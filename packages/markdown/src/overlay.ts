@@ -1,3 +1,4 @@
+import { labelCaption, labelledElement, labelNoteReference, labelText } from '@researchforce/domain/label-marks';
 import type { Span } from '@researchforce/domain/richtext';
 import { cpLength } from '@researchforce/domain/text';
 import { element, text } from '@researchforce/domain/tree';
@@ -28,24 +29,12 @@ export class LabelNotes {
   }
 }
 
-/** The visible label text of a Quote, Paraphrase, or Source_Reported span. */
-export function labelText(span: Span): string | undefined {
-  switch (span.k) {
-    case 'quote': return `Quote · ${span.source}`;
-    case 'paraphrase': return `Paraphrase · ${span.source}`;
-    case 'source_reported': return span.source === undefined || span.source.trim() === '' ? 'Source-reported' : `Source-reported · ${span.source}`;
-    default: return undefined;
-  }
-}
-
 const RANK: Readonly<Record<Span['k'], number>> = { quote: 0, paraphrase: 0, source_reported: 1, lang: 2, mention: 3 };
 
 function spanMark(span: Span, index: number): Mark {
   const key = `span:${index}`;
   switch (span.k) {
-    case 'quote': return { key, wrap: (children) => element('q', { class: 'labelled labelled-quote' }, children) };
-    case 'paraphrase': return { key, wrap: (children) => element('span', { class: 'labelled labelled-paraphrase' }, children) };
-    case 'source_reported': return { key, wrap: (children) => element('span', { class: 'labelled labelled-source-reported' }, children) };
+    case 'quote': case 'paraphrase': case 'source_reported': return { key, wrap: (children) => labelledElement(span.k, children) };
     case 'lang': return { key, wrap: (children) => element('span', { lang: span.lang }, children) };
     case 'mention': return {
       key, wrap: (children) => element('span', { class: 'mention', 'data-member': span.member, 'data-specialty': span.specialty }, children),
@@ -112,9 +101,9 @@ export function buildInline(leaves: readonly Leaf[], context: OverlayContext): V
     if (value === undefined) return [];
     if (cpLength(context.source.slice(entry.span.s, entry.span.e)) >= FOOTNOTE_FROM) {
       const note = context.notes.add(value);
-      return [element('sup', { class: 'label-ref' }, [element('a', { href: `#${note.id}`, id: `${note.id}-ref` }, [text(String(note.number))])])];
+      return [labelNoteReference(note.number, note.id)];
     }
-    return [element('span', { class: 'label' }, [text(value)])];
+    return [labelCaption(value)];
   };
 
   const build = (from: number, to: number, depth: number): ViewNode[] => {

@@ -1,10 +1,128 @@
-/* Initial scaffold only. Task 8 completes the shared design system. */
+/* Generated from tokens.ts by `npm run design:css`. Do not edit by hand. */
 :root {
-  --rf-colour-text: #202124;
-  --rf-colour-surface: #ffffff;
-  --rf-font-body: system-ui, sans-serif;
-  --rf-font-size-body: 1rem;
+  color-scheme: light dark;
+  --rf-font-body: 'Fraunces', 'Fraunces Fallback', 'STIX Two Text', 'Noto Sans', 'Noto Sans Coptic', 'STIX Two Math', 'Noto Sans Math', serif;
+  --rf-font-ui: 'Inter', 'Inter Fallback', 'Noto Sans', 'Noto Sans Coptic', 'STIX Two Text', 'STIX Two Math', 'Noto Sans Math', sans-serif;
+  --rf-font-mono: 'JetBrains Mono', 'JetBrains Mono Fallback', 'Noto Sans', 'Noto Sans Coptic', 'STIX Two Text', 'STIX Two Math', 'Noto Sans Math', monospace;
+  --rf-font-math: 'STIX Two Math', 'STIX Two Text', 'Noto Sans', 'Noto Sans Coptic', 'Noto Sans Math', math;
+  --rf-font-heading: var(--rf-font-body);
+  --rf-font-size-xs: 0.8125rem;
+  --rf-font-size-sm: 0.875rem;
+  --rf-font-size-ui: 0.9375rem;
+  --rf-font-size-body: 1.0625rem;
+  --rf-font-size-lg: 1.25rem;
+  --rf-font-size-xl: clamp(1.375rem, 1.2rem + 0.8vw, 1.625rem);
+  --rf-font-size-2xl: clamp(1.625rem, 1.3rem + 1.5vw, 2.125rem);
+  --rf-font-size-3xl: clamp(2rem, 1.5rem + 2.4vw, 2.875rem);
+  --rf-font-weight-regular: 400;
+  --rf-font-weight-medium: 500;
+  --rf-font-weight-semibold: 600;
+  --rf-font-weight-bold: 700;
+  --rf-line-height-tight: 1.2;
+  --rf-line-height-ui: 1.4;
   --rf-line-height-body: 1.6;
-  --rf-space-page: 2rem;
-  --rf-width-reading: 65ch;
+  --rf-letter-spacing-caps: 0.06em;
+  --rf-space-3xs: 0.125rem;
+  --rf-space-2xs: 0.25rem;
+  --rf-space-xs: 0.5rem;
+  --rf-space-sm: 0.75rem;
+  --rf-space-md: 1rem;
+  --rf-space-lg: 1.5rem;
+  --rf-space-xl: 2rem;
+  --rf-space-2xl: 3rem;
+  --rf-space-3xl: 4rem;
+  --rf-space-page: clamp(1rem, 0.5rem + 2.5vw, 2rem);
+  --rf-radius-sm: 0.25rem;
+  --rf-radius-md: 0.5rem;
+  --rf-radius-pill: 999rem;
+  --rf-hairline: 1px;
+  --rf-underline-offset: 0.18em;
+  --rf-border-width: 1px;
+  --rf-border-width-strong: 2px;
+  --rf-focus-width: 3px;
+  --rf-focus-offset: 2px;
+  --rf-target-min: 1.5rem;
+  --rf-control-height: 2.75rem;
+  --rf-size-full: 100%;
+  --rf-width-reading: 68ch;
+  --rf-width-page: 72rem;
+  --rf-duration-fast: 120ms;
+  --rf-colour-surface: #fbfaf7;
+  --rf-colour-surface-raised: #f2efe9;
+  --rf-colour-text: #1c1b19;
+  --rf-colour-text-muted: #57534e;
+  --rf-colour-border: #78716c;
+  --rf-colour-border-subtle: #ddd8cf;
+  --rf-colour-danger: #a3161a;
+  --rf-colour-success: #1d6b34;
+  --rf-colour-warning: #7a4a00;
+  --rf-colour-info: #1f4fd1;
+  --rf-colour-accent: #9a3412;
+  --rf-colour-on-accent: #ffffff;
+  --rf-colour-focus: var(--rf-colour-accent);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --rf-colour-surface: #151413;
+    --rf-colour-surface-raised: #221f1d;
+    --rf-colour-text: #edebe7;
+    --rf-colour-text-muted: #aaa49d;
+    --rf-colour-border: #8a847d;
+    --rf-colour-border-subtle: #3a3633;
+    --rf-colour-danger: #ff9a8f;
+    --rf-colour-success: #7fd69a;
+    --rf-colour-warning: #f0bb5a;
+    --rf-colour-info: #93b6ff;
+    --rf-colour-accent: #f4a06b;
+    --rf-colour-on-accent: #151413;
+    --rf-colour-focus: var(--rf-colour-accent);
+  }
+}
+
+[data-accent='oxblood'] { --rf-colour-accent: #9b1c31; }
+[data-accent='ochre'] { --rf-colour-accent: #7f5200; }
+[data-accent='olive'] { --rf-colour-accent: #4a6413; }
+[data-accent='green'] { --rf-colour-accent: #16653a; }
+[data-accent='teal'] { --rf-colour-accent: #0e6570; }
+[data-accent='blue'] { --rf-colour-accent: #1f4fd1; }
+[data-accent='violet'] { --rf-colour-accent: #6a2bd0; }
+[data-accent='magenta'] { --rf-colour-accent: #9a1850; }
+
+@media (prefers-color-scheme: dark) {
+  [data-accent='oxblood'] { --rf-colour-accent: #f59aa8; }
+  [data-accent='ochre'] { --rf-colour-accent: #e8b44c; }
+  [data-accent='olive'] { --rf-colour-accent: #b0d474; }
+  [data-accent='green'] { --rf-colour-accent: #72d49d; }
+  [data-accent='teal'] { --rf-colour-accent: #66d1d9; }
+  [data-accent='blue'] { --rf-colour-accent: #93b6ff; }
+  [data-accent='violet'] { --rf-colour-accent: #c6a8ff; }
+  [data-accent='magenta'] { --rf-colour-accent: #f59cc2; }
+}
+
+@media print {
+  :root {
+    color-scheme: light;
+    --rf-colour-surface: #fbfaf7;
+    --rf-colour-surface-raised: #f2efe9;
+    --rf-colour-text: #1c1b19;
+    --rf-colour-text-muted: #57534e;
+    --rf-colour-border: #78716c;
+    --rf-colour-border-subtle: #ddd8cf;
+    --rf-colour-danger: #a3161a;
+    --rf-colour-success: #1d6b34;
+    --rf-colour-warning: #7a4a00;
+    --rf-colour-info: #1f4fd1;
+    --rf-colour-accent: #9a3412;
+    --rf-colour-on-accent: #ffffff;
+    --rf-colour-focus: var(--rf-colour-accent);
+  }
+  [data-accent='oxblood'] { --rf-colour-accent: #9b1c31; }
+  [data-accent='ochre'] { --rf-colour-accent: #7f5200; }
+  [data-accent='olive'] { --rf-colour-accent: #4a6413; }
+  [data-accent='green'] { --rf-colour-accent: #16653a; }
+  [data-accent='teal'] { --rf-colour-accent: #0e6570; }
+  [data-accent='blue'] { --rf-colour-accent: #1f4fd1; }
+  [data-accent='violet'] { --rf-colour-accent: #6a2bd0; }
+  [data-accent='magenta'] { --rf-colour-accent: #9a1850; }
 }

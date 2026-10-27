@@ -7,6 +7,6 @@ export default {
     'declaration-block-no-duplicate-properties': true,
     'researchforce/design-tokens': true,
   },
-  overrides: [{ files: ['packages/design/src/tokens.css'], rules: { 'researchforce/design-tokens': null, 'color-named': null } }],
+  overrides: [{ files: ['packages/design/src/tokens.css', 'packages/design/src/fonts.css'], rules: { 'researchforce/design-tokens': null, 'color-named': null } }],
   ignoreFiles: ['**/node_modules/**', '**/dist/**', '**/.cache/**', '**/.wrangler/**'],
 };

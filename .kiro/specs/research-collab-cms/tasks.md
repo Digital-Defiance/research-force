@@ -226,27 +226,27 @@ Tests use synthetic data only. No task copies, quotes, or commits content from t
     - Ask the user for the paths to the journal Markdown, the attachment folder, and the metadata module, run both tools, and report to the user the counts and the names of attachments that no entry references (the design measured 6) and of referenced files without metadata, so the user can answer design open question 4 before the import is built
     - _Requirements: 26.2, 26.12_
 
-- [ ] 8. Build the Design_System foundations in `packages/design`
-  - [ ] 8.1 Define the design tokens in `packages/design/src/tokens.css` and `packages/design/src/tokens.ts`
+- [x] 8. Build the Design_System foundations in `packages/design`
+  - [x] 8.1 Define the design tokens in `packages/design/src/tokens.css` and `packages/design/src/tokens.ts`
     - CSS custom properties for colours in light and dark schemes switched by `prefers-color-scheme` without stored state, the type scale, spacing, radii, and breakpoints; eight Project_Accents and the default accent; the token list exported for validation of accent choices
     - _Requirements: 45.1, 45.3, 45.16, 45.22_
-  - [ ] 8.2 Implement both renderers in `packages/design/src/render-string.ts` and `packages/design/src/react.ts`
+  - [x] 8.2 Implement both renderers in `packages/design/src/render-string.ts` and `packages/design/src/react.ts`
     - Over the neutral element tree of `packages/domain/src/tree.ts`: `renderToString` producing escaped HTML for static outputs, and `toReact` producing React elements for the Workspace from the same tree and classes
     - _Requirements: 45.1, 45.13_
-  - [ ] 8.3 Write the fixed texts and the copy lint
+  - [x] 8.3 Write the fixed texts and the copy lint
     - `packages/design/src/fixed-texts.ts`: the Group_Statement, the About status section, the footer copyright statement (at most 3 sentences with the Content_Licence name and link as parameters), the People affiliation and no-profile statements, the Licence statement, the Corrections Response_Target statement, and the Privacy Responsible_Person statement template, each with a version date and typographic quotation marks and apostrophes
     - `tools/lint-copy.ts` wired into `npm run lint`: refuse straight quotation marks in fixed and generated text, and any email address, telephone number, postal address, donation, payment, or fundraising wording in fixed texts and templates
     - _Requirements: 45.14, 46.1, 46.2, 46.3, 46.6, 46.10, 46.15, 46.21, 46.35_
-  - [ ] 8.4 Implement the presentational components in `packages/design/src/components/`
+  - [x] 8.4 Implement the presentational components in `packages/design/src/components/`
     - Header with the ResearchForce link, footer (Group_Statement, copyright statement, links to the six Policy_Pages and the form), navigation, buttons, form fields with labelled errors, notices, status labels and companion-field blocks, label marks, citation block, Attachment list, tables, pagination, Disclosure_Line block, Dissent_Note block; 24 by 24 CSS pixel targets and visible focus
     - _Requirements: 29.10, 45.1, 45.2, 45.5, 46.2_
-  - [ ] 8.5 Add the self-hosted typefaces in `packages/design/fonts/` and `packages/design/src/fonts.css`
+  - [x] 8.5 Add the self-hosted typefaces in `packages/design/fonts/` and `packages/design/src/fonts.css`
     - Fraunces, Inter, JetBrains Mono, STIX Two Text, and STIX Two Math under the SIL Open Font License, split by `unicode-range`, with `font-display: swap` and `size-adjust` fallback faces, and the licence notices collected for exports
     - _Requirements: 45.8, 45.13, 45.17, 45.20_
-  - [ ]* 8.6 Write unit tests for font coverage and accent contrast
+  - [x]* 8.6 Write unit tests for font coverage and accent contrast
     - Read every font file's character map and check that each graphic character of the blocks Requirement 45.13 lists is covered in each stack; check every Project_Accent for at least 4.5:1 text and 3:1 interface contrast in both schemes
     - _Requirements: 45.4, 45.13, 45.22_
-  - [ ]* 8.7 Write property test for label rendering
+  - [x]* 8.7 Write property test for label rendering
     - **Property 39: Labels render exactly over their characters**
     - **Validates: Requirements 11.5, 11.6**
 

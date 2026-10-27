@@ -10,7 +10,8 @@
   },
   "include": [
     "src/**/*.ts",
-    "*.ts"
+    "*.ts",
+    "types/*.d.ts"
   ],
   "references": [
     {
