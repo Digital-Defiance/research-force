@@ -323,7 +323,7 @@ Tests use synthetic data only. No task copies, quotes, or commits content from t
     - **Property 63: Non-public text leaves the public index unchanged**
     - **Validates: Requirements 30.10**
 
-- [ ] 12. Checkpoint - Ensure all tests pass
+- [x] 12. Checkpoint - Ensure all tests pass
   - Run `npm test` (`vitest --run`) and `npm run lint`; ensure all tests pass, ask the user if questions arise.
 
 - [ ] 13. Build the Worker foundation and the Authentication_Service in `rf-app`
