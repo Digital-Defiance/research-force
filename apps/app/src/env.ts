@@ -13,4 +13,9 @@ export interface Env {
   MAILER: DurableObjectNamespace<Mailer>;
   BUDGET: DurableObjectNamespace<Budget>;
   JOBS: DurableObjectNamespace<Jobs>;
+  /** `https://app.researchforce.org`, or the staging hostname. */
+  WORKSPACE_ORIGIN: string;
+  /** Secrets: `https://<team>.cloudflareaccess.com` and the Access application's AUD tag. */
+  ACCESS_TEAM_DOMAIN: string;
+  ACCESS_AUD: string;
 }

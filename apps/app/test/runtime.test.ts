@@ -1,4 +1,4 @@
-import { env, runInDurableObject } from 'cloudflare:test';
+import { createExecutionContext, env, runInDurableObject } from 'cloudflare:test';
 import { describe, expect, inject, it } from 'vitest';
 import { fc, FC_RUNS } from '@researchforce/testing/fc';
 import type { Env } from '../src/env';
@@ -43,7 +43,13 @@ describe('local Cloudflare runtime', () => {
     }
   });
 
-  it('keeps all Worker request handlers closed before their security features exist', async () => {
-    expect((await app.fetch()).status).toBe(404);
+  it('sends API requests through Access verification, which fails closed without the Access secrets', async () => {
+    expect(bindings.WORKSPACE_ORIGIN).toBe('https://app.researchforce.org');
+    for (const path of ['/api/v1/me', '/api/v1/no-such-route', '/api/']) {
+      const request = new Request(`https://app.researchforce.org${path}`, { headers: { 'Cf-Access-Jwt-Assertion': 'eyJhbGciOiJub25lIn0.e30.' } });
+      const response = await app.fetch(request as Parameters<typeof app.fetch>[0], bindings, createExecutionContext());
+      expect(response.status).toBe(401);
+      expect(await response.json()).toEqual({ error: 'unauthenticated' });
+    }
   });
 });

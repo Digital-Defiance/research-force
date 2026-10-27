@@ -8,13 +8,14 @@
     "./*": "./src/*.ts"
   },
   "dependencies": {
+    "@researchforce/db": "*",
+    "@researchforce/design": "*",
     "@researchforce/domain": "*",
     "@researchforce/kernel": "*",
-    "@researchforce/markdown": "*",
     "@researchforce/manifest": "*",
-    "@researchforce/design": "*",
+    "@researchforce/markdown": "*",
     "@researchforce/public-render": "*",
     "@researchforce/search-public": "*",
-    "@researchforce/db": "*"
+    "jose": "6.2.13"
   }
 }

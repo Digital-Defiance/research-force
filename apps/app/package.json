@@ -5,15 +5,16 @@
   "private": true,
   "type": "module",
   "dependencies": {
+    "@researchforce/db": "*",
+    "@researchforce/design": "*",
     "@researchforce/domain": "*",
     "@researchforce/kernel": "*",
-    "@researchforce/markdown": "*",
     "@researchforce/manifest": "*",
-    "@researchforce/design": "*",
+    "@researchforce/markdown": "*",
     "@researchforce/public-render": "*",
     "@researchforce/search-public": "*",
-    "@researchforce/db": "*",
-    "@researchforce/testing": "*"
+    "@researchforce/testing": "*",
+    "jose": "6.2.13"
   },
   "scripts": {
     "build": "vite build --config web/vite.config.ts"

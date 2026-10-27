@@ -5,6 +5,12 @@
   "compatibility_date": "2026-10-26",
   "workers_dev": false,
   "preview_urls": false,
+  "observability": {
+    "enabled": true
+  },
+  "vars": {
+    "WORKSPACE_ORIGIN": "https://app.researchforce.org"
+  },
   "d1_databases": [
     {
       "binding": "RF_CORE",
@@ -94,6 +100,9 @@
       "name": "rf-app-staging",
       "workers_dev": false,
       "preview_urls": false,
+      "vars": {
+        "WORKSPACE_ORIGIN": "https://staging.researchforce.org"
+      },
       "d1_databases": [
         {
           "binding": "RF_CORE",

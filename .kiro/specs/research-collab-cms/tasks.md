@@ -326,26 +326,26 @@ Tests use synthetic data only. No task copies, quotes, or commits content from t
 - [x] 12. Checkpoint - Ensure all tests pass
   - Run `npm test` (`vitest --run`) and `npm run lint`; ensure all tests pass, ask the user if questions arise.
 
-- [ ] 13. Build the Worker foundation and the Authentication_Service in `rf-app`
-  - [ ] 13.1 Create the Hono API skeleton, error shape, and logging in `apps/app/src/api/app.ts`, `apps/app/src/api/errors.ts`, and `apps/app/src/log.ts`
+- [x] 13. Build the Worker foundation and the Authentication_Service in `rf-app`
+  - [x] 13.1 Create the Hono API skeleton, error shape, and logging in `apps/app/src/api/app.ts`, `apps/app/src/api/errors.ts`, and `apps/app/src/log.ts`
     - `/api/v1` router; error responses `{ error, fields?, details? }` with the codes and HTTP statuses of the design's error table; `DAILY_LIMIT` mapping for D1 daily-limit errors
     - Structured logs of route, status, CPU time, and D1 rows from the accountant; a redactor that removes `Authorization` headers, token-shaped strings, email addresses, and bodies, and hashes Member ids
     - _Requirements: 20.20, 28.3, 28.9, 28.13_
-  - [ ] 13.2 Implement Access JWT verification in `apps/app/src/auth/jwt.ts`
+  - [x] 13.2 Implement Access JWT verification in `apps/app/src/auth/jwt.ts`
     - Read `Cf-Access-Jwt-Assertion`; verify with `jose` against the team key set (RS256, `aud`, `iss`, `exp`, `iat` no more than 24 hours ago); cache keys in isolate memory and the Cache API for one hour and refetch once for an unknown `kid`; respond 401 before any data access when no valid key set is available
     - _Requirements: 1.3, 1.5, 1.8_
-  - [ ] 13.3 Implement sessions and Member_Status checks in `apps/app/src/auth/session.ts`
+  - [x] 13.3 Implement sessions and Member_Status checks in `apps/app/src/auth/session.ts`
     - Session key as the SHA-256 of the assertion; one query joining `sessions` and `members`; a new hash looks up the Member by lower-cased verified email, activates a Pending Member, and inserts the session with `established_at = iat`; 403 without any write for an email of no Pending or Active Member; refusal of ended sessions and Revoked Members
     - `POST /api/v1/session/logout` marks the session ended and redirects to `/cdn-cgi/access/logout`; handlers read the acting Member only from the session context
     - _Requirements: 1.1, 1.4, 1.6, 1.7, 1.8, 1.9, 2.3, 2.9, 2.12_
-  - [ ] 13.4 Implement CSRF, Origin, and CORS checks in `apps/app/src/api/csrf.ts`
+  - [x] 13.4 Implement CSRF, Origin, and CORS checks in `apps/app/src/api/csrf.ts`
     - State-changing requests need the `X-RF-CSRF` header and an `Origin` of `https://app.researchforce.org`; CORS allows only the Workspace origin; `GET` routes have no side effects
     - _Requirements: 14.6_
-  - [ ]* 13.5 Write property test for identity assertions
+  - [x]* 13.5 Write property test for identity assertions
     - Use `jwtArb` in `packages/testing/src/jwt.ts` with test signing keys and mutations
     - **Property 21: Identity assertions gate every Workspace request**
     - **Validates: Requirements 1.3, 1.4, 1.5, 1.6, 1.8, 2.9**
-  - [ ]* 13.6 Write unit tests for logout and log redaction
+  - [x]* 13.6 Write unit tests for logout and log redaction
     - Logout ends the session for that browser; logged lines contain no `Authorization` header, token, email address, or body text
     - _Requirements: 1.9, 20.20_
 

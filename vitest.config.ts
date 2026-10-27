@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 const worker = JSON.parse(readFileSync(new URL('./apps/app/wrangler.jsonc', import.meta.url), 'utf8')) as {
   compatibility_date: string;
+  vars: Record<string, string>;
   d1_databases: { binding: string }[];
   r2_buckets: { binding: string }[];
   durable_objects: { bindings: { name: string; class_name: string }[] };
@@ -39,6 +40,7 @@ export default defineConfig({
           miniflare: {
             // Derive local storage bindings from production, excluding remote AI and services.
             compatibilityDate: worker.compatibility_date,
+            bindings: worker.vars,
             d1Databases: worker.d1_databases.map((entry) => entry.binding),
             r2Buckets: worker.r2_buckets.map((entry) => entry.binding),
             durableObjects: Object.fromEntries(worker.durable_objects.bindings.map((entry) => [entry.name, { className: entry.class_name, useSQLite: true }])),

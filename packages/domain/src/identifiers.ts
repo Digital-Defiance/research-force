@@ -24,6 +24,10 @@ export function itemIdentifierKey(value: string): string {
   if (!isItemIdentifier(value)) throw new RangeError('Invalid Item Identifier.');
   return value.toLowerCase();
 }
+/** The key that matches a Member's email ignoring letter case (`members.email_lc`, R1.4). */
+export function emailKey(email: string): string {
+  return email.toLowerCase();
+}
 export function newItemIdentifier(source: RandomSource = randomSource()): { readonly identifier: string; readonly registryKey: string } {
   const identifier = randomGroups(ITEM_ID_FORMAT.groups, source);
   return { identifier, registryKey: itemIdentifierKey(identifier) };
