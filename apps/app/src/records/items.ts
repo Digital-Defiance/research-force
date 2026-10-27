@@ -24,7 +24,8 @@ import { parse } from '../api/input';
 import { authorize } from '../auth/authorize';
 import type { PermissionCheck } from '../auth/authorize';
 import { KIND_ADAPTERS } from './kinds';
-import { prepareSections } from './kinds/journal';
+import { insertStagedSections, prepareSections, stagedSectionChange, stagedSectionIssues, writeStagedSections } from './kinds/journal';
+import type { Section, StagedSections } from './kinds/journal';
 import { richText, rowsOf } from './kinds/kind';
 import type { BaseRow, ChildUnit, ItemFields, KindRules } from './kinds/kind';
 import { evidenceLink, linkIssues, writeLinks } from './links';
@@ -202,8 +203,11 @@ function validated(kind: ItemKind, context: ValidationContext, options: Paramete
   return result.ok ? { fields: result.value as unknown as ItemFields, issues: [] } : { issues: result.issues.map((issue) => ({ field: issue.field, rule: issue.message })) };
 }
 
-/** Submit a new Research_Item as one Submission: the Item, its kind rows, any Group_Note, and its links, or nothing (R4.1, R41.7). */
-export async function createItem(c: Context<ApiEnv>, kind: ItemKind, body: unknown): Promise<ULID> {
+/**
+ * Submit a new Research_Item as one Submission: the Item, its kind rows, any Group_Note, and its links, or nothing (R4.1, R41.7).
+ * A Journal_Entry's Entry_Sections can come from the parts of a staged save instead of the body.
+ */
+export async function createItem(c: Context<ApiEnv>, kind: ItemKind, body: unknown, staged?: StagedSections): Promise<ULID> {
   const { links, evidence, ...rest } = objectBody(body);
   const envelope = parse(createEnvelope, { links, evidence });
   const actor = c.get('session').member.id;
@@ -213,7 +217,7 @@ export async function createItem(c: Context<ApiEnv>, kind: ItemKind, body: unkno
     ...((envelope.links?.length ?? 0) + (envelope.evidence?.length ?? 0) > 0 ? [{ permission: 'link.add' as const }] : []),
   ]);
   const context = await validationContext(c);
-  const result = validated(kind, context, { mode: 'submit' }, { ...rest, kind });
+  const result = validated(kind, context, { mode: 'submit', ...stagedTotals(staged) }, { ...rest, kind });
   const issues = result.issues.filter((issue) => issue.field !== 'projectId');
   try {
     requireProject(context.projects, rest['projectId']);
@@ -223,7 +227,7 @@ export async function createItem(c: Context<ApiEnv>, kind: ItemKind, body: unkno
   }
   const id = newULID(now);
   let fields = result.fields ?? {};
-  if (kind === 'journal_entry' && result.fields) {
+  if (kind === 'journal_entry' && result.fields && !staged) {
     const prepared = prepareSections(fields, undefined, now);
     fields = { ...fields, sections: prepared.sections };
     issues.push(...prepared.issues);
@@ -241,6 +245,7 @@ export async function createItem(c: Context<ApiEnv>, kind: ItemKind, body: unkno
   const groupNote = fields['groupNote'] as RichText | undefined;
   const withdrawn = kind === 'finding' && fields['statusValueId'] === BUILT_IN_VALUE_IDS.findingWithdrawn;
   await commitWithIdentifiers(c.env.RF_CORE, { id: actor, now }, [id], (batch, issued) => {
+    staged?.guard(batch);
     addSubmission(batch, { id: submissionId, memberId: actor, kind: 'member', now, complete: true, hasGroupNote: present(groupNote) });
     batch.insert(units, {
       id, unitType: 'research_item', projectId, rootId: id, ownerId: actor, credit, submissionId, createdAt: now,
@@ -251,6 +256,10 @@ export async function createItem(c: Context<ApiEnv>, kind: ItemKind, body: unkno
       ...dateKeys(kind, fields, now), ...logSummaryColumns(fields['logSummary'] as RichText | undefined),
     });
     adapter.insert(batch, { id, projectId, ownerId: actor, credit, submissionId, now }, fields);
+    if (staged) {
+      insertStagedSections(batch, { id, projectId, ownerId: actor, credit, submissionId, now }, staged);
+      staged.release(batch);
+    }
     if (present(groupNote)) addGroupNote(batch, { id: newULID(now), itemId: id, projectId, memberId: actor, submissionId, now, text: groupNote });
     if (linked.links.length > 0) writeLinks(batch, linked.links, { id: actor, now });
     rules.write?.(batch);
@@ -262,8 +271,9 @@ export async function createItem(c: Context<ApiEnv>, kind: ItemKind, body: unkno
 /**
  * Save an edit of a Research_Item as one guarded batch (R4.5, R22.1). A field set to null is removed. The Group_Note
  * is edited in the Thread, the Project by moving the Item, and the Log_Summary only by the Owner (R41.4).
+ * A Journal_Entry's new Entry_Sections can come from the parts of a staged save. Resolves to whether anything was saved.
  */
-export async function editItem(c: Context<ApiEnv>, current: LoadedItem, body: unknown): Promise<void> {
+export async function editItem(c: Context<ApiEnv>, current: LoadedItem, body: unknown, staged?: StagedSections): Promise<boolean> {
   const { rev, mark, statusReason, links, evidence, ...patch } = objectBody(body);
   const envelope = parse(editEnvelope, { rev, mark, statusReason, links, evidence });
   const { base } = current;
@@ -290,38 +300,45 @@ export async function editItem(c: Context<ApiEnv>, current: LoadedItem, body: un
     if (value === null) delete merged[key];
     else merged[key] = value;
   }
+  if (staged) delete merged['sections'];
   adapter.adjust?.(merged, patch, before);
   const context = await validationContext(c, Object.fromEntries(SELECTION_FIELDS.flatMap((field) => (typeof before[field] === 'string' ? [[field, [before[field] as ULID]]] : []))));
-  const sections = before['sections'] as readonly { content: RichText }[] | undefined;
+  const sections = (before['sections'] ?? []) as readonly Section[];
   const result = validated(base.kind, context, {
     mode: 'edit', previous: {
       ...(base.logSummary ? { logSummary: base.logSummary } : {}),
-      sectionCount: sections?.length ?? 0, sectionCharacters: (sections ?? []).reduce((total, section) => total + cpLength(section.content.text), 0),
+      sectionCount: sections.length, sectionCharacters: sections.reduce((total, section) => total + cpLength(section.content.text), 0),
     },
+    ...stagedTotals(staged),
   }, merged);
   issues.push(...result.issues);
   let input: ItemFields = result.fields ?? {};
-  if (base.kind === 'journal_entry' && result.fields) {
+  if (base.kind === 'journal_entry' && result.fields && !staged) {
     const prepared = prepareSections(input, before, now);
     input = { ...input, sections: prepared.sections };
     issues.push(...prepared.issues);
   }
+  if (staged) issues.push(...stagedSectionIssues(staged));
   const linked = await saveLinks(c, base.id, envelope, false);
   issues.push(...linked.issues);
   refuse(issues);
 
   const { projectId: _project, kind: _kind, groupNote: _note, ...kept } = input;
   const after = normalized(kept);
-  const classes = { ...COMMON_CLASSES, ...adapter.classes(before, after) };
+  // Staged sections never pass through the Worker, so the kind adapter compares and writes every other field.
+  const { sections: _sections, ...unstaged } = before;
+  const compared = staged ? unstaged : before;
+  const classes = { ...COMMON_CLASSES, ...adapter.classes(compared, after) };
   const explicit = Object.fromEntries(Object.keys(classes).map((field) => [field, after[field]]));
-  const changes: FieldChange[] = [...diffFields(before, explicit, classes), ...(adapter.diff?.(before, after) ?? [])];
+  const changes: FieldChange[] = [...diffFields(compared, explicit, classes), ...(adapter.diff?.(compared, after) ?? [])];
+  const sectionsChange = staged ? stagedSectionChange(sections, staged) : null;
   const changesStatus = changes.some((change) => change.fieldClass === 'status');
   if (envelope.statusReason !== undefined && !changesStatus) refuse([{ field: 'statusReason', rule: 'A reason is given only with a status change.' }]);
   const rules: KindRules = (await adapter.rules?.(c, {
     id: base.id, before, after, base, links: linked.links, statusReason: envelope.statusReason, mark: envelope.mark,
   })) ?? { issues: [] };
   refuse(rules.issues);
-  if (changes.length === 0 && linked.links.length === 0) return;
+  if (changes.length === 0 && !sectionsChange && linked.links.length === 0) return false;
 
   const changed = new Set(changes.map((change) => change.field));
   const summaryChanged = changed.has('logSummary');
@@ -329,21 +346,31 @@ export async function editItem(c: Context<ApiEnv>, current: LoadedItem, body: un
     target: { type: 'unit', id: base.id, rootId: base.id },
     startedFrom: envelope.rev,
     change: {
-      fields: [...changes, ...(rules.changes ?? [])],
+      fields: [...changes, ...(sectionsChange ? [sectionsChange] : []), ...(rules.changes ?? [])],
       ...(envelope.mark ? { mark: { mark: envelope.mark.mark, ...(envelope.mark.reason === undefined ? {} : { reason: envelope.mark.reason }) } } : {}),
       ...(envelope.statusReason === undefined ? {} : { reasons: { status: envelope.statusReason } }),
     },
     write: (batch) => {
+      staged?.guard(batch);
       if (summaryChanged) guardLogSummaryOwner(batch, base.id, actor);
       batch.update(units, { ...rules.unit }, eq(units.id, base.id));
       batch.update(researchItems, {
         title: after['title'] as string, statusValueId: (after['statusValueId'] as string | undefined) ?? null,
         ...dateKeys(base.kind, after, base.createdAt), ...logSummaryColumns(after['logSummary'] as RichText | undefined),
       }, eq(researchItems.unitId, base.id));
-      adapter.update(batch, base, before, after, changed, now);
+      adapter.update(batch, base, compared, after, changed, now);
+      if (staged) {
+        if (sectionsChange) writeStagedSections(batch, base, sections, staged, now);
+        staged.release(batch);
+      }
       if (linked.links.length > 0) writeLinks(batch, linked.links, { id: actor, now });
       rules.write?.(batch);
     },
     outbox: [['publish', `unit:${base.id}`]],
   });
+  return true;
+}
+
+function stagedTotals(staged: StagedSections | undefined): { staged?: { count: number; characters: number } } {
+  return staged ? { staged: { count: staged.count, characters: staged.characters } } : {};
 }

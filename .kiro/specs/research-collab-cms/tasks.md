@@ -456,14 +456,14 @@ Tests use synthetic data only. No task copies, quotes, or commits content from t
     - **Property 22: The acting Member is the session Member**
     - **Validates: Requirements 1.7, 2.10**
 
-- [ ] 19. Build staged commits and the value-set and settings APIs
-  - [ ] 19.1 Implement staged commits in `apps/app/src/records/stages.ts` and `apps/app/src/api/routes/stages.ts`
+- [x] 19. Build staged commits and the value-set and settings APIs
+  - [x] 19.1 Implement staged commits in `apps/app/src/records/stages.ts` and `apps/app/src/api/routes/stages.ts`
     - Saves above 512 KB send `POST /stages`, `PUT /stages/{token}/parts/{n}`, and `POST /stages/{token}/commit`, which moves the staged rows into place with `INSERT … SELECT` in one batch; non-staged routes answer `too_large` (413) above 512 KB
     - _Requirements: 4.1, 4.4, 28.3_
-  - [ ] 19.2 Implement the value-set API in `apps/app/src/api/routes/value-sets.ts`
+  - [x] 19.2 Implement the value-set API in `apps/app/src/api/routes/value-sets.ts`
     - `GET/POST/PATCH /value-sets` applying the domain rules to every configurable set, Public_Description edits for Methods_Terms, and `value:{set}:{id}` outbox rows
     - _Requirements: 3.3, 3.8, 4.6, 6.5, 6.8, 7.7, 8.8, 10.5, 33.6, 46.12, 46.13_
-  - [ ] 19.3 Implement the settings API in `apps/app/src/api/routes/settings.ts`
+  - [x] 19.3 Implement the settings API in `apps/app/src/api/routes/settings.ts`
     - `GET/PUT /settings` with each setting's validator, refusing out-of-range values with the allowed range shown
     - _Requirements: 2.5, 10.8, 20.14, 20.25, 28.12, 44.15_
 

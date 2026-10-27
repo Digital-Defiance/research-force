@@ -9,7 +9,32 @@ export async function resetRecords(core: D1Database): Promise<void> {
   await core.batch([
     'units', 'research_items', 'attachments', 'entry_sections', 'replies', 'dissent_notes', 'submissions', 'cross_links', 'deletions', 'external_parties', 'projects',
     'journal_entries', 'je_members', 'findings', 'sources', 'runs', 'run_counts', 'hypotheses', 'correspondences', 'correspondence_parties', 'archival_requests', 'topics', 'revisions',
+    'staging_rows',
   ].map((table) => core.prepare(`DELETE FROM ${table}`)));
+}
+
+/**
+ * Restores seeded tables that a test file changes: the first call records their rows, every later call puts them back.
+ * Call it from `beforeEach`.
+ */
+export function seededTables(core: () => D1Database, tables: readonly string[]): () => Promise<void> {
+  let saved: ReadonlyMap<string, readonly Record<string, unknown>[]> | undefined;
+  return async () => {
+    const db = core();
+    if (!saved) {
+      saved = new Map(await Promise.all(tables.map(async (table) => [table, (await db.prepare(`SELECT * FROM ${table}`).all<Record<string, unknown>>()).results] as const)));
+      return;
+    }
+    const rows = saved;
+    await db.batch(tables.flatMap((table) => {
+      const list = rows.get(table)!;
+      const columns = Object.keys(list[0] ?? {});
+      return [
+        db.prepare(`DELETE FROM ${table}`),
+        ...(list.length === 0 ? [] : [db.prepare(`INSERT INTO ${table} (${columns.join(', ')}) SELECT ${columns.map((column) => `value ->> '$.${column}'`).join(', ')} FROM json_each(?1)`).bind(JSON.stringify(list))]),
+      ];
+    }));
+  };
 }
 
 let projectCount = 0;

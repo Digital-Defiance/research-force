@@ -60,6 +60,26 @@ describe('Journal Entry limits', () => {
     if (result.ok) throw new Error('Expected all independent errors.');
     expect(result.issues.map((issue) => issue.field)).toEqual(expect.arrayContaining(['title', 'sections.0.content.text', 'sections.1.id', 'endDate']));
   });
+
+  it('checks staged sections by their totals with the same caps, and refuses sections in the body of a staged save', () => {
+    const { sections: _sections, ...metadata } = fixture;
+    const issues = (options: Parameters<typeof researchItemSchema>[2], input: unknown = metadata) => {
+      const result = validate(researchItemSchema('journal_entry', context, options), input);
+      return result.ok ? [] : result.issues.map((issue) => `${issue.field}: ${issue.message}`);
+    };
+    expect(issues({ mode: 'submit', staged: { count: 1, characters: 0 } })).toEqual([]);
+    expect(issues({ mode: 'submit', staged: { count: JOURNAL_LIMITS.sections, characters: JOURNAL_LIMITS.codePoints } })).toEqual([]);
+    expect(issues({ mode: 'submit', staged: { count: 0, characters: 0 } })).toEqual(['sections: A Journal Entry needs at least one Entry Section.']);
+    expect(issues({ mode: 'submit', staged: { count: JOURNAL_LIMITS.sections + 1, characters: 1 } })).toEqual(['sections: A Journal Entry can hold at most 5000 Entry Sections.']);
+    expect(issues({ mode: 'submit', staged: { count: 1, characters: JOURNAL_LIMITS.codePoints + 1 } })).toEqual(['sections: Entry Section text must total at most 2000000 Unicode code points.']);
+    expect(issues({ mode: 'submit', staged: { count: 1, characters: 1 } }, fixture)).toEqual(['sections: Send the Entry Sections as parts of the staged save.']);
+    const previous = { sectionCount: 6000, sectionCharacters: JOURNAL_LIMITS.codePoints + 5 };
+    expect(issues({ mode: 'edit', previous, staged: { count: 6000, characters: JOURNAL_LIMITS.codePoints + 5 } })).toEqual([]);
+    expect(issues({ mode: 'edit', previous, staged: { count: 6001, characters: 1 } })).toEqual(['sections: A Journal Entry can hold at most 6000 Entry Sections.']);
+    expect(issues({ mode: 'edit', previous: { sectionCount: 0, sectionCharacters: 0 }, staged: { count: 0, characters: 0 } })).toEqual([]);
+    expect(() => researchItemSchema('journal_entry', context, { mode: 'submit', staged: { count: -1, characters: 0 } })).toThrow(RangeError);
+    expect(() => researchItemSchema('journal_entry', context, { mode: 'submit', staged: { count: 1, characters: 0.5 } })).toThrow(RangeError);
+  });
 });
 
 describe('kind-specific validation', () => {

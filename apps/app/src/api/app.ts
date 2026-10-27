@@ -1,9 +1,11 @@
 import { Hono } from 'hono';
 import type { Context } from 'hono';
+import { bodyLimit } from 'hono/body-limit';
 import { routePath } from 'hono/route';
 import { RequestAccountant } from '@researchforce/db/accountant';
 import type { OpsAccess } from '@researchforce/domain/ops';
 import type { PermissionContext } from '@researchforce/domain/permissions';
+import { OPERATIONS } from '@researchforce/domain/settings';
 import type { Timestamp } from '@researchforce/domain/types';
 import { ACCESS_ASSERTION_HEADER, verifyAccessAssertion } from '../auth/jwt';
 import type { AccessConfig, AccessKeys } from '../auth/jwt';
@@ -23,6 +25,9 @@ import { linksRoutes } from './routes/links';
 import { partiesRoutes } from './routes/parties';
 import { projectsRoutes } from './routes/projects';
 import { rolesRoutes } from './routes/roles';
+import { settingsRoutes } from './routes/settings';
+import { stagesRoutes } from './routes/stages';
+import { valueSetsRoutes } from './routes/value-sets';
 
 export interface ApiConfig {
   readonly access: AccessConfig;
@@ -82,6 +87,13 @@ export function createApi(config: ApiConfig): Hono<ApiEnv> {
     await next();
   });
   app.use('/api/*', profileGate);
+  app.use('/api/*', bodyLimit({
+    maxSize: OPERATIONS.stagedSaveThresholdBytes,
+    onError: (c) => {
+      c.set('failure', 'too_large');
+      return errorResponse(new ApiError('too_large', { details: { limitBytes: OPERATIONS.stagedSaveThresholdBytes } }));
+    },
+  }));
 
   const v1 = new Hono<ApiEnv>();
   v1.route('/me', meRoutes);
@@ -96,6 +108,9 @@ export function createApi(config: ApiConfig): Hono<ApiEnv> {
   v1.route('/links', linksRoutes);
   v1.route('/parties', partiesRoutes);
   v1.route('/items', itemsRoutes);
+  v1.route('/stages', stagesRoutes);
+  v1.route('/value-sets', valueSetsRoutes);
+  v1.route('/settings', settingsRoutes);
   app.route('/api/v1', v1);
 
   app.notFound((c) => {

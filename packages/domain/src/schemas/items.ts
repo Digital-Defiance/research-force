@@ -9,10 +9,13 @@ import { distinctIds, documentDateSchema, enteredTimeSchema, fullDateSchema, idS
 import type { ReportIssue, ValidationContext } from './common';
 
 export const JOURNAL_LIMITS = Object.freeze({ sections: 5000, codePoints: 2_000_000, parserSourceBytes: 2_000_000 });
+/** The size of Entry_Sections sent as parts of a staged save, which the schema checks in place of the sections themselves. */
+export interface StagedSectionTotals { readonly count: number; readonly characters: number }
 export type ItemValidationOptions =
-  | { readonly mode: 'submit' | 'import' | 'restore' }
+  | { readonly mode: 'submit' | 'import' | 'restore'; readonly staged?: StagedSectionTotals }
   | { readonly mode: 'parser'; readonly sourceBytes: number }
-  | { readonly mode: 'edit'; readonly previous: { readonly logSummary?: RichText; readonly sectionCount?: number; readonly sectionCharacters?: number } };
+  | { readonly mode: 'edit'; readonly previous: { readonly logSummary?: RichText; readonly sectionCount?: number; readonly sectionCharacters?: number }; readonly staged?: StagedSectionTotals };
+export const entrySectionSchema = z.strictObject({ id: idSchema.optional(), content: richTextSchema(undefined, true) });
 
 function missingRich(value: unknown): boolean {
   return value === undefined || (typeof value === 'object' && value !== null && 'text' in value && typeof value.text === 'string' && isBlank(value.text));
@@ -87,14 +90,23 @@ function buildResearchItemSchema(kind: ItemKind, context: ValidationContext, opt
         maximumCharacters = Math.max(maximumCharacters, options.previous.sectionCharacters);
         minimumSections = options.previous.sectionCount === 0 ? 0 : 1;
       }
+      const staged = 'staged' in options ? options.staged : undefined;
+      if (staged && (!safeMetric(staged.count) || !safeMetric(staged.characters))) throw new RangeError('Staged sections need a count and a character total.');
       return finish(z.strictObject({
         ...common, kind: z.literal('journal_entry'), phaseId: textField(200).optional(), statusValueId: selectedValue(context, 'campaign_status', 'statusValueId').optional(),
         startDate: partialDateSchema.optional(), endDate: partialDateSchema.optional(), relatedMemberIds: distinctIds(knownId(context.members.map((member) => member.id), 'Member')).optional(),
-        sections: z.array(z.strictObject({ id: idSchema.optional(), content: richTextSchema(undefined, true) })).min(minimumSections).max(maximumSections),
+        sections: staged
+          ? z.never({ error: 'Send the Entry Sections as parts of the staged save.' }).optional()
+          : z.array(entrySectionSchema).min(minimumSections).max(maximumSections),
       }), (raw, report) => {
         const start = validDate(raw['startDate']);
         const end = validDate(raw['endDate']);
         if (start && end && dateSortKey(end) < dateSortKey(start)) report(['endDate'], 'The end date precedes the start date.');
+        if (staged) {
+          if (staged.count < minimumSections) report(['sections'], 'A Journal Entry needs at least one Entry Section.');
+          if (staged.count > maximumSections) report(['sections'], `A Journal Entry can hold at most ${maximumSections} Entry Sections.`);
+          if (staged.characters > maximumCharacters) report(['sections'], `Entry Section text must total at most ${maximumCharacters} Unicode code points.`);
+        }
         if (Array.isArray(raw['sections'])) {
           let total = 0;
           const ids = new Set<string>();

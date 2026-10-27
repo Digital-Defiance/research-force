@@ -1,4 +1,5 @@
 import { eq, sql } from 'drizzle-orm';
+import type { SQL } from 'drizzle-orm';
 import type { GuardedBatch } from '@researchforce/db/batch';
 import { CHANGE_SEQ, chunks } from '@researchforce/db/batch';
 import { entrySections, jeMembers, journalEntries, units } from '@researchforce/db/schema/core';
@@ -98,10 +99,19 @@ function sectionChange(before: readonly Section[], after: readonly Section[]): F
     const content = next.get(section.id!);
     if (content === undefined || content.text !== section.content.text || JSON.stringify(content.spans) !== JSON.stringify(section.content.spans)) previous[section.id!] = section.content;
   }
+  return sectionsRevision(before, after.map((section) => section.id!), previous);
+}
+function sectionsRevision(before: readonly Section[], nextOrder: readonly string[], previous: Readonly<Record<string, RichText>>): FieldChange | null {
   const order = before.map((section) => section.id!);
-  const nextOrder = after.map((section) => section.id!);
   if (Object.keys(previous).length === 0 && order.length === nextOrder.length && order.every((id, index) => id === nextOrder[index])) return null;
   return { field: 'sections', before: { order, content: previous }, after: { order: nextOrder }, fieldClass: 'content' };
+}
+function removeSections(batch: GuardedBatch, itemId: ULID, removed: readonly string[]): void {
+  for (const chunk of chunks(removed)) {
+    const list = JSON.stringify(chunk);
+    batch.run(sql`DELETE FROM entry_sections WHERE unit_id IN (SELECT value FROM json_each(${list}))`)
+      .run(sql`DELETE FROM units WHERE parent_id = ${itemId} AND unit_type = 'entry_section' AND id IN (SELECT value FROM json_each(${list}))`);
+  }
 }
 
 /**
@@ -119,18 +129,94 @@ function writeSections(batch: GuardedBatch, item: BaseRow, before: readonly Sect
     const content = previous.section.content.text !== section.content.text || JSON.stringify(previous.section.content.spans) !== JSON.stringify(section.content.spans);
     return content || previous.position !== position ? [{ id: section.id!, position, content: content ? section.content : null }] : [];
   });
-  for (const chunk of chunks(removed)) {
-    const list = JSON.stringify(chunk);
-    batch.run(sql`DELETE FROM entry_sections WHERE unit_id IN (SELECT value FROM json_each(${list}))`)
-      .run(sql`DELETE FROM units WHERE parent_id = ${item.id} AND unit_type = 'entry_section' AND id IN (SELECT value FROM json_each(${list}))`);
-  }
+  removeSections(batch, item.id, removed);
   for (const chunk of chunks(changed.map((entry) => [entry.id, entry.position, entry.content?.text ?? null, entry.content ? JSON.stringify(entry.content.spans) : null]))) {
     const list = JSON.stringify(chunk);
-    batch.run(sql`UPDATE units SET position = j.value ->> '$[1]', rev = rev + 1, updated_seq = ${CHANGE_SEQ}, actor_id = ${batch.actor.id}
-        FROM json_each(${list}) j WHERE units.id = j.value ->> '$[0]' AND units.parent_id = ${item.id}`)
-      .run(sql`UPDATE entry_sections SET text = j.value ->> '$[2]', text_spans = j.value ->> '$[3]'
+    moveSections(batch, item.id, list);
+    batch.run(sql`UPDATE entry_sections SET text = j.value ->> '$[2]', text_spans = j.value ->> '$[3]'
         FROM json_each(${list}) j WHERE entry_sections.unit_id = j.value ->> '$[0]' AND j.value ->> '$[2]' IS NOT NULL`);
   }
   const owner = { id: item.id, projectId: item.projectId, ownerId: item.ownerId, credit: item.credit, submissionId: item.submissionId, createdAt: now };
   batch.bulkInsert(units, sectionUnits(owner, added)).bulkInsert(entrySections, sectionRows(added.map((entry) => entry.section)));
+}
+/** Set the position of each `[id, position, …]` in `list` and record the change on the section's unit row. */
+function moveSections(batch: GuardedBatch, itemId: ULID, list: string): void {
+  batch.run(sql`UPDATE units SET position = j.value ->> '$[1]', rev = rev + 1, updated_seq = ${CHANGE_SEQ}, actor_id = ${batch.actor.id}
+      FROM json_each(${list}) j WHERE units.id = j.value ->> '$[0]' AND units.parent_id = ${itemId}`);
+}
+
+/**
+ * Entry_Sections sent as the parts of a staged save. Their text stays in D1: the commit batch moves it into place
+ * with `INSERT … SELECT` (design "Staged commits for large payloads").
+ */
+export interface StagedSections {
+  readonly count: number;
+  readonly characters: number;
+  /** The sections in their new order. */
+  readonly entries: readonly StagedEntry[];
+  /** A subquery over the staged sections with the columns `id`, `added`, `text`, `spans`, and `position`. */
+  readonly rows: SQL;
+  /** Refuse the batch if the parts changed after they were read. */
+  guard(batch: GuardedBatch): void;
+  /** Delete the parts; it must follow every statement that reads them. */
+  release(batch: GuardedBatch): void;
+}
+export interface StagedEntry {
+  readonly id: ULID;
+  /** Sent without an id, so its part gave it a new one. */
+  readonly added: boolean;
+  /** An Entry_Section of this Journal_Entry. */
+  readonly known: boolean;
+  /** Its text or spans differ from the saved ones. */
+  readonly changed: boolean;
+  /** Where it was sent, such as `parts.2.sections.7`. */
+  readonly field: string;
+}
+
+/** Staged sections that name an Entry_Section of another Journal_Entry, or one already named. */
+export function stagedSectionIssues(staged: StagedSections): FieldIssue[] {
+  const seen = new Set<ULID>();
+  return staged.entries.flatMap((entry) => {
+    if (entry.added) return [];
+    if (!entry.known) return [{ field: `${entry.field}.id`, rule: 'This Entry Section does not belong to this Journal Entry.' }];
+    if (seen.has(entry.id)) return [{ field: `${entry.field}.id`, rule: 'An Entry Section can appear only once.' }];
+    seen.add(entry.id);
+    return [];
+  });
+}
+
+/** The Revision record of a staged edit, as `sectionChange` records an edit sent whole. */
+export function stagedSectionChange(before: readonly Section[], staged: StagedSections): FieldChange | null {
+  const kept = new Set<string>(staged.entries.filter((entry) => !entry.added).map((entry) => entry.id));
+  const changed = new Set<string>(staged.entries.filter((entry) => entry.changed).map((entry) => entry.id));
+  const previous: Record<string, RichText> = {};
+  for (const section of before) if (!kept.has(section.id!) || changed.has(section.id!)) previous[section.id!] = section.content;
+  return sectionsRevision(before, staged.entries.map((entry) => entry.id), previous);
+}
+
+type SectionOwner = Parameters<typeof sectionUnits>[0];
+function addStagedSections(batch: GuardedBatch, owner: SectionOwner, rows: SQL): void {
+  batch.run(sql`INSERT INTO units (id, unit_type, project_id, root_id, parent_id, position, owner_id, credit, submission_id, created_at, updated_seq, actor_id)
+      SELECT r.id, 'entry_section', ${owner.projectId}, ${owner.id}, ${owner.id}, r.position, ${owner.ownerId}, ${JSON.stringify(owner.credit)}, ${owner.submissionId}, ${owner.createdAt}, ${CHANGE_SEQ}, ${batch.actor.id}
+      FROM (${rows}) r WHERE r.added = 1`)
+    .run(sql`INSERT INTO entry_sections (unit_id, text, text_spans) SELECT r.id, r.text, r.spans FROM (${rows}) r WHERE r.added = 1`);
+}
+
+/** The sections of a new Journal_Entry, moved from its staged parts. */
+export function insertStagedSections(batch: GuardedBatch, item: NewItem, staged: StagedSections): void {
+  addStagedSections(batch, { id: item.id, projectId: item.projectId, ownerId: item.ownerId, credit: item.credit, submissionId: item.submissionId, createdAt: item.now }, staged.rows);
+}
+
+/** Apply a staged edit's section changes with the same effects as `writeSections` (R4.8). */
+export function writeStagedSections(batch: GuardedBatch, item: BaseRow, before: readonly Section[], staged: StagedSections, now: Timestamp): void {
+  const old = new Map(before.map((section, position) => [section.id!, position]));
+  const kept = new Set<string>(staged.entries.filter((entry) => !entry.added).map((entry) => entry.id));
+  removeSections(batch, item.id, before.flatMap((section) => (kept.has(section.id!) ? [] : [section.id!])));
+  const touched = staged.entries.flatMap((entry, position) => (!entry.added && (entry.changed || old.get(entry.id) !== position) ? [[entry.id, position]] : []));
+  for (const chunk of chunks(touched)) moveSections(batch, item.id, JSON.stringify(chunk));
+  for (const chunk of chunks(staged.entries.filter((entry) => entry.changed).map((entry) => entry.id))) {
+    batch.run(sql`UPDATE entry_sections SET text = r.text, text_spans = r.spans
+        FROM (${staged.rows}) r WHERE entry_sections.unit_id = r.id AND r.id IN (SELECT value FROM json_each(${JSON.stringify(chunk)}))`);
+  }
+  addStagedSections(batch, { id: item.id, projectId: item.projectId, ownerId: item.ownerId, credit: item.credit, submissionId: item.submissionId, createdAt: now }, staged.rows);
 }

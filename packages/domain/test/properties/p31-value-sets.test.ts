@@ -38,9 +38,16 @@ function reference(set: ValueSet, operation: ValueSetOperation, locked: Readonly
     } else if (operation.kind === 'retire') {
       if (locked.has(value.id) || (!value.retired && values.filter((entry) => !entry.retired).length === 1)) return undefined;
       values[index] = { ...value, retired: true };
-    } else {
+    } else if (operation.kind === 'mark_publication') {
       if (set.kind !== 'rights_status' || (value.id === LOCKED_VALUE_IDS.rightsUnknown && operation.permits)) return undefined;
       values[index] = { ...value, permitsPublication: operation.permits };
+    } else {
+      const description = operation.publicDescription;
+      if (set.kind !== 'specialty' || description !== undefined) {
+        if (description === undefined || /^[\p{White_Space}\uFEFF]*$/u.test(description) || Array.from(description).length > 500) return undefined;
+      }
+      const { publicDescription: _old, ...rest } = value;
+      values[index] = { ...rest, ...(description === undefined ? {} : { publicDescription: description }) };
     }
   }
   return { kind: set.kind, values };
@@ -48,7 +55,7 @@ function reference(set: ValueSet, operation: ValueSetOperation, locked: Readonly
 
 it('matches an independent state machine through accepted and rejected operation sequences', () => {
   const name = fc.oneof(scalarTextArb, fc.constantFrom('', ' ', 'INITIAL', '😀'.repeat(50), '😀'.repeat(51)));
-  const action = fc.record({ kind: fc.constantFrom('add', 'rename', 'retire', 'mark_publication'), name, description: fc.option(fc.constantFrom('', ' ', 'A description', '😀'.repeat(500), 'x'.repeat(501)), { nil: undefined }), target: fc.nat({ max: 30 }), flag: fc.boolean() });
+  const action = fc.record({ kind: fc.constantFrom('add', 'rename', 'retire', 'mark_publication', 'describe'), name, description: fc.option(fc.constantFrom('', ' ', 'A description', '😀'.repeat(500), 'x'.repeat(501)), { nil: undefined }), target: fc.nat({ max: 30 }), flag: fc.boolean() });
   fc.assert(fc.property(fc.constantFrom(...VALUE_SET_KINDS), fc.array(action, { minLength: 1, maxLength: 50 }), (kind, actions) => {
     let state = initial(kind);
     let model = structuredClone(state);
@@ -60,7 +67,8 @@ it('matches an independent state machine through accepted and rejected operation
       if (action.kind === 'add') operation = { kind: 'add', value: { id: action.target % 4 === 0 ? selected : id(1000 + step), name: action.name, retired: action.target % 7 === 0, ...(action.description === undefined ? {} : { publicDescription: action.description }) } };
       else if (action.kind === 'rename') operation = { kind: 'rename', id: selected, name: action.name };
       else if (action.kind === 'retire') operation = { kind: 'retire', id: selected };
-      else operation = { kind: 'mark_publication', id: selected, permits: action.flag };
+      else if (action.kind === 'mark_publication') operation = { kind: 'mark_publication', id: selected, permits: action.flag };
+      else operation = { kind: 'describe', id: selected, publicDescription: action.description };
       const snapshot = structuredClone(state);
       const expected = reference(model, operation, locked);
       const actual = changeValueSet(state, operation);
