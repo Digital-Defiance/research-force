@@ -3,7 +3,7 @@ import { partialDate } from '@researchforce/domain/dates';
 import { BUILT_IN_VALUE_IDS } from '@researchforce/domain/value-sets';
 import { projectDetailed } from '../src/project';
 import { EMAIL_PLACEHOLDER } from '../src/substitute';
-import type { CorrespondenceParty } from '../src/input';
+import type { CorrespondenceParty, UnitRecord } from '../src/input';
 import { LINE, RESTRICTED, attachment, dissent, id, item, project, rich, section, state } from './fixtures';
 
 const PROJECT_REF = { key: 'p:project-1', name: project.name, slug: project.slug, path: '/p/synthetic' };
@@ -115,6 +115,15 @@ describe('project', () => {
     expect(projection.views.get('u:a')).toMatchObject({
       links: [{ direction: 'outgoing', target: { tag: 'withheld', key: 'u:b', path: '/r/RI-b', line: { kindOfMaterial: 'letters' } } }],
     });
+  });
+
+  it('addresses a Reply on an Attachment by the Attachment’s page, which presents it', () => {
+    const reply = { ...section('r', 'f', 'A reply'), type: 'reply', isGroupNote: false } as UnitRecord;
+    const projection = projectDetailed(state([
+      item('a', { kind: 'topic', body: rich('Body') }), attachment('f', 'a'), reply, attachment('g', 'r'), item('b', { kind: 'topic', body: rich('Body') }),
+    ], { links: [{ id: 'l1', originId: 'b', targetId: 'r' }] }));
+    expect(projection.views.get('u:b')).toMatchObject({ links: [{ direction: 'outgoing', target: { tag: 'link', key: 'u:r', path: '/a/AT-f', title: 'Title a' } }] });
+    expect(projection.views.get('u:g')).toMatchObject({ parent: { key: 'u:r', path: '/a/AT-f' } });
   });
 
   it('notes the Superseding Finding of a Superseded Finding', () => {

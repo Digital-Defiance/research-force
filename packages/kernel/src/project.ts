@@ -195,10 +195,11 @@ class Projector {
     const node = this.unitNode(unit.id)!;
     return this.records.get(node.type === 'research_item' ? node : node.root!) as ItemUnit;
   }
+  /** The page that presents the unit: an Entry_Section, Reply, or Dissent_Note is on the page of its nearest Research_Item or Attachment ancestor (R24.8). */
   private pathOf(unit: UnitRecord): string {
     if (unit.type === 'research_item') return PUBLIC_PATHS.item(unit.item.identifier);
     if (unit.type === 'attachment') return PUBLIC_PATHS.attachment(unit.attachment.identifier);
-    return PUBLIC_PATHS.item(this.rootOf(unit).item.identifier);
+    return this.pathOf(this.units.get(unit.parentId!)!);
   }
   private titleOf(unit: UnitRecord): string {
     if (unit.type === 'research_item') return unit.item.title;

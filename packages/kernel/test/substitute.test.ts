@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { partialDate } from '@researchforce/domain/dates';
-import { EMAIL_PLACEHOLDER, UNNAMED_PARTY, emailMatcher, partyDirectory, prefillCorrespondenceLine, projectProfile, scrubRichText, scrubText } from '../src/substitute';
+import { EMAIL_PLACEHOLDER, UNNAMED_PARTY, emailMatcher, partyDirectory, prefillCorrespondenceLine, projectPolicyText, projectProfile, scrubRichText, scrubText } from '../src/substitute';
 import { rich, state } from './fixtures';
 
 const profile = { displayName: 'Ada Example', specialties: ['Archives'], affiliations: ['A society'], biography: 'Mail ADA@example.test for notes.', publicProfile: true, status: 'active' as const };
@@ -43,5 +43,13 @@ describe('substitute', () => {
   it('projects no profile while the setting is Off or the Member is not Active', () => {
     expect(projectProfile({ ...profile, publicProfile: false }, [])).toBeUndefined();
     expect(projectProfile({ ...profile, status: 'revoked' }, [])).toBeUndefined();
+  });
+
+  it('removes addresses from Policy_Section text and marks each replacement', () => {
+    const projected = projectPolicyText(rich('Write to ADA@example.test or ada@EXAMPLE.test.'), ['ada@example.test']);
+    expect(projected.text.text).toBe(`Write to ${EMAIL_PLACEHOLDER} or ${EMAIL_PLACEHOLDER}.`);
+    const second = 'Write to '.length + EMAIL_PLACEHOLDER.length + ' or '.length;
+    expect(projected.marks).toEqual([{ start: 9, end: 9 + EMAIL_PLACEHOLDER.length }, { start: second, end: second + EMAIL_PLACEHOLDER.length }]);
+    expect(projectPolicyText(rich('No addresses.'), [])).toEqual({ text: rich('No addresses.'), marks: [] });
   });
 });

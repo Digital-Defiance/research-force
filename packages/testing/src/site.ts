@@ -1,10 +1,10 @@
 import { FIXED_METHODS_TERMS } from '@researchforce/db/seed/methods-descriptions';
-import { SEED_POLICY_SECTIONS } from '@researchforce/db/seed/policy-sections';
+import { SEED_POLICY_SECTIONS, type SeedPolicySection } from '@researchforce/db/seed/policy-sections';
 import { retentionRows } from '@researchforce/domain/retention';
 import { BUILT_IN_VALUE_IDS } from '@researchforce/domain/value-sets';
 import type { ValueRecord } from '@researchforce/kernel/input';
 import { project } from '@researchforce/kernel/project';
-import { projectProfile, type PublicProfileView } from '@researchforce/kernel/substitute';
+import { projectPolicyText, projectProfile, type PublicProfileView } from '@researchforce/kernel/substitute';
 import { projectKey, unitKey, type PublicView, type UnitKey } from '@researchforce/kernel/views';
 import {
   METHODS_SET_KINDS, POLICY_PAGE_KEYS, type MethodsSetKind, type MethodsValue, type PolicyPageInput, type PolicyPageKey, type SiteInput,
@@ -40,6 +40,8 @@ export interface SiteOptions {
   /** Value ids that are retired. */
   readonly retired?: ReadonlySet<string>;
   readonly profiles?: readonly PublicProfileView[];
+  /** The Policy_Sections of every policy page, by default the seeded ones. */
+  readonly policySections?: readonly SeedPolicySection[];
 }
 
 const VALUES_IN_USE: readonly ValueRecord[] = Object.keys(TEST_VALUE_KINDS).map((id) => ({ id, name: id }));
@@ -55,7 +57,7 @@ export function syntheticSite(views: Iterable<PublicView>, options: SiteOptions 
   }
   const policy = Object.fromEntries(POLICY_PAGE_KEYS.map((key): [PolicyPageKey, PolicyPageInput] => [key, {
     changedOn: TEST_POLICY_DATE,
-    sections: SEED_POLICY_SECTIONS.filter((section) => section.pageKey === key)
+    sections: (options.policySections ?? SEED_POLICY_SECTIONS).filter((section) => section.pageKey === key)
       .map((section) => ({ key: section.sectionKey, title: section.title, required: section.required, text: { text: section.text, spans: [] } })),
   }])) as Record<PolicyPageKey, PolicyPageInput>;
   return {
@@ -82,10 +84,13 @@ export function siteInputFor(state: WorkspaceState, options: Omit<SiteOptions, '
     return projected === undefined ? [] : [projected.view];
   });
   const projectKeys = input.projects.map((entry) => projectKey(entry.id));
+  const policySections = (options.policySections ?? SEED_POLICY_SECTIONS)
+    .map((section) => ({ ...section, text: projectPolicyText({ text: section.text, spans: [] }, emails).text.text }));
   return syntheticSite(project(input).values(), {
     projectOrder: projectKeys,
     featured: new Set(projectKeys.filter((_, index) => index % 2 === 0)),
     ...options,
+    policySections,
     createdAt: new Map(input.units.map((unit) => [unitKey(unit.id), unit.createdAt])),
     values: input.values,
     profiles,

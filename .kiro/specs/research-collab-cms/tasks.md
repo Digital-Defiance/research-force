@@ -303,23 +303,23 @@ Tests use synthetic data only. No task copies, quotes, or commits content from t
     - **Property 62: Public search returns exactly the matching Public_Views**
     - **Validates: Requirements 30.1, 30.2, 30.3, 30.4, 30.9, 30.12**
 
-- [ ] 11. Write the privacy-core property tests across the kernel, renderers, and public search
-  - [ ] 11.1 Write property test for Withheld units
+- [x] 11. Write the privacy-core property tests across the kernel, renderers, and public search
+  - [x] 11.1 Write property test for Withheld units
     - **Property 6: Withheld units appear only as their Disclosure_Line**
     - **Validates: Requirements 24.4, 29.5, 30.9, 40.1, 40.2, 40.7, 45.11**
-  - [ ] 11.2 Write property test for Summary_Only presentation
+  - [x] 11.2 Write property test for Summary_Only presentation
     - **Property 8: Summary_Only exposes only the allowed fields**
     - **Validates: Requirements 24.13, 40.5, 40.6**
-  - [ ] 11.3 Write property test for Do_Not_Name substitution
+  - [x] 11.3 Write property test for Do_Not_Name substitution
     - **Property 10: Do_Not_Name substitution**
     - **Validates: Requirements 9.4, 34.5**
-  - [ ] 11.4 Write property test for Member email addresses
+  - [x] 11.4 Write property test for Member email addresses
     - **Property 11: Member email addresses never appear publicly**
     - **Validates: Requirements 46.9, 46.34**
-  - [ ] 11.5 Write property test for public Cross_Links
+  - [x] 11.5 Write property test for public Cross_Links
     - **Property 17: Public Cross_Links follow the other end's view**
     - **Validates: Requirements 24.8**
-  - [ ] 11.6 Write property test for the public index and non-public text
+  - [x] 11.6 Write property test for the public index and non-public text
     - **Property 63: Non-public text leaves the public index unchanged**
     - **Validates: Requirements 30.10**
 

@@ -164,6 +164,12 @@ export function projectProfile(profile: ProfileRecord, emails: Iterable<string>)
   return { view: scrubbed.value, marks: scrubbed.marks };
 }
 
+/** A Policy_Section's text as the Public_Site shows it, with registered Member addresses replaced (R46.9). */
+export function projectPolicyText(text: RichText, emails: Iterable<string>): { readonly text: RichText; readonly marks: readonly { start: number; end: number }[] } {
+  const scrubbed = scrubRichText(text, emailMatcher(emails));
+  return { text: scrubbed.value, marks: scrubbed.ranges };
+}
+
 export type BreachCode = 'consent' | 'rights' | 'missing_line' | 'structure';
 /** A stored state the save path makes impossible; the Publisher raises a System_Alert for each. */
 export interface InvariantBreach { readonly key: UnitKey; readonly code: BreachCode; readonly message: string; }
