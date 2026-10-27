@@ -8,6 +8,14 @@
     "./*": "./src/*.ts"
   },
   "dependencies": {
-    "@researchforce/domain": "*"
+    "@researchforce/domain": "*",
+    "@types/mdast": "4.0.4",
+    "mdast-util-from-markdown": "2.1.0",
+    "mdast-util-gfm-table": "2.0.0",
+    "micromark": "4.0.3",
+    "micromark-extension-gfm-table": "2.1.2",
+    "micromark-util-character": "2.1.1",
+    "micromark-util-types": "2.0.3",
+    "temml": "0.14.0"
   }
 }

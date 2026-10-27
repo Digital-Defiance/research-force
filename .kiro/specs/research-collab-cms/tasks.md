@@ -186,43 +186,43 @@ Tests use synthetic data only. No task copies, quotes, or commits content from t
     - **Property 14: Disclosure previews are exact diffs**
     - **Validates: Requirements 23.6, 23.16, 34.9, 39.13**
 
-- [ ] 7. Build Markdown rendering, the Journal_Parser and Journal_Printer, and the migration dry-run
-  - [ ] 7.1 Implement Markdown parsing, rendering, and mathematics in `packages/markdown/src/render.ts` and `packages/markdown/src/math.ts`
+- [x] 7. Build Markdown rendering, the Journal_Parser and Journal_Printer, and the migration dry-run
+  - [x] 7.1 Implement Markdown parsing, rendering, and mathematics in `packages/markdown/src/render.ts` and `packages/markdown/src/math.ts`
     - micromark and mdast with source positions, the GFM table extension, and a math extension that applies the delimiter rules of Requirement 45.15 outside code spans and code blocks
     - Temml MathML output at render time; an expression that fails shows its source with delimiters; HTML output escapes only `<`, `>`, `&`, and quotes and never normalizes text
     - _Requirements: 45.13, 45.15_
-  - [ ] 7.2 Implement the label and language overlay in `packages/markdown/src/overlay.ts`
+  - [x] 7.2 Implement the label and language overlay in `packages/markdown/src/overlay.ts`
     - Split text nodes at span boundaries; Quote as `<q>` with a visible "Quote · {source}" label or a same-page footnote for long spans; Paraphrase and Source_Reported as marked spans with visible labels and no quotation marks; `lang` on language-marked spans; one marked segment per block for spans that cross blocks
     - Output is the neutral element tree of `packages/domain/src/tree.ts`, so the Design_System's string renderer and React adapter render the same marks
     - _Requirements: 11.5, 11.6, 45.6_
-  - [ ]* 7.3 Write property test for mathematics delimiters
+  - [x]* 7.3 Write property test for mathematics delimiters
     - **Property 93: Mathematics delimiters follow the rules**
     - **Validates: Requirements 45.15**
-  - [ ] 7.4 Implement the Journal_Parser in `packages/markdown/src/journal/parse.ts`
+  - [x] 7.4 Implement the Journal_Parser in `packages/markdown/src/journal/parse.ts`
     - `ParsedEntry` and `ParsedSection` as the design defines them; one entry per top-level level-3 Phase_Heading with phase identifier, heading text, raw heading line, and 200-character title; a front-matter entry for blocks before the first Phase_Heading with the import key `front-matter` and the title rule of Requirement 27.2
     - One section per top-level block, per list item, per table body row, and one for each table header with its delimiter row; exact source slices with `sepBefore` and `trailing` separators; any non-whitespace text outside every block becomes an `unassigned` section with its line numbers
     - _Requirements: 26.1, 27.1, 27.2, 27.3, 27.4_
-  - [ ] 7.5 Implement the Journal_Printer and the rendered comparison in `packages/markdown/src/journal/print.ts` and `packages/markdown/src/journal/compare.ts`
+  - [x] 7.5 Implement the Journal_Printer and the rendered comparison in `packages/markdown/src/journal/print.ts` and `packages/markdown/src/journal/compare.ts`
     - Print each entry's heading line (stored raw line, or `### ` and the heading text when edited), each section after its separator whatever its Disclosure_Level, and the trailing text; separators for Member-added sections as the design states
     - `compareRendered(a, b)`: render both with the same renderer and settings, collapse whitespace runs outside code, ignore leading and trailing whitespace, and report per-entry mismatches with titles and source line ranges
     - _Requirements: 27.5, 27.6, 27.7, 27.8_
-  - [ ] 7.6 Implement attachment reference resolution in `packages/markdown/src/journal/attachments.ts`
+  - [x] 7.6 Implement attachment reference resolution in `packages/markdown/src/journal/attachments.ts`
     - `resolveAttachmentParent(entries, file)`: the first entry in source order whose content references the file by a link or image destination, an autolink, or a path token in text or a code span that equals the site path or ends with `/{file name}`; this function is the only place the rule lives
     - `unreferencedFiles(entries, files)` listing files that no entry references
     - _Requirements: 26.2, 26.12_
-  - [ ] 7.7 Write property test for the journal round trip
+  - [x] 7.7 Write property test for the journal round trip
     - Use `journalMarkdownArb` in `packages/testing/src/journal.ts`: a synthetic block grammar with Phase_Headings, other headings, paragraphs, nested lists, tables, fenced code, math, HTML, link definitions, stray text, varied blank lines, and Unicode
     - **Property 66: Journal print and parse round trip**
     - **Validates: Requirements 27.5, 27.6**
-  - [ ] 7.8 Write property test for journal parsing completeness and rendering
+  - [x] 7.8 Write property test for journal parsing completeness and rendering
     - **Property 67: Journal parsing loses nothing and preserves rendering**
     - **Validates: Requirements 26.1, 27.1, 27.2, 27.3, 27.4, 27.7**
-  - [ ] 7.9 Implement the migration dry-run tools
+  - [x] 7.9 Implement the migration dry-run tools
     - `tools/export-attachment-metadata.ts`: read the current site's attachment metadata module from a path given on the command line and write JSON with title, kind, credit, credit line, caption, size label, Origin, and site path
     - `tools/migration-dry-run.ts`: parse a journal Markdown file and the metadata JSON from given paths, and print the number of entries and sections, unassigned spans by line range, the printer comparison result, each attachment's Parent phase identifier, metadata entries that no entry references, and referenced files without metadata; the output holds only counts, phase identifiers, line ranges, and file names, never journal text
     - Neither tool copies the journal or its attachments into the repository
     - _Requirements: 26.2, 26.12, 27.4, 27.7, 27.8_
-  - [ ] 7.10 Run the dry-run on the existing journal and report the unreferenced attachments
+  - [x] 7.10 Run the dry-run on the existing journal and report the unreferenced attachments
     - Ask the user for the paths to the journal Markdown, the attachment folder, and the metadata module, run both tools, and report to the user the counts and the names of attachments that no entry references (the design measured 6) and of referenced files without metadata, so the user can answer design open question 4 before the import is built
     - _Requirements: 26.2, 26.12_
 

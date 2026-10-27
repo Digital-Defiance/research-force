@@ -24,7 +24,7 @@ export default defineConfig({
         test: {
           name: 'node', environment: 'node',
           provide: { fcRuns: Number(process.env['FC_RUNS'] ?? '100') },
-          include: ['packages/*/test/**/*.test.ts', 'tools/test/**/*.test.mjs'],
+          include: ['packages/*/test/**/*.test.ts', 'tools/test/**/*.test.{ts,mjs}'],
           setupFiles: ['./packages/testing/test/setup.ts'],
         },
       },

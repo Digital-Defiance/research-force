@@ -21,7 +21,9 @@
     "ci": "npm run lint && npm run typecheck && npm test",
     "check:workers": "node scripts/check-workers.mjs",
     "db:generate": "drizzle-kit generate --config packages/db/drizzle/core.config.ts && drizzle-kit generate --config packages/db/drizzle/search.config.ts && drizzle-kit generate --config packages/db/drizzle/public.config.ts",
-    "test:nightly": "FC_RUNS=1000 vitest --run"
+    "test:nightly": "FC_RUNS=1000 vitest --run",
+    "tools:export-metadata": "node --import tsx tools/export-attachment-metadata.ts",
+    "tools:dry-run": "node --import tsx tools/migration-dry-run.ts"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "npm:@cloudflare/vitest-plugin@1.4.8",
@@ -40,6 +42,7 @@
     "react-dom": "^19.2.0",
     "react-router": "^7.9.4",
     "stylelint": "^16.25.0",
+    "tsx": "4.23.15",
     "typescript": "~6.0.3",
     "vite": "^8.0.0",
     "vitest": "~4.1.12",
