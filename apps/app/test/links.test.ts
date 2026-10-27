@@ -70,7 +70,7 @@ describe('adding Cross_Links', () => {
     const { link } = await response.json<{ link: LinkEntry }>();
     expect(link).toEqual({
       id: link.id, relation: { id: RELATED, name: 'Related' }, addedBy: { id: ids.author, displayName: `Member ${ids.author}` }, addedAt: at,
-      end: { id: finding.id, kind: 'finding', title: 'A synthetic finding', identifier: finding.identifier, withdrawn: false },
+      end: { id: finding.id, rootId: finding.id, kind: 'finding', title: 'A synthetic finding', identifier: finding.identifier, withdrawn: false },
     });
     expect(await core().prepare('SELECT origin_id AS o, target_id AS t, relation_value_id AS r, added_by AS b, added_at AS a FROM cross_links').first())
       .toEqual({ o: source.id, t: finding.id, r: RELATED, b: ids.author, a: at });
@@ -133,7 +133,8 @@ describe('adding Cross_Links', () => {
 });
 
 describe('Backlinks and link listings', () => {
-  it('shows each other end’s kind, title, Item_Identifier, and withdrawal or deletion notice', async () => {
+  it('shows each other end’s kind, title, Item_Identifier, Root_Item, Source companion, and withdrawal or deletion notice', async () => {
+    await core().prepare("INSERT INTO sources (unit_id, source_kind, reliability_id, rights_status_id) VALUES (?1, 'primary', '0000000000000000000000Q002', '00000000000000000000000005')").bind(source.id).run();
     const journal = await addItem(core(), place, { kind: 'journal_entry', title: 'A synthetic journal entry', withdrawn: true });
     const section = await addElement(core(), place, 'entry_section', journal.id);
     const reply = await addElement(core(), place, 'reply', finding.id);
@@ -146,15 +147,15 @@ describe('Backlinks and link listings', () => {
     const byId = (a: { id: string }, b: { id: string }) => a.id.localeCompare(b.id);
     expect(entries.map((entry) => entry.id)).toEqual(entries.map((entry) => entry.id).sort());
     expect(entries.map((entry) => entry.end).sort(byId)).toEqual([
-      { id: section.id, kind: 'entry_section', title: 'A synthetic journal entry', identifier: journal.identifier, withdrawn: true },
-      { id: reply.id, kind: 'reply', title: 'A synthetic finding', identifier: finding.identifier, withdrawn: false },
-      { id: attachment.id, kind: 'attachment', title: 'A synthetic scan', identifier: attachment.identifier, withdrawn: false },
+      { id: section.id, rootId: journal.id, kind: 'entry_section', title: 'A synthetic journal entry', identifier: journal.identifier, withdrawn: true },
+      { id: reply.id, rootId: finding.id, kind: 'reply', title: 'A synthetic finding', identifier: finding.identifier, withdrawn: false },
+      { id: attachment.id, rootId: source.id, kind: 'attachment', title: 'A synthetic scan', identifier: attachment.identifier, withdrawn: false },
       { id: doomed.id, kind: 'run', title: null, identifier: doomed.identifier, withdrawn: false, deletedAt: later },
-      { id: source.id, kind: 'source', title: 'A synthetic source', identifier: source.identifier, withdrawn: false },
+      { id: source.id, rootId: source.id, kind: 'source', title: 'A synthetic source', identifier: source.identifier, source: { sourceKind: 'primary', reliability: 'Medium' }, withdrawn: false },
     ].sort(byId));
     expect(entries.every((entry) => entry.relation?.name === 'Discusses')).toBe(true);
     expect((await list(`origin=${section.id}`)).entries.map((entry) => entry.end)).toEqual([
-      { id: finding.id, kind: 'finding', title: 'A synthetic finding', identifier: finding.identifier, withdrawn: false },
+      { id: finding.id, rootId: finding.id, kind: 'finding', title: 'A synthetic finding', identifier: finding.identifier, withdrawn: false },
     ]);
   });
 

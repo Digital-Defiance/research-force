@@ -1,5 +1,6 @@
 import { defineConfig } from 'vitest/config';
 import { cloudflareTest, readD1Migrations } from '@cloudflare/vitest-pool-workers';
+import react from '@vitejs/plugin-react';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
@@ -31,6 +32,15 @@ export default defineConfig({
           provide: { fcRuns },
           include: ['packages/*/test/**/*.test.ts', 'tools/test/**/*.test.{ts,mjs}'],
           setupFiles: ['./packages/testing/test/setup.ts'],
+        },
+      },
+      {
+        plugins: [react()],
+        test: {
+          name: 'web', environment: 'happy-dom', testTimeout,
+          provide: { fcRuns },
+          include: ['apps/app/web/test/**/*.test.{ts,tsx}'],
+          setupFiles: ['./packages/testing/test/setup.ts', './apps/app/web/test/setup.ts'],
         },
       },
       {

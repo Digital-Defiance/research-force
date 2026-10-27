@@ -481,26 +481,26 @@ Tests use synthetic data only. No task copies, quotes, or commits content from t
     - A lost kick is picked up by the next cron run; a job stopped by a simulated daily-limit error resumes from its cursor without repeating work
     - _Requirements: 26.13, 36.10_
 
-- [ ] 21. Build the Workspace SPA foundation and the record screens
-  - [ ] 21.1 Create the SPA shell in `apps/app/web/src/main.tsx`, `apps/app/web/src/routes.tsx`, and `apps/app/web/src/api.ts`
+- [x] 21. Build the Workspace SPA foundation and the record screens
+  - [x] 21.1 Create the SPA shell in `apps/app/web/src/main.tsx`, `apps/app/web/src/routes.tsx`, and `apps/app/web/src/api.ts`
     - react-router routes; an API client that sends `X-RF-CSRF`, handles the error shape, reloads through Access on 401, and shows "saving is unavailable until 00:00 UTC" on every page after a `daily_limit` error or the platform's limit response; the "saving is paused for a backup" notice for `frozen`; the Profile form for `profile_incomplete`; the ResearchForce header link to the start page
     - _Requirements: 1.1, 3.6, 28.9, 28.13, 45.2_
-  - [ ] 21.2 Implement unsent-input persistence in `apps/app/web/src/persist.ts`
+  - [x] 21.2 Implement unsent-input persistence in `apps/app/web/src/persist.ts`
     - Mirror every editor's and form's field values into `sessionStorage` for the tab until the input is sent or discarded, restore them after a reload, and state that the input was not saved after a failure
     - _Requirements: 28.10, 28.13_
-  - [ ] 21.3 Build the rich-text editor in `apps/app/web/src/editor/`
+  - [x] 21.3 Build the rich-text editor in `apps/app/web/src/editor/`
     - CodeMirror 6 on the Markdown source with label and language-mark decorations and dialogs, span mapping through `applyEdit`, and a picker that inserts Mentions of active Members and non-retired Specialties as atomic ranges
     - _Requirements: 11.1, 11.2, 11.3, 11.5, 11.9, 16.8, 45.6_
-  - [ ] 21.4 Build the submission and edit forms in `apps/app/web/src/items/forms/`
+  - [x] 21.4 Build the submission and edit forms in `apps/app/web/src/items/forms/`
     - One form per Research_Item kind with the Project choice and preselection, the Log_Summary and Group_Note fields, field errors from 422 responses, the Minor_Edit or Correction choice with no default and the reason field, and the conflict view for 409 responses that keeps the input
     - _Requirements: 4.9, 22.2, 22.10, 39.2, 39.3, 41.2, 41.7_
-  - [ ] 21.5 Build the item pages in `apps/app/web/src/items/page.tsx`
+  - [x] 21.5 Build the item pages in `apps/app/web/src/items/page.tsx`
     - Fields with their companion fields in the same section (Finding_Status and Scope_Caveat with every claim, the superseding Finding link, Source_Kind and reliability, the Resume_Point or its absence, the Elimination_Scope right after an Eliminated status), the Owner and Credit linked to Profiles, the Project name, Disclosure_Level and Effective_Disclosure, Cross_Links and Backlinks with their notices, the Log_Summary section with its author or "no Log_Summary recorded", and the Group_Note label
     - _Requirements: 3.5, 5.6, 5.10, 6.3, 7.4, 8.3, 15.3, 23.9, 39.15, 41.9_
-  - [ ] 21.6 Build the Profile and Member screens in `apps/app/web/src/people/`
+  - [x] 21.6 Build the Profile and Member screens in `apps/app/web/src/people/`
     - Own Profile form, Profile view with recent Submissions, Notification_Preferences, digest hour, Muted_Projects, the Licence_Agreement checkbox (never preselected), and the Public_Profile preview and confirmation; for Administrators, invitations, Role changes, and revocations
     - _Requirements: 2.1, 3.1, 3.4, 19.8, 20.13, 39.10, 46.4, 46.16_
-  - [ ] 21.7 Build the Project screens in `apps/app/web/src/projects/`
+  - [x] 21.7 Build the Project screens in `apps/app/web/src/projects/`
     - Create and edit with the reserved slug names shown, the slug-fixed indicator, the featured toggle, order moves with buttons as well as dragging, the accent picker limited to the palette, and the Project history
     - _Requirements: 39.4, 39.5, 39.7, 39.18, 45.4, 45.5_
 

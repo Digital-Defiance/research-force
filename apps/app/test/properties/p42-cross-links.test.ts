@@ -80,12 +80,12 @@ describe('Property 42: Cross_Links are unique and Backlinks complete', () => {
     const note = await addElement(core(), place, 'dissent_note', finding.id);
     const everyone = () => true;
     const pool: PoolUnit[] = [
-      { id: finding.id, visibleTo: everyone, linkable: true, end: { id: finding.id, kind: 'finding', title: 'Pool finding', identifier: finding.identifier, withdrawn: false } },
-      { id: source.id, visibleTo: everyone, linkable: true, end: { id: source.id, kind: 'source', title: 'Pool source', identifier: source.identifier, withdrawn: true } },
-      { id: section.id, visibleTo: everyone, linkable: true, end: { id: section.id, kind: 'entry_section', title: 'Pool journal entry', identifier: journal.identifier, withdrawn: false } },
-      { id: scan.id, visibleTo: everyone, linkable: true, end: { id: scan.id, kind: 'attachment', title: 'Pool scan', identifier: scan.identifier, withdrawn: false } },
-      { id: reply.id, visibleTo: everyone, linkable: true, end: { id: reply.id, kind: 'reply', title: 'Pool finding', identifier: finding.identifier, withdrawn: false } },
-      { id: draft.id, visibleTo: (actor) => actor === 'colleague', linkable: true, end: { id: draft.id, kind: 'finding', title: 'Pool draft', identifier: draft.identifier, withdrawn: false } },
+      { id: finding.id, visibleTo: everyone, linkable: true, end: { id: finding.id, rootId: finding.id, kind: 'finding', title: 'Pool finding', identifier: finding.identifier, withdrawn: false } },
+      { id: source.id, visibleTo: everyone, linkable: true, end: { id: source.id, rootId: source.id, kind: 'source', title: 'Pool source', identifier: source.identifier, withdrawn: true } },
+      { id: section.id, visibleTo: everyone, linkable: true, end: { id: section.id, rootId: journal.id, kind: 'entry_section', title: 'Pool journal entry', identifier: journal.identifier, withdrawn: false } },
+      { id: scan.id, visibleTo: everyone, linkable: true, end: { id: scan.id, rootId: finding.id, kind: 'attachment', title: 'Pool scan', identifier: scan.identifier, withdrawn: false } },
+      { id: reply.id, visibleTo: everyone, linkable: true, end: { id: reply.id, rootId: finding.id, kind: 'reply', title: 'Pool finding', identifier: finding.identifier, withdrawn: false } },
+      { id: draft.id, visibleTo: (actor) => actor === 'colleague', linkable: true, end: { id: draft.id, rootId: draft.id, kind: 'finding', title: 'Pool draft', identifier: draft.identifier, withdrawn: false } },
       { id: deleted.id, visibleTo: () => false, linkable: true },
       { id: note.id, visibleTo: everyone, linkable: false },
       { id: newULID(at), visibleTo: () => false, linkable: true },

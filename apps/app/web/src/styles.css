@@ -1,4 +1,6 @@
 @import '../../../../packages/design/src/tokens.css';
+@import '../../../../packages/design/src/fonts.css';
+@import '../../../../packages/design/src/components.css';
 
 body {
   margin: 0;
@@ -9,8 +11,101 @@ body {
   line-height: var(--rf-line-height-body);
 }
 
-main {
+.rf-main {
   max-inline-size: var(--rf-width-reading);
   margin: var(--rf-space-page) auto;
   padding-inline: var(--rf-space-page);
+}
+
+.rf-stack > * + * {
+  margin-block-start: var(--rf-space-page);
+}
+
+.rf-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rf-space-xs);
+  align-items: center;
+}
+
+.rf-section {
+  border-block-start: var(--rf-border-width) solid var(--rf-colour-border);
+  padding-block-start: var(--rf-space-md);
+}
+
+.rf-meta {
+  color: var(--rf-colour-text-muted);
+}
+
+.rf-list {
+  padding-inline-start: 0;
+  list-style: none;
+}
+
+.rf-list > li + li {
+  margin-block-start: var(--rf-space-sm);
+}
+
+.rf-order-item {
+  display: flex;
+  gap: var(--rf-space-xs);
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--rf-space-xs);
+  border: var(--rf-border-width) solid var(--rf-colour-border);
+}
+
+.rf-order-item[aria-grabbed='true'] {
+  outline: var(--rf-border-width-strong) solid var(--rf-colour-accent);
+}
+
+.rf-accent-swatch {
+  display: inline-block;
+  inline-size: var(--rf-space-md);
+  block-size: var(--rf-space-md);
+  margin-inline-end: var(--rf-space-2xs);
+  vertical-align: middle;
+  border: var(--rf-border-width) solid var(--rf-colour-border);
+}
+
+.rf-editor {
+  border: var(--rf-border-width) solid var(--rf-colour-border);
+}
+
+.rf-editor .cm-editor {
+  min-block-size: calc(var(--rf-space-3xl) + var(--rf-space-3xl));
+}
+
+.rf-editor .cm-focused {
+  outline: var(--rf-focus-width) solid var(--rf-colour-focus);
+}
+
+.rf-mark--quote,
+.rf-mark--paraphrase,
+.rf-mark--source_reported {
+  text-decoration: underline;
+  text-decoration-style: dotted;
+}
+
+.rf-mark--mention {
+  font-weight: var(--rf-font-weight-semibold);
+}
+
+.rf-mark-caption {
+  margin-inline-start: var(--rf-space-2xs);
+  color: var(--rf-colour-text-muted);
+  font-size: var(--rf-font-size-sm);
+}
+
+.rf-picker {
+  max-block-size: calc(var(--rf-space-3xl) + var(--rf-space-3xl) + var(--rf-space-3xl));
+  overflow-y: auto;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  border: var(--rf-border-width) solid var(--rf-colour-border);
+}
+
+.rf-picker [aria-selected='true'] {
+  background: var(--rf-colour-surface-raised);
 }

@@ -26,6 +26,8 @@ export const BUILT_IN_VALUE_IDS = Object.freeze({
   // The Content_Licence covers only Own_Work Attachments (R29.12).
   rightsOwnWork: asULID('0000000000000000000000P001'),
 });
+/** The Partial, Suspended, and Stopped Run_Outcomes, shown with the Run's Resume_Point or a notice that none is recorded (R7.4). Seeds share these IDs. */
+export const RESUMABLE_RUN_OUTCOME_IDS: ReadonlySet<ULID> = new Set(['0000000000000000000000R004', '0000000000000000000000R005', '0000000000000000000000R006'].map(asULID));
 const protectedIds: ReadonlySet<ULID> = new Set(Object.values(LOCKED_VALUE_IDS));
 const reservedIds: ReadonlySet<ULID> = new Set(Object.values(BUILT_IN_VALUE_IDS));
 export interface ConfigValue {

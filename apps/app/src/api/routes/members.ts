@@ -56,10 +56,13 @@ const roleChange = z.strictObject({ roleId: z.string() });
 
 export const membersRoutes = new Hono<ApiEnv>();
 
+/** Every Member with the display name the Mention picker offers (R16.8); a Member without a Profile has none yet. */
 membersRoutes.get('/', async (c) => {
   await authorizeRead(c);
-  const result = await c.get('accountant').track(c.env.RF_CORE.prepare(`SELECT ${MEMBER_COLUMNS} FROM members ORDER BY email_lc`).all<MemberRow>());
-  return c.json({ members: result.results.map(present) });
+  const result = await c.get('accountant').track(c.env.RF_CORE.prepare(
+    `SELECT ${MEMBER_COLUMNS}, (SELECT display_name FROM profiles WHERE member_id = members.id) AS displayName FROM members ORDER BY email_lc`,
+  ).all<MemberRow & { displayName: string | null }>());
+  return c.json({ members: result.results.map((member) => ({ ...present(member), displayName: member.displayName })) });
 });
 
 /**

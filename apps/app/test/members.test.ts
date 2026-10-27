@@ -162,9 +162,10 @@ describe('Role changes and revocation', () => {
     expect([unknownRole.status, await unknownRole.json()]).toEqual([422, { error: 'validation', fields: [{ field: 'roleId', rule: 'Choose an existing Role.' }] }]);
   });
 
-  it('lists Members for every active Member', async () => {
-    const list = await (await call(api, bindings, contributor, 'GET', '/members')).json<{ members: { id: ULID }[] }>();
-    expect(list.members.map((member) => member.id)).toEqual([adminId, contributorId]);
+  it('lists Members for every active Member, with each display name the Mention picker offers', async () => {
+    const pendingId = await addMember(core(), 'pending@example.test', 'pending', at, ROLE_IDS.contributor, { profile: false });
+    const list = await (await call(api, bindings, contributor, 'GET', '/members')).json<{ members: { id: ULID; displayName: string | null }[] }>();
+    expect(list.members.map((member) => [member.id, member.displayName])).toEqual([[adminId, `Member ${adminId}`], [contributorId, `Member ${contributorId}`], [pendingId, null]]);
   });
 });
 
