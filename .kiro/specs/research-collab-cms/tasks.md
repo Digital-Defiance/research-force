@@ -386,20 +386,20 @@ Tests use synthetic data only. No task copies, quotes, or commits content from t
     - **Property 26: Incomplete Profiles gate the Workspace**
     - **Validates: Requirements 3.6**
 
-- [ ] 16. Build the save pipeline and Projects
-  - [ ] 16.1 Implement the save pipeline in `apps/app/src/records/pipeline.ts`
+- [x] 16. Build the save pipeline and Projects
+  - [x] 16.1 Implement the save pipeline in `apps/app/src/records/pipeline.ts`
     - Validate with the domain schemas, load the current revision, run data checks, build one guarded batch with the `rev` guard, the change counter, the writes, `revisionsFor(change)` (one Revision per Revision_Kind with the previous value of each changed field), automatic consequences, and outbox rows, then commit
     - Content edits require a Minor_Edit or Correction mark with no default and a reason for a Correction, except Restorations and saves that only change status, withdrawal, or disclosure fields; a 409 lists the Revisions saved since with Member and time
     - A label-only change is an edit of the field that contains it, with the same Permission checks and a Revision whose previous values include the old spans; the server confirms the text is unchanged
     - _Requirements: 4.1, 4.5, 4.9, 11.7, 11.8, 22.1, 22.2, 22.9, 22.10, 28.13_
-  - [ ] 16.2 Implement Projects in `apps/app/src/records/projects.ts` and `apps/app/src/api/routes/projects.ts`
+  - [x] 16.2 Implement Projects in `apps/app/src/records/projects.ts` and `apps/app/src/api/routes/projects.ts`
     - Create (Private, not featured, last in the Project_Order, creator and time recorded), edit with validation, refusal of a whole save that changes a fixed Project_Slug, featured toggle, `move-position` rewriting the positions between the old and new places in one batch, and Project_Accent set or clear from the palette by Administrators only
     - A Revision for every change (Disclosure_Change for level and Disclosure_Line, Minor_Edit otherwise), `GET /projects/{id}/history` with before and after values, and `project:{id}` outbox rows
     - _Requirements: 39.4, 39.5, 39.6, 39.7, 39.8, 39.18, 45.3, 45.4, 45.22_
-  - [ ]* 16.3 Write property test for the Project_Order
+  - [x]* 16.3 Write property test for the Project_Order
     - **Property 76: Project_Order stays a permutation**
     - **Validates: Requirements 39.7**
-  - [ ]* 16.4 Write property test for Project_Accents
+  - [x]* 16.4 Write property test for Project_Accents
     - **Property 94: Project_Accents apply only to their Project and only from the palette**
     - **Validates: Requirements 45.3, 45.22**
 

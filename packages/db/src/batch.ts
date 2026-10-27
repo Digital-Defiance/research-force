@@ -97,9 +97,9 @@ export class GuardedBatch {
   /** Statements the batch will send, including the leading guard and counter increment. */
   get size(): number { return this.#statements.length + (this.options.ignoreFreeze ? 1 : 2); }
 
-  /** Abort the whole batch unless `condition` holds when this statement runs. */
+  /** Abort the whole batch unless `condition` holds when this statement runs; a NULL condition aborts too. */
   guard(code: GuardCode, condition: SQL): this {
-    return this.#push(sql`INSERT INTO ${sql.identifier(`_g_${code}`)} (x) SELECT NULL WHERE NOT (${condition})`);
+    return this.#push(sql`INSERT INTO ${sql.identifier(`_g_${code}`)} (x) SELECT NULL WHERE (${condition}) IS NOT TRUE`);
   }
 
   /** Any other statement: a Drizzle query or a `sql` template. */
@@ -158,6 +158,22 @@ export class GuardedBatch {
       kind: input.kind, memberId: this.actor.id, at: this.actor.now, reason: input.reason ?? null, prev: input.prev,
       restoredPoint: input.restoredPoint ?? null, ai: input.ai ?? null, seq: CHANGE_SEQ,
     }));
+  }
+
+  /** Many Revisions in a few statements, for one save that changes many targets (for example the Project_Order). */
+  revisions(inputs: readonly RevisionInput[]): this {
+    if (inputs.length === 0) return this;
+    if (this.actor.id === null) throw new Error('A Revision needs an acting Member.');
+    const rows = inputs.map((input) => [
+      newULID(this.actor.now), input.targetType, input.targetId, input.rootId ?? null, input.kind, input.reason ?? null,
+      JSON.stringify(input.prev), input.restoredPoint ?? null, input.ai ? JSON.stringify(input.ai) : null,
+    ]);
+    for (const chunk of chunks(rows)) {
+      this.#push(sql`INSERT INTO revisions (id, target_type, target_id, root_id, kind, reason, prev, restored_point, ai, member_id, at, seq)
+        SELECT ${sql.raw([0, 1, 2, 3, 4, 5, 6, 7, 8].map((index) => `json_extract(value, '$[${index}]')`).join(', '))}, ${this.actor.id}, ${this.actor.now}, ${CHANGE_SEQ}
+        FROM json_each(${JSON.stringify(chunk)})`);
+    }
+    return this;
   }
 
   /** Follow-up work for a background processor, committed with the change (design "Outbox, kick, sweep"). */

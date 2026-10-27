@@ -143,6 +143,33 @@ describe('guarded batch helper', () => {
     expect(await changeSeq()).toBe(before);
   });
 
+  it('treats a guard condition that is NULL, such as a rev check on a missing row, as failed', async () => {
+    const memberId = await addMember(ROLE_IDS.contributor);
+    const before = await changeSeq();
+    const missing = new GuardedBatch(core, { id: memberId, now }).guard('rev', sql`(SELECT rev FROM units WHERE id = ${'missing'}) = ${1}`).outbox('publish', 'root:missing');
+    expect(await refusal(missing.commit())).toMatchObject({ code: 'rev' });
+    expect(await changeSeq()).toBe(before);
+  });
+
+  it('writes many Revisions in a few statements with the change sequence and acting Member', async () => {
+    const memberId = await addMember(ROLE_IDS.contributor);
+    const targets = Array.from({ length: 300 }, () => id());
+    const batch = new GuardedBatch(core, { id: memberId, now }).revisions(targets.map((targetId, index) => ({
+      targetType: 'project' as const, targetId, kind: 'minor_edit' as const, prev: { position: index, note: index === 0 ? 'ẞ „x“ \'q\'' : null },
+      ...(index === 1 ? { rootId: 'root', reason: 'Why.', restoredPoint: 'point', ai: { model: 'synthetic', at: now } as never } : {}),
+    })));
+    expect(batch.size).toBeLessThan(5);
+    await batch.commit();
+    const rows = await core.prepare(`SELECT target_id AS targetId, root_id AS rootId, kind, reason, prev, restored_point AS restoredPoint, ai, member_id AS memberId, at, seq
+      FROM revisions WHERE target_id IN (SELECT value FROM json_each(?1)) ORDER BY json_extract(prev, '$.position')`).bind(JSON.stringify(targets)).all();
+    expect(rows.results).toHaveLength(300);
+    const seq = await changeSeq();
+    expect(rows.results[0]).toEqual({ targetId: targets[0], rootId: null, kind: 'minor_edit', reason: null, prev: JSON.stringify({ position: 0, note: 'ẞ „x“ \'q\'' }), restoredPoint: null, ai: null, memberId, at: now, seq });
+    expect(rows.results[1]).toEqual({ targetId: targets[1], rootId: 'root', kind: 'minor_edit', reason: 'Why.', prev: JSON.stringify({ position: 1, note: null }), restoredPoint: 'point', ai: JSON.stringify({ model: 'synthetic', at: now }), memberId, at: now, seq });
+    expect(new GuardedBatch(core, { id: memberId, now }).revisions([]).size).toBe(2);
+    expect(() => new GuardedBatch(core, { id: null, now }).revisions([{ targetType: 'project', targetId: 'x', kind: 'minor_edit', prev: {} }])).toThrow();
+  });
+
   it('checks guards after the writes before them, so the last active Administrator cannot be demoted', async () => {
     const admins = await core.prepare("SELECT id FROM members WHERE role_id = ? AND status = 'active'").bind(ROLE_IDS.administrator).all<{ id: ULID }>();
     const demoteAll = new GuardedBatch(core, { id: null, now }).update(members, { roleId: ROLE_IDS.contributor }, eq(members.roleId, ROLE_IDS.administrator));

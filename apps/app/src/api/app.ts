@@ -18,6 +18,7 @@ import type { ErrorCode } from './errors';
 import { profileGate } from '../auth/profile-gate';
 import { membersRoutes } from './routes/members';
 import { memberProfileRoutes, meRoutes } from './routes/profile';
+import { projectsRoutes } from './routes/projects';
 import { rolesRoutes } from './routes/roles';
 
 export interface ApiConfig {
@@ -88,6 +89,7 @@ export function createApi(config: ApiConfig): Hono<ApiEnv> {
   v1.route('/roles', rolesRoutes);
   v1.route('/members', membersRoutes);
   v1.route('/members', memberProfileRoutes);
+  v1.route('/projects', projectsRoutes);
   app.route('/api/v1', v1);
 
   app.notFound((c) => {
