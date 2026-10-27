@@ -23,6 +23,8 @@ export const BUILT_IN_VALUE_IDS = Object.freeze({
   findingSuperseded: asULID('00000000000000000000000023'),
   // Evidence_Links are Cross_Links with this relation label (R5.2, R8.2).
   relationEvidenceFor: asULID('00000000000000000000000024'),
+  // The Content_Licence covers only Own_Work Attachments (R29.12).
+  rightsOwnWork: asULID('0000000000000000000000P001'),
 });
 const protectedIds: ReadonlySet<ULID> = new Set(Object.values(LOCKED_VALUE_IDS));
 const reservedIds: ReadonlySet<ULID> = new Set(Object.values(BUILT_IN_VALUE_IDS));

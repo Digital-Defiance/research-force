@@ -157,32 +157,32 @@ Tests use synthetic data only. No task copies, quotes, or commits content from t
     - In the workers pool: a failing guard aborts the whole batch and names its rule; `UPDATE` on `revisions` is refused; a schema scan finds no password, password hash, or PIN column
     - _Requirements: 1.2, 4.1, 22.11_
 
-- [ ] 6. Build the privacy kernel in `packages/kernel`
-  - [ ] 6.1 Implement Effective_Disclosure in `packages/kernel/src/effective.ts`
+- [x] 6. Build the privacy kernel in `packages/kernel`
+  - [x] 6.1 Implement Effective_Disclosure in `packages/kernel/src/effective.ts`
     - `DNode`, `ancestors(n)` (Parent chain to the Root_Item, then the Project), and `effective(n)` as the design defines it: Unclassified units are Private, any non-Public ancestor makes a unit Private, and Entry_Sections, Replies, and Dissent_Notes also need a Full_Content Root_Item
     - _Requirements: 23.1, 23.3, 24.5, 26.5_
-  - [ ] 6.2 Implement the Public_View projection in `packages/kernel/src/project.ts`
+  - [x] 6.2 Implement the Public_View projection in `packages/kernel/src/project.ts`
     - `project(input)` returning a `PublicView` only for Public and Withheld units, with the fields of the design's view table for each unit type; Withheld views hold only the Disclosure_Line; Summary_Only views have no slot for Entry_Sections, Replies, Log_Summaries, or other free text; no view has a slot for review state, flags, Submitter addresses, or Consent_Status
     - Cross_Links presented by the other end's view (link, Disclosure_Line, or omitted), supersession notices for the last later Public version, withdrawal notices, first-public dates, Credits as display names (outside and imported Credits as the design states), Elimination_Scope with every Eliminated status, and non-withdrawn Dissent_Notes under Full_Content
     - _Requirements: 6.3, 8.3, 24.1, 24.2, 24.3, 24.4, 24.8, 24.9, 24.10, 24.13, 24.14, 29.2, 29.3, 29.4, 29.11, 29.12, 40.1, 40.5, 40.7, 42.8, 42.14_
-  - [ ] 6.3 Implement substitutions, profile projection, and invariant checks in `packages/kernel/src/substitute.ts`
+  - [x] 6.3 Implement substitutions, profile projection, and invariant checks in `packages/kernel/src/substitute.ts`
     - Generic_Label in every Party field of an External_Party marked Do_Not_Name, including Disclosure_Line Party labels; `prefillCorrespondenceLine` for automatic and manual Withheld Correspondences
     - Every registered Member email address, matched ignoring letter case, replaced by "[email address removed]", with the positions of each replacement returned for previews; `projectProfile` returning exactly display name, Specialties, affiliations, and biography
     - Defensive projection as Withheld, with an `invariantBreaches` list for a System_Alert, for a Public Correspondence without Granted consent or a Public Attachment whose Rights_Status does not permit publication
     - _Requirements: 9.4, 33.4, 34.2, 34.5, 46.5, 46.9_
-  - [ ] 6.4 Implement preview diffs and publication gates in `packages/kernel/src/preview.ts`
+  - [x] 6.4 Implement preview diffs and publication gates in `packages/kernel/src/preview.ts`
     - `diffViews(before, after)`: every unit whose Public_View differs, every Party name those views show, every non-withdrawn Dissent_Note on a presented Log_Summary or Public_Summary whose resulting Effective_Disclosure is not Public, and each credited Member's Licence_Agreement state
     - `checkGates(change, state)`: rights, consent, licence agreements, Disclosure_Line validity, and the 1,000-unit limit, each failure naming the unit, the reason, and whether Withheld is offered
     - _Requirements: 23.5, 23.6, 23.14, 23.16, 26.14, 33.4, 34.2, 34.9, 39.13, 46.16, 46.17_
-  - [ ] 6.5 Write property test for Effective_Disclosure
+  - [x] 6.5 Write property test for Effective_Disclosure
     - **Property 1: Effective_Disclosure follows the ancestor rule**
     - **Validates: Requirements 23.1, 23.3, 24.5, 26.5**
-  - [ ] 6.6 Write property test for public output confinement
+  - [x] 6.6 Write property test for public output confinement
     - Build `workspaceStateArb` in `packages/testing/src/workspace.ts` with a unique canary token in every field of every unit, Member, Party, and Outside_Submission
     - Build the public-channel registry `packages/testing/src/public-channels.ts`, register the kernel's view output as its first channel, and write the test so it checks every registered channel; later tasks register their channels here
     - **Property 5: Public outputs contain only Public_View content**
     - **Validates: Requirements 17.7, 20.6, 24.5, 24.6, 24.13, 30.10, 31.7, 31.9, 35.2, 40.6, 41.12, 42.8, 42.15**
-  - [ ] 6.7 Write property test for preview diffs
+  - [x] 6.7 Write property test for preview diffs
     - **Property 14: Disclosure previews are exact diffs**
     - **Validates: Requirements 23.6, 23.16, 34.9, 39.13**
 

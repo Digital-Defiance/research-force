@@ -29,7 +29,7 @@ const INITIAL: Readonly<Record<ValueSetKind, readonly (readonly [ULID, string])[
   hypothesis_status: [[ids.hypothesisOpen, 'Open'], [ids.hypothesisEliminated, 'Eliminated']],
   archival_request_status: [[seedId('A', 1), 'Planned'], [ids.archivalSent, 'Sent'], [ids.archivalReplied, 'Replied'], [seedId('A', 2), 'Closed']],
   reliability: ['High', 'Medium', 'Low', 'Unknown'].map((name, index) => [seedId('Q', index + 1), name] as const),
-  rights_status: [[seedId('P', 1), 'Own work'], [seedId('P', 2), 'Public domain'], [seedId('P', 3), 'Licensed'], [seedId('P', 4), 'Permission granted'], [ids.rightsUnknown, 'Unknown'], [seedId('P', 5), 'Restricted']],
+  rights_status: [[ids.rightsOwnWork, 'Own work'], [seedId('P', 2), 'Public domain'], [seedId('P', 3), 'Licensed'], [seedId('P', 4), 'Permission granted'], [ids.rightsUnknown, 'Unknown'], [seedId('P', 5), 'Restricted']],
   relation: [[ids.relationEvidenceFor, 'Evidence for'], [seedId('X', 1), 'Based on'], [seedId('X', 2), 'Produced by'], [seedId('X', 3), 'Discusses'], [seedId('X', 4), 'Related']],
 };
 
