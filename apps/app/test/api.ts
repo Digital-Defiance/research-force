@@ -8,6 +8,7 @@ import { FakeOps } from '@researchforce/testing/fake-ops';
 import { certsBody } from '@researchforce/testing/jwt';
 import type { SigningKey, TestAccess } from '@researchforce/testing/jwt';
 import { createApi } from '../src/api/app';
+import type { ApiConfig } from '../src/api/app';
 import { AccessKeys, certsUrl } from '../src/auth/jwt';
 import type { Env } from '../src/env';
 import { createLogger } from '../src/log';
@@ -36,12 +37,18 @@ export interface TestApi {
   readonly clock: { now: Date };
   readonly ops: FakeOps;
 }
-export function testApi(access: TestAccess, server: KeyServer, now: Date, options: { readonly cache?: Cache | null; readonly ops?: FakeOps; readonly contentLicence?: string } = {}): TestApi {
+export function testApi(
+  access: TestAccess, server: KeyServer, now: Date,
+  options: { readonly cache?: Cache | null; readonly ops?: FakeOps; readonly contentLicence?: string; readonly kick?: ApiConfig['kick'] } = {},
+): TestApi {
   const clock = { now };
   const lines: string[] = [];
   const ops = options.ops ?? new FakeOps();
   const keys = new AccessKeys(certsUrl(access), { fetch: server.fetch, cache: options.cache ?? null, now: () => clock.now.getTime() });
-  const app = createApi({ access, keys, workspaceOrigin: WORKSPACE, log: createLogger((line) => lines.push(line)), clock: () => clock.now, ops, contentLicence: options.contentLicence ?? '' });
+  const app = createApi({
+    access, keys, workspaceOrigin: WORKSPACE, log: createLogger((line) => lines.push(line)), clock: () => clock.now, ops, contentLicence: options.contentLicence ?? '',
+    ...(options.kick ? { kick: options.kick } : {}),
+  });
   return { app, keys, lines, clock, ops };
 }
 

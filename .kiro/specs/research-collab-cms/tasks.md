@@ -467,17 +467,17 @@ Tests use synthetic data only. No task copies, quotes, or commits content from t
     - `GET/PUT /settings` with each setting's validator, refusing out-of-range values with the allowed range shown
     - _Requirements: 2.5, 10.8, 20.14, 20.25, 28.12, 44.15_
 
-- [ ] 20. Build the transactional outbox consumers, cron, and sliced jobs
-  - [ ] 20.1 Implement the outbox reader and kicks in `apps/app/src/outbox.ts`
+- [x] 20. Build the transactional outbox consumers, cron, and sliced jobs
+  - [x] 20.1 Implement the outbox reader and kicks in `apps/app/src/outbox.ts`
     - Per-topic reading in `seq` order with `done_at` marking; after a committed batch the handler sends a best-effort kick to the owning Durable Object with `ctx.waitUntil`
     - _Requirements: 4.1, 21.6, 24.12_
-  - [ ] 20.2 Implement the scheduled handler in `apps/app/src/cron.ts`
+  - [x] 20.2 Implement the scheduled handler in `apps/app/src/cron.ts`
     - The every-minute trigger kicks every owner; the hourly trigger runs a list of sweeps, starting with deletion of staging rows older than 24 hours
     - _Requirements: 28.3_
-  - [ ] 20.3 Implement the sliced job runner in `apps/app/src/do/jobs.ts`
+  - [x] 20.3 Implement the sliced job runner in `apps/app/src/do/jobs.ts`
     - A `Jobs` Durable Object that processes one slice of about 5 ms per alarm, stores its cursor and progress in its SQLite storage and the `jobs` table, sets the next alarm while work remains, and pauses on a daily-limit error until after 00:00 UTC
     - _Requirements: 26.13, 28.3, 36.10_
-  - [ ]* 20.4 Write integration tests for the outbox and the job runner
+  - [x]* 20.4 Write integration tests for the outbox and the job runner
     - A lost kick is picked up by the next cron run; a job stopped by a simulated daily-limit error resumes from its cursor without repeating work
     - _Requirements: 26.13, 36.10_
 

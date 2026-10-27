@@ -2,6 +2,7 @@ import type { Hono } from 'hono';
 import { createApi } from './api/app';
 import type { ApiEnv } from './api/app';
 import { AccessKeys, certsUrl } from './auth/jwt';
+import { runScheduled } from './cron';
 import type { Env } from './env';
 import { createLogger } from './log';
 export { Budget, Jobs, Mailer, Publisher } from './durable-objects';
@@ -21,7 +22,7 @@ export default {
     if (new URL(request.url).pathname.startsWith('/api/')) return apiFor(env).fetch(request, env, ctx);
     return env.ASSETS.fetch(request);
   },
-  scheduled() {
-    // Task 20 wires the transactional outbox and scheduled work.
+  scheduled(controller, env, ctx) {
+    ctx.waitUntil(runScheduled(controller.cron, env, new Date(controller.scheduledTime), createLogger()));
   },
 } satisfies ExportedHandler<Env>;

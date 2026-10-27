@@ -7,9 +7,9 @@ import type { SQLiteTable } from 'drizzle-orm/sqlite-core';
 import { newULID } from '@researchforce/domain/identifiers';
 import { OPERATIONS } from '@researchforce/domain/settings';
 import type { RevisionKind, Timestamp, ULID } from '@researchforce/domain/types';
-import type { RequestAccountant } from './accountant';
+import type { OutboxTopic, RequestAccountant } from './accountant';
 import { outbox, revisions } from './schema/core';
-import type { AiProvenance, OUTBOX_TOPICS, REVISION_TARGET_TYPES } from './schema/core';
+import type { AiProvenance, REVISION_TARGET_TYPES } from './schema/core';
 
 export const GUARD_CODES = ['rev', 'evidence', 'superseding', 'last_admin', 'chain_tip', 'decision_open', 'preview_fresh', 'log_summary_owner', 'dissent_unique', 'frozen'] as const;
 export type GuardCode = typeof GUARD_CODES[number];
@@ -88,6 +88,7 @@ export class GuardedBatch {
   readonly #orm: DrizzleD1Database;
   readonly #dialect = new SQLiteAsyncDialect();
   readonly #statements: { readonly sql: string; readonly params: readonly unknown[] }[] = [];
+  readonly #topics = new Set<OutboxTopic>();
 
   constructor(db: D1Database, readonly actor: BatchActor, readonly options: { readonly ignoreFreeze?: boolean } = {}) {
     this.#db = db;
@@ -96,6 +97,8 @@ export class GuardedBatch {
 
   /** Statements the batch will send, including the leading guard and counter increment. */
   get size(): number { return this.#statements.length + (this.options.ignoreFreeze ? 1 : 2); }
+  /** Topics this batch writes outbox rows to, whose owners are kicked once it commits. */
+  get outboxTopics(): readonly OutboxTopic[] { return [...this.#topics]; }
 
   /** Abort the whole batch unless `condition` holds when this statement runs; a NULL condition aborts too. */
   guard(code: GuardCode, condition: SQL): this {
@@ -177,14 +180,16 @@ export class GuardedBatch {
   }
 
   /** Follow-up work for a background processor, committed with the change (design "Outbox, kick, sweep"). */
-  outbox(topic: typeof OUTBOX_TOPICS[number], scope: string): this {
+  outbox(topic: OutboxTopic, scope: string): this {
+    this.#topics.add(topic);
     return this.run(this.#orm.insert(outbox).values({ topic, scope, changeSeq: CHANGE_SEQ, createdAt: this.actor.now }));
   }
 
   /** One outbox row per distinct scope, in one statement, in the order given. */
-  outboxMany(topic: typeof OUTBOX_TOPICS[number], scopes: readonly string[]): this {
+  outboxMany(topic: OutboxTopic, scopes: readonly string[]): this {
     const distinct = [...new Set(scopes)];
     if (distinct.length === 0) return this;
+    this.#topics.add(topic);
     return this.#push(sql`INSERT INTO outbox (topic, scope, change_seq, created_at)
       SELECT ${topic}, value, ${CHANGE_SEQ}, ${this.actor.now} FROM json_each(${JSON.stringify(distinct)}) ORDER BY key`);
   }
@@ -205,6 +210,7 @@ export class GuardedBatch {
       throw code ? new GuardViolation(code, { cause: error }) : error;
     }
     accountant?.add(results);
+    accountant?.committed(this.#topics);
     return results;
   }
 

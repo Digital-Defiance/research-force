@@ -3,6 +3,7 @@ import type { Context } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import { routePath } from 'hono/route';
 import { RequestAccountant } from '@researchforce/db/accountant';
+import type { OutboxTopic } from '@researchforce/db/accountant';
 import type { OpsAccess } from '@researchforce/domain/ops';
 import type { PermissionContext } from '@researchforce/domain/permissions';
 import { OPERATIONS } from '@researchforce/domain/settings';
@@ -14,6 +15,7 @@ import type { Session } from '../auth/session';
 import type { Env } from '../env';
 import { hashMemberId } from '../log';
 import type { Logger } from '../log';
+import { kick } from '../outbox';
 import { csrfGuard, workspaceCors } from './csrf';
 import { ApiError, errorResponse, toApiError } from './errors';
 import type { ErrorCode } from './errors';
@@ -39,6 +41,8 @@ export interface ApiConfig {
   readonly ops?: OpsAccess;
   /** The current Content_Licence's name; `CONTENT_LICENCE_NAME` unless a test supplies one. */
   readonly contentLicence?: string;
+  /** Kicks the owners of outbox topics after the request; the Durable Object kick unless a test supplies one. */
+  readonly kick?: (env: Env, topics: readonly OutboxTopic[], log: Logger) => Promise<void>;
 }
 export interface ApiVariables {
   accountant: RequestAccountant;
@@ -58,6 +62,17 @@ export function sessionOf(c: Context<ApiEnv>): Session {
   return c.get('session');
 }
 
+/** Run `work` after the response; without an execution context it is left to the next cron run. */
+function afterResponse(c: Context<ApiEnv>, work: () => Promise<void>): void {
+  let context: Pick<ExecutionContext, 'waitUntil'>;
+  try {
+    context = c.executionCtx;
+  } catch {
+    return;
+  }
+  context.waitUntil(work());
+}
+
 export function createApi(config: ApiConfig): Hono<ApiEnv> {
   const app = new Hono<ApiEnv>();
   const clock = config.clock ?? (() => new Date());
@@ -70,6 +85,8 @@ export function createApi(config: ApiConfig): Hono<ApiEnv> {
     c.set('ops', config.ops ?? c.env.OPS);
     c.set('contentLicence', (config.contentLicence ?? c.env.CONTENT_LICENCE_NAME ?? '').trim());
     await next();
+    const topics = c.get('accountant').outboxTopics;
+    if (topics.length > 0) afterResponse(c, () => (config.kick ?? kick)(c.env, topics, config.log));
     const session = c.get('session') as Session | undefined;
     const failure = c.get('failure') as ErrorCode | undefined;
     // CPU time is not readable inside a Worker; Workers Logs records it for each invocation.

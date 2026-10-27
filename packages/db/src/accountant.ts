@@ -1,5 +1,7 @@
 import { OPERATIONS } from '@researchforce/domain/settings';
+import type { OUTBOX_TOPICS } from './schema/core';
 
+export type OutboxTopic = typeof OUTBOX_TOPICS[number];
 interface MetaCarrier { readonly meta?: { readonly rows_read?: number; readonly rows_written?: number } }
 export interface RequestUsage { readonly statements: number; readonly rowsRead: number; readonly rowsWritten: number }
 
@@ -11,6 +13,12 @@ export class RequestAccountant {
   #statements = 0;
   #rowsRead = 0;
   #rowsWritten = 0;
+  readonly #outbox = new Set<OutboxTopic>();
+
+  /** Record the outbox topics of a committed batch, so the request can kick their owners afterwards. */
+  committed(topics: Iterable<OutboxTopic>): void {
+    for (const topic of topics) this.#outbox.add(topic);
+  }
 
   /** Record one result, or the results of one batch, in which every statement counts. */
   add(result: MetaCarrier | readonly MetaCarrier[]): void {
@@ -30,4 +38,6 @@ export class RequestAccountant {
   /** Statements a handler may still issue within the per-request limit. */
   get remaining(): number { return Math.max(0, OPERATIONS.maxD1Statements - this.#statements); }
   get usage(): RequestUsage { return { statements: this.#statements, rowsRead: this.#rowsRead, rowsWritten: this.#rowsWritten }; }
+  /** Topics that committed batches of this request wrote outbox rows to. */
+  get outboxTopics(): readonly OutboxTopic[] { return [...this.#outbox]; }
 }
