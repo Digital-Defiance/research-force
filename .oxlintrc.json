@@ -253,7 +253,6 @@
             "patterns": [
               {
                 "group": [
-                  "@researchforce/domain",
                   "@researchforce/manifest",
                   "@researchforce/search-public",
                   "@researchforce/db",
@@ -264,7 +263,6 @@
                   "@researchforce/dl",
                   "@researchforce/ops",
                   "@researchforce/tools",
-                  "@researchforce/domain/*",
                   "@researchforce/manifest/*",
                   "@researchforce/search-public/*",
                   "@researchforce/db/*",

@@ -17,13 +17,17 @@ const d1Migrations = {
   public: await readD1Migrations(fileURLToPath(new URL('./packages/db/migrations/public', import.meta.url))),
 };
 
+const fcRuns = Number(process.env['FC_RUNS'] ?? '100');
+// Property tests take time in proportion to their run count; 100 runs keeps Vitest's 5-second default.
+const testTimeout = 50 * fcRuns;
+
 export default defineConfig({
   test: {
     projects: [
       {
         test: {
-          name: 'node', environment: 'node',
-          provide: { fcRuns: Number(process.env['FC_RUNS'] ?? '100') },
+          name: 'node', environment: 'node', testTimeout,
+          provide: { fcRuns },
           include: ['packages/*/test/**/*.test.ts', 'tools/test/**/*.test.{ts,mjs}'],
           setupFiles: ['./packages/testing/test/setup.ts'],
         },
@@ -42,8 +46,8 @@ export default defineConfig({
           },
         })],
         test: {
-          name: 'workers', include: ['apps/*/test/**/*.test.ts'],
-          provide: { fcRuns: Number(process.env['FC_RUNS'] ?? '100'), d1Migrations },
+          name: 'workers', include: ['apps/*/test/**/*.test.ts'], testTimeout,
+          provide: { fcRuns, d1Migrations },
           setupFiles: ['./packages/testing/test/setup.ts'],
         },
       },

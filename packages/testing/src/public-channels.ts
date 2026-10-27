@@ -1,6 +1,8 @@
 import { canonicalJson } from '@researchforce/kernel/views';
 import { project } from '@researchforce/kernel/project';
 import { projectProfile } from '@researchforce/kernel/substitute';
+import { renderSite } from '@researchforce/public-render/render-site';
+import { siteInputFor } from './site';
 import type { WorkspaceState } from './workspace';
 
 /** One piece of output a public reader or crawler can obtain. */
@@ -27,4 +29,12 @@ const kernelProfiles: PublicChannel = {
   },
 };
 
-export const PUBLIC_CHANNELS: readonly PublicChannel[] = [kernelViews, kernelProfiles];
+/** Every page template, the sitemap, and robots.txt, as one Public_Site build writes them. */
+const publicSite: PublicChannel = {
+  name: 'public site pages',
+  *artifacts(state) {
+    for (const file of renderSite(siteInputFor(state))) yield { name: file.file, content: file.content };
+  },
+};
+
+export const PUBLIC_CHANNELS: readonly PublicChannel[] = [kernelViews, kernelProfiles, publicSite];

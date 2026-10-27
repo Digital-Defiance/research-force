@@ -121,16 +121,18 @@ describe('content blocks', () => {
     expect(renderToString(block)).toContain('<a class="rf-status rf-status--withheld" href="/methods#withheld">Withheld</a>');
     expect(visible(block)).toBe('WithheldLetter · 3 March 1951 · A, BHeld privately.');
     expect(visible(disclosureLineBlock({ kindOfMaterial: 'Photograph', date: '1960', parties: [], methodsHref: '/m' }))).toBe('WithheldPhotograph · 1960');
+    expect(renderToString(disclosureLineBlock({ kindOfMaterial: 'Photograph', date: '1960', parties: [], methodsHref: '/m', href: '/r/X' }))).toContain('<a href="/r/X">Photograph · 1960</a>');
   });
 
   it('shows a Dissent_Note with its author, time, earlier-wording link, and withdrawal', () => {
     const block = dissentNoteBlock({
-      authorName: 'D. Member', authorHref: '/people/d', savedAt: '27 October 2026', body: [text('I disagree.')], earlierWordingHref: '/logs/1/diff', withdrawn: { date: '28 October 2026', reason: 'Resolved' },
+      authorName: 'D. Member', authorHref: '/people/d', savedAt: '27 October 2026', body: [text('I disagree.')], earlierWording: { href: '/logs/1/diff' }, withdrawn: { date: '28 October 2026', reason: 'Resolved' },
     });
     const html = renderToString(block);
     expect(html).toMatch(/^<aside class="rf-dissent rf-dissent--withdrawn" aria-label="Dissent note by D. Member">/u);
     expect(html).toContain('<a href="/people/d">D. Member</a>');
     expect(visible(block)).toBe('Dissent note by D. Member · last saved 27 October 2026Written about an earlier wordingWithdrawn on 28 October 2026: ResolvedI disagree.');
     expect(renderToString(dissentNoteBlock({ authorName: 'E', savedAt: 't', body: [] }))).not.toMatch(/withdrawn|earlier|href/u);
+    expect(renderToString(dissentNoteBlock({ authorName: 'E', savedAt: 't', body: [], earlierWording: {} }))).toContain('<p class="rf-dissent__earlier">Written about an earlier wording</p>');
   });
 });

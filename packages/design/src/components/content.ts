@@ -1,4 +1,4 @@
-import { labelCaption, labelledElement, labelNoteReference, labelTextFor, type LabelKind } from '@researchforce/domain/label-marks';
+import { labelCaption, labelledElement, labelNoteReference, type LabelKind } from '@researchforce/domain/label-marks';
 import { element, fragment, text, type ElementNode, type FragmentNode, type ViewNode } from '@researchforce/domain/tree';
 
 const nodes = (value: string | ViewNode): ViewNode => (typeof value === 'string' ? text(value) : value);
@@ -8,11 +8,13 @@ export interface LabelMarkProps {
   readonly source?: string;
   /** Show the label as this numbered footnote instead of next to the characters (R11.5). */
   readonly footnote?: { readonly number: number; readonly id: string };
+  /** The Methods page entry the label kind links to on public pages (R46.14). */
+  readonly kindHref?: string;
 }
 
 /** Marks the labelled characters and shows the label kind and source next to them, with quotation marks only for a Quote (R11.5, R11.6). */
 export function labelMark(props: LabelMarkProps, children: readonly ViewNode[]): FragmentNode {
-  const after = props.footnote === undefined ? labelCaption(labelTextFor(props.kind, props.source)) : labelNoteReference(props.footnote.number, props.footnote.id);
+  const after = props.footnote === undefined ? labelCaption(props.kind, props.source, props.kindHref) : labelNoteReference(props.footnote.number, props.footnote.id);
   return fragment([labelledElement(props.kind, children), after]);
 }
 
@@ -98,14 +100,16 @@ export interface DisclosureLineProps {
   readonly note?: string;
   /** The Methods page entry for Withheld (R46.14). */
   readonly methodsHref: string;
+  /** The unit's Public_URL, where a listing links to it (R29.5). */
+  readonly href?: string;
 }
 
 /** What a Withheld unit shows in place of its content: the Disclosure_Line, marked Withheld. */
 export function disclosureLineBlock(props: DisclosureLineProps): ElementNode {
-  const summary = [props.kindOfMaterial, props.date, ...(props.parties.length > 0 ? [props.parties.join(', ')] : [])].join(' · ');
+  const summary = text([props.kindOfMaterial, props.date, ...(props.parties.length > 0 ? [props.parties.join(', ')] : [])].join(' · '));
   return element('div', { class: 'rf-disclosure-line' }, [
     element('p', { class: 'rf-disclosure-line__label' }, [element('a', { class: 'rf-status rf-status--withheld', href: props.methodsHref }, [text('Withheld')])]),
-    element('p', { class: 'rf-disclosure-line__summary' }, [text(summary)]),
+    element('p', { class: 'rf-disclosure-line__summary' }, [props.href === undefined ? summary : element('a', { href: props.href }, [summary])]),
     ...(props.note === undefined ? [] : [element('p', { class: 'rf-disclosure-line__note' }, [text(props.note)])]),
   ]);
 }
@@ -117,17 +121,23 @@ export interface DissentNoteProps {
   /** The last-saved time, already formatted for display. */
   readonly savedAt: string;
   readonly body: readonly ViewNode[];
-  /** Set when the note was written about an earlier wording of the Log_Summary, with a link to the word diff (R42.9). */
-  readonly earlierWordingHref?: string;
+  /**
+   * Set when the note was written about an earlier wording of the Log_Summary (R42.9), with a link to the word diff in the Workspace; public
+   * pages show the mark without the comparison (R42.14).
+   */
+  readonly earlierWording?: { readonly href?: string };
   readonly withdrawn?: { readonly date: string; readonly reason: string };
 }
+
+const EARLIER_WORDING = 'Written about an earlier wording';
 
 /** A Dissent_Note shown directly after the Log_Summary it concerns (R42.3). */
 export function dissentNoteBlock(props: DissentNoteProps): ElementNode {
   const author = props.authorHref === undefined ? text(props.authorName) : element('a', { href: props.authorHref }, [text(props.authorName)]);
+  const earlier = props.earlierWording?.href === undefined ? text(EARLIER_WORDING) : element('a', { href: props.earlierWording.href }, [text(EARLIER_WORDING)]);
   return element('aside', { class: `rf-dissent${props.withdrawn ? ' rf-dissent--withdrawn' : ''}`, 'aria-label': `Dissent note by ${props.authorName}` }, [
     element('p', { class: 'rf-dissent__meta' }, [element('span', { class: 'rf-dissent__kind' }, [text('Dissent note')]), text(' by '), author, text(` · last saved ${props.savedAt}`)]),
-    ...(props.earlierWordingHref === undefined ? [] : [element('p', { class: 'rf-dissent__earlier' }, [element('a', { href: props.earlierWordingHref }, [text('Written about an earlier wording')])])]),
+    ...(props.earlierWording === undefined ? [] : [element('p', { class: 'rf-dissent__earlier' }, [earlier])]),
     ...(props.withdrawn === undefined ? [] : [element('p', { class: 'rf-dissent__withdrawn' }, [text(`Withdrawn on ${props.withdrawn.date}: ${props.withdrawn.reason}`)])]),
     element('div', { class: 'rf-dissent__body' }, props.body),
   ]);

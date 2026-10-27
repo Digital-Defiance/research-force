@@ -6,6 +6,8 @@ import { EMAIL_PLACEHOLDER } from '../src/substitute';
 import type { CorrespondenceParty } from '../src/input';
 import { LINE, RESTRICTED, attachment, dissent, id, item, project, rich, section, state } from './fixtures';
 
+const PROJECT_REF = { key: 'p:project-1', name: project.name, slug: project.slug, path: '/p/synthetic' };
+
 const correspondence = (id: string, parties: CorrespondenceParty[], unit = {}) => item(id, {
   kind: 'correspondence', date: partialDate('1944-02-03'), channel: 'post', direction: 'received', content: rich('Letter text'), parties,
 }, unit);
@@ -26,7 +28,7 @@ describe('project', () => {
   it('shows only the Disclosure_Line for a Withheld unit, and makes its descendants Private', () => {
     const projection = projectDetailed(state([item('a', { kind: 'topic', body: rich('Body') }, { level: 'withheld', disclosureLine: { ...LINE, partyIds: [id('party-2')] } }), section('s', 'a', 'Text')]));
     expect(projection.views.get('u:a')).toEqual({
-      tag: 'withheld', key: 'u:a', path: '/r/RI-a', line: { kindOfMaterial: 'letters', date: LINE.date, parties: ['Open Archive'] },
+      tag: 'withheld', key: 'u:a', path: '/r/RI-a', line: { kindOfMaterial: 'letters', date: LINE.date, parties: ['Open Archive'] }, project: PROJECT_REF,
     });
     expect(projection.views.has('u:s')).toBe(false);
   });
@@ -69,7 +71,7 @@ describe('project', () => {
       attachment('f', 'a'),
     ]));
     expect(projection.views.get('u:a')).toEqual({
-      tag: 'withheld', key: 'u:a', path: '/r/RI-a', line: { kindOfMaterial: 'correspondence', date: partialDate('1944-02-03'), parties: ['a private correspondent', 'Ada Example'] },
+      tag: 'withheld', key: 'u:a', path: '/r/RI-a', line: { kindOfMaterial: 'correspondence', date: partialDate('1944-02-03'), parties: ['a private correspondent', 'Ada Example'] }, project: PROJECT_REF,
     });
     expect(projection.levels.get('u:f')).toBe('private');
     expect(projection.invariantBreaches).toEqual([expect.objectContaining({ key: 'u:a', code: 'consent' })]);
@@ -77,7 +79,7 @@ describe('project', () => {
 
   it('projects a Public Attachment whose Rights_Status does not permit publication as Withheld', () => {
     const projection = projectDetailed(state([item('a', { kind: 'topic', body: rich('Body') }), attachment('f', 'a', { rightsStatusId: RESTRICTED, fileKind: 'image' })]));
-    expect(projection.views.get('u:f')).toEqual({ tag: 'withheld', key: 'u:f', path: '/a/AT-f', line: { kindOfMaterial: 'image', date: partialDate('2026-02-03'), parties: [] } });
+    expect(projection.views.get('u:f')).toEqual({ tag: 'withheld', key: 'u:f', path: '/a/AT-f', line: { kindOfMaterial: 'image', date: partialDate('2026-02-03'), parties: [] }, project: PROJECT_REF });
     expect(projection.invariantBreaches).toEqual([expect.objectContaining({ key: 'u:f', code: 'rights' })]);
   });
 

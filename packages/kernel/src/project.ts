@@ -381,7 +381,9 @@ class Projector {
 
   private unitView(unit: UnitRecord): PublicView {
     const key = unitKey(unit.id);
-    if (this.levelOf(unit.id) === 'withheld') return { tag: 'withheld', key, path: this.pathOf(unit), line: this.line(unit) };
+    if (this.levelOf(unit.id) === 'withheld') {
+      return { tag: 'withheld', key, path: this.pathOf(unit), line: this.line(unit), project: this.projectRef(this.projects.get(this.rootOf(unit).item.projectId)!) };
+    }
     switch (unit.type) {
       case 'research_item': return this.researchItemView(unit);
       case 'attachment': return this.attachmentView(unit);
@@ -390,10 +392,14 @@ class Projector {
         tag: 'reply', key, text: publicRich(unit.text), author: this.memberName(unit.ownerId) ?? '', postedOn: dateOf(unit.createdAt), ...this.withdrawal(unit),
         attachments: this.visibleChildren(unit.id, 'attachment', byPosition), replies: this.visibleChildren(unit.id, 'reply', byPosting), links: this.linkViews(unit),
       } satisfies ReplyView;
-      case 'dissent_note': return {
-        tag: 'dissent_note', key, text: publicRich(unit.text), author: this.memberName(unit.authorId) ?? '', savedOn: dateOf(unit.lastSavedAt),
-        earlierWording: !sameRich(unit.concernedSummary, this.rootOf(unit).item.logSummary),
-      } satisfies DissentNoteView;
+      case 'dissent_note': {
+        const author = this.directory.members.get(unit.authorId);
+        return {
+          tag: 'dissent_note', key, text: publicRich(unit.text), author: author?.displayName ?? '', savedOn: dateOf(unit.lastSavedAt),
+          earlierWording: !sameRich(unit.concernedSummary, this.rootOf(unit).item.logSummary),
+          ...(author?.publicProfile && author.status === 'active' ? { authorProfiled: true as const } : {}),
+        } satisfies DissentNoteView;
+      }
     }
   }
 

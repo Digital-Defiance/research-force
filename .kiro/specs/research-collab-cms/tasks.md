@@ -250,38 +250,38 @@ Tests use synthetic data only. No task copies, quotes, or commits content from t
     - **Property 39: Labels render exactly over their characters**
     - **Validates: Requirements 11.5, 11.6**
 
-- [ ] 9. Build the public renderers in `packages/public-render`
-  - [ ] 9.1 Implement the public address scheme in `packages/public-render/src/paths.ts`
+- [x] 9. Build the public renderers in `packages/public-render`
+  - [x] 9.1 Implement the public address scheme in `packages/public-render/src/paths.ts`
     - `/r/{Item_Identifier}`, `/a/{Item_Identifier}`, `/p/{slug}/…` with kind listings, `log`, `withheld`, `search`, and `submit`; pagination paths; no slug equal to a reserved name defined with the Project schema of task 4.1; every address built only from the identifier or slug and fixed text
     - `sitemap.xml` with Public and Withheld addresses only, and `robots.txt`
     - _Requirements: 24.5, 29.6, 29.7, 29.8, 39.5, 40.3, 40.8_
-  - [ ] 9.2 Implement the page frame and metadata in `packages/public-render/src/frame.ts` and `packages/public-render/src/meta.ts`
+  - [x] 9.2 Implement the page frame and metadata in `packages/public-render/src/frame.ts` and `packages/public-render/src/meta.ts`
     - `lang="en"`, header, footer, the Project_Accent on Project_Section pages and on the pages of the Project's Items and Attachments only, times in UTC marked "UTC", `data-url` for print
     - `citation_title`, one `citation_author` per Credit name in page order, `citation_publication_date`, Open Graph tags (description only when a Public_Summary is set), and JSON-LD, all taken from the page's own view or fixed text; none of the citation tags or JSON-LD on Withheld pages
     - _Requirements: 29.10, 45.2, 45.3, 45.10, 45.11, 45.23, 46.2_
-  - [ ] 9.3 Implement the Research_Item and Attachment page templates in `packages/public-render/src/item-page.ts` and `packages/public-render/src/attachment-page.ts`
+  - [x] 9.3 Implement the Research_Item and Attachment page templates in `packages/public-render/src/item-page.ts` and `packages/public-render/src/attachment-page.ts`
     - All fields of Requirements 24 and 29 for each view, companion fields in one block, the withdrawal notice, the Project link, the Citation_Line with an access-date placeholder, Public Attachments with Rights_Status, rights holder, terms, and licence coverage, the download address on `files.researchforce.org`, supersession notices, and Cross_Links as the views present them
     - Under Full_Content: the fields of the kind, the Log_Summary, Entry_Sections in order, the Reply tree, and Dissent_Notes after the Log_Summary; Withheld units and children as their Disclosure_Lines; Credit names linked to Public_Profiles while shown; every status, rating, Source_Kind, Rights_Status, relation label, label kind, Withheld label, field label, and notice linked to its Methods page entry
     - _Requirements: 8.3, 24.1, 24.2, 24.3, 24.4, 24.8, 24.9, 24.10, 24.13, 24.14, 24.15, 29.2, 29.3, 29.4, 29.9, 29.11, 29.12, 42.14, 46.8, 46.14_
-  - [ ] 9.4 Implement the listing, Project, and home page templates in `packages/public-render/src/listings.ts` and `packages/public-render/src/projects.ts`
+  - [x] 9.4 Implement the listing, Project, and home page templates in `packages/public-render/src/listings.ts` and `packages/public-render/src/projects.ts`
     - Kind listings, the public Project_Log (Log_Summary and Dissent_Notes under Full_Content, Public_Summary under Summary_Only), and the Disclosure_Line listing, each in the specified order with 50 entries per page and previous and next links
     - The home page with Featured_Projects in Project_Order (Withheld ones as Disclosure_Lines without link or slug) or the no-featured notice, the projects listing, the Project page with its links, and the Withheld Project page showing only its Disclosure_Line; the Design_System `404.html`
     - _Requirements: 24.7, 29.1, 29.5, 29.13, 29.14, 40.1, 40.2, 40.3, 40.4, 40.5, 40.6, 40.7, 40.11_
-  - [ ] 9.5 Implement the Policy_Page and form page templates in `packages/public-render/src/policy.ts` and `packages/public-render/src/forms.ts`
+  - [x] 9.5 Implement the Policy_Page and form page templates in `packages/public-render/src/policy.ts` and `packages/public-render/src/forms.ts`
     - About (status section, "About the group"), People (optional Introduction, profiles sorted ignoring case and diacritics, fixed statements, form link), Methods (sections, then every Methods_Term with its Public_Description under the specified headings, leaving out retired values no page presents), Licence, Privacy (Responsible_Person statement, sections, Retention_Table, removal link), and Corrections, each with its last-updated date
     - Static form pages `/submit`, `/p/{slug}/submit`, `/submit/general`, `/submit/correction`, `/submit/removal`, `/submit/removal/general`, and `/respond` with the preselections of Requirements 31.13, 46.18, and 46.21 built in
     - Register every page template of tasks 9.2 to 9.5 in `packages/testing/src/public-channels.ts`
     - _Requirements: 31.1, 31.13, 46.1, 46.5, 46.6, 46.10, 46.11, 46.15, 46.18, 46.21, 46.29, 46.35_
-  - [ ]* 9.6 Write property test for complete public pages
+  - [x]* 9.6 Write property test for complete public pages
     - **Property 16: Public pages are complete**
     - **Validates: Requirements 24.1, 24.2, 24.3, 24.9, 24.10, 24.14, 24.15, 29.9, 29.10, 29.11, 29.12, 45.2, 46.2, 46.8**
-  - [ ]* 9.7 Write property test for public listings
+  - [x]* 9.7 Write property test for public listings
     - **Property 18: Public listings are exact, ordered, and paged**
     - **Validates: Requirements 29.1, 29.5, 29.13, 29.14, 40.1, 40.2, 40.4, 40.11**
-  - [ ]* 9.8 Write property test for page metadata
+  - [x]* 9.8 Write property test for page metadata
     - **Property 20: Page metadata derives from the page**
     - **Validates: Requirements 45.10, 45.11**
-  - [ ]* 9.9 Write property test for the Methods page and term links
+  - [x]* 9.9 Write property test for the Methods page and term links
     - **Property 96: Methods page and term links**
     - **Validates: Requirements 46.11, 46.14**
 

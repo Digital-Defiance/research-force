@@ -7,16 +7,8 @@ export type UnitKey = string;
 export const projectKey = (id: string): UnitKey => `p:${id}`;
 export const unitKey = (id: string): UnitKey => `u:${id}`;
 
-/**
- * Public_URLs are formed here and nowhere else, only from the Item_Identifier or Project_Slug and fixed text (R29.8, R40.3).
- * Renderers read `path` and `download` from the views. `download` is a path on the public files host.
- */
-export const PUBLIC_PATHS = Object.freeze({
-  item: (identifier: string): string => `/r/${identifier}`,
-  attachment: (identifier: string): string => `/a/${identifier}`,
-  file: (identifier: string): string => `/f/${identifier}`,
-  project: (slug: string): string => `/p/${slug}`,
-});
+/** Renderers read `path` and `download` from the views. `download` is a path on the public files host. */
+export { PUBLIC_PATHS } from '@researchforce/domain/public-paths';
 
 /** JSON with sorted object keys, so equal views serialize, compare, and hash identically. */
 export function canonicalJson(value: unknown): string {
@@ -85,8 +77,11 @@ export type LinkTarget =
 export interface LinkView { readonly direction: 'outgoing' | 'incoming'; readonly relation?: ValueRef; readonly target: LinkTarget; }
 export interface RightsView { readonly status: ValueRef; readonly holder?: string; readonly terms?: string; readonly licenceCovers: boolean; }
 
-/** `path` is the unit's Public_URL, or its Root_Item's for Entry_Sections, Replies, and Dissent_Notes. */
-export interface WithheldView { readonly tag: 'withheld'; readonly key: UnitKey; readonly path?: string; readonly line: DisclosureLineView; }
+/**
+ * `path` is the unit's Public_URL, or its Root_Item's for Entry_Sections, Replies, and Dissent_Notes. A Withheld unit names its Root_Item's
+ * Project, whose section lists its Disclosure_Line (R29.5); a Withheld Project has no `project`.
+ */
+export interface WithheldView { readonly tag: 'withheld'; readonly key: UnitKey; readonly path?: string; readonly line: DisclosureLineView; readonly project?: ProjectRef; }
 export interface ProjectView { readonly tag: 'project'; readonly key: UnitKey; readonly path: string; readonly name: string; readonly description: string; readonly slug: string; readonly accent?: string; }
 export interface FullContentView {
   readonly fields: readonly FieldView[];
@@ -115,6 +110,10 @@ export interface ReplyView {
   readonly tag: 'reply'; readonly key: UnitKey; readonly text: RichText; readonly author: string; readonly postedOn: UTCDate;
   readonly withdrawal?: WithdrawalView; readonly attachments: readonly ChildRef[]; readonly replies: readonly ChildRef[]; readonly links: readonly LinkView[];
 }
-export interface DissentNoteView { readonly tag: 'dissent_note'; readonly key: UnitKey; readonly text: RichText; readonly author: string; readonly savedOn: UTCDate; readonly earlierWording: boolean; }
+export interface DissentNoteView {
+  readonly tag: 'dissent_note'; readonly key: UnitKey; readonly text: RichText; readonly author: string; readonly savedOn: UTCDate; readonly earlierWording: boolean;
+  /** Set while the author's Public_Profile is shown on the People page (R46.8). */
+  readonly authorProfiled?: true;
+}
 
 export type PublicView = WithheldView | ProjectView | ResearchItemView | AttachmentView | EntrySectionView | ReplyView | DissentNoteView;

@@ -6,7 +6,7 @@ import ts from 'typescript';
 export const root = fileURLToPath(new URL('../', import.meta.url));
 export const boundaries = {
   domain: [], kernel: ['domain'], markdown: ['domain'], manifest: ['domain'],
-  design: ['domain'], 'public-render': ['kernel', 'design', 'markdown'],
+  design: ['domain'], 'public-render': ['domain', 'kernel', 'design', 'markdown'],
   'search-public': ['kernel', 'domain'], db: ['domain'],
   testing: ['domain', 'kernel', 'markdown', 'manifest', 'design', 'public-render', 'search-public', 'db'],
   app: ['domain', 'kernel', 'markdown', 'manifest', 'design', 'public-render', 'search-public', 'db', 'testing'],

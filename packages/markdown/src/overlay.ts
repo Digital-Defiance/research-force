@@ -1,4 +1,4 @@
-import { labelCaption, labelledElement, labelNoteReference, labelText } from '@researchforce/domain/label-marks';
+import { isLabelSpan, labelCaption, labelContent, labelledElement, labelNoteReference, labelTextFor, type LabelKind } from '@researchforce/domain/label-marks';
 import type { Span } from '@researchforce/domain/richtext';
 import { cpLength } from '@researchforce/domain/text';
 import { element, text } from '@researchforce/domain/tree';
@@ -17,13 +17,17 @@ export type Leaf =
 /** Spans of at least this many code points show their label as a numbered footnote on the same page (R11.5). */
 export const FOOTNOTE_FROM = 200;
 
-export interface LabelNote { readonly number: number; readonly id: string; readonly label: string; }
-/** Collects footnoted labels for one page so numbering runs across every field on it. */
+export interface LabelNote { readonly number: number; readonly id: string; readonly kind: LabelKind; readonly source?: string; readonly label: string; }
+/**
+ * Collects footnoted labels for one page so numbering runs across every field on it. `kindHref` links each label kind to its Methods
+ * page entry on public pages (R46.14).
+ */
 export class LabelNotes {
   readonly items: LabelNote[] = [];
-  add(label: string): LabelNote {
+  constructor(readonly kindHref?: (kind: LabelKind) => string) {}
+  add(kind: LabelKind, source: string | undefined): LabelNote {
     const number = this.items.length + 1;
-    const note = { number, id: `label-note-${number}`, label };
+    const note = { number, id: `label-note-${number}`, kind, ...(source === undefined ? {} : { source }), label: labelTextFor(kind, source) };
     this.items.push(note);
     return note;
   }
@@ -96,14 +100,14 @@ export function buildInline(leaves: readonly Leaf[], context: OverlayContext): V
 
   const label = (key: string): ViewNode[] => {
     const entry = byKey.get(key);
-    if (!entry || !context.labelHere.has(entry.index)) return [];
-    const value = labelText(entry.span);
-    if (value === undefined) return [];
+    if (!entry || !context.labelHere.has(entry.index) || !isLabelSpan(entry.span)) return [];
+    const { k: kind } = entry.span;
+    const source = 'source' in entry.span ? entry.span.source : undefined;
     if (cpLength(context.source.slice(entry.span.s, entry.span.e)) >= FOOTNOTE_FROM) {
-      const note = context.notes.add(value);
+      const note = context.notes.add(kind, source);
       return [labelNoteReference(note.number, note.id)];
     }
-    return [labelCaption(value)];
+    return [labelCaption(kind, source, context.notes.kindHref?.(kind))];
   };
 
   const build = (from: number, to: number, depth: number): ViewNode[] => {
@@ -132,7 +136,8 @@ export function buildInline(leaves: readonly Leaf[], context: OverlayContext): V
 export function renderNotes(notes: LabelNotes): ViewNode | undefined {
   if (!notes.items.length) return undefined;
   return element('ol', { class: 'label-notes' }, notes.items.map((note) => element('li', { id: note.id }, [
-    text(note.label), text(' '), element('a', { href: `#${note.id}-ref`, 'aria-label': `Back to reference ${note.number}` }, [text('↩')]),
+    ...labelContent(note.kind, note.source, notes.kindHref?.(note.kind)), text(' '),
+    element('a', { href: `#${note.id}-ref`, 'aria-label': `Back to reference ${note.number}` }, [text('↩')]),
   ])));
 }
 
