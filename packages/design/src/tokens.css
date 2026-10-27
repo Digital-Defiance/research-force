@@ -1,0 +1,10 @@
+/* Initial scaffold only. Task 8 completes the shared design system. */
+:root {
+  --rf-colour-text: #202124;
+  --rf-colour-surface: #ffffff;
+  --rf-font-body: system-ui, sans-serif;
+  --rf-font-size-body: 1rem;
+  --rf-line-height-body: 1.6;
+  --rf-space-page: 2rem;
+  --rf-width-reading: 65ch;
+}

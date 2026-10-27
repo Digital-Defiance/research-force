@@ -1,0 +1,16 @@
+@import '../../../../packages/design/src/tokens.css';
+
+body {
+  margin: 0;
+  color: var(--rf-colour-text);
+  background: var(--rf-colour-surface);
+  font-family: var(--rf-font-body);
+  font-size: var(--rf-font-size-body);
+  line-height: var(--rf-line-height-body);
+}
+
+main {
+  max-inline-size: var(--rf-width-reading);
+  margin: var(--rf-space-page) auto;
+  padding-inline: var(--rf-space-page);
+}

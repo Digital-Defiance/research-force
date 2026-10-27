@@ -1,0 +1,43 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": ".cache/types",
+    "tsBuildInfoFile": ".cache/tsconfig.tsbuildinfo",
+    "types": [
+      "node"
+    ]
+  },
+  "include": [
+    "src/**/*.ts"
+  ],
+  "references": [
+    {
+      "path": "../packages/domain"
+    },
+    {
+      "path": "../packages/kernel"
+    },
+    {
+      "path": "../packages/markdown"
+    },
+    {
+      "path": "../packages/manifest"
+    },
+    {
+      "path": "../packages/design"
+    },
+    {
+      "path": "../packages/public-render"
+    },
+    {
+      "path": "../packages/search-public"
+    },
+    {
+      "path": "../packages/db"
+    },
+    {
+      "path": "../packages/testing"
+    }
+  ]
+}

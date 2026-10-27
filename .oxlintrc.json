@@ -1,0 +1,615 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "categories": {
+    "correctness": "error"
+  },
+  "ignorePatterns": [
+    "**/dist/**",
+    "node_modules/**",
+    ".wrangler/**"
+  ],
+  "overrides": [
+    {
+      "files": [
+        "packages/domain/src/**/*",
+        "packages/domain/web/src/**/*"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "@researchforce/kernel",
+                  "@researchforce/markdown",
+                  "@researchforce/manifest",
+                  "@researchforce/design",
+                  "@researchforce/public-render",
+                  "@researchforce/search-public",
+                  "@researchforce/db",
+                  "@researchforce/testing",
+                  "@researchforce/app",
+                  "@researchforce/site-shell",
+                  "@researchforce/submit",
+                  "@researchforce/dl",
+                  "@researchforce/ops",
+                  "@researchforce/tools",
+                  "@researchforce/kernel/*",
+                  "@researchforce/markdown/*",
+                  "@researchforce/manifest/*",
+                  "@researchforce/design/*",
+                  "@researchforce/public-render/*",
+                  "@researchforce/search-public/*",
+                  "@researchforce/db/*",
+                  "@researchforce/testing/*",
+                  "@researchforce/app/*",
+                  "@researchforce/site-shell/*",
+                  "@researchforce/submit/*",
+                  "@researchforce/dl/*",
+                  "@researchforce/ops/*",
+                  "@researchforce/tools/*"
+                ],
+                "message": "Import violates the design.md dependency boundary for domain."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "packages/kernel/src/**/*",
+        "packages/kernel/web/src/**/*"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "@researchforce/markdown",
+                  "@researchforce/manifest",
+                  "@researchforce/design",
+                  "@researchforce/public-render",
+                  "@researchforce/search-public",
+                  "@researchforce/db",
+                  "@researchforce/testing",
+                  "@researchforce/app",
+                  "@researchforce/site-shell",
+                  "@researchforce/submit",
+                  "@researchforce/dl",
+                  "@researchforce/ops",
+                  "@researchforce/tools",
+                  "@researchforce/markdown/*",
+                  "@researchforce/manifest/*",
+                  "@researchforce/design/*",
+                  "@researchforce/public-render/*",
+                  "@researchforce/search-public/*",
+                  "@researchforce/db/*",
+                  "@researchforce/testing/*",
+                  "@researchforce/app/*",
+                  "@researchforce/site-shell/*",
+                  "@researchforce/submit/*",
+                  "@researchforce/dl/*",
+                  "@researchforce/ops/*",
+                  "@researchforce/tools/*"
+                ],
+                "message": "Import violates the design.md dependency boundary for kernel."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "packages/markdown/src/**/*",
+        "packages/markdown/web/src/**/*"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "@researchforce/kernel",
+                  "@researchforce/manifest",
+                  "@researchforce/design",
+                  "@researchforce/public-render",
+                  "@researchforce/search-public",
+                  "@researchforce/db",
+                  "@researchforce/testing",
+                  "@researchforce/app",
+                  "@researchforce/site-shell",
+                  "@researchforce/submit",
+                  "@researchforce/dl",
+                  "@researchforce/ops",
+                  "@researchforce/tools",
+                  "@researchforce/kernel/*",
+                  "@researchforce/manifest/*",
+                  "@researchforce/design/*",
+                  "@researchforce/public-render/*",
+                  "@researchforce/search-public/*",
+                  "@researchforce/db/*",
+                  "@researchforce/testing/*",
+                  "@researchforce/app/*",
+                  "@researchforce/site-shell/*",
+                  "@researchforce/submit/*",
+                  "@researchforce/dl/*",
+                  "@researchforce/ops/*",
+                  "@researchforce/tools/*"
+                ],
+                "message": "Import violates the design.md dependency boundary for markdown."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "packages/manifest/src/**/*",
+        "packages/manifest/web/src/**/*"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "@researchforce/kernel",
+                  "@researchforce/markdown",
+                  "@researchforce/design",
+                  "@researchforce/public-render",
+                  "@researchforce/search-public",
+                  "@researchforce/db",
+                  "@researchforce/testing",
+                  "@researchforce/app",
+                  "@researchforce/site-shell",
+                  "@researchforce/submit",
+                  "@researchforce/dl",
+                  "@researchforce/ops",
+                  "@researchforce/tools",
+                  "@researchforce/kernel/*",
+                  "@researchforce/markdown/*",
+                  "@researchforce/design/*",
+                  "@researchforce/public-render/*",
+                  "@researchforce/search-public/*",
+                  "@researchforce/db/*",
+                  "@researchforce/testing/*",
+                  "@researchforce/app/*",
+                  "@researchforce/site-shell/*",
+                  "@researchforce/submit/*",
+                  "@researchforce/dl/*",
+                  "@researchforce/ops/*",
+                  "@researchforce/tools/*"
+                ],
+                "message": "Import violates the design.md dependency boundary for manifest."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "packages/design/src/**/*",
+        "packages/design/web/src/**/*"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "@researchforce/kernel",
+                  "@researchforce/markdown",
+                  "@researchforce/manifest",
+                  "@researchforce/public-render",
+                  "@researchforce/search-public",
+                  "@researchforce/db",
+                  "@researchforce/testing",
+                  "@researchforce/app",
+                  "@researchforce/site-shell",
+                  "@researchforce/submit",
+                  "@researchforce/dl",
+                  "@researchforce/ops",
+                  "@researchforce/tools",
+                  "@researchforce/kernel/*",
+                  "@researchforce/markdown/*",
+                  "@researchforce/manifest/*",
+                  "@researchforce/public-render/*",
+                  "@researchforce/search-public/*",
+                  "@researchforce/db/*",
+                  "@researchforce/testing/*",
+                  "@researchforce/app/*",
+                  "@researchforce/site-shell/*",
+                  "@researchforce/submit/*",
+                  "@researchforce/dl/*",
+                  "@researchforce/ops/*",
+                  "@researchforce/tools/*"
+                ],
+                "message": "Import violates the design.md dependency boundary for design."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "packages/public-render/src/**/*",
+        "packages/public-render/web/src/**/*"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "@researchforce/domain",
+                  "@researchforce/manifest",
+                  "@researchforce/search-public",
+                  "@researchforce/db",
+                  "@researchforce/testing",
+                  "@researchforce/app",
+                  "@researchforce/site-shell",
+                  "@researchforce/submit",
+                  "@researchforce/dl",
+                  "@researchforce/ops",
+                  "@researchforce/tools",
+                  "@researchforce/domain/*",
+                  "@researchforce/manifest/*",
+                  "@researchforce/search-public/*",
+                  "@researchforce/db/*",
+                  "@researchforce/testing/*",
+                  "@researchforce/app/*",
+                  "@researchforce/site-shell/*",
+                  "@researchforce/submit/*",
+                  "@researchforce/dl/*",
+                  "@researchforce/ops/*",
+                  "@researchforce/tools/*"
+                ],
+                "message": "Import violates the design.md dependency boundary for public-render."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "packages/search-public/src/**/*",
+        "packages/search-public/web/src/**/*"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "@researchforce/markdown",
+                  "@researchforce/manifest",
+                  "@researchforce/design",
+                  "@researchforce/public-render",
+                  "@researchforce/db",
+                  "@researchforce/testing",
+                  "@researchforce/app",
+                  "@researchforce/site-shell",
+                  "@researchforce/submit",
+                  "@researchforce/dl",
+                  "@researchforce/ops",
+                  "@researchforce/tools",
+                  "@researchforce/markdown/*",
+                  "@researchforce/manifest/*",
+                  "@researchforce/design/*",
+                  "@researchforce/public-render/*",
+                  "@researchforce/db/*",
+                  "@researchforce/testing/*",
+                  "@researchforce/app/*",
+                  "@researchforce/site-shell/*",
+                  "@researchforce/submit/*",
+                  "@researchforce/dl/*",
+                  "@researchforce/ops/*",
+                  "@researchforce/tools/*"
+                ],
+                "message": "Import violates the design.md dependency boundary for search-public."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "packages/db/src/**/*",
+        "packages/db/web/src/**/*"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "@researchforce/kernel",
+                  "@researchforce/markdown",
+                  "@researchforce/manifest",
+                  "@researchforce/design",
+                  "@researchforce/public-render",
+                  "@researchforce/search-public",
+                  "@researchforce/testing",
+                  "@researchforce/app",
+                  "@researchforce/site-shell",
+                  "@researchforce/submit",
+                  "@researchforce/dl",
+                  "@researchforce/ops",
+                  "@researchforce/tools",
+                  "@researchforce/kernel/*",
+                  "@researchforce/markdown/*",
+                  "@researchforce/manifest/*",
+                  "@researchforce/design/*",
+                  "@researchforce/public-render/*",
+                  "@researchforce/search-public/*",
+                  "@researchforce/testing/*",
+                  "@researchforce/app/*",
+                  "@researchforce/site-shell/*",
+                  "@researchforce/submit/*",
+                  "@researchforce/dl/*",
+                  "@researchforce/ops/*",
+                  "@researchforce/tools/*"
+                ],
+                "message": "Import violates the design.md dependency boundary for db."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "packages/testing/src/**/*",
+        "packages/testing/web/src/**/*"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "@researchforce/app",
+                  "@researchforce/site-shell",
+                  "@researchforce/submit",
+                  "@researchforce/dl",
+                  "@researchforce/ops",
+                  "@researchforce/tools",
+                  "@researchforce/app/*",
+                  "@researchforce/site-shell/*",
+                  "@researchforce/submit/*",
+                  "@researchforce/dl/*",
+                  "@researchforce/ops/*",
+                  "@researchforce/tools/*"
+                ],
+                "message": "Import violates the design.md dependency boundary for testing."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "apps/app/src/**/*",
+        "apps/app/web/src/**/*"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "@researchforce/site-shell",
+                  "@researchforce/submit",
+                  "@researchforce/dl",
+                  "@researchforce/ops",
+                  "@researchforce/tools",
+                  "@researchforce/site-shell/*",
+                  "@researchforce/submit/*",
+                  "@researchforce/dl/*",
+                  "@researchforce/ops/*",
+                  "@researchforce/tools/*"
+                ],
+                "message": "Import violates the design.md dependency boundary for app."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "apps/site-shell/src/**/*",
+        "apps/site-shell/web/src/**/*"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "@researchforce/domain",
+                  "@researchforce/kernel",
+                  "@researchforce/markdown",
+                  "@researchforce/manifest",
+                  "@researchforce/public-render",
+                  "@researchforce/db",
+                  "@researchforce/testing",
+                  "@researchforce/app",
+                  "@researchforce/submit",
+                  "@researchforce/dl",
+                  "@researchforce/ops",
+                  "@researchforce/tools",
+                  "@researchforce/domain/*",
+                  "@researchforce/kernel/*",
+                  "@researchforce/markdown/*",
+                  "@researchforce/manifest/*",
+                  "@researchforce/public-render/*",
+                  "@researchforce/db/*",
+                  "@researchforce/testing/*",
+                  "@researchforce/app/*",
+                  "@researchforce/submit/*",
+                  "@researchforce/dl/*",
+                  "@researchforce/ops/*",
+                  "@researchforce/tools/*"
+                ],
+                "message": "Import violates the design.md dependency boundary for site-shell."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "apps/submit/src/**/*",
+        "apps/submit/web/src/**/*"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "@researchforce/kernel",
+                  "@researchforce/markdown",
+                  "@researchforce/manifest",
+                  "@researchforce/design",
+                  "@researchforce/public-render",
+                  "@researchforce/search-public",
+                  "@researchforce/testing",
+                  "@researchforce/app",
+                  "@researchforce/site-shell",
+                  "@researchforce/dl",
+                  "@researchforce/ops",
+                  "@researchforce/tools",
+                  "@researchforce/kernel/*",
+                  "@researchforce/markdown/*",
+                  "@researchforce/manifest/*",
+                  "@researchforce/design/*",
+                  "@researchforce/public-render/*",
+                  "@researchforce/search-public/*",
+                  "@researchforce/testing/*",
+                  "@researchforce/app/*",
+                  "@researchforce/site-shell/*",
+                  "@researchforce/dl/*",
+                  "@researchforce/ops/*",
+                  "@researchforce/tools/*"
+                ],
+                "message": "Import violates the design.md dependency boundary for submit."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "apps/dl/src/**/*",
+        "apps/dl/web/src/**/*"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "@researchforce/kernel",
+                  "@researchforce/markdown",
+                  "@researchforce/manifest",
+                  "@researchforce/design",
+                  "@researchforce/public-render",
+                  "@researchforce/search-public",
+                  "@researchforce/testing",
+                  "@researchforce/app",
+                  "@researchforce/site-shell",
+                  "@researchforce/submit",
+                  "@researchforce/ops",
+                  "@researchforce/tools",
+                  "@researchforce/kernel/*",
+                  "@researchforce/markdown/*",
+                  "@researchforce/manifest/*",
+                  "@researchforce/design/*",
+                  "@researchforce/public-render/*",
+                  "@researchforce/search-public/*",
+                  "@researchforce/testing/*",
+                  "@researchforce/app/*",
+                  "@researchforce/site-shell/*",
+                  "@researchforce/submit/*",
+                  "@researchforce/ops/*",
+                  "@researchforce/tools/*"
+                ],
+                "message": "Import violates the design.md dependency boundary for dl."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "apps/ops/src/**/*",
+        "apps/ops/web/src/**/*"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "@researchforce/kernel",
+                  "@researchforce/markdown",
+                  "@researchforce/manifest",
+                  "@researchforce/design",
+                  "@researchforce/public-render",
+                  "@researchforce/search-public",
+                  "@researchforce/testing",
+                  "@researchforce/app",
+                  "@researchforce/site-shell",
+                  "@researchforce/submit",
+                  "@researchforce/dl",
+                  "@researchforce/tools",
+                  "@researchforce/kernel/*",
+                  "@researchforce/markdown/*",
+                  "@researchforce/manifest/*",
+                  "@researchforce/design/*",
+                  "@researchforce/public-render/*",
+                  "@researchforce/search-public/*",
+                  "@researchforce/testing/*",
+                  "@researchforce/app/*",
+                  "@researchforce/site-shell/*",
+                  "@researchforce/submit/*",
+                  "@researchforce/dl/*",
+                  "@researchforce/tools/*"
+                ],
+                "message": "Import violates the design.md dependency boundary for ops."
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

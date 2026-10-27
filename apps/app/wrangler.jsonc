@@ -1,0 +1,158 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "rf-app",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-26",
+  "workers_dev": false,
+  "preview_urls": false,
+  "d1_databases": [
+    {
+      "binding": "RF_CORE",
+      "database_name": "rf-core",
+      "database_id": "00000000-0000-4000-8000-000000000001",
+      "migrations_dir": "../../packages/db/migrations/core"
+    },
+    {
+      "binding": "RF_SEARCH",
+      "database_name": "rf-search",
+      "database_id": "00000000-0000-4000-8000-000000000002",
+      "migrations_dir": "../../packages/db/migrations/search"
+    },
+    {
+      "binding": "RF_PUBLIC",
+      "database_name": "rf-public",
+      "database_id": "00000000-0000-4000-8000-000000000003",
+      "migrations_dir": "../../packages/db/migrations/public"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "RF_PRIVATE_BUCKET",
+      "bucket_name": "rf-private"
+    },
+    {
+      "binding": "RF_PUBLIC_BUCKET",
+      "bucket_name": "rf-public"
+    }
+  ],
+  "ai": {
+    "binding": "AI"
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "PUBLISHER",
+        "class_name": "Publisher"
+      },
+      {
+        "name": "MAILER",
+        "class_name": "Mailer"
+      },
+      {
+        "name": "BUDGET",
+        "class_name": "Budget"
+      },
+      {
+        "name": "JOBS",
+        "class_name": "Jobs"
+      }
+    ]
+  },
+  "services": [
+    {
+      "binding": "OPS",
+      "service": "rf-ops"
+    }
+  ],
+  "assets": {
+    "directory": "./web/dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": [
+      "/api/*"
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": [
+        "Publisher",
+        "Mailer",
+        "Budget",
+        "Jobs"
+      ]
+    }
+  ],
+  "triggers": {
+    "crons": [
+      "* * * * *",
+      "7 * * * *"
+    ]
+  },
+  "env": {
+    "staging": {
+      "name": "rf-app-staging",
+      "workers_dev": false,
+      "preview_urls": false,
+      "d1_databases": [
+        {
+          "binding": "RF_CORE",
+          "database_name": "rf-core-staging",
+          "database_id": "00000000-0000-4000-8000-000000000001",
+          "migrations_dir": "../../packages/db/migrations/core"
+        },
+        {
+          "binding": "RF_SEARCH",
+          "database_name": "rf-search-staging",
+          "database_id": "00000000-0000-4000-8000-000000000002",
+          "migrations_dir": "../../packages/db/migrations/search"
+        },
+        {
+          "binding": "RF_PUBLIC",
+          "database_name": "rf-public-staging",
+          "database_id": "00000000-0000-4000-8000-000000000003",
+          "migrations_dir": "../../packages/db/migrations/public"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "RF_PRIVATE_BUCKET",
+          "bucket_name": "rf-private-staging"
+        },
+        {
+          "binding": "RF_PUBLIC_BUCKET",
+          "bucket_name": "rf-public-staging"
+        }
+      ],
+      "ai": {
+        "binding": "AI"
+      },
+      "durable_objects": {
+        "bindings": [
+          {
+            "name": "PUBLISHER",
+            "class_name": "Publisher"
+          },
+          {
+            "name": "MAILER",
+            "class_name": "Mailer"
+          },
+          {
+            "name": "BUDGET",
+            "class_name": "Budget"
+          },
+          {
+            "name": "JOBS",
+            "class_name": "Jobs"
+          }
+        ]
+      },
+      "services": [
+        {
+          "binding": "OPS",
+          "service": "rf-ops-staging"
+        }
+      ]
+    }
+  }
+}

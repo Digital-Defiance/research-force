@@ -1,0 +1,14 @@
+{
+  "name": "@researchforce/site-shell",
+  "version": "0.0.0",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@researchforce/design": "*",
+    "@researchforce/search-public": "*"
+  },
+  "scripts": {
+    "build": "vite build"
+  }
+}

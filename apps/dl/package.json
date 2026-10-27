@@ -1,0 +1,11 @@
+{
+  "name": "@researchforce/dl",
+  "version": "0.0.0",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@researchforce/db": "*",
+    "@researchforce/domain": "*"
+  }
+}

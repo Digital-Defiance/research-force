@@ -1,0 +1,52 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": ".cache/types",
+    "tsBuildInfoFile": ".cache/tsconfig.tsbuildinfo",
+    "jsx": "react-jsx",
+    "lib": [
+      "ES2023",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "types": [
+      "vite/client",
+      "react",
+      "react-dom"
+    ]
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx"
+  ],
+  "references": [
+    {
+      "path": "../../../packages/domain"
+    },
+    {
+      "path": "../../../packages/kernel"
+    },
+    {
+      "path": "../../../packages/markdown"
+    },
+    {
+      "path": "../../../packages/manifest"
+    },
+    {
+      "path": "../../../packages/design"
+    },
+    {
+      "path": "../../../packages/public-render"
+    },
+    {
+      "path": "../../../packages/search-public"
+    },
+    {
+      "path": "../../../packages/db"
+    },
+    {
+      "path": "../../../packages/testing"
+    }
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "name": "research-force",
+  "version": "0.0.0",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "packageManager": "npm@11.21.1",
+  "workspaces": [
+    "packages/*",
+    "apps/*",
+    "tools"
+  ],
+  "scripts": {
+    "lint": "oxlint && stylelint '**/*.css' && node scripts/check-boundaries.mjs",
+    "typecheck": "node scripts/check-boundaries.mjs && tsc -b",
+    "test": "vitest --run",
+    "build": "npm run build --workspace @researchforce/app && npm run build --workspace @researchforce/site-shell",
+    "ci": "npm run lint && npm run typecheck && npm test",
+    "check:workers": "node scripts/check-workers.mjs",
+    "db:generate": "drizzle-kit generate --config packages/db/drizzle/core.config.ts && drizzle-kit generate --config packages/db/drizzle/search.config.ts && drizzle-kit generate --config packages/db/drizzle/public.config.ts",
+    "test:nightly": "FC_RUNS=1000 vitest --run"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "npm:@cloudflare/vitest-plugin@1.4.8",
+    "@cloudflare/workers-types": "5.20261027.1",
+    "@playwright/test": "^1.56.1",
+    "@types/node": "^22.19.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^5.0.4",
+    "drizzle-kit": "0.31.11",
+    "drizzle-orm": "0.45.4",
+    "fast-check": "^4.3.0",
+    "hono": "^4.10.3",
+    "oxlint": "^1.26.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-router": "^7.9.4",
+    "stylelint": "^16.25.0",
+    "typescript": "~6.0.3",
+    "vite": "^8.0.0",
+    "vitest": "~4.1.12",
+    "wrangler": "^4.45.0",
+    "zod": "4.6.6"
+  },
+  "overrides": {
+    "@esbuild-kit/core-utils": {
+      "esbuild": "0.25.12"
+    }
+  }
+}
