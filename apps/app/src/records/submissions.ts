@@ -23,11 +23,13 @@ export interface SubmissionStart {
   /** A normal Submission completes in the batch that creates its units; imports and acceptances complete later. */
   readonly complete: boolean;
   readonly counts?: Readonly<Record<string, number>>;
+  /** Notifications and emails about the Submission say that it includes a Group_Note (R41.11, R41.12). */
+  readonly hasGroupNote?: boolean;
 }
 export function addSubmission(batch: GuardedBatch, start: SubmissionStart): GuardedBatch {
   return batch.insert(submissions, {
     id: start.id, memberId: start.memberId, kind: start.kind, startedAt: start.now, completedAt: start.complete ? start.now : null,
-    ...(start.counts === undefined ? {} : { counts: { ...start.counts } }),
+    ...(start.counts === undefined ? {} : { counts: { ...start.counts } }), hasGroupNote: start.hasGroupNote ?? false,
   });
 }
 /** Makes every unit of an import or acceptance visible in one step, in its final batch (R18.2). */

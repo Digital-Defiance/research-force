@@ -39,6 +39,8 @@ export const SUBMISSION_KINDS = ['member', 'outside_acceptance', 'bulk_import', 
 export type SubmissionKind = typeof SUBMISSION_KINDS[number];
 export const OUTSIDE_SUBMISSION_TYPES = ['material', 'correction', 'comment', 'removal_request'] as const;
 export type OutsideSubmissionType = typeof OUTSIDE_SUBMISSION_TYPES[number];
+export const CONSENT_STATUSES = ['not_asked', 'requested', 'granted', 'refused'] as const;
+export type ConsentStatus = typeof CONSENT_STATUSES[number];
 export type ClassificationState = 'unclassified' | 'classified';
 export type PublicPresentation = 'summary_only' | 'full_content';
 

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { dateSortKey, todayInZone } from '../dates';
 import { cpLength, isBlank } from '../text';
+import { CONSENT_STATUSES } from '../types';
 import type { ItemKind } from '../types';
 import type { RichText } from '../richtext';
 import { BUILT_IN_VALUE_IDS } from '../value-sets';
@@ -27,6 +28,13 @@ export function partySchema(context: ValidationContext) {
   return z.discriminatedUnion('kind', [
     z.strictObject({ kind: z.literal('member'), id: knownId(context.members.map((member) => member.id), 'Member') }),
     z.strictObject({ kind: z.literal('external'), id: knownId(context.externalPartyIds, 'External Party') }),
+  ]);
+}
+/** A Correspondence Party; each External_Party carries its Consent_Status for this Correspondence, initially Not_Asked (R34.1). */
+export function correspondencePartySchema(context: ValidationContext) {
+  return z.discriminatedUnion('kind', [
+    z.strictObject({ kind: z.literal('member'), id: knownId(context.members.map((member) => member.id), 'Member') }),
+    z.strictObject({ kind: z.literal('external'), id: knownId(context.externalPartyIds, 'External Party'), consent: z.enum(CONSENT_STATUSES).prefault('not_asked') }),
   ]);
 }
 export function rightsFields(context: ValidationContext, existing = false) {
@@ -106,8 +114,14 @@ function buildResearchItemSchema(kind: ItemKind, context: ValidationContext, opt
     }
     case 'finding': {
       const status = selectedValue(context, 'finding_status', 'statusValueId');
-      return finish(z.strictObject({ ...common, kind: z.literal('finding'), statusValueId: existing ? status : status.prefault(BUILT_IN_VALUE_IDS.findingOpen), claim: richTextSchema(2000, true), scopeCaveat: richTextSchema(2000, true), withdrawalReason: textField(1000).optional() }), (raw, report) => {
+      return finish(z.strictObject({
+        ...common, kind: z.literal('finding'), statusValueId: existing ? status : status.prefault(BUILT_IN_VALUE_IDS.findingOpen), claim: richTextSchema(2000, true), scopeCaveat: richTextSchema(2000, true),
+        withdrawalReason: textField(1000).optional(), supersededById: idSchema.optional(),
+      }), (raw, report) => {
         if (raw['statusValueId'] === BUILT_IN_VALUE_IDS.findingWithdrawn && (raw['withdrawalReason'] === undefined || (typeof raw['withdrawalReason'] === 'string' && isBlank(raw['withdrawalReason'])))) report(['withdrawalReason'], 'A Withdrawn Finding needs a non-blank reason.');
+        const superseded = raw['statusValueId'] === BUILT_IN_VALUE_IDS.findingSuperseded;
+        if (superseded && raw['supersededById'] === undefined) report(['supersededById'], 'A Superseded Finding needs the Finding that supersedes it.');
+        if (!superseded && raw['supersededById'] !== undefined) report(['supersededById'], 'Only a Superseded Finding names a superseding Finding.');
       });
     }
     case 'source':
@@ -136,13 +150,13 @@ function buildResearchItemSchema(kind: ItemKind, context: ValidationContext, opt
       });
     }
     case 'correspondence':
-      return finish(z.strictObject({ ...common, kind: z.literal('correspondence'), date: fullDateSchema, channel: z.string().prefault(''), direction: z.enum(['sent', 'received']), content: richTextSchema().prefault({ text: '', spans: [] }), parties: z.array(partySchema(context)).min(2) }), (raw, report) => {
+      return finish(z.strictObject({ ...common, kind: z.literal('correspondence'), date: fullDateSchema, channel: z.string().prefault(''), direction: z.enum(['sent', 'received']), content: richTextSchema().prefault({ text: '', spans: [] }), parties: z.array(correspondencePartySchema(context)).min(2) }), (raw, report) => {
         const date = fullDateSchema.safeParse(raw['date']);
         if (date.success && date.data.value > todayInZone(context.now, context.timeZone).value) report(['date'], 'The Correspondence date cannot be after today in the saving Member’s time zone.');
         if (Array.isArray(raw['parties'])) {
           const seen = new Set<string>();
           for (const [index, party] of raw['parties'].entries()) {
-            const parsed = partySchema(context).safeParse(party);
+            const parsed = correspondencePartySchema(context).safeParse(party);
             if (!parsed.success) continue;
             const key = `${parsed.data.kind}:${parsed.data.id}`;
             if (seen.has(key)) report(['parties', index], 'Choose each Party at most once.');

@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { check, index, integer, primaryKey, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
-import { ITEM_KINDS, LEVELS, UNIT_TYPES } from '@researchforce/domain/types';
+import { CONSENT_STATUSES, ITEM_KINDS, LEVELS, UNIT_TYPES } from '@researchforce/domain/types';
 import type { CreditEntry, DisclosureLine } from '@researchforce/domain/types';
 import { FILE_KIND_EXTENSIONS } from '@researchforce/domain/file-kinds';
 import type { FileKind } from '@researchforce/domain/file-kinds';
@@ -10,7 +10,7 @@ export const CLASSIFICATION_STATES = ['unclassified', 'classified'] as const;
 export const PUBLIC_PRESENTATIONS = ['summary_only', 'full_content'] as const;
 export const SOURCE_KINDS = ['primary', 'secondary'] as const;
 export const PARTY_KINDS = ['member', 'external'] as const;
-export const CONSENT_STATUSES = ['not_asked', 'requested', 'granted', 'refused'] as const;
+export { CONSENT_STATUSES };
 export const DIRECTIONS = ['sent', 'received'] as const;
 export const SECTION_GROUP_KINDS = ['list', 'table'] as const;
 export const REVIEW_STATES = ['needs_review', 'reviewed'] as const;
@@ -127,6 +127,7 @@ export const findings = sqliteTable('findings', {
   claimSpans: spans('claim_spans'),
   scopeCaveat: text('scope_caveat').notNull(),
   scopeCaveatSpans: spans('scope_caveat_spans'),
+  supersededById: text('superseded_by_id'), // the designated superseding Finding while Superseded (R5.4)
 });
 
 export const sources = sqliteTable('sources', {

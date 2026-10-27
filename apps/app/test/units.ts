@@ -6,8 +6,10 @@ import type { ItemKind, Timestamp, ULID } from '@researchforce/domain/types';
 
 /** Remove every synthetic unit, link, Submission, Project, and External_Party; issued identifiers stay registered. */
 export async function resetRecords(core: D1Database): Promise<void> {
-  await core.batch(['units', 'research_items', 'attachments', 'entry_sections', 'replies', 'dissent_notes', 'submissions', 'cross_links', 'deletions', 'external_parties', 'projects']
-    .map((table) => core.prepare(`DELETE FROM ${table}`)));
+  await core.batch([
+    'units', 'research_items', 'attachments', 'entry_sections', 'replies', 'dissent_notes', 'submissions', 'cross_links', 'deletions', 'external_parties', 'projects',
+    'journal_entries', 'je_members', 'findings', 'sources', 'runs', 'run_counts', 'hypotheses', 'correspondences', 'correspondence_parties', 'archival_requests', 'topics', 'revisions',
+  ].map((table) => core.prepare(`DELETE FROM ${table}`)));
 }
 
 let projectCount = 0;

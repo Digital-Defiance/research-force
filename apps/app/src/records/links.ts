@@ -9,6 +9,7 @@ import type { Timestamp, ULID } from '@researchforce/domain/types';
 import type { ApiEnv } from '../api/app';
 import { ApiError, isUniqueViolation } from '../api/errors';
 import type { FieldIssue } from '../api/errors';
+import { checkLinkRemoval, guardStatusLinks } from './status-links';
 import { visibleTo } from './submissions';
 
 export interface LinkInput { readonly originId: string; readonly targetId: string; readonly relationValueId?: string | null | undefined }
@@ -82,8 +83,9 @@ export function writeLinks(batch: GuardedBatch, links: readonly LinkInput[], act
     id: newULID(actor.now), originId: link.originId, targetId: link.targetId, relationValueId: link.relationValueId ?? null, addedBy: actor.id, addedAt: actor.now,
   }));
   const ends = ids(links.flatMap((link) => [link.originId, link.targetId]));
-  batch.guard('rev', sql`NOT EXISTS (SELECT 1 FROM json_each(${ends}) j WHERE NOT EXISTS (SELECT 1 FROM units u WHERE u.id = j.value))`).bulkInsert(crossLinks, rows);
-  for (const end of JSON.parse(ends) as string[]) batch.outbox('publish', `unit:${end}`);
+  batch.guard('rev', sql`NOT EXISTS (SELECT 1 FROM json_each(${ends}) j WHERE NOT EXISTS (SELECT 1 FROM units u WHERE u.id = j.value))`)
+    .bulkInsert(crossLinks, rows)
+    .outboxMany('publish', (JSON.parse(ends) as string[]).map((end) => `unit:${end}`));
   return rows.map((row) => row.id);
 }
 
@@ -113,14 +115,18 @@ export async function activeLink(c: Context<ApiEnv>, id: string): Promise<{ id: 
   return link;
 }
 
-/** Remove a link, keeping it with the removing Member and time for the origin's history (R15.4). */
+/**
+ * Remove a link, keeping it with the removing Member and time for the origin's history (R15.4). A link that a
+ * Finding or Hypothesis status still needs stays until the status changes (R5.9, R8.2).
+ */
 export async function removeLink(c: Context<ApiEnv>, link: { readonly id: ULID; readonly originId: ULID; readonly targetId: ULID }): Promise<LinkEntry> {
+  await checkLinkRemoval(c, link);
   const actor = { id: c.get('session').member.id, now: c.get('now') };
-  await new GuardedBatch(c.env.RF_CORE, actor)
+  const batch = new GuardedBatch(c.env.RF_CORE, actor)
     .guard('rev', sql`EXISTS (SELECT 1 FROM cross_links WHERE id = ${link.id} AND removed_at IS NULL)`)
-    .update(crossLinks, { removedBy: actor.id, removedAt: actor.now }, eq(crossLinks.id, link.id))
-    .outbox('publish', `unit:${link.originId}`).outbox('publish', `unit:${link.targetId}`)
-    .commit(c.get('accountant'));
+    .update(crossLinks, { removedBy: actor.id, removedAt: actor.now }, eq(crossLinks.id, link.id));
+  guardStatusLinks(batch, [link.originId, link.targetId]);
+  await batch.outbox('publish', `unit:${link.originId}`).outbox('publish', `unit:${link.targetId}`).commit(c.get('accountant'));
   return (await linkEntries(c, { originId: link.originId, ids: [link.id], removed: true })).entries[0]!;
 }
 

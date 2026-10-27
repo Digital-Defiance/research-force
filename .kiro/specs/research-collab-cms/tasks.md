@@ -422,37 +422,37 @@ Tests use synthetic data only. No task copies, quotes, or commits content from t
     - **Property 99: External_Party duplicate detection ignores case and diacritics**
     - **Validates: Requirements 9.2**
 
-- [ ] 18. Build the Research_Item kinds with the Log_Summary and the Group_Note
-  - [ ] 18.1 Implement Journal_Entries in `apps/app/src/records/kinds/journal.ts`
+- [x] 18. Build the Research_Item kinds with the Log_Summary and the Group_Note
+  - [x] 18.1 Implement Journal_Entries in `apps/app/src/records/kinds/journal.ts`
     - Title, optional Campaign_Status from the set, phase identifier, start and end dates, related Members, and 1 to 5,000 ordered Entry_Sections; edits that add, change, reorder, or remove sections keep each surviving section's Disclosure_Level, Classification_State, Revisions, and Cross_Links, with the growth rule for entries larger than the caps
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.7, 4.8_
-  - [ ] 18.2 Implement Findings in `apps/app/src/records/kinds/finding.ts`
+  - [x] 18.2 Implement Findings in `apps/app/src/records/kinds/finding.ts`
     - Default Finding_Status Open; the `evidence` guard for Confirmed and the `superseding` guard for Superseded, counting links saved in the same change; removal of the last such link refused with "change the Finding_Status first"; Withdrawn at submission needs a reason
     - _Requirements: 5.1, 5.3, 5.4, 5.5, 5.8, 5.9_
-  - [ ] 18.3 Implement Sources and Runs in `apps/app/src/records/kinds/source.ts` and `apps/app/src/records/kinds/run.ts`
+  - [x] 18.3 Implement Sources and Runs in `apps/app/src/records/kinds/source.ts` and `apps/app/src/records/kinds/run.ts`
     - Source fields with the recoverer as a Member or External_Party, rights fields defaulting to Unknown, and partial document dates stored as given; Run fields, start time to the second with a zone, end time, Resume_Point, notes, and up to 20 counts stored as digit strings and never converted to numbers
     - _Requirements: 6.1, 6.2, 6.4, 6.6, 6.7, 7.1, 7.2, 7.3, 7.5, 7.8, 7.9, 33.1, 33.2_
-  - [ ] 18.4 Implement Hypotheses in `apps/app/src/records/kinds/hypothesis.ts`
+  - [x] 18.4 Implement Hypotheses in `apps/app/src/records/kinds/hypothesis.ts`
     - Start Open; Eliminated needs a non-blank Elimination_Scope and an Evidence_Link with a Run or Finding, re-checked on edits and link removals; reopening by the Owner or an Administrator needs a reason and records a Status_Change with the previous Elimination_Scope; an Elimination_Scope change while Eliminated must be a Correction
     - _Requirements: 8.1, 8.2, 8.4, 8.6, 8.7, 8.9_
-  - [ ] 18.5 Implement Correspondences in `apps/app/src/records/kinds/correspondence.ts`
+  - [x] 18.5 Implement Correspondences in `apps/app/src/records/kinds/correspondence.ts`
     - Title, date, channel, direction, content, at least two Parties, and one Consent_Status per External_Party per Correspondence, initially Not_Asked
     - Automatic consequence in the same batch: a Public Correspondence that gains a non-Granted External_Party or loses a Granted consent becomes Withheld with `prefillCorrespondenceLine`, with a Disclosure_Change attributed to the saving Member
     - _Requirements: 9.1, 9.3, 9.4, 9.5, 9.6, 34.1, 34.3_
-  - [ ] 18.6 Implement Archival_Requests and Topics in `apps/app/src/records/kinds/archival.ts` and `apps/app/src/records/kinds/topic.ts`
+  - [x] 18.6 Implement Archival_Requests and Topics in `apps/app/src/records/kinds/archival.ts` and `apps/app/src/records/kinds/topic.ts`
     - Archive or desk and contact as Parties; the Sent and Replied rules; reply date and content as fields separate from the Thread; `isFollowUpDue(request, interval, ownerZone)`; Topics with title and body
     - _Requirements: 10.1, 10.2, 10.6, 10.7, 16.1_
-  - [ ] 18.7 Implement the Log_Summary and the Group_Note in `apps/app/src/records/log-summary.ts`
+  - [x] 18.7 Implement the Log_Summary and the Group_Note in `apps/app/src/records/log-summary.ts`
     - Log_Summary required at submission for every kind except Journal_Entry and Topic; the `log_summary_owner` guard refuses any change by another Member, even inside a request that changes other fields; an edit that empties an existing Log_Summary is refused with "a Log_Summary can be changed but not removed"; changes are Revisions with previous text and labels
     - A non-empty Group_Note is posted in the same Submission as a Reply flagged `is_group_note`, owned and credited by the submitter, placed first in the Thread
     - _Requirements: 41.1, 41.2, 41.3, 41.4, 41.5, 41.6, 41.7, 41.8, 41.15_
-  - [ ] 18.8 Implement the Item routes in `apps/app/src/api/routes/items.ts`
+  - [x] 18.8 Implement the Item routes in `apps/app/src/api/routes/items.ts`
     - `POST /items/{kind}`, `GET /items/{id}`, and `PATCH /items/{id}`; the item response carries the Owner's display name and current Specialties, the Credit, the Project name, and each unit's Disclosure_Level and Effective_Disclosure computed with the kernel over the loaded ancestors
     - _Requirements: 3.5, 23.9, 39.15_
-  - [ ]* 18.9 Write property test for Journal_Entry edits
+  - [x]* 18.9 Write property test for Journal_Entry edits
     - **Property 32: Journal_Entry edits preserve surviving sections and their order**
     - **Validates: Requirements 4.4, 4.8**
-  - [ ]* 18.10 Write property test for the acting Member
+  - [x]* 18.10 Write property test for the acting Member
     - **Property 22: The acting Member is the session Member**
     - **Validates: Requirements 1.7, 2.10**
 

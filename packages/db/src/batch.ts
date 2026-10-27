@@ -181,6 +181,14 @@ export class GuardedBatch {
     return this.run(this.#orm.insert(outbox).values({ topic, scope, changeSeq: CHANGE_SEQ, createdAt: this.actor.now }));
   }
 
+  /** One outbox row per distinct scope, in one statement, in the order given. */
+  outboxMany(topic: typeof OUTBOX_TOPICS[number], scopes: readonly string[]): this {
+    const distinct = [...new Set(scopes)];
+    if (distinct.length === 0) return this;
+    return this.#push(sql`INSERT INTO outbox (topic, scope, change_seq, created_at)
+      SELECT ${topic}, value, ${CHANGE_SEQ}, ${this.actor.now} FROM json_each(${JSON.stringify(distinct)}) ORDER BY key`);
+  }
+
   /** Run the batch. A failing guard aborts everything and surfaces as a GuardViolation naming its rule. */
   async commit(accountant?: RequestAccountant): Promise<D1Result[]> {
     if (this.size > OPERATIONS.maxD1Statements) throw new BatchTooLarge(this.size);
@@ -216,8 +224,9 @@ export class GuardedBatch {
   }
 }
 
-function* chunks(rows: readonly unknown[][]): Generator<unknown[][]> {
-  let current: unknown[][] = [];
+/** Rows grouped so that each group's JSON stays below the size D1 accepts for one parameter. */
+export function* chunks<T>(rows: readonly T[]): Generator<T[]> {
+  let current: T[] = [];
   let length = 2;
   for (const row of rows) {
     const size = JSON.stringify(row).length + 1;
