@@ -45,6 +45,12 @@ export function isDailyLimitError(error: unknown): boolean {
   return false;
 }
 
+/** Whether a D1 error, or any error it wraps, is a UNIQUE violation of `table.column`. */
+export function isUniqueViolation(error: unknown, column: string): boolean {
+  for (let current: unknown = error; current instanceof Error; current = current.cause) if (current.message.includes(`UNIQUE constraint failed: ${column}`)) return true;
+  return false;
+}
+
 const GUARD_ERRORS: Readonly<Partial<Record<GuardCode, ErrorCode>>> = { rev: 'conflict', chain_tip: 'conflict', decision_open: 'conflict', preview_fresh: 'preview_stale', frozen: 'frozen' };
 
 /** The API error for anything a handler throws. Unknown errors become `internal` without their message. */

@@ -1,3 +1,4 @@
+import type { OpsAccess } from '@researchforce/domain/ops';
 import type { Budget, Jobs, Mailer, Publisher } from './durable-objects';
 
 export interface Env {
@@ -8,7 +9,7 @@ export interface Env {
   RF_PUBLIC_BUCKET: R2Bucket;
   AI: Ai;
   ASSETS: Fetcher;
-  OPS: Fetcher;
+  OPS: Fetcher & OpsAccess;
   PUBLISHER: DurableObjectNamespace<Publisher>;
   MAILER: DurableObjectNamespace<Mailer>;
   BUDGET: DurableObjectNamespace<Budget>;

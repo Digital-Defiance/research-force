@@ -12,7 +12,7 @@ export const SESSION_HOURS = 24;
 export const ACCESS_LOGOUT_PATH = '/cdn-cgi/access/logout';
 
 /** The acting Member; handlers take it only from here, never from a request body (R1.7). */
-export interface SessionMember { readonly id: ULID; readonly roleId: string }
+export interface SessionMember { readonly id: ULID; readonly roleId: ULID }
 export interface Session { readonly tokenHash: string; readonly member: SessionMember; readonly establishedAt: Timestamp }
 
 export async function sessionKey(token: string): Promise<string> {
@@ -20,8 +20,8 @@ export async function sessionKey(token: string): Promise<string> {
   return Array.from(digest, (byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 
-interface SessionRow { memberId: ULID; establishedAt: Timestamp; endedAt: Timestamp | null; roleId: string; status: MemberStatus }
-interface MemberRow { id: ULID; roleId: string; status: MemberStatus }
+interface SessionRow { memberId: ULID; establishedAt: Timestamp; endedAt: Timestamp | null; roleId: ULID; status: MemberStatus }
+interface MemberRow { id: ULID; roleId: ULID; status: MemberStatus }
 
 /**
  * The session for a verified assertion, created on its first request. Role and Member_Status are read

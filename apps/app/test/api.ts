@@ -3,10 +3,12 @@ import { members } from '@researchforce/db/schema/core';
 import { emailKey, newULID } from '@researchforce/domain/identifiers';
 import { ROLE_IDS } from '@researchforce/domain/permissions';
 import type { MemberStatus, Timestamp, ULID } from '@researchforce/domain/types';
+import { FakeOps } from '@researchforce/testing/fake-ops';
 import { certsBody } from '@researchforce/testing/jwt';
 import type { SigningKey, TestAccess } from '@researchforce/testing/jwt';
 import { createApi } from '../src/api/app';
 import { AccessKeys, certsUrl } from '../src/auth/jwt';
+import type { Env } from '../src/env';
 import { createLogger } from '../src/log';
 
 export const WORKSPACE = 'https://app.researchforce.org';
@@ -31,13 +33,30 @@ export interface TestApi {
   readonly keys: AccessKeys;
   readonly lines: string[];
   readonly clock: { now: Date };
+  readonly ops: FakeOps;
 }
-export function testApi(access: TestAccess, server: KeyServer, now: Date, cache: Cache | null = null): TestApi {
+export function testApi(access: TestAccess, server: KeyServer, now: Date, options: { readonly cache?: Cache | null; readonly ops?: FakeOps } = {}): TestApi {
   const clock = { now };
   const lines: string[] = [];
-  const keys = new AccessKeys(certsUrl(access), { fetch: server.fetch, cache, now: () => clock.now.getTime() });
-  const app = createApi({ access, keys, workspaceOrigin: WORKSPACE, log: createLogger((line) => lines.push(line)), clock: () => clock.now });
-  return { app, keys, lines, clock };
+  const ops = options.ops ?? new FakeOps();
+  const keys = new AccessKeys(certsUrl(access), { fetch: server.fetch, cache: options.cache ?? null, now: () => clock.now.getTime() });
+  const app = createApi({ access, keys, workspaceOrigin: WORKSPACE, log: createLogger((line) => lines.push(line)), clock: () => clock.now, ops });
+  return { app, keys, lines, clock, ops };
+}
+
+/** A JSON API call with the session of `token`, including the CSRF header and Workspace origin for writes. */
+export async function call(api: TestApi, bindings: Env, token: string | undefined, method: string, path: string, body?: unknown): Promise<Response> {
+  return api.app.fetch(request(`/api/v1${path}`, token, {
+    method, ...(body === undefined ? {} : { body: JSON.stringify(body), headers: { 'content-type': 'application/json' } }),
+  }), bindings);
+}
+
+/** Remove every Member, session, invitation email, outbox row, and added Role. */
+export async function resetPeople(core: D1Database): Promise<void> {
+  await core.batch([
+    core.prepare('DELETE FROM sessions'), core.prepare('DELETE FROM members'), core.prepare('DELETE FROM outgoing_emails'), core.prepare('DELETE FROM outbox'),
+    core.prepare('DELETE FROM role_permissions WHERE role_id IN (SELECT id FROM roles WHERE builtin = 0)'), core.prepare('DELETE FROM roles WHERE builtin = 0'),
+  ]);
 }
 
 export function request(path: string, token: string | undefined, init: RequestInit = {}): Request {
@@ -54,9 +73,9 @@ export async function resetIdentity(core: D1Database): Promise<void> {
   await core.batch([core.prepare('DELETE FROM sessions'), core.prepare('DELETE FROM members')]);
 }
 
-export async function addMember(core: D1Database, email: string, status: MemberStatus, now: Timestamp): Promise<ULID> {
+export async function addMember(core: D1Database, email: string, status: MemberStatus, now: Timestamp, roleId: ULID = ROLE_IDS.contributor): Promise<ULID> {
   const id = newULID(now);
-  await new GuardedBatch(core, { id: null, now }).insert(members, { id, email, emailLc: emailKey(email), roleId: ROLE_IDS.contributor, status, createdAt: now }).commit();
+  await new GuardedBatch(core, { id: null, now }).insert(members, { id, email, emailLc: emailKey(email), roleId, status, createdAt: now }).commit();
   return id;
 }
 

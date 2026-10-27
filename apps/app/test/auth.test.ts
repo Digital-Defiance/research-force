@@ -55,14 +55,14 @@ describe('Access key set', () => {
   it('shares the key set through the Cache API for an hour', async () => {
     const cache = await caches.open(`rf-access-keys-${crypto.randomUUID()}`);
     const first = new KeyServer(access);
-    const a = testApi(access, first, t0, cache);
+    const a = testApi(access, first, t0, { cache });
     await verifyAccessAssertion(await sign(0, t0), access, a.keys, t0);
     const second = new KeyServer(access);
-    const b = testApi(access, second, later(3599), cache);
+    const b = testApi(access, second, later(3599), { cache });
     await verifyAccessAssertion(await sign(0, b.clock.now), access, b.keys, b.clock.now);
     expect([first.calls, second.calls]).toEqual([1, 0]);
     const third = new KeyServer(access);
-    const c = testApi(access, third, later(3600), cache);
+    const c = testApi(access, third, later(3600), { cache });
     await verifyAccessAssertion(await sign(0, c.clock.now), access, c.keys, c.clock.now);
     expect(third.calls).toBe(1);
   });

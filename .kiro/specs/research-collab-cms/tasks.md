@@ -349,28 +349,28 @@ Tests use synthetic data only. No task copies, quotes, or commits content from t
     - Logout ends the session for that browser; logged lines contain no `Authorization` header, token, email address, or body text
     - _Requirements: 1.9, 20.20_
 
-- [ ] 14. Build access control, Members, and the `rf-ops` access sync
-  - [ ] 14.1 Create the `rf-ops` RPC entrypoint with Access list sync in `apps/ops/src/index.ts` and `apps/ops/src/access.ts`
+- [x] 14. Build access control, Members, and the `rf-ops` access sync
+  - [x] 14.1 Create the `rf-ops` RPC entrypoint with Access list sync in `apps/ops/src/index.ts` and `apps/ops/src/access.ts`
     - A `WorkerEntrypoint` with no `fetch` route and methods `addMember(email)`, `removeMember(email)`, and `revokeSessions(email)` against the `rf-members` Access list and Access's revoke-user-sessions endpoint
     - `packages/testing/src/fake-ops.ts`: an in-memory fake of `rf-ops` for tests
     - _Requirements: 2.1, 2.9_
-  - [ ] 14.2 Enforce Permissions in handlers and add the Roles API in `apps/app/src/auth/authorize.ts` and `apps/app/src/api/routes/roles.ts`
+  - [x] 14.2 Enforce Permissions in handlers and add the Roles API in `apps/app/src/auth/authorize.ts` and `apps/app/src/api/routes/roles.ts`
     - Every handler checks all Permissions it needs with `canAll` before running any statement and refuses the whole request otherwise; read routes allow every active Member in every Role
     - `GET/POST /roles` with built-in Roles fixed and added Roles limited to existing Permissions; every Role picker lists all Roles
     - _Requirements: 2.3, 2.6, 2.7, 2.8_
-  - [ ] 14.3 Implement invitations in `apps/app/src/api/routes/members.ts`
+  - [x] 14.3 Implement invitations in `apps/app/src/api/routes/members.ts`
     - `POST /members/invite`: validate, upsert the Member as Pending with the selected Role and `created_at` set to the invitation time, call `rf-ops.addMember`, and queue an `outgoing_emails` invitation row for the Mailer in the same batch as the Member change
     - _Requirements: 2.1, 2.2, 2.13_
-  - [ ] 14.4 Implement Role changes and revocation in `apps/app/src/api/routes/members.ts`
+  - [x] 14.4 Implement Role changes and revocation in `apps/app/src/api/routes/members.ts`
     - `PATCH /members/{id}/role` and `POST /members/{id}/revoke` with the `last_admin` guard inside the batch; revocation sets Revoked, calls `rf-ops.removeMember` and `revokeSessions`, and leaves every record's attribution unchanged
     - _Requirements: 2.9, 2.10, 2.11_
-  - [ ]* 14.5 Write property test for Permission decisions
+  - [x]* 14.5 Write property test for Permission decisions
     - **Property 23: Permission decisions match the Role_Permission_Map**
     - **Validates: Requirements 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 3.2, 13.8, 34.10, 41.3, 41.4, 42.5, 42.6, 44.13, 45.22, 46.16, 46.39**
-  - [ ]* 14.6 Write property test for the last active Administrator
+  - [x]* 14.6 Write property test for the last active Administrator
     - **Property 24: At least one active Administrator remains**
     - **Validates: Requirements 2.11**
-  - [ ]* 14.7 Write property test for Member identity
+  - [x]* 14.7 Write property test for Member identity
     - **Property 25: Member identity invariants**
     - **Validates: Requirements 2.1, 2.2, 2.13**
 
