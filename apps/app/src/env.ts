@@ -19,4 +19,6 @@ export interface Env {
   /** Secrets: `https://<team>.cloudflareaccess.com` and the Access application's AUD tag. */
   ACCESS_TEAM_DOMAIN: string;
   ACCESS_AUD: string;
+  /** The installation's current Content_Licence name; unset until the owner chooses one (no default). */
+  CONTENT_LICENCE_NAME?: string;
 }

@@ -1,7 +1,8 @@
 import { GuardedBatch } from '@researchforce/db/batch';
-import { members } from '@researchforce/db/schema/core';
+import { members, profiles, profileSpecialties } from '@researchforce/db/schema/core';
 import { emailKey, newULID } from '@researchforce/domain/identifiers';
 import { ROLE_IDS } from '@researchforce/domain/permissions';
+import { asULID } from '@researchforce/domain/types';
 import type { MemberStatus, Timestamp, ULID } from '@researchforce/domain/types';
 import { FakeOps } from '@researchforce/testing/fake-ops';
 import { certsBody } from '@researchforce/testing/jwt';
@@ -35,12 +36,12 @@ export interface TestApi {
   readonly clock: { now: Date };
   readonly ops: FakeOps;
 }
-export function testApi(access: TestAccess, server: KeyServer, now: Date, options: { readonly cache?: Cache | null; readonly ops?: FakeOps } = {}): TestApi {
+export function testApi(access: TestAccess, server: KeyServer, now: Date, options: { readonly cache?: Cache | null; readonly ops?: FakeOps; readonly contentLicence?: string } = {}): TestApi {
   const clock = { now };
   const lines: string[] = [];
   const ops = options.ops ?? new FakeOps();
   const keys = new AccessKeys(certsUrl(access), { fetch: server.fetch, cache: options.cache ?? null, now: () => clock.now.getTime() });
-  const app = createApi({ access, keys, workspaceOrigin: WORKSPACE, log: createLogger((line) => lines.push(line)), clock: () => clock.now, ops });
+  const app = createApi({ access, keys, workspaceOrigin: WORKSPACE, log: createLogger((line) => lines.push(line)), clock: () => clock.now, ops, contentLicence: options.contentLicence ?? '' });
   return { app, keys, lines, clock, ops };
 }
 
@@ -51,10 +52,12 @@ export async function call(api: TestApi, bindings: Env, token: string | undefine
   }), bindings);
 }
 
-/** Remove every Member, session, invitation email, outbox row, and added Role. */
+/** Remove every Member, Profile and its parts, session, invitation email, outbox row, and added Role; Licence_Agreements are kept. */
 export async function resetPeople(core: D1Database): Promise<void> {
   await core.batch([
     core.prepare('DELETE FROM sessions'), core.prepare('DELETE FROM members'), core.prepare('DELETE FROM outgoing_emails'), core.prepare('DELETE FROM outbox'),
+    core.prepare('DELETE FROM profiles'), core.prepare('DELETE FROM profile_specialties'), core.prepare('DELETE FROM profile_affiliations'),
+    core.prepare('DELETE FROM notification_prefs'), core.prepare('DELETE FROM muted_projects'),
     core.prepare('DELETE FROM role_permissions WHERE role_id IN (SELECT id FROM roles WHERE builtin = 0)'), core.prepare('DELETE FROM roles WHERE builtin = 0'),
   ]);
 }
@@ -73,9 +76,18 @@ export async function resetIdentity(core: D1Database): Promise<void> {
   await core.batch([core.prepare('DELETE FROM sessions'), core.prepare('DELETE FROM members')]);
 }
 
-export async function addMember(core: D1Database, email: string, status: MemberStatus, now: Timestamp, roleId: ULID = ROLE_IDS.contributor): Promise<ULID> {
+/** A seeded Specialty for synthetic Profiles. */
+export const SPECIALTY = asULID('0000000000000000000000S001');
+
+/** A Member with, unless `profile` is false, a complete Profile named after the Member's id. */
+export async function addMember(core: D1Database, email: string, status: MemberStatus, now: Timestamp, roleId: ULID = ROLE_IDS.contributor, options: { readonly profile?: boolean } = {}): Promise<ULID> {
   const id = newULID(now);
-  await new GuardedBatch(core, { id: null, now }).insert(members, { id, email, emailLc: emailKey(email), roleId, status, createdAt: now }).commit();
+  const batch = new GuardedBatch(core, { id: null, now }).insert(members, { id, email, emailLc: emailKey(email), roleId, status, createdAt: now });
+  if (options.profile !== false) {
+    batch.insert(profiles, { memberId: id, displayName: `Member ${id}`, displayNameKey: `member ${id.toLowerCase()}`, timeZone: 'UTC' })
+      .insert(profileSpecialties, { memberId: id, valueId: SPECIALTY });
+  }
+  await batch.commit();
   return id;
 }
 

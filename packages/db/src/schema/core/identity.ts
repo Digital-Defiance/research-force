@@ -73,6 +73,13 @@ export const profiles = sqliteTable('profiles', {
   check('profiles_licence_pair', sql`(${t.licenceName} IS NULL) = (${t.licenceGivenOn} IS NULL)`),
 ]);
 
+/** Every Licence_Agreement given, one per Member and Content_Licence; the Profile's pair names the latest (R46.16). */
+export const licenceAgreements = sqliteTable('licence_agreements', {
+  memberId: text('member_id').notNull(),
+  licenceName: text('licence_name').notNull(),
+  givenOn: text('given_on').notNull(), // UTC date
+}, (t) => [primaryKey({ columns: [t.memberId, t.licenceName] })]);
+
 export const profileSpecialties = sqliteTable('profile_specialties', {
   memberId: text('member_id').notNull(),
   valueId: text('value_id').notNull(),

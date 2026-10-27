@@ -100,9 +100,9 @@ describe('sessions', () => {
 
   it('reuses one session per assertion and reads the Role as it stands on each request', async () => {
     const assertion = await token();
-    expect(await (await me(assertion)).json()).toEqual({ member: { id: memberId, roleId: ROLE_IDS.contributor } });
+    expect(await (await me(assertion)).json()).toMatchObject({ member: { id: memberId, roleId: ROLE_IDS.contributor } });
     await bindings.RF_CORE.prepare('UPDATE members SET role_id = ?1 WHERE id = ?2').bind(ROLE_IDS.administrator, memberId).run();
-    expect(await (await me(assertion)).json()).toEqual({ member: { id: memberId, roleId: ROLE_IDS.administrator } });
+    expect(await (await me(assertion)).json()).toMatchObject({ member: { id: memberId, roleId: ROLE_IDS.administrator } });
     expect(await sessionRows()).toEqual([{ memberId, endedAt: null }]);
   });
 

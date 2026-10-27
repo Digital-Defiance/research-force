@@ -15,7 +15,9 @@ import type { Logger } from '../log';
 import { csrfGuard, workspaceCors } from './csrf';
 import { ApiError, errorResponse, toApiError } from './errors';
 import type { ErrorCode } from './errors';
+import { profileGate } from '../auth/profile-gate';
 import { membersRoutes } from './routes/members';
+import { memberProfileRoutes, meRoutes } from './routes/profile';
 import { rolesRoutes } from './routes/roles';
 
 export interface ApiConfig {
@@ -26,12 +28,16 @@ export interface ApiConfig {
   readonly clock?: () => Date;
   /** `rf-ops`; the `OPS` service binding unless a test supplies a fake. */
   readonly ops?: OpsAccess;
+  /** The current Content_Licence's name; `CONTENT_LICENCE_NAME` unless a test supplies one. */
+  readonly contentLicence?: string;
 }
 export interface ApiVariables {
   accountant: RequestAccountant;
   now: Timestamp;
   log: Logger;
   ops: OpsAccess;
+  /** Empty until the installation configures a Content_Licence. */
+  contentLicence: string;
   session: Session;
   permissions: PermissionContext;
   failure: ErrorCode;
@@ -53,6 +59,7 @@ export function createApi(config: ApiConfig): Hono<ApiEnv> {
     c.set('now', clock().toISOString() as Timestamp);
     c.set('log', config.log);
     c.set('ops', config.ops ?? c.env.OPS);
+    c.set('contentLicence', (config.contentLicence ?? c.env.CONTENT_LICENCE_NAME ?? '').trim());
     await next();
     const session = c.get('session') as Session | undefined;
     const failure = c.get('failure') as ErrorCode | undefined;
@@ -70,15 +77,17 @@ export function createApi(config: ApiConfig): Hono<ApiEnv> {
     c.set('session', await establishSession(c.env.RF_CORE, assertion, c.get('accountant'), c.get('now')));
     await next();
   });
+  app.use('/api/*', profileGate);
 
   const v1 = new Hono<ApiEnv>();
-  v1.get('/me', (c) => c.json({ member: sessionOf(c).member }));
+  v1.route('/me', meRoutes);
   v1.post('/session/logout', async (c) => {
     await endSession(c.env.RF_CORE, sessionOf(c), c.get('accountant'), c.get('now'));
     return c.redirect(ACCESS_LOGOUT_PATH, 303);
   });
   v1.route('/roles', rolesRoutes);
   v1.route('/members', membersRoutes);
+  v1.route('/members', memberProfileRoutes);
   app.route('/api/v1', v1);
 
   app.notFound((c) => {

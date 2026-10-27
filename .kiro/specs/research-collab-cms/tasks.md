@@ -374,15 +374,15 @@ Tests use synthetic data only. No task copies, quotes, or commits content from t
     - **Property 25: Member identity invariants**
     - **Validates: Requirements 2.1, 2.2, 2.13**
 
-- [ ] 15. Build Profiles, preferences, mutes, and Licence_Agreements
-  - [ ] 15.1 Implement the Profile API in `apps/app/src/api/routes/profile.ts`
+- [x] 15. Build Profiles, preferences, mutes, and Licence_Agreements
+  - [x] 15.1 Implement the Profile API in `apps/app/src/api/routes/profile.ts`
     - `GET /me`, `PATCH /me/profile` (own Profile only, schema checks, retired Specialties refused), `GET /members/{id}/profile` with the 20 most recent Submissions and links, `PUT /me/preferences` (initially in-app On and email Immediate for every Event_Type; Daily_Digest hour initially 08:00), `PUT /me/mutes`, and `POST /me/licence-agreement` recording the UTC date and the Content_Licence name, with no route that withdraws one
     - Public_Profile changes to On return the `projectProfile` preview and apply only on confirmation; Profile changes write a `member:{id}` outbox row
     - _Requirements: 3.1, 3.2, 3.4, 3.7, 19.8, 19.9, 20.13, 39.10, 46.4, 46.16_
-  - [ ] 15.2 Implement the incomplete-Profile gate in `apps/app/src/auth/profile-gate.ts`
+  - [x] 15.2 Implement the incomplete-Profile gate in `apps/app/src/auth/profile-gate.ts`
     - Respond `profile_incomplete` (428) to every Workspace route except the Profile routes while the display name, a Specialty, or the time zone is missing
     - _Requirements: 3.6_
-  - [ ]* 15.3 Write property test for the Profile gate
+  - [x]* 15.3 Write property test for the Profile gate
     - **Property 26: Incomplete Profiles gate the Workspace**
     - **Validates: Requirements 3.6**
 
