@@ -112,6 +112,7 @@ function reference(member: PermissionMember, map: RolePermissionMap, permission:
     }
     case 'item.move': return t?.type === 'research_item' && scope === 'any';
     case 'backup.manage': return scope === 'any' && administrator;
+    case 'party.doNotName.off': return scope === 'any' && administrator;
     default: return scope === 'any';
   }
 }

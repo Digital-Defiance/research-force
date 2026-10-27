@@ -106,7 +106,7 @@ export function can(ctx: PermissionContext, permission: Permission, target?: Per
       // The save batch must repeat this last-Administrator guard atomically (Tasks 5 and 14).
       return true;
     case 'item.move': return target?.type === 'research_item' && scope === 'any';
-    case 'backup.manage': return scope === 'any' && isAdministrator(ctx);
+    case 'backup.manage': case 'party.doNotName.off': return scope === 'any' && isAdministrator(ctx);
     default: return scope === 'any';
   }
 }

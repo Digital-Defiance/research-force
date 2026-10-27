@@ -403,22 +403,22 @@ Tests use synthetic data only. No task copies, quotes, or commits content from t
     - **Property 94: Project_Accents apply only to their Project and only from the palette**
     - **Validates: Requirements 45.3, 45.22**
 
-- [ ] 17. Build Submissions, identifiers, Cross_Links, and External_Parties
-  - [ ] 17.1 Implement Submissions and identifier issue in `apps/app/src/records/submissions.ts`
+- [x] 17. Build Submissions, identifiers, Cross_Links, and External_Parties
+  - [x] 17.1 Implement Submissions and identifier issue in `apps/app/src/records/submissions.ts`
     - Every unit carries `submission_id`; a normal Submission sets `completed_at` in the batch that creates its units; `visibleTo(memberId)` filters every Workspace query to completed Submissions; Item_Identifiers are inserted into `identifiers` with a retry on collision
     - A Research_Item needs an existing Project, with the preselection rule of Requirement 39.2 and the "an Administrator must first create one" message when none exists
     - _Requirements: 15.1, 15.6, 18.2, 18.11, 39.1, 39.2, 39.3_
-  - [ ] 17.2 Implement Cross_Links and Backlinks in `apps/app/src/records/links.ts` and `apps/app/src/api/routes/links.ts`
+  - [x] 17.2 Implement Cross_Links and Backlinks in `apps/app/src/records/links.ts` and `apps/app/src/api/routes/links.ts`
     - `POST /links` and `DELETE /links/{id}` recording origin, target, optional relation label, Member, and time whatever the levels and withdrawal states; refusal of self-links, missing or deleted ends, unknown or retired labels, and duplicates; removal by the adder or an Administrator recorded in the origin's history
     - Backlinks from the `target_id` index, 100 per page with no upper bound; each end shows the relation label, kind, title, Item_Identifier (the Root_Item's for Entry_Sections and Replies), and a withdrawal notice; citing evidence for a Finding records an Evidence_Link
     - _Requirements: 5.2, 15.2, 15.3, 15.4, 15.5, 15.7_
-  - [ ] 17.3 Implement External_Parties in `apps/app/src/records/parties.ts` and `apps/app/src/api/routes/parties.ts`
+  - [x] 17.3 Implement External_Parties in `apps/app/src/records/parties.ts` and `apps/app/src/api/routes/parties.ts`
     - A new External_Party whose case- and diacritic-folded name equals an existing one needs confirmation; one Do_Not_Name flag and one Generic_Label per External_Party; any Member may turn the flag on with a valid Generic_Label; a non-Administrator turning it off is refused; changes write `party:{id}` outbox rows
     - _Requirements: 9.2, 34.4, 34.8, 34.10_
-  - [ ]* 17.4 Write property test for Cross_Links and Backlinks
+  - [x]* 17.4 Write property test for Cross_Links and Backlinks
     - **Property 42: Cross_Links are unique and Backlinks complete**
     - **Validates: Requirements 15.2, 15.3, 15.4, 15.5, 15.7**
-  - [ ]* 17.5 Write property test for External_Party duplicate detection
+  - [x]* 17.5 Write property test for External_Party duplicate detection
     - **Property 99: External_Party duplicate detection ignores case and diacritics**
     - **Validates: Requirements 9.2**
 

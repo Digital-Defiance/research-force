@@ -6,6 +6,7 @@ import type { ULID } from '@researchforce/domain/types';
 import { authorize, authorizeRead } from '../../auth/authorize';
 import { createProject, editProject, listProjects, loadProject, moveProject, projectHistory } from '../../records/projects';
 import type { ProjectRecord } from '../../records/projects';
+import { projectChoice } from '../../records/submissions';
 import type { ApiEnv } from '../app';
 import { ApiError } from '../errors';
 import { parse, readJson } from '../input';
@@ -39,6 +40,12 @@ projectsRoutes.get('/', async (c) => {
   const muted = new Set((counts[0] as D1Result<{ projectId: ULID }>).results.map((row) => row.projectId));
   const items = new Map((counts[1] as D1Result<{ projectId: ULID; n: number }>).results.map((row) => [row.projectId, row.n]));
   return c.json({ projects: list.map((project) => ({ ...project, muted: muted.has(project.id), researchItems: items.get(project.id) ?? 0 })) });
+});
+
+/** The Project choice of a new Research_Item, preselected from the page where the Submission started (R39.2). */
+projectsRoutes.get('/choice', async (c) => {
+  await authorizeRead(c);
+  return c.json(await projectChoice(c, { projectId: c.req.query('project'), unitId: c.req.query('unit') }));
 });
 
 projectsRoutes.post('/', async (c) => {

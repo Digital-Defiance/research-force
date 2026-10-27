@@ -87,7 +87,7 @@ describe('Administrator-only decisions and custom roles', () => {
   });
 
   it('validates added-role grants and preserves hard authorship limits even with broader stored grants', () => {
-    const role: RoleDefinition = { id: id(201), name: 'Curator', permissions: { 'item.edit': 'any', 'profile.edit': 'own', 'project.edit': 'any', 'policy.edit': 'any', 'settings.edit': 'any', 'backup.manage': 'any' } };
+    const role: RoleDefinition = { id: id(201), name: 'Curator', permissions: { 'item.edit': 'any', 'profile.edit': 'own', 'project.edit': 'any', 'policy.edit': 'any', 'settings.edit': 'any', 'backup.manage': 'any', 'party.doNotName.off': 'any' } };
     expect(validateAddedRole(role, ROLE_PERMISSION_MAP).ok).toBe(true);
     expect(validateAddedRole({ ...role, name: 'ADMINISTRATOR' }, ROLE_PERMISSION_MAP).ok).toBe(false);
     expect(validateAddedRole({ ...role, id: ROLE_IDS.administrator }, ROLE_PERMISSION_MAP).ok).toBe(false);
@@ -101,6 +101,7 @@ describe('Administrator-only decisions and custom roles', () => {
     expect(can(ctx, 'project.edit', { type: 'project', field: 'accent' })).toBe(false);
     expect(can(ctx, 'policy.edit', { type: 'policy_section' })).toBe(false);
     expect(can(ctx, 'backup.manage')).toBe(false);
+    expect(can(ctx, 'party.doNotName.off')).toBe(false);
     expect(can(ctx, 'settings.edit', { type: 'setting', key: 'responsiblePerson', candidateMember: { id: other, status: 'active' } })).toBe(false);
     const broad = { ...ctx, roles: { [role.id]: { ...role, permissions: { 'profile.edit': 'any' as const, 'logSummary.write': 'any' as const, 'dissent.edit': 'any' as const } } } };
     expect(can(broad, 'profile.edit', { type: 'profile', memberId: other })).toBe(false);
