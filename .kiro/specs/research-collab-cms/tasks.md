@@ -285,21 +285,21 @@ Tests use synthetic data only. No task copies, quotes, or commits content from t
     - **Property 96: Methods page and term links**
     - **Validates: Requirements 46.11, 46.14**
 
-- [ ] 10. Build the static public search index and query engine in `packages/search-public`
-  - [ ] 10.1 Implement the index builder in `packages/search-public/src/build.ts`
+- [x] 10. Build the static public search index and query engine in `packages/search-public`
+  - [x] 10.1 Implement the index builder in `packages/search-public/src/build.ts`
     - One document per Public or Withheld Research_Item and Attachment from views only: a Research_Item's text in display order including its Entry_Sections, Replies, and non-withdrawn Dissent_Notes under Full_Content; an Attachment's title, caption, Origin, and Credit; a Withheld unit's Disclosure_Line only, with result kind Withheld
     - `/idx/manifest.json`, term buckets by 2-character prefix (split to 3 above 256 KB, 1-character terms in `_1`) with postings and positions, and 64 document shards with content-hashed names; register the index files in `packages/testing/src/public-channels.ts`
     - _Requirements: 30.1, 30.4, 30.9, 30.10, 30.12, 30.13_
-  - [ ] 10.2 Implement the browser query engine in `packages/search-public/src/engine.ts`
+  - [x] 10.2 Implement the browser query engine in `packages/search-public/src/engine.ts`
     - Validation through the shared search-text module; bucket fetches; whole-word and word-start matching for terms of two or more characters, whole words for one-character terms, and consecutive positions for phrases; filters by kind (including Withheld), inclusive date range on the displayed date, and Project; title-match-first then newest-first ranking; pages of 20
     - _Requirements: 30.1, 30.2, 30.3, 30.4, 30.11, 30.12_
-  - [ ] 10.3 Implement excerpts in `packages/search-public/src/excerpt.ts`
+  - [x] 10.3 Implement excerpts in `packages/search-public/src/excerpt.ts`
     - Cut at most 300 characters around the first match in a result page's main content with its label markup and highlighted terms; Withheld results show only the Disclosure_Line and address with highlights; each Public result names its Project
     - _Requirements: 30.5, 30.9, 30.13_
-  - [ ] 10.4 Implement the public page scripts in `apps/site-shell/src`
+  - [x] 10.4 Implement the public page scripts in `apps/site-shell/src`
     - `search.ts`: the search form running the engine in a Web Worker, limited by default to the Project when opened from its Project_Section; `citation-date.ts`: a script of about 1 KB that fills in the Visitor's local access date, with "accessed [date of access]" as the text without scripts
     - _Requirements: 29.9, 30.6, 30.12_
-  - [ ]* 10.5 Write property test for public search
+  - [x]* 10.5 Write property test for public search
     - **Property 62: Public search returns exactly the matching Public_Views**
     - **Validates: Requirements 30.1, 30.2, 30.3, 30.4, 30.9, 30.12**
 

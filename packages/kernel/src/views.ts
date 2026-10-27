@@ -78,8 +78,9 @@ export interface LinkView { readonly direction: 'outgoing' | 'incoming'; readonl
 export interface RightsView { readonly status: ValueRef; readonly holder?: string; readonly terms?: string; readonly licenceCovers: boolean; }
 
 /**
- * `path` is the unit's Public_URL, or its Root_Item's for Entry_Sections, Replies, and Dissent_Notes. A Withheld unit names its Root_Item's
- * Project, whose section lists its Disclosure_Line (R29.5); a Withheld Project has no `project`.
+ * `path` is the address of the unit's own page: set for Withheld Projects, Research_Items, and Attachments, and absent for Entry_Sections,
+ * Replies, and Dissent_Notes, whose Disclosure_Lines appear on their Root_Item's page. A Withheld unit names its Root_Item's Project, whose
+ * section lists its Disclosure_Line (R29.5); a Withheld Project has no `project`.
  */
 export interface WithheldView { readonly tag: 'withheld'; readonly key: UnitKey; readonly path?: string; readonly line: DisclosureLineView; readonly project?: ProjectRef; }
 export interface ProjectView { readonly tag: 'project'; readonly key: UnitKey; readonly path: string; readonly name: string; readonly description: string; readonly slug: string; readonly accent?: string; }

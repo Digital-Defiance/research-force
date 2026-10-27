@@ -70,14 +70,14 @@ export const REPLY: ReplyView = {
 export const DISSENT: DissentNoteView = {
   tag: 'dissent_note', key: 'u:dissent', text: rich('I read the result differently.'), author: 'Ada Example', savedOn: '2026-01-08', earlierWording: true, authorProfiled: true,
 };
-const withheld = (key: UnitKey, path: string, kindOfMaterial: string, date = '1950-03'): WithheldView =>
-  ({ tag: 'withheld', key, path, line: { ...LINE, kindOfMaterial, date: partialDate(date) }, project: REF });
+const withheld = (key: UnitKey, path: string | undefined, kindOfMaterial: string, date = '1950-03'): WithheldView =>
+  ({ tag: 'withheld', key, ...(path === undefined ? {} : { path }), line: { ...LINE, kindOfMaterial, date: partialDate(date) }, project: REF });
 
 export const VIEWS: readonly PublicView[] = [
   PROJECT, OTHER, WITHHELD_PROJECT, FINDING, HYPOTHESIS, FILE_OLD, FILE_NEW, REPLY, DISSENT,
   withheld('u:file-withheld', '/a/IIII-5555-JJJJ', 'Photograph', '1949'),
-  withheld('u:reply-withheld', FINDING.path, 'Reply', '1955'),
-  withheld('u:dissent-withheld', FINDING.path, 'Dissent note', '1954'),
+  withheld('u:reply-withheld', undefined, 'Reply', '1955'),
+  withheld('u:dissent-withheld', undefined, 'Dissent note', '1954'),
   withheld('u:withheld-item', '/r/WWWW-0000-WWWW', 'Letter', '1950-03'),
 ];
 

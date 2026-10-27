@@ -33,6 +33,11 @@ describe('project', () => {
     expect(projection.views.has('u:s')).toBe(false);
   });
 
+  it('gives a Withheld Entry_Section no address of its own, since its Disclosure_Line appears on its Root_Item’s page', () => {
+    const projection = projectDetailed(state([item('a', { kind: 'topic', body: rich('Body') }), section('s', 'a', 'Text', { level: 'withheld', disclosureLine: LINE })]));
+    expect(projection.views.get('u:s')).toEqual({ tag: 'withheld', key: 'u:s', line: { kindOfMaterial: 'letters', date: LINE.date, parties: [] }, project: PROJECT_REF });
+  });
+
   it('shows the Generic_Label of a Do_Not_Name party in fields and Disclosure_Lines', () => {
     const projection = projectDetailed(state([
       correspondence('a', [{ kind: 'external', id: 'party-1', consent: 'granted' }, { kind: 'external', id: 'party-2', consent: 'granted' }]),

@@ -27,17 +27,10 @@ export function buildPages(site: SiteInput): PageSpec[] {
     if (entry.tag === 'withheld') { pages.push(withheldProjectPage(entry)); continue; }
     pages.push(projectPage(entry), ...projectListings(newContext, site, entry).map((listing) => listing.spec), searchPage(publicProjects, assets.searchScript, entry));
   }
-  const views = [...site.views.values()];
-  // A Withheld Entry_Section, Reply, or Dissent_Note names its Root_Item's address, which a Public page already presents.
-  const publicPaths = new Set(views.flatMap((view) => (view.tag === 'research_item' || view.tag === 'attachment' ? [view.path] : [])));
-  const withheldPaths = new Set<string>();
-  for (const view of views) {
+  for (const view of site.views.values()) {
     if (view.tag === 'research_item') pages.push(itemPage(newContext(), view, assets.citationScript));
     else if (view.tag === 'attachment') pages.push(attachmentPage(newContext(), view));
-    else if (view.tag === 'withheld' && view.project !== undefined && view.path !== undefined && !publicPaths.has(view.path) && !withheldPaths.has(view.path)) {
-      withheldPaths.add(view.path);
-      pages.push(withheldPage({ ...view, path: view.path }));
-    }
+    else if (view.tag === 'withheld' && view.project !== undefined && view.path !== undefined) pages.push(withheldPage({ ...view, path: view.path }));
   }
   pages.push(
     ...formPages(publicProjects).map((page) => formPage(site, publicProjects, page, assets.formScript)), respondPage(assets.formScript),

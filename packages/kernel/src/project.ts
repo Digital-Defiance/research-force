@@ -382,7 +382,8 @@ class Projector {
   private unitView(unit: UnitRecord): PublicView {
     const key = unitKey(unit.id);
     if (this.levelOf(unit.id) === 'withheld') {
-      return { tag: 'withheld', key, path: this.pathOf(unit), line: this.line(unit), project: this.projectRef(this.projects.get(this.rootOf(unit).item.projectId)!) };
+      const ownPage = unit.type === 'research_item' || unit.type === 'attachment';
+      return { tag: 'withheld', key, ...(ownPage ? { path: this.pathOf(unit) } : {}), line: this.line(unit), project: this.projectRef(this.projects.get(this.rootOf(unit).item.projectId)!) };
     }
     switch (unit.type) {
       case 'research_item': return this.researchItemView(unit);

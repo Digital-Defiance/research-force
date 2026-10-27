@@ -1,14 +1,12 @@
 import { SITE_PATHS } from '@researchforce/design/fixed-texts';
 import { formatDate, partialDate } from '@researchforce/domain/dates';
 import type { FileKind } from '@researchforce/domain/file-kinds';
+import { ITEM_KIND_NAMES } from '@researchforce/domain/kind-names';
 import type { ViewNode } from '@researchforce/domain/tree';
 import type { ItemKind } from '@researchforce/domain/types';
 import type { FieldKey, UTCDate } from '@researchforce/kernel/views';
 
-export const KIND_NAMES: Readonly<Record<ItemKind, string>> = {
-  journal_entry: 'Journal entry', finding: 'Finding', source: 'Source', run: 'Run', hypothesis: 'Hypothesis',
-  correspondence: 'Correspondence', archival_request: 'Archival request', topic: 'Topic',
-};
+export const KIND_NAMES: Readonly<Record<ItemKind, string>> = ITEM_KIND_NAMES;
 export const KIND_LISTING_TITLES: Readonly<Record<ItemKind, string>> = {
   journal_entry: 'Journal', finding: 'Findings', source: 'Sources', run: 'Runs', hypothesis: 'Hypotheses',
   correspondence: 'Correspondence', archival_request: 'Archival requests', topic: 'Topics',

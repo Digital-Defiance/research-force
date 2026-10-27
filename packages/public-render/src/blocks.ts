@@ -1,6 +1,7 @@
 import { attachmentList, disclosureLineBlock, dissentNoteBlock, notice, statusLabel, type Tone } from '@researchforce/design/components/index';
 import { licenceLink } from '@researchforce/design/fixed-texts';
 import { formatDate, formatEnteredTime } from '@researchforce/domain/dates';
+import { SOURCE_KIND_LABELS } from '@researchforce/domain/methods-anchors';
 import type { RichText } from '@researchforce/domain/richtext';
 import { element, fragment, text, type ElementNode, type ViewNode } from '@researchforce/domain/tree';
 import type {
@@ -96,7 +97,7 @@ export function statusValue(context: PageContext, status: StatusView): ElementNo
 }
 
 const sourceKindLabel = (kind: 'primary' | 'secondary'): ElementNode =>
-  statusLabel({ label: kind === 'primary' ? 'Primary source' : 'Secondary source', href: termHref(`source_kind.${kind}`) });
+  statusLabel({ label: SOURCE_KIND_LABELS[kind], href: termHref(`source_kind.${kind}`) });
 
 /** The status with every companion field in one block (R5.6, R6.3, R7.4, R8.3, R29.2–R29.4). */
 export function statusBlockFor(context: PageContext, status: StatusView | undefined): ElementNode | undefined {

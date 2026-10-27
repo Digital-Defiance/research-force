@@ -227,13 +227,13 @@ describe('listings', () => {
     expect(entries[1]).not.toContain('The public summary.');
   });
 
-  it('lists Disclosure_Lines newest first, each linked to its address', () => {
+  it('lists Disclosure_Lines newest first, each unit with a page of its own linked to it', () => {
     const view = page(build(), 'p/alpha/withheld.html');
     const lines = findAll(view.main.children, byClass('rf-disclosure-line__summary'));
     expect(lines.map((node) => textOf(node.children))).toEqual([
       'Reply · 1955 · A Correspondent', 'Dissent note · 1954 · A Correspondent', 'Letter · March 1950 · A Correspondent', 'Photograph · 1949 · A Correspondent',
     ]);
-    expect(lines.map((node) => find(node.children, byTag('a'))!.attributes.get('href'))).toEqual([FINDING.path, FINDING.path, '/r/WWWW-0000-WWWW', '/a/IIII-5555-JJJJ']);
+    expect(lines.map((node) => find(node.children, byTag('a'))?.attributes.get('href'))).toEqual([undefined, undefined, '/r/WWWW-0000-WWWW', '/a/IIII-5555-JJJJ']);
   });
 });
 
