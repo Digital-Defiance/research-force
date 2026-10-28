@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import type { Context } from 'hono';
 import { eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
+import { canRead } from '@researchforce/db/access';
 import { CHANGE_SEQ, GuardedBatch } from '@researchforce/db/batch';
 import { EMAIL_MODES, notificationPrefs, profileAffiliations, profiles, profileSpecialties } from '@researchforce/db/schema/core';
 import { distinctIds, knownId } from '@researchforce/domain/schemas/common';
@@ -249,8 +250,10 @@ memberProfileRoutes.get('/:id/profile', async (c) => {
   const results = await c.get('accountant').track(db.batch([
     db.prepare('SELECT id, status FROM members WHERE id = ?1').bind(memberId),
     ...profileStatements(db, memberId),
-    db.prepare(`SELECT id, kind, completed_at AS completedAt FROM submissions WHERE member_id = ?1 AND completed_at IS NOT NULL
-      ORDER BY completed_at DESC, id DESC LIMIT ${RECENT_SUBMISSIONS}`).bind(memberId),
+    // A Submission whose every unit belongs to Research_Items the viewer cannot read is left out (R47.4).
+    db.prepare(`SELECT s.id, s.kind, s.completed_at AS completedAt FROM submissions s WHERE s.member_id = ?1 AND s.completed_at IS NOT NULL
+        AND (NOT EXISTS (SELECT 1 FROM units su WHERE su.submission_id = s.id) OR EXISTS (SELECT 1 FROM units su WHERE su.submission_id = s.id AND ${canRead('?2', 'su.root_id')}))
+      ORDER BY s.completed_at DESC, s.id DESC LIMIT ${RECENT_SUBMISSIONS}`).bind(memberId, c.get('session').member.id),
   ]));
   const member = (results[0] as D1Result<{ id: ULID; status: MemberStatus }>).results[0];
   if (!member) throw new ApiError('not_found');
@@ -258,8 +261,8 @@ memberProfileRoutes.get('/:id/profile', async (c) => {
   const submissions = (results[5] as D1Result<{ id: ULID; kind: string; completedAt: string }>).results;
   const items = submissions.length === 0 ? [] : (await c.get('accountant').track(db.prepare(
     `SELECT id, unit_type AS unitType, root_id AS rootId, submission_id AS submissionId FROM units
-       WHERE submission_id IN (SELECT value FROM json_each(?1)) AND unit_type IN (${ITEM_TYPES}) ORDER BY created_at, id`,
-  ).bind(JSON.stringify(submissions.map((submission) => submission.id))).all<{ id: ULID; unitType: string; rootId: ULID; submissionId: ULID }>())).results;
+       WHERE submission_id IN (SELECT value FROM json_each(?1)) AND unit_type IN (${ITEM_TYPES}) AND ${canRead('?2', 'units.root_id')} ORDER BY created_at, id`,
+  ).bind(JSON.stringify(submissions.map((submission) => submission.id)), c.get('session').member.id).all<{ id: ULID; unitType: string; rootId: ULID; submissionId: ULID }>())).results;
   return c.json({
     member,
     profile: profile ? present(profile, c.get('contentLicence')) : null,

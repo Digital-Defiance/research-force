@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { partialDate } from '@researchforce/domain/dates';
 import { MAX_CHANGE_UNITS, applyChange, checkGates, previewChange } from '../src/preview';
-import type { GateState } from '../src/preview';
+import type { GateState, UnitChange } from '../src/preview';
 import { LICENCE, LINE, RESTRICTED, attachment, dissent, id, item, rich, state } from './fixtures';
 
 const gateState = (input = state([]), requesterId = 'member-1'): GateState => ({ input, requesterId, contentLicence: LICENCE });
@@ -80,6 +80,20 @@ describe('checkGates', () => {
     expect(checkGates({ units: [{ key: 'u:a', publicSummary: rich('New') }] }, gateState(input, 'member-2'))).toEqual([
       expect.objectContaining({ key: 'u:a', reason: 'requester_licence', memberId: 'member-2' }),
     ]);
+  });
+
+  it('refuses publishing anything in a Restricted Research_Item and names it (R47.9)', () => {
+    const input = state([
+      item('r', { kind: 'topic', body: rich('Body'), restricted: true }, { level: 'not_published' }),
+      attachment('f', 'r', {}, { level: 'not_published' }),
+      topic('w', { level: 'not_published' }),
+    ]);
+    const refused = (units: readonly UnitChange[]) => checkGates({ units }, gateState(input)).filter((failure) => failure.reason === 'restricted');
+    for (const change of [{ key: 'u:r', level: 'public' as const }, { key: 'u:f', level: 'withheld' as const, disclosureLine: LINE }, { key: 'u:r', presentation: 'summary_only' as const },
+      { key: 'u:r', publicSummary: rich('Summary') }, { key: 'u:f', disclosureLine: LINE }]) {
+      expect(refused([change])).toEqual([expect.objectContaining({ key: change.key, reason: 'restricted', offerWithheld: false, details: ['RI-r'] })]);
+    }
+    expect(refused([{ key: 'u:f', level: 'not_published' }, { key: 'u:r', publicSummary: null }, { key: 'u:w', level: 'public' }])).toEqual([]);
   });
 
   it('names unknown units', () => {

@@ -33,6 +33,10 @@ function insert<T extends SQLiteTable>(table: T, rows: readonly SeedRow<T>[]): s
 }
 
 const SEEDED_SETTINGS = (Object.keys(SETTINGS) as SettingKey[]).filter((key) => key !== 'responsiblePerson');
+/** Permissions added after the seed migration; the migration that adds each one grants it to the built-in Roles. */
+export const PERMISSIONS_AFTER_SEED: ReadonlySet<string> = new Set([
+  'access.restrict', 'access.widen', 'hold.place', 'hold.lift', 'consent.give', 'consent.propose', 'dual.propose', 'dual.approve', 'dual.decline', 'attachment.move',
+]);
 
 /**
  * The seed migration for rf-core. Everything here is the same for every installation; installation
@@ -45,6 +49,7 @@ export function seedSql(): string {
     insert(counters, [{ k: 'change', v: 0 }, { k: 'frozen', v: 0 }]),
     insert(roles, Object.values(BUILT_IN_ROLES).map((role) => ({ id: role.id, name: role.name, nameKey: role.name.toLowerCase(), builtin: true, rev: 1, updatedSeq: 0 }))),
     insert(rolePermissions, Object.values(BUILT_IN_ROLES).flatMap((role) => Object.entries(role.permissions)
+      .filter(([permission]) => !PERMISSIONS_AFTER_SEED.has(permission))
       .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
       .map(([permission, scope]) => ({ roleId: role.id, permission: permission as typeof rolePermissions.$inferInsert['permission'], scope: scope as typeof rolePermissions.$inferInsert['scope'] })))),
     insert(configValues, SEED_VALUES.map((value) => ({

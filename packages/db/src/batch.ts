@@ -13,7 +13,7 @@ import type { AiProvenance, REVISION_TARGET_TYPES } from './schema/core';
 
 export const GUARD_CODES = [
   'rev', 'evidence', 'superseding', 'last_admin', 'chain_tip', 'decision_open', 'preview_fresh', 'log_summary_owner', 'dissent_unique', 'frozen',
-  'reply_parent', 'review_eligible', 'reviewer_eligible', 'review_open',
+  'reply_parent', 'review_eligible', 'reviewer_eligible', 'review_open', 'access_owner',
 ] as const;
 export type GuardCode = typeof GUARD_CODES[number];
 /** HTTP status and the rule each guard enforces, for the API's refusal (design "Guards"). */
@@ -32,6 +32,7 @@ export const GUARD_RULES: Readonly<Record<GuardCode, { readonly status: 409 | 42
   review_eligible: { status: 422, rule: 'The addressees include no active Member other than you (R17.9).' },
   reviewer_eligible: { status: 422, rule: 'You are no longer an Eligible_Reviewer of this Review_Request (R17.10).' },
   review_open: { status: 422, rule: 'This Review_Request is already Reviewed (R17.3, R17.10).' },
+  access_owner: { status: 422, rule: 'Only the Owner of a Research_Item can widen who reads it (R47.7).' },
 });
 
 /** The change sequence after the batch's second statement has incremented it. */

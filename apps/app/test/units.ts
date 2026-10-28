@@ -9,7 +9,7 @@ export async function resetRecords(core: D1Database): Promise<void> {
   await core.batch([
     'units', 'research_items', 'attachments', 'entry_sections', 'replies', 'dissent_notes', 'submissions', 'cross_links', 'deletions', 'external_parties', 'projects',
     'journal_entries', 'je_members', 'findings', 'sources', 'runs', 'run_counts', 'hypotheses', 'correspondences', 'correspondence_parties', 'archival_requests', 'topics', 'revisions',
-    'staging_rows', 'review_requests', 'review_addressees',
+    'staging_rows', 'review_requests', 'review_addressees', 'access_grants', 'notification_events',
   ].map((table) => core.prepare(`DELETE FROM ${table}`)));
 }
 
@@ -52,6 +52,11 @@ export async function addSubmissionRow(core: D1Database, memberId: ULID, now: Ti
   const id = newULID(now);
   await new GuardedBatch(core, { id: memberId, now }).insert(submissions, { id, memberId, kind: 'member', startedAt: now, completedAt: completed ? now : null }).commit();
   return id;
+}
+
+/** The `research_items` row every Research_Item unit has, which the access check reads (R47.3). */
+export function researchItemRow(id: ULID, projectId: ULID): typeof researchItems.$inferInsert {
+  return { unitId: id, kind: 'finding', itemIdentifier: newItemIdentifier().identifier, projectId, title: `Item ${id}`, itemDateKey: '2026-10-27', logDateKey: '2026-10-27' };
 }
 
 export interface Place { readonly projectId: ULID; readonly ownerId: ULID; readonly submissionId: ULID; readonly now: Timestamp }

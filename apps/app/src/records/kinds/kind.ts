@@ -3,7 +3,7 @@ import type { GuardedBatch } from '@researchforce/db/batch';
 import type { ItemDateInput } from '@researchforce/domain/dates';
 import type { RichText, Span } from '@researchforce/domain/richtext';
 import type { ResearchItemInput } from '@researchforce/domain/schemas/items';
-import type { CreditEntry, DisclosureLine, ItemKind, Level, PartialDate, Timestamp, ULID } from '@researchforce/domain/types';
+import type { AccessLevel, CreditEntry, DisclosureLine, ItemKind, Level, PartialDate, Timestamp, ULID } from '@researchforce/domain/types';
 import type { ApiEnv } from '../../api/app';
 import type { FieldIssue } from '../../api/errors';
 import type { LinkInput } from '../links';
@@ -21,6 +21,7 @@ export interface BaseRow {
   readonly publicPresentation: 'summary_only' | 'full_content';
   readonly withdrawnAt: Timestamp | null; readonly withdrawnBy: ULID | null; readonly withdrawalReason: string | null;
   readonly title: string; readonly statusValueId: ULID | null; readonly logSummary: RichText | null;
+  readonly accessLevel: AccessLevel;
 }
 /** A unit under the Research_Item that the item response describes, such as an Entry_Section. */
 export interface ChildUnit {

@@ -7,6 +7,7 @@ import { ITEM_KINDS } from '@researchforce/domain/types';
 import type { ItemKind } from '@researchforce/domain/types';
 import { BUILT_IN_VALUE_IDS, RESUMABLE_RUN_OUTCOME_IDS } from '@researchforce/domain/value-sets';
 import type { ValueSetKind } from '@researchforce/domain/value-sets';
+import { AccessSummary, RestrictedMark } from '../access/access';
 import { RichTextView } from '../editor/RichTextView';
 import { Thread, mentionOptions } from '../discussion/thread';
 import { DeletedItem, deletionOf } from '../history/delete';
@@ -165,6 +166,7 @@ function LinkList({ title, entries, empty }: { readonly title: string; readonly 
               <li key={entry.id}>
                 {entry.relation !== null && <span className="rf-status">{entry.relation.name}</span>}{' '}
                 {end.deletedAt === undefined ? <Link to={`/items/${end.rootId ?? end.id}`}>{name}</Link> : <span>{name}</span>}
+                {end.restricted === true && <>{' '}<RestrictedMark /></>}
                 {end.source !== undefined && <span className="rf-meta">{` (${end.source.sourceKind === 'primary' ? 'Primary' : 'Secondary'} source; reliability: ${end.source.reliability})`}</span>}
                 {end.withdrawn && <Notice tone="warning" title="This record has been withdrawn." />}
                 {end.deletedAt !== undefined && <Notice tone="warning" title={`This record was permanently deleted on ${formatDate(end.deletedAt)}.`} />}
@@ -194,6 +196,7 @@ export function ItemDetails({ data }: { readonly data: ItemPageData }) {
       <header>
         <p className="rf-meta">{`${ITEM_KIND_NAMES[item.kind]} ${item.identifier}`}</p>
         <h1>{item.title}</h1>
+        {item.access.level === 'restricted' && <p><RestrictedMark /></p>}
         {item.pendingReview && <p><PendingReview /></p>}
         <p>{'Project: '}<strong>{item.project.name}</strong></p>
         <DisclosureStatus disclosure={item.disclosure} />
@@ -205,6 +208,7 @@ export function ItemDetails({ data }: { readonly data: ItemPageData }) {
           {session.can('item.delete') && <Link className="rf-button rf-button--danger" to={`/items/${item.id}/delete`}>Delete permanently</Link>}
         </div>
       </header>
+      <AccessSummary item={item} members={data.members} onChanged={onChanged} />
       {item.withdrawal !== null && (
         <Notice tone="warning" title={`Withdrawn on ${formatDate(item.withdrawal.at)}`}>
           <p>{'By '}<PersonLink person={item.withdrawal.by} />{item.withdrawal.reason === null ? '' : `: ${item.withdrawal.reason}`}</p>
@@ -253,7 +257,7 @@ export function ItemDetails({ data }: { readonly data: ItemPageData }) {
         {session.can('review.request') && <ReviewRequestForm targets={reviewTargets} options={reviewOptions(session, data.members)} onRequested={onChanged} />}
       </section>
       <section className="rf-section" aria-label="Thread">
-        <h2>Thread</h2>
+        <h2>Thread{item.access.level === 'restricted' && <>{' '}<RestrictedMark /></>}</h2>
         <Thread rootId={item.id} entries={data.thread} mentions={mentionOptions(data.members, session.me.specialtyOptions)} canReply={session.can('reply.post')}
           onChanged={onChanged} groupNote={item.groupNote} />
       </section>

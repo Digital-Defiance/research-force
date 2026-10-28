@@ -1,4 +1,4 @@
-import type { ItemKind } from '@researchforce/domain/types';
+import type { AccessLevel, ItemKind } from '@researchforce/domain/types';
 import type { RichText } from '@researchforce/domain/richtext';
 import type { ValueSetKind } from '@researchforce/domain/value-sets';
 
@@ -71,6 +71,20 @@ export interface SectionView { readonly id: string; readonly content: RichText; 
 export interface GroupNoteView {
   readonly id: string; readonly rev: number; readonly text: RichText; readonly owner: PersonRef; readonly withdrawn: boolean; readonly disclosure: DisclosureView;
 }
+/** Who can read a Research_Item: everyone, or its Owner, its Access_List, and Administrators (R47.1). */
+export interface AccessView { readonly level: AccessLevel; readonly members: readonly PersonRef[]; readonly statement: string }
+export interface AccessPoint { readonly level: string; readonly members: readonly PersonRef[] }
+export interface AccessPreviewView {
+  readonly items: readonly {
+    readonly id: string; readonly identifier: string; readonly title: string; readonly changed: boolean;
+    readonly from: AccessPoint; readonly to: AccessPoint; readonly refusal?: string;
+  }[];
+  readonly gaining: readonly PersonRef[];
+  readonly resets: readonly { readonly unitId: string; readonly rootId: string; readonly unitType: string; readonly identifier: string | null; readonly title: string | null; readonly level: string }[];
+  readonly statement: string;
+  /** Set when the change widens or restricts access; the change repeats it. */
+  readonly confirmation: string | null;
+}
 export interface ItemView {
   readonly id: string; readonly kind: ItemKind; readonly identifier: string; readonly rev: number; readonly createdAt: string;
   readonly project: { readonly id: string; readonly name: string };
@@ -86,6 +100,7 @@ export interface ItemView {
   readonly reviews: readonly ReviewView[];
   /** Whether the Item itself has a Needs_Review request (R17.7). */
   readonly pendingReview: boolean;
+  readonly access: AccessView;
   readonly [field: string]: unknown;
 }
 
@@ -116,6 +131,7 @@ export interface LinkEnd {
   readonly rootId?: string;
   readonly source?: { readonly sourceKind: string; readonly reliability: string };
   readonly deletedAt?: string;
+  readonly restricted?: true;
 }
 export interface LinkEntry {
   readonly id: string; readonly relation: { readonly id: string; readonly name: string } | null;
@@ -127,6 +143,8 @@ export interface HistoryEntry {
   /** A Revision id, or `creation`. */
   readonly id: string; readonly kind: string; readonly memberId: string; readonly displayName: string | null; readonly at: string;
   readonly reason: string | null; readonly restoredPoint: string | null; readonly sectionId: string | null; readonly fields: readonly string[];
+  /** An Access_Change's level and list before and after (R47.6). */
+  readonly access?: { readonly before: AccessPoint; readonly after: AccessPoint };
 }
 export interface HistoryStateView {
   readonly item: Readonly<Record<string, unknown>>;

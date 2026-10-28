@@ -131,7 +131,7 @@ class Projector {
       const project = this.projectNode(unit.item.projectId);
       if (unit.parentId !== undefined) this.breach(key, 'structure', 'A Research_Item cannot have a Parent.');
       else if (!project) this.breach(key, 'structure', 'The Research_Item names no existing Project.');
-      else node = { ...base, presentation: unit.item.presentation, project };
+      else node = { ...base, presentation: unit.item.presentation, project, ...(unit.item.restricted ? { restricted: true } : {}) };
     } else {
       const parentUnit = unit.parentId === undefined ? undefined : this.units.get(unit.parentId);
       const parent = parentUnit && this.unitNode(parentUnit.id);

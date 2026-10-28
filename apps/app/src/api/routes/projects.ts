@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { canRead } from '@researchforce/db/access';
 import { isULID } from '@researchforce/domain/types';
 import type { ULID } from '@researchforce/domain/types';
 import { authorize, authorizeRead } from '../../auth/authorize';
@@ -34,7 +35,7 @@ projectsRoutes.get('/', async (c) => {
     c.get('accountant').track(db.batch([
       db.prepare('SELECT project_id AS projectId FROM muted_projects WHERE member_id = ?1').bind(c.get('session').member.id),
       db.prepare(`SELECT u.project_id AS projectId, count(*) AS n FROM units u JOIN submissions s ON s.id = u.submission_id AND s.completed_at IS NOT NULL
-        WHERE u.unit_type = 'research_item' GROUP BY u.project_id`),
+        WHERE u.unit_type = 'research_item' AND ${canRead('?1', 'u.root_id')} GROUP BY u.project_id`).bind(c.get('session').member.id),
     ])),
   ]);
   const muted = new Set((counts[0] as D1Result<{ projectId: ULID }>).results.map((row) => row.projectId));

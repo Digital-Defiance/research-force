@@ -601,6 +601,7 @@ Where a task in an earlier milestone produces something that a later task delive
     - _Requirements: 18.7_
   - [ ] 25.6 Build the activity screens in `apps/app/web/src/activity/`
     - Badge counts on every page, new and updated marks in listings, search results, Threads, and Attachment lists as the flags stood when the page opened, and the feed page with filters and "mark all as seen"
+    - List entries of Restricted Research_Items show `RestrictedMark` from `apps/app/web/src/access/access.tsx`, and listings offer bulk access changes through its `useSelection` and `BulkAccess` (R47.11, R47.14)
     - _Requirements: 16.4, 18.5, 18.7, 18.8, 18.10_
   - [ ]* 25.7 Write property test for New_Flags
     - **Property 49: New_Flags mark exactly the unseen Items of others' Submissions**
@@ -689,6 +690,7 @@ Where a task in an earlier milestone produces something that a later task delive
     - _Requirements: 21.2, 21.3, 21.4, 21.5, 21.7, 21.8, 21.9, 23.9, 39.14, 39.15, 42.13, 47.4, 47.11_
   - [ ] 28.3 Build the search screen in `apps/app/web/src/search/`
     - Query form and filters; after 10 seconds without a response, "search is unavailable", with the 00:00 UTC note for daily limits; query and filters kept as entered
+    - Restricted results show `RestrictedMark` from `apps/app/web/src/access/access.tsx`, and result lists offer bulk access changes through its `useSelection` and `BulkAccess` (R47.11, R47.14)
     - _Requirements: 21.9, 21.10_
   - [ ]* 28.4 Write property test for Member search
     - **Property 60: Member search returns exactly the matching units**
@@ -746,6 +748,7 @@ Where a task in an earlier milestone produces something that a later task delive
 - [ ] 31. Build disclosure changes, previews, classification, Publication_Requests, rights and consent rules, and item moves
   - [ ] 31.1 Implement projection input loading and the preview API in `apps/app/src/kernel-input.ts` and `apps/app/src/disclosure/preview.ts`
     - `loadProjectionInput(roots)`, the only code that turns `rf-core` rows into kernel input, including Parties, Do_Not_Name flags, registered Member emails, consent, rights, Licence_Agreements, and Cross_Link neighbours
+    - It reads `research_items.access_level` into the `restricted` flag that task 52.5 added to the kernel input; the access preview of task 52.4, which until then lists the units whose level a restriction resets, then also renders the Public_Views the restriction removes with `diffViews`
     - `POST /disclosure/preview` for levels, presentations, Public_Summaries, and Disclosure_Lines of one unit or up to 1,000, a Project's level, a Project move, or turning Do_Not_Name off; returns `diffViews` and `checkGates` output and a preview token that is an HMAC over the change set and its dependency rows' `updated_seq`; previews of more than a few hundred units run in a `Jobs` object with progress and paging
     - _Requirements: 23.6, 23.16, 26.7, 33.7, 34.7, 34.9, 39.13, 46.16_
   - [ ] 31.2 Implement the apply API in `apps/app/src/disclosure/apply.ts`
@@ -764,6 +767,7 @@ Where a task in an earlier milestone produces something that a later task delive
     - _Requirements: 33.4, 33.5, 33.8, 34.2, 34.6, 34.9_
   - [ ] 31.6 Implement item moves in `apps/app/src/records/move.ts` and `POST /items/{id}/move`
     - Update `project_id` on the Research_Item and every element under it in one statement, leaving everything else unchanged (including its Access_Level and Access_List), and record a Revision holding the previous Project (Disclosure_Change when a Public_View changes, Minor_Edit otherwise); a move that alters a Public_View needs a confirmed, fresh preview
+    - Extend Property 101 (`apps/app/test/properties/p101-access-changes.test.ts`) with moves, checking that a moved Research_Item keeps its Access_Level and Access_List (R47.12)
     - The same batch removes every Question_Group entry that names the moved Research_Item or anything under it from Research_Questions of the old Project, recording the removal in each Research_Question's history (task 55.2 supplies the shared helper)
     - _Requirements: 23.3, 39.12, 39.13, 47.12, 50.7_
   - [ ] 31.7 Build the disclosure screens in `apps/app/web/src/disclosure/`
@@ -1206,34 +1210,36 @@ Where a task in an earlier milestone produces something that a later task delive
     - `rg -n "'private'"` over `apps` and `packages` finds no Disclosure_Level use afterwards
     - _Requirements: 23.1_
 
-- [ ] 52. Build restricted access inside the team
-  - [ ] 52.1 Add the access data and Permissions
+- [x] 52. Build restricted access inside the team
+  - [x] 52.1 Add the access data and Permissions
     - The next migration adds `research_items.access_level` (`whole_team` or `restricted`, default `whole_team`), `access_grants (root_id, member_id, granted_by, granted_at)` with primary key (`root_id`, `member_id`), the guard table `_g_access_owner`, and the Revision_Kind `access_change`; add `access_owner` to `GUARD_CODES` in `packages/db/src/batch.ts`
+    - Adding `access_change` changes the `revisions_kind_values` check, so the migration rebuilds `revisions` as task 51's migration rebuilt `units`, and recreates the `revisions_immutable` trigger from `0001_raw.sql`, which dropping the table removes; extend the migration test pattern of `apps/app/test/migration-not-published.test.ts` to check the rows, the indexes, and that the trigger still refuses updates
     - Add the Permissions `access.restrict`, `access.widen`, `hold.place`, `hold.lift`, `consent.give`, `consent.propose`, `dual.propose`, `dual.approve`, `dual.decline`, and `attachment.move` to the Role_Permission_Map in `packages/domain/src/permissions.ts` as the design's table assigns them, so that tasks 53 to 55 use them without changing the map again
     - _Requirements: 2.4, 2.5, 47.1_
-  - [ ] 52.2 Implement the `canRead` fragment and retrofit the existing read paths
+  - [x] 52.2 Implement the `canRead` fragment and retrofit the existing read paths
     - `canRead(memberId, isAdmin, rootColumn)` in `packages/db/src/access.ts`, the SQL fragment of the design; join it into `visibleTo` in `apps/app/src/records/submissions.ts`, so that every read path from tasks 17 to 24 that uses the visibility gate applies it: item pages and sections, history and comparisons, Threads and Replies, Cross_Links and Backlinks, Mentions, Review_Request queues and responses, the Projects list counts, and Parties' item lists
     - A request that names an element the Member cannot read answers the shared `not_found` response; Activity_Feed entries already written keep only readable references when read (the feed itself arrives with task 25)
     - _Requirements: 2.8, 47.3, 47.4_
-  - [ ] 52.3 Apply access to Submissions, Mentions, and Review_Requests
+  - [x] 52.3 Apply access to Submissions, Mentions, and Review_Requests
     - Submissions accept `access: { level, members }` for each new Research_Item, with members limited to Pending or Active Members and the statement that the Owner and every Administrator can read Restricted items returned for display
     - Mentions and Review_Requests that name a Member who cannot read the Research_Item are refused with `rule: access_addressee` listing the Members, keeping the input; Specialty Mentions and Specialty or Role addressees reach only holders who Can_Read the Research_Item
     - _Requirements: 47.1, 47.2, 47.5, 47.10_
-  - [ ] 52.4 Implement access changes in `apps/app/src/records/access.ts`
+  - [x] 52.4 Implement access changes in `apps/app/src/records/access.ts`
     - `POST /items/{id}/access` with `{ level, add, remove }`, `POST /access/bulk` for 1 to 1,000 Research_Items, and their preview endpoint, which lists the Members who would gain read access and, when restricting, every Public or Withheld unit whose own level the change resets, with the Public_Views removed
     - A change that only narrows needs `access.restrict`; a change that adds Members or lifts the restriction needs `access.widen` and the `access_owner` guard (task 54.5 adds the Dual_Approval path for a Revoked Owner); restricting writes, in the same batch, `not_published` on each listed unit, a Disclosure_Change per unit, Item_Update events for every Administrator, and a `publish` outbox row; every change writes an `access_change` Revision with the previous level and list; a bulk change applies to every Research_Item or none and states the reason
+    - Item history (`apps/app/src/records/history.ts`, `packages/domain/src/history.ts`, and the history screen) lists Access_Change Revisions with the previous and new level and list; a Restoration never changes the Access_Level or Access_List, so add them to `ALWAYS_KEPT` beside the disclosure fields
     - _Requirements: 47.6, 47.7, 47.8, 47.14_
-  - [ ] 52.5 Treat Restricted roots as Not_Published in the kernel
+  - [x] 52.5 Treat Restricted roots as Not_Published in the kernel
     - `loadProjectionInput` and the kernel input carry a `restricted` flag on Research_Items, and `effective()` treats a Restricted root like a Not_Published ancestor; `checkGates` refuses any change that sets a Public or Withheld level, a Public_Presentation, a Public_Summary, or a Disclosure_Line on a Restricted Research_Item, naming it as Restricted
     - _Requirements: 23.1, 47.9_
-  - [ ] 52.6 Build the access screens in `apps/app/web/src/access/`
+  - [x] 52.6 Build the access screens in `apps/app/web/src/access/`
     - The access fields in the item form (Whole_Team or Restricted, a Member picker, and the statement of who can always read), the Restricted mark with the Owner and the Access_List on item pages, lists, and Thread headers, the access dialog with the preview and confirmation, and bulk selection on lists
     - _Requirements: 47.2, 47.7, 47.8, 47.11, 47.14_
-  - [ ] 52.7 Write property test for restricted reads
+  - [x] 52.7 Write property test for restricted reads
     - Generate Members, Administrators, Research_Items with access settings, and every element kind under them; check every read endpoint built so far and every per-Member insert
     - **Property 100: Members see nothing of Research_Items they cannot read**
     - **Validates: Requirements 2.8, 47.3, 47.4, 47.5, 47.10**
-  - [ ] 52.8 Write property test for access changes
+  - [x] 52.8 Write property test for access changes
     - **Property 101: Only the Owner widens access, and restricting unpublishes**
     - **Validates: Requirements 47.6, 47.7, 47.8, 47.12, 47.14**
 
@@ -1251,7 +1257,7 @@ Where a task in an earlier milestone produces something that a later task delive
 
 - [ ] 54. Build Owner consent, Confidentiality_Holds, and Dual_Approvals
   - [ ] 54.1 Add the consent, hold, and approval data
-    - The next migration adds `publication_consents`, `confidentiality_holds` with its partial unique index, and `dual_approvals` as the design defines them, the Review_Request type `proposal`, and the guard tables `_g_consent_valid`, `_g_hold_free`, `_g_dual_open`, and `_g_dual_distinct`; add the codes to `GUARD_CODES`
+    - The next migration adds `publication_consents`, `confidentiality_holds` with its partial unique index, and `dual_approvals` as the design defines them, the Review_Request type `proposal` (the existing `review_requests` checks allow an outcome only on Publication_Requests and only Applied or Declined, so the migration rebuilds `review_requests` with a request type column and outcomes Approved and Declined for proposals, mapping existing rows), and the guard tables `_g_consent_valid`, `_g_hold_free`, `_g_dual_open`, and `_g_dual_distinct`; add the codes to `GUARD_CODES`
     - _Requirements: 23.18, 48.1, 49.2_
   - [ ] 54.2 Add the widening test and the new gates to the kernel and `loadProjectionInput`
     - `widens(before, after, unit)` in `packages/kernel`, evaluated with the real ancestors and with every ancestor treated as Public and Full_Content; `checkGates` refuses a widening of a unit whose Consenting_Member is another Member without a covering Publication_Consent (listing the units and Members and offering a Publication_Proposal), and of a unit covered by an active Confidentiality_Hold (listing each hold); a Project level change needs no consent
@@ -1285,7 +1291,7 @@ Where a task in an earlier milestone produces something that a later task delive
 
 - [ ] 55. Build Research_Questions
   - [ ] 55.1 Add the Research_Question kind
-    - The kind in `packages/domain` (kind names, Item_Identifier prefix, the zod schema with the limits of R50.1), the next migration adding `research_questions`, `question_groups`, `question_entries`, and `projects.question_order`, and the fixed relation label Addresses seeded as locked and not offered for ordinary Cross_Links
+    - The kind in `packages/domain` (kind names, Item_Identifier prefix, the zod schema with the limits of R50.1), the next migration adding `research_questions`, `question_groups`, `question_entries`, and `projects.question_order`, and rebuilding `research_items` because its `research_items_kind_values` check lists the kinds; and the fixed relation label Addresses, seeded as locked, not offered for ordinary Cross_Links, and refused by `validateLinks` in `apps/app/src/records/links.ts` for any link that is not a Question_Group entry
     - _Requirements: 50.1, 50.2, 50.8_
   - [ ] 55.2 Implement Research_Questions in `apps/app/src/records/kinds/question.ts`
     - Create and edit through the records pipeline: each entry stored as an Addresses Cross_Link with its group and position; targets must be live Research_Items or Attachments of the same Project, at most once per Research_Question; no Log_Summary required; invalid input saves nothing and names each invalid value

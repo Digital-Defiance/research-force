@@ -139,6 +139,8 @@ export interface LinkEnd {
   /** The end's own title and Item_Identifier, or its Root_Item's for Entry_Sections and Replies (R15.3). */
   readonly title: string | null; readonly identifier: string | null;
   readonly withdrawn: boolean;
+  /** Set when the end's Research_Item is Restricted (R47.11). */
+  readonly restricted?: true;
   /** The Root_Item that opens the end, for every end not permanently deleted. */
   readonly rootId?: ULID;
   /** A Source end's Source_Kind and reliability rating, shown wherever the link names the Source (R6.3). */
@@ -155,7 +157,7 @@ export interface LinkEntry {
 interface LinkRow {
   id: ULID; relationId: ULID | null; relationName: string | null; addedBy: ULID; addedByName: string | null; addedAt: Timestamp;
   removedBy: ULID | null; removedByName: string | null; removedAt: Timestamp | null;
-  endId: ULID; rootId: ULID | null; unitType: string | null; itemKind: string | null; title: string | null; identifier: string | null; withdrawnAt: string | null;
+  endId: ULID; rootId: ULID | null; unitType: string | null; itemKind: string | null; title: string | null; identifier: string | null; withdrawnAt: string | null; accessLevel: string | null;
   sourceKind: string | null; reliabilityName: string | null;
   deletedType: string | null; deletedKind: string | null; deletedIdentifier: string | null; deletedAt: Timestamp | null;
 }
@@ -180,7 +182,7 @@ export async function linkEntries(c: Context<ApiEnv>, query: LinkQuery): Promise
         u.root_id AS rootId, u.unit_type AS unitType, ri.kind AS itemKind, s.source_kind AS sourceKind, rv.name AS reliabilityName,
         CASE WHEN u.unit_type = 'attachment' THEN a.title ELSE ri.title END AS title,
         CASE WHEN u.unit_type = 'attachment' THEN a.item_identifier ELSE ri.item_identifier END AS identifier,
-        coalesce(u.withdrawn_at, root.withdrawn_at) AS withdrawnAt,
+        coalesce(u.withdrawn_at, root.withdrawn_at) AS withdrawnAt, ri.access_level AS accessLevel,
         d.unit_type AS deletedType, d.kind AS deletedKind, d.item_identifier AS deletedIdentifier, d.deleted_at AS deletedAt
       FROM cross_links l
       LEFT JOIN units u ON u.id = l.${far}
@@ -209,6 +211,7 @@ export async function linkEntries(c: Context<ApiEnv>, query: LinkQuery): Promise
       : {
         id: row.endId, rootId: row.rootId!, kind: row.unitType === 'research_item' ? row.itemKind! : row.unitType!, title: row.title, identifier: row.identifier,
         ...(row.sourceKind === null ? {} : { source: { sourceKind: row.sourceKind, reliability: row.reliabilityName ?? '' } }), withdrawn: row.withdrawnAt !== null,
+        ...(row.accessLevel === 'restricted' ? { restricted: true as const } : {}),
       },
   }));
   return { entries, next: rows.length > LINKS_PER_PAGE ? entries.at(-1)!.id : null };

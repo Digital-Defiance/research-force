@@ -3,6 +3,8 @@ import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router';
 import { ITEM_KIND_NAMES } from '@researchforce/domain/kind-names';
 import type { ItemKind } from '@researchforce/domain/types';
+import { accessBody, AccessFields, WHOLE_TEAM } from '../../access/access';
+import type { AccessValue } from '../../access/access';
 import { ApiFailure, useApi } from '../../api';
 import type { FieldIssue } from '../../api';
 import { mentionOptions } from '../../discussion/thread';
@@ -19,7 +21,7 @@ import type { EditMarkValue, FormValues } from './model';
 
 const REVISION_KIND_NAMES: Readonly<Record<string, string>> = {
   minor_edit: 'Minor edit', correction: 'Correction', status_change: 'Status change', withdrawal: 'Withdrawal',
-  disclosure_change: 'Disclosure change', restoration: 'Restoration', deletion: 'Deletion',
+  disclosure_change: 'Disclosure change', access_change: 'Access change', restoration: 'Restoration', deletion: 'Deletion',
 };
 
 /** Value sets, External_Parties, and Members that the fields offer, and the Mention picker's choices. */
@@ -36,7 +38,7 @@ export function useFormData(): { data: FormData | undefined; error: unknown } {
   return { data, error: valueSets.error ?? parties.error ?? members.error };
 }
 
-interface CreateState { readonly values: FormValues; readonly projectId: string; readonly reviews: readonly ReviewDraft[] }
+interface CreateState { readonly values: FormValues; readonly projectId: string; readonly reviews: readonly ReviewDraft[]; readonly access?: AccessValue }
 interface EditState { readonly values: FormValues; readonly before: FormValues; readonly rev: number; readonly mark: EditMarkValue; readonly statusReason: string }
 
 /** Field issues that no field of the form shows, such as an issue with the whole body. */
@@ -112,15 +114,16 @@ export function CreateItemForm({ kind, choice, data }: { readonly kind: ItemKind
   const form = usePersistentForm<CreateState>(`item:new:${kind}`, () => ({ values: initialValues(kind), projectId: choice.preselected ?? '', reviews: [] }));
   const [failure, setFailure] = useState<unknown>(undefined);
   const [busy, setBusy] = useState(false);
-  const shown = ['projectId', 'reviews', ...fieldsFor(kind, 'create').map((field) => field.name)];
+  const shown = ['projectId', 'reviews', 'access', ...fieldsFor(kind, 'create').map((field) => field.name)];
   const sections = Array.isArray(form.values.values['sections']) ? form.values.values['sections'].length : 0;
+  const access = form.values.access ?? WHOLE_TEAM;
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     setBusy(true);
     setFailure(undefined);
     try {
       const reviews = form.values.reviews.length === 0 ? {} : { reviews: draftsToApi(form.values.reviews) };
-      const response = await client.saveItem<{ item: ItemView }>({ kindPath: kind.replaceAll('_', '-') }, { ...createBody(kind, form.values.projectId, form.values.values), ...reviews });
+      const response = await client.saveItem<{ item: ItemView }>({ kindPath: kind.replaceAll('_', '-') }, { ...createBody(kind, form.values.projectId, form.values.values), ...reviews, access: accessBody(access) });
       form.sent();
       void navigate(`/items/${response.item.id}`);
     } catch (error) {
@@ -141,6 +144,8 @@ export function CreateItemForm({ kind, choice, data }: { readonly kind: ItemKind
         : <SelectField label="Project" required value={form.values.projectId} placeholder="Choose a Project" errors={projectErrors}
             options={choice.projects.map((project) => ({ value: project.id, label: project.name }))} onChange={(projectId) => form.set('projectId', projectId)} />}
       <Fields kind={kind} mode="create" values={form.values.values} set={(field, value) => form.set('values', { ...form.values.values, [field]: value })} failure={failure} data={data} />
+      <AccessFields value={access} onChange={(next) => form.set('access', next)} members={data.members} ownerId={session.me.member.id}
+        errors={failure instanceof ApiFailure ? failure.fields : []} />
       {session.can('review.request') && <ReviewDrafts value={form.values.reviews} onChange={(reviews) => form.set('reviews', reviews)} options={reviewOptions(session, data.members)}
         sections={sections} errors={failure instanceof ApiFailure ? failure.fields : []} />}
       <div className="rf-actions">

@@ -1,6 +1,7 @@
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { GuardedBatch } from '@researchforce/db/batch';
-import { submissions, units } from '@researchforce/db/schema/core';
+import { researchItems, submissions, units } from '@researchforce/db/schema/core';
+import { researchItemRow } from './units';
 import { PROJECT_ACCENT_IDS } from '@researchforce/design/tokens';
 import { newULID } from '@researchforce/domain/identifiers';
 import { BUILT_IN_ROLES, ROLE_IDS } from '@researchforce/domain/permissions';
@@ -222,6 +223,7 @@ describe('the Project_Order', () => {
     await new GuardedBatch(core(), { id: contributorId, now: at })
       .insert(submissions, [{ id: done, memberId: contributorId, kind: 'member', startedAt: at, completedAt: at }, { id: draft, memberId: contributorId, kind: 'member', startedAt: at, completedAt: null }])
       .insert(units, items.map((id, index) => ({ id, unitType: 'research_item' as const, projectId: a!.id, rootId: id, ownerId: contributorId, credit: [{ member: contributorId }], submissionId: index < 2 ? done : draft, createdAt: at })))
+      .bulkInsert(researchItems, items.map((id) => researchItemRow(id, a!.id)))
       .commit();
     expect((await call(api, bindings, admin, 'PUT', '/me/mutes', { projectIds: [b!.id] })).status).toBe(200);
     expect((await call(api, bindings, contributor, 'PUT', '/me/mutes', { projectIds: [a!.id] })).status).toBe(200);

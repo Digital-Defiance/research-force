@@ -3,20 +3,22 @@ import type { ReactNode } from 'react';
 import { Link } from 'react-router';
 import { ROLE_IDS } from '@researchforce/domain/permissions';
 import type { RichText, Span } from '@researchforce/domain/richtext';
+import { accessLevelName } from '../access/access';
 import { RichTextView } from '../editor/RichTextView';
 import { KIND_FIELDS } from '../items/forms/model';
 import { useApi } from '../api';
 import { useSession } from '../session';
-import type { FieldDifference, HistoryEntry, HistoryStateView, ItemHistoryView, ItemView, WordPart } from '../types';
+import type { AccessPoint, FieldDifference, HistoryEntry, HistoryStateView, ItemHistoryView, ItemView, WordPart } from '../types';
 import { Button, formatDate, levelName, LoadState, Notice, PersonLink, SaveFailure, SelectField, useLoad } from '../ui';
 
 export const REVISION_KIND_NAMES: Readonly<Record<string, string>> = {
   creation: 'Creation', minor_edit: 'Minor edit', correction: 'Correction', status_change: 'Status change', withdrawal: 'Withdrawal',
-  disclosure_change: 'Disclosure change', restoration: 'Restoration', deletion: 'Deletion',
+  disclosure_change: 'Disclosure change', access_change: 'Access change', restoration: 'Restoration', deletion: 'Deletion',
 };
 const UNIT_FIELD_LABELS: Readonly<Record<string, string>> = {
   title: 'Title', logSummary: 'Log Summary', sections: 'Entry Sections', disclosureLevel: 'Disclosure level', classificationState: 'Classification',
   disclosureLine: 'Disclosure line', publicPresentation: 'Public presentation', withdrawnAt: 'Withdrawn on', withdrawnBy: 'Withdrawn by', withdrawalReason: 'Withdrawal reason',
+  accessLevel: 'Who can read', accessMembers: 'Access list',
 };
 
 /** The name of a field of this kind of Item, or of an Entry_Section by its position in `order`. */
@@ -34,6 +36,7 @@ const isRich = (value: unknown): value is RichText => typeof value === 'object' 
 export function plainValue(field: string, value: unknown): string {
   if (value === null || value === undefined || value === '') return 'none';
   if (field === 'disclosureLevel' && typeof value === 'string') return levelName(value);
+  if (field === 'accessLevel' && typeof value === 'string') return accessLevelName(value);
   if (field === 'withdrawnAt' && typeof value === 'string') return formatDate(value);
   if (isRich(value)) return value.text;
   if (typeof value === 'string') return value;
@@ -85,6 +88,10 @@ export function Comparison({ item, differences, order }: { readonly item: Pick<I
   );
 }
 
+const personName = (displayName: string | null): string => displayName ?? 'a Member without a display name';
+/** An Access_Level with its Access_List, as an Access_Change records it (R47.6). */
+export const describeAccess = (point: AccessPoint): string => `${accessLevelName(point.level)}${point.members.length === 0 ? '' : `, Access list: ${point.members.map((member) => personName(member.displayName)).join(', ')}`}`;
+
 const entryName = (entry: HistoryEntry) => `${REVISION_KIND_NAMES[entry.kind] ?? entry.kind}, ${formatDate(entry.at)}`;
 
 /** The creation and every Revision, newest first, with who, when, what kind, the reason, and the fields it changed (R22.3). */
@@ -107,6 +114,7 @@ export function HistoryList({ item, entries, selected, onSelect }: {
           </p>
           {entry.restoredPoint !== null && <p>{`Restored to: ${restoredName(entry.restoredPoint)}`}</p>}
           {entry.reason !== null && <p>{`Reason: ${entry.reason}`}</p>}
+          {entry.access !== undefined && <p>{`Before: ${describeAccess(entry.access.before)}. After: ${describeAccess(entry.access.after)}.`}</p>}
           {entry.fields.length > 0 && <p className="rf-meta">{`Changed: ${entry.fields.map((field) => fieldLabel(item, field)).join(', ')}`}</p>}
           <Button variant="quiet" onClick={() => onSelect(entry.id)} disabled={selected === entry.id}>
             {selected === entry.id ? 'Shown below' : 'Show the record as it was after this'}
@@ -117,19 +125,20 @@ export function HistoryList({ item, entries, selected, onSelect }: {
   );
 }
 
-function StateValue({ field, value }: { readonly field: string; readonly value: unknown }): ReactNode {
+function StateValue({ field, value, names }: { readonly field: string; readonly value: unknown; readonly names: ReadonlyMap<string, string | null> }): ReactNode {
+  if (field === 'accessMembers' && Array.isArray(value)) return value.map((id: string) => personName(names.get(id) ?? null)).join(', ');
   return isRich(value) ? <RichTextView value={value} /> : plainValue(field, value);
 }
 
 /** The Item as it stood immediately after one point (R22.3). */
-export function StateView({ item, state, onRestoreSection }: {
-  readonly item: ItemView; readonly state: HistoryStateView; readonly onRestoreSection?: (sectionId: string) => void;
+export function StateView({ item, state, names = new Map(), onRestoreSection }: {
+  readonly item: ItemView; readonly state: HistoryStateView; readonly names?: ReadonlyMap<string, string | null>; readonly onRestoreSection?: (sectionId: string) => void;
 }) {
   const sections = (state.item['sections'] ?? []) as readonly { id: string; content: RichText }[];
   const fields = Object.entries(state.item).filter(([field]) => field !== 'sections');
   return (
     <>
-      <dl>{fields.map(([field, value]) => <div key={field}><dt>{fieldLabel(item, field)}</dt><dd><StateValue field={field} value={value} /></dd></div>)}</dl>
+      <dl>{fields.map(([field, value]) => <div key={field}><dt>{fieldLabel(item, field)}</dt><dd><StateValue field={field} value={value} names={names} /></dd></div>)}</dl>
       {sections.length > 0 && (
         <section aria-label="Entry Sections at this point">
           <h3>Entry Sections</h3>
@@ -207,6 +216,7 @@ export function ItemHistoryPage({ id }: { readonly id: string }) {
   const order = (current.sections ?? []).map((section) => section.id);
   const options = entries.map((entry) => ({ value: entry.id, label: entryName(entry) }));
   const pointEntry = entries.find((entry) => entry.id === point);
+  const names = new Map(entries.flatMap((entry) => (entry.access === undefined ? [] : [...entry.access.before.members, ...entry.access.after.members])).map((member) => [member.id, member.displayName]));
   const restored = (changed: boolean) => {
     setRestoring(undefined);
     setOutcome(changed ? 'The Restoration was saved.' : 'Nothing differs from that point, so nothing was saved.');
@@ -230,7 +240,7 @@ export function ItemHistoryPage({ id }: { readonly id: string }) {
       {point !== undefined && state !== undefined && pointEntry !== undefined && (
         <section className="rf-section" aria-label="The record at the chosen point">
           <h2>{`The record after: ${entryName(pointEntry)}`}</h2>
-          <StateView item={current} state={state} {...(canRestore(session, current) ? { onRestoreSection: (sectionId: string) => setRestoring({ sectionId }) } : {})} />
+          <StateView item={current} state={state} names={names} {...(canRestore(session, current) ? { onRestoreSection: (sectionId: string) => setRestoring({ sectionId }) } : {})} />
           {canRestore(session, current) && <Button onClick={() => setRestoring({})}>Restore this version</Button>}
           {restoring !== undefined && (
             <RestoreDialog item={current} point={point} pointName={entryName(pointEntry)} {...(restoring.sectionId === undefined ? {} : { sectionId: restoring.sectionId })}

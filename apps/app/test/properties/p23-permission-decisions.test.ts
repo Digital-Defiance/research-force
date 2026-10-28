@@ -21,7 +21,7 @@ const SPECIALTIES = [id(10), id(11), id(12)];
 const ADDED_ROLE_IDS = [id(20), id(21)];
 const UNKNOWN_ROLE = id(29);
 /** Permissions whose `own` scope may narrow an Administrator's `any` in an added Role (R2.6). */
-const NARROWABLE = new Set<Permission>(['item.edit', 'item.correct', 'item.withdraw', 'item.delete', 'section.edit', 'link.remove']);
+const NARROWABLE = new Set<Permission>(['item.edit', 'item.correct', 'item.withdraw', 'item.delete', 'section.edit', 'link.remove', 'access.restrict', 'attachment.move']);
 const GRANTABLE: readonly (readonly [Permission, PermissionScope])[] = PERMISSIONS.flatMap((permission) => {
   const scopes = new Set<PermissionScope>(Object.values(BUILT_IN_ROLES).flatMap((role) => (role.permissions[permission] ? [role.permissions[permission]] : [])));
   if (NARROWABLE.has(permission)) scopes.add('own');
@@ -58,6 +58,9 @@ function targetKinds(map: RolePermissionMap): fc.Arbitrary<PermissionTarget>[] {
     fc.record({ type: fc.constant('role' as const), roleId: roleIdArb(map) }),
     fc.record({ type: fc.constant('member' as const), member, activeAdministratorCount: fc.constantFrom(0, 1, 1, 2, 3), nextRoleId: fc.option(roleIdArb(map), { nil: undefined }) })
       .map(({ nextRoleId, ...target }) => (nextRoleId === undefined ? target : { ...target, nextRoleId })),
+    fc.record({ type: fc.constant('hold' as const), placedById: ownerArb, itemOwnerId: ownerArb }),
+    fc.record({ type: fc.constant('publication_proposal' as const), consentingMemberId: ownerArb }),
+    fc.record({ type: fc.constant('dual_approval' as const), proposedById: ownerArb }),
   ];
 }
 
@@ -70,7 +73,8 @@ const targetsArb = (map: RolePermissionMap): fc.Arbitrary<(PermissionTarget | un
 /**
  * The reference decision, written from R2.4 and R2.5 and the Profile (R3.2), Log_Summary (R41.3, R41.4),
  * Dissent_Note (R42.5, R42.6), Project_Accent (R45.22), Policy (R46.16), Responsible_Person (R46.39),
- * and last-Administrator (R2.11) rules: a Role's scope says whose targets it covers, and some rules
+ * last-Administrator (R2.11), access change (R47.6, R47.7), hold (R48.10), consent (R23.19), and
+ * Dual_Approval (R49.3 to R49.5) rules: a Role's scope says whose targets it covers, and some rules
  * hold in every Role.
  */
 function reference(member: PermissionMember, map: RolePermissionMap, permission: string, target: PermissionTarget | undefined): boolean {
@@ -113,6 +117,12 @@ function reference(member: PermissionMember, map: RolePermissionMap, permission:
     case 'item.move': return t?.type === 'research_item' && scope === 'any';
     case 'backup.manage': return scope === 'any' && administrator;
     case 'party.doNotName.off': return scope === 'any' && administrator;
+    case 'access.restrict': return t?.type === 'research_item' && scoped(t.ownerId);
+    case 'access.widen': return t?.type === 'research_item' && ownOnly(t.ownerId);
+    case 'attachment.move': return t?.type === 'attachment' && scoped(t.ownerId);
+    case 'hold.lift': return t?.type === 'hold' && (ownOnly(t.placedById) || ownOnly(t.itemOwnerId));
+    case 'consent.give': return t?.type === 'publication_proposal' && ownOnly(t.consentingMemberId);
+    case 'dual.approve': case 'dual.decline': return t?.type === 'dual_approval' && scope === 'any' && !mine(t.proposedById);
     default: return scope === 'any';
   }
 }

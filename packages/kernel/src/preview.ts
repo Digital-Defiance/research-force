@@ -146,7 +146,7 @@ export function diffViews(before: ProjectionInput, after: ProjectionInput, optio
   return describe(compare(before, after), after, options.contentLicence);
 }
 
-export type GateReason = 'unit_limit' | 'unknown_unit' | 'rights' | 'consent' | 'licence' | 'requester_licence' | 'disclosure_line';
+export type GateReason = 'unit_limit' | 'unknown_unit' | 'rights' | 'consent' | 'licence' | 'requester_licence' | 'disclosure_line' | 'restricted';
 export interface GateFailure {
   readonly key?: UnitKey;
   readonly reason: GateReason;
@@ -160,6 +160,16 @@ export interface GateState {
   readonly input: ProjectionInput;
   readonly requesterId: string;
   readonly contentLicence: string;
+}
+
+/** The Research_Item a unit belongs to, through its Parent chain. */
+function rootItem(unit: UnitRecord, units: ReadonlyMap<string, UnitRecord>): Extract<UnitRecord, { type: 'research_item' }> | undefined {
+  const seen = new Set<string>();
+  for (let current: UnitRecord | undefined = unit; current && !seen.has(current.id); current = current.parentId === undefined ? undefined : units.get(current.parentId)) {
+    if (current.type === 'research_item') return current;
+    seen.add(current.id);
+  }
+  return undefined;
 }
 
 function gates(change: ChangeSet, state: GateState, after: ProjectionInput, compared: Compared): GateFailure[] {
@@ -189,6 +199,11 @@ function gates(change: ChangeSet, state: GateState, after: ProjectionInput, comp
       continue;
     }
     const unit = 'type' in record ? record : undefined;
+    const root = unit && rootItem(unit, afterUnits);
+    if (root?.item.restricted && (entry.level === 'public' || entry.level === 'withheld' || entry.presentation !== undefined || entry.publicSummary || entry.disclosureLine)) {
+      failures.push({ key: entry.key, reason: 'restricted', message: `${root.item.identifier} is Restricted, so nothing in it can be published; widen its access first.`, offerWithheld: false, details: [root.item.identifier] });
+      continue;
+    }
     if (entry.level === 'public' && unit?.type === 'attachment') {
       const rights = values.get(unit.attachment.rightsStatusId);
       if (rights?.permitsPublication !== true) failures.push({ key: entry.key, reason: 'rights', message: `The Rights_Status ${rights?.name ?? 'of this Attachment'} does not permit publication.`, offerWithheld: true, details: [rights?.name ?? ''] });
@@ -232,7 +247,7 @@ function gates(change: ChangeSet, state: GateState, after: ProjectionInput, comp
   return failures;
 }
 
-/** Every reason to refuse the whole change; an empty list means it may be applied (R23.5, R23.14, R26.14, R33.4, R34.2, R46.17). */
+/** Every reason to refuse the whole change; an empty list means it may be applied (R23.5, R23.14, R26.14, R33.4, R34.2, R46.17, R47.9). */
 export function checkGates(change: ChangeSet, state: GateState): GateFailure[] {
   const after = applyChange(state.input, change);
   return gates(change, state, after, compare(state.input, after));

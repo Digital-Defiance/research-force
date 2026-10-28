@@ -7,7 +7,7 @@ import { CREATION, inSaveOrder, sectionIds, stateAt } from '@researchforce/domai
 import type { Fields, HistoryPoint, HistoryState, SectionValue, StoredRevision } from '@researchforce/domain/history';
 import { addedBack, restoreFields, restoreSection } from '@researchforce/domain/restore';
 import { reasonSchema } from '@researchforce/domain/schemas/other';
-import type { DisclosureLine, Level, RevisionKind, Timestamp, ULID } from '@researchforce/domain/types';
+import type { AccessLevel, DisclosureLine, Level, RevisionKind, Timestamp, ULID } from '@researchforce/domain/types';
 import { BUILT_IN_VALUE_IDS } from '@researchforce/domain/value-sets';
 import type { ApiEnv } from '../api/app';
 import { ApiError } from '../api/errors';
@@ -17,12 +17,18 @@ import { KIND_ADAPTERS } from './kinds';
 import { rowsOf } from './kinds/kind';
 import { editItem, itemResponse } from './items';
 import type { LoadedItem } from './items';
+import type { NamedMember } from './access';
 import { commitSave } from './pipeline';
 import type { FieldChange } from './pipeline';
 
-/** Unit fields that only Withdrawals and Disclosure_Changes set; the item's history shows them with its other fields. */
-export const UNIT_FIELDS = ['disclosureLevel', 'classificationState', 'disclosureLine', 'publicPresentation', 'withdrawnAt', 'withdrawnBy', 'withdrawalReason'] as const;
-/** Fields a Restoration never changes beyond each kind's status fields (R22.5, R23.15): the Elimination_Scope goes with its Status_Change (R8.4). */
+/** Fields that only Withdrawals, Disclosure_Changes, and Access_Changes set; the item's history shows them with its other fields. */
+export const UNIT_FIELDS = [
+  'disclosureLevel', 'classificationState', 'disclosureLine', 'publicPresentation', 'withdrawnAt', 'withdrawnBy', 'withdrawalReason', 'accessLevel', 'accessMembers',
+] as const;
+/**
+ * Fields a Restoration never changes beyond each kind's status fields (R22.5, R23.15, R47.6): the Elimination_Scope goes
+ * with its Status_Change (R8.4), and who can read the item changes only through an access change.
+ */
 const ALWAYS_KEPT: readonly string[] = [...UNIT_FIELDS, 'eliminationScope'];
 
 export interface HistoryRevision extends StoredRevision {
@@ -37,17 +43,21 @@ export interface ItemHistory {
   /** Oldest first. */
   readonly revisions: readonly HistoryRevision[];
   readonly creation: { readonly memberId: ULID; readonly displayName: string | null; readonly at: Timestamp };
+  /** Display names of the Members on any Access_List the history shows. */
+  readonly names: ReadonlyMap<ULID, string | null>;
 }
+export interface AccessPoint { readonly level: AccessLevel; readonly members: readonly NamedMember[] }
 
 const defined = (fields: Record<string, unknown>): Fields => Object.fromEntries(Object.entries(fields).filter(([, value]) => value !== undefined && value !== null));
 
-/** The Item's fields as its Revisions record them, with the unit fields that Withdrawals and Disclosure_Changes set. */
+/** The Item's fields as its Revisions record them, with the fields that Withdrawals, Disclosure_Changes, and Access_Changes set. */
 export function itemFields(item: LoadedItem): Fields {
   const { base } = item;
   return defined({
     title: base.title, logSummary: base.logSummary, ...item.fields,
     disclosureLevel: base.disclosureLevel, classificationState: base.classificationState, disclosureLine: base.disclosureLine,
     publicPresentation: base.publicPresentation, withdrawnAt: base.withdrawnAt, withdrawnBy: base.withdrawnBy, withdrawalReason: base.withdrawalReason,
+    accessLevel: base.accessLevel, accessMembers: item.accessMembers.length === 0 ? undefined : item.accessMembers.map((member) => member.id),
   });
 }
 
@@ -55,13 +65,15 @@ export function itemFields(item: LoadedItem): Fields {
 export async function loadHistory(c: Context<ApiEnv>, item: LoadedItem): Promise<ItemHistory> {
   const db = c.env.RF_CORE;
   const id = item.base.id;
-  const [sectionRows, revisionRows, creatorRows] = await c.get('accountant').track(db.batch([
+  const [sectionRows, revisionRows, creatorRows, nameRows] = await c.get('accountant').track(db.batch([
     db.prepare(`SELECT id, disclosure_level AS disclosureLevel, classification_state AS classificationState, disclosure_line AS disclosureLine
       FROM units WHERE root_id = ?1 AND unit_type = 'entry_section'`).bind(id),
     db.prepare(`SELECT r.id, r.seq, r.target_id AS targetId, r.kind, r.prev, r.member_id AS memberId, p.display_name AS displayName, r.at, r.reason, r.restored_point AS restoredPoint
       FROM revisions r LEFT JOIN profiles p ON p.member_id = r.member_id
       WHERE r.target_type = 'unit' AND (r.target_id = ?1 OR r.root_id = ?1)`).bind(id),
     db.prepare('SELECT s.member_id AS memberId, p.display_name AS displayName FROM submissions s LEFT JOIN profiles p ON p.member_id = s.member_id WHERE s.id = ?1').bind(item.base.submissionId),
+    db.prepare(`SELECT DISTINCT j.value AS id, p.display_name AS displayName FROM revisions r, json_each(r.prev, '$.accessMembers') j LEFT JOIN profiles p ON p.member_id = j.value
+      WHERE r.target_type = 'unit' AND r.target_id = ?1 AND r.kind = 'access_change'`).bind(id),
   ]));
   const sections = Object.fromEntries(rowsOf<{ id: ULID; disclosureLevel: Level; classificationState: string | null; disclosureLine: string | null }>(sectionRows).map((row) => [
     row.id, defined({ disclosureLevel: row.disclosureLevel, classificationState: row.classificationState, disclosureLine: row.disclosureLine === null ? null : JSON.parse(row.disclosureLine) as DisclosureLine }),
@@ -71,7 +83,10 @@ export async function loadHistory(c: Context<ApiEnv>, item: LoadedItem): Promise
   const covered = sectionIds(current, all);
   const revisions = inSaveOrder(all.filter((revision) => revision.targetId === id || covered.has(revision.targetId)));
   const creator = rowsOf<{ memberId: ULID; displayName: string | null }>(creatorRows)[0];
-  return { current, revisions, creation: { memberId: creator?.memberId ?? item.base.ownerId, displayName: creator?.displayName ?? null, at: item.base.createdAt } };
+  return {
+    current, revisions, creation: { memberId: creator?.memberId ?? item.base.ownerId, displayName: creator?.displayName ?? null, at: item.base.createdAt },
+    names: new Map([...rowsOf<NamedMember>(nameRows), ...item.accessMembers].map((member) => [member.id, member.displayName])),
+  };
 }
 
 function pointState(history: ItemHistory, point: HistoryPoint, field = 'point'): HistoryState {
@@ -83,12 +98,22 @@ function pointState(history: ItemHistory, point: HistoryPoint, field = 'point'):
   }
 }
 
-/** The history list, newest first, ending with the creation, and the state after the selected point (R22.3). */
+/** The history list, newest first, ending with the creation; Access_Changes carry the level and list before and after (R22.3, R47.6). */
 export function historyResponse(history: ItemHistory, point?: HistoryPoint) {
-  const entries = [...history.revisions].reverse().map((revision) => ({
-    id: revision.id, kind: revision.kind as RevisionKind, memberId: revision.memberId, displayName: revision.displayName, at: revision.at, reason: revision.reason,
-    restoredPoint: revision.restoredPoint, sectionId: revision.targetId === history.current.id ? null : revision.targetId, fields: Object.keys(revision.prev),
-  }));
+  const accessPoint = (fields: Readonly<Record<string, unknown>>): AccessPoint => ({
+    level: fields['accessLevel'] as AccessLevel,
+    members: ((fields['accessMembers'] ?? []) as ULID[]).map((id) => ({ id, displayName: history.names.get(id) ?? null })),
+  });
+  let after = accessPoint(history.current.item);
+  const entries = [...history.revisions].reverse().map((revision) => {
+    const access = revision.kind === 'access_change' && revision.targetId === history.current.id ? { before: accessPoint(revision.prev), after } : undefined;
+    if (access !== undefined) after = access.before;
+    return {
+      id: revision.id, kind: revision.kind as RevisionKind, memberId: revision.memberId, displayName: revision.displayName, at: revision.at, reason: revision.reason,
+      restoredPoint: revision.restoredPoint, sectionId: revision.targetId === history.current.id ? null : revision.targetId, fields: Object.keys(revision.prev),
+      ...(access === undefined ? {} : { access }),
+    };
+  });
   return {
     entries: [...entries, { id: CREATION, kind: CREATION, ...history.creation, reason: null, restoredPoint: null, sectionId: null, fields: [] }],
     ...(point === undefined ? {} : { point, state: pointState(history, point) }),

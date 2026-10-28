@@ -1,5 +1,6 @@
 import type { Context } from 'hono';
 import { eq } from 'drizzle-orm';
+import { canRead } from '@researchforce/db/access';
 import type { RequestAccountant } from '@researchforce/db/accountant';
 import { GuardedBatch } from '@researchforce/db/batch';
 import type { BatchActor } from '@researchforce/db/batch';
@@ -12,10 +13,12 @@ import { ApiError, isUniqueViolation } from '../api/errors';
 
 /**
  * The condition that shows the unit aliased `unit` to the Member bound at `memberParam`: its Submission has
- * completed, or it is the Member's own (R18.2, R18.11). Every Workspace query over units includes it.
+ * completed, or it is the Member's own (R18.2, R18.11), and the Member Can_Read its Research_Item (R47.3, R47.4).
+ * Every Workspace query over units includes it.
  */
 export function visibleTo(unit: string, memberParam: string): string {
-  return `EXISTS (SELECT 1 FROM submissions vs WHERE vs.id = ${unit}.submission_id AND (vs.completed_at IS NOT NULL OR vs.member_id = ${memberParam}))`;
+  return `(EXISTS (SELECT 1 FROM submissions vs WHERE vs.id = ${unit}.submission_id AND (vs.completed_at IS NOT NULL OR vs.member_id = ${memberParam}))
+    AND ${canRead(memberParam, `${unit}.root_id`)})`;
 }
 
 export interface SubmissionStart {

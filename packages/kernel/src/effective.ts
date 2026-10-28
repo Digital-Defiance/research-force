@@ -8,6 +8,8 @@ export interface DNode {
   readonly unclassified: boolean;
   /** Research_Items only. */
   readonly presentation?: PublicPresentation;
+  /** Research_Items only: a Restricted Research_Item counts as a Not_Published ancestor of everything under it (R47.9). */
+  readonly restricted?: boolean;
   readonly parent?: DNode;
   /** The Root_Item; derived from the Parent chain when absent. */
   readonly root?: DNode;
@@ -58,7 +60,8 @@ function compute(node: DNode, adjust: LevelAdjustment | undefined, memo: Map<DNo
   } else {
     const own: Level = node.unclassified ? 'not_published' : node.own; // R26.5
     const needsFull = node.type === 'entry_section' || node.type === 'reply' || node.type === 'dissent_note';
-    if (ancestors(node).some((ancestor) => compute(ancestor, adjust, memo) !== 'public')) level = 'not_published';
+    if (rootOf(node)!.restricted === true) level = 'not_published';
+    else if (ancestors(node).some((ancestor) => compute(ancestor, adjust, memo) !== 'public')) level = 'not_published';
     else if (needsFull && rootOf(node)!.presentation !== 'full_content') level = 'not_published';
     else level = adjust && own !== 'not_published' ? lessPublic(adjust(node, own), own) : own;
   }
@@ -66,7 +69,7 @@ function compute(node: DNode, adjust: LevelAdjustment | undefined, memo: Map<DNo
   return level;
 }
 
-/** Effective_Disclosure (R23.1, R23.3, R24.5, R26.5). Pass one memo across calls to share work over a tree. */
+/** Effective_Disclosure (R23.1, R23.3, R24.5, R26.5, R47.9). Pass one memo across calls to share work over a tree. */
 export function effective(node: DNode, adjust?: LevelAdjustment, memo: Map<DNode, Level> = new Map()): Level {
   return compute(node, adjust, memo);
 }

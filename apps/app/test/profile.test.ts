@@ -1,6 +1,7 @@
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { GuardedBatch } from '@researchforce/db/batch';
-import { projects, submissions, units } from '@researchforce/db/schema/core';
+import { projects, researchItems, submissions, units } from '@researchforce/db/schema/core';
+import { researchItemRow } from './units';
 import { newULID } from '@researchforce/domain/identifiers';
 import { ROLE_IDS } from '@researchforce/domain/permissions';
 import { asTimestamp, asULID, EVENT_TYPES } from '@researchforce/domain/types';
@@ -175,7 +176,8 @@ describe('viewing a Profile', () => {
       );
       expected.unshift({ id: submissionId, items: [itemId] });
     }
-    await new GuardedBatch(core(), { id: colleagueId, now: at }).bulkInsert(submissions, submissionRows).bulkInsert(units, unitRows).commit();
+    await new GuardedBatch(core(), { id: colleagueId, now: at }).bulkInsert(submissions, submissionRows).bulkInsert(units, unitRows)
+      .bulkInsert(researchItems, expected.map((submission) => researchItemRow(submission.items[0]!, projectId))).commit();
     await call(api, bindings, newcomer, 'PATCH', '/me/profile', complete);
 
     const response = await (await call(api, bindings, newcomer, 'GET', `/members/${colleagueId}/profile`)).json<{ member: object; profile: object; submissions: { id: ULID; items: { id: ULID; unitType: string }[] }[] }>();

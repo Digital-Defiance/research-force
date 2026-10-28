@@ -22,6 +22,7 @@ import type { ErrorCode } from './errors';
 import { profileGate } from '../auth/profile-gate';
 import { membersRoutes } from './routes/members';
 import { memberProfileRoutes, meRoutes } from './routes/profile';
+import { accessRoutes } from './routes/access';
 import { discussionRoutes } from './routes/discussion';
 import { historyRoutes } from './routes/history';
 import { itemsRoutes } from './routes/items';
@@ -130,6 +131,7 @@ export function createApi(config: ApiConfig): Hono<ApiEnv> {
   v1.route('/', discussionRoutes);
   v1.route('/items', historyRoutes);
   v1.route('/items', itemsRoutes);
+  v1.route('/access', accessRoutes);
   v1.route('/reviews', reviewsRoutes);
   v1.route('/stages', stagesRoutes);
   v1.route('/value-sets', valueSetsRoutes);

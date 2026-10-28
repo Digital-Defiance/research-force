@@ -63,6 +63,8 @@ export type ResearchItemRecord = KindRecord & {
   readonly publicSummary?: RichText; readonly logSummary?: RichText;
   /** When the Research_Item's Effective_Disclosure first became Public, once the Publisher has recorded it. */
   readonly firstPublicAt?: Timestamp;
+  /** Its Access_Level is Restricted, so nothing under it is published (R47.9). */
+  readonly restricted?: boolean;
 };
 export interface AttachmentRecord {
   readonly identifier: string; readonly title: string; readonly fileKind: FileKind; readonly sizeBytes: number; readonly caption?: string;

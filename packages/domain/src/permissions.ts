@@ -12,7 +12,8 @@ export const PERMISSIONS = [
   'ai.draft.logSummary', 'ai.draft.publicSummary', 'ai.draft.disclosureLine', 'disclosure.set',
   'project.create', 'project.edit', 'item.move', 'moderation.decide', 'member.invite', 'member.role', 'member.revoke',
   'role.add', 'role.edit', 'valueSet.manage', 'rights.markPublication', 'methods.describe', 'policy.edit', 'settings.edit',
-  'import.run', 'export.manage', 'backup.manage',
+  'import.run', 'export.manage', 'backup.manage', 'access.restrict', 'access.widen', 'hold.place', 'hold.lift', 'consent.give', 'consent.propose',
+  'dual.propose', 'dual.approve', 'dual.decline', 'attachment.move',
 ] as const;
 export type Permission = typeof PERMISSIONS[number];
 export type PermissionScope = 'any' | 'own' | 'other' | 'eligible';
@@ -20,15 +21,18 @@ export type PermissionGrants = Readonly<Partial<Record<Permission, PermissionSco
 export interface RoleDefinition { readonly id: ULID; readonly name: string; readonly permissions: PermissionGrants; }
 export type RolePermissionMap = Readonly<Record<string, RoleDefinition>>;
 export const ROLE_IDS = Object.freeze({ contributor: asULID('00000000000000000000000006'), administrator: asULID('00000000000000000000000007') });
+/** Shown wherever a Member chooses an Access_Level (R47.2). */
+export const ACCESS_STATEMENT = 'The Owner and every Administrator can read a Restricted item, whether or not they are on its Access List.';
 const contributor: PermissionGrants = Object.freeze({
   'item.create': 'any', 'attachment.upload': 'any', 'reply.post': 'any', 'topic.create': 'any',
   'item.edit': 'own', 'item.correct': 'own', 'item.withdraw': 'own', 'section.edit': 'own', 'logSummary.write': 'own',
   'link.add': 'any', 'link.remove': 'own', 'review.request': 'any', 'review.complete': 'eligible',
   'party.doNotName.on': 'any', 'profile.edit': 'own', 'dissent.attach': 'other', 'dissent.edit': 'own', 'dissent.withdraw': 'own', 'ai.draft.logSummary': 'own',
+  'access.restrict': 'own', 'access.widen': 'own', 'hold.place': 'any', 'hold.lift': 'own', 'consent.give': 'own', 'attachment.move': 'own',
 });
 const administrator: PermissionGrants = Object.freeze({
   ...Object.fromEntries(PERMISSIONS.map((permission) => [permission, 'any'])), ...contributor,
-  'item.edit': 'any', 'item.correct': 'any', 'item.withdraw': 'any', 'section.edit': 'any', 'link.remove': 'any',
+  'item.edit': 'any', 'item.correct': 'any', 'item.withdraw': 'any', 'section.edit': 'any', 'link.remove': 'any', 'access.restrict': 'any', 'attachment.move': 'any',
 });
 export const BUILT_IN_ROLES = Object.freeze({
   contributor: Object.freeze({ id: ROLE_IDS.contributor, name: 'Contributor', permissions: contributor }),
@@ -51,7 +55,10 @@ export type PermissionTarget =
   | { readonly type: 'setting'; readonly key: SettingKey; readonly candidateMember?: SettingMember }
   | { readonly type: 'policy_section' }
   | { readonly type: 'role'; readonly roleId: ULID }
-  | { readonly type: 'member'; readonly member: PermissionMember; readonly activeAdministratorCount: number; readonly nextRoleId?: ULID };
+  | { readonly type: 'member'; readonly member: PermissionMember; readonly activeAdministratorCount: number; readonly nextRoleId?: ULID }
+  | { readonly type: 'hold'; readonly placedById: ULID; readonly itemOwnerId: ULID }
+  | { readonly type: 'publication_proposal'; readonly consentingMemberId: ULID }
+  | { readonly type: 'dual_approval'; readonly proposedById: ULID };
 
 function currentRole(ctx: PermissionContext): RoleDefinition | undefined {
   if (ctx.member.status !== 'active' || !Object.hasOwn(ctx.roles, ctx.member.roleId)) return undefined;
@@ -106,6 +113,13 @@ export function can(ctx: PermissionContext, permission: Permission, target?: Per
       // The save batch must repeat this last-Administrator guard atomically (Tasks 5 and 14).
       return true;
     case 'item.move': return target?.type === 'research_item' && scope === 'any';
+    case 'access.restrict': return target?.type === 'research_item' && (scope === 'any' || (scope === 'own' && own(target.ownerId)));
+    // Widening stays with the Owner in every Role; a Revoked Owner's item widens only through a Dual_Approval (R47.7).
+    case 'access.widen': return ownScope && target?.type === 'research_item' && own(target.ownerId);
+    case 'attachment.move': return target?.type === 'attachment' && (scope === 'any' || (scope === 'own' && own(target.ownerId)));
+    case 'hold.lift': return ownScope && target?.type === 'hold' && (own(target.placedById) || own(target.itemOwnerId));
+    case 'consent.give': return ownScope && target?.type === 'publication_proposal' && own(target.consentingMemberId);
+    case 'dual.approve': case 'dual.decline': return scope === 'any' && target?.type === 'dual_approval' && !own(target.proposedById);
     case 'backup.manage': case 'party.doNotName.off': return scope === 'any' && isAdministrator(ctx);
     default: return scope === 'any';
   }
@@ -125,7 +139,7 @@ export function validateAddedRole(candidate: RoleDefinition, existing: RolePermi
       const permission = key as Permission;
       if (!Object.hasOwn(role.permissions, permission)) return false;
       const current = role.permissions[permission];
-      return current === scope || (current === 'any' && scope === 'own' && ['item.edit', 'item.correct', 'item.withdraw', 'item.delete', 'section.edit', 'link.remove'].includes(key));
+      return current === scope || (current === 'any' && scope === 'own' && ['item.edit', 'item.correct', 'item.withdraw', 'item.delete', 'section.edit', 'link.remove', 'access.restrict', 'attachment.move'].includes(key));
     });
     if (!granted) return refused('scope_not_granted', `permissions.${key}`, 'The Permission and scope must be drawn from existing Roles.');
   }

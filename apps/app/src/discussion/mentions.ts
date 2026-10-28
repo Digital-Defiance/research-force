@@ -2,6 +2,10 @@ import type { Context } from 'hono';
 import type { MentionSpan, RichText } from '@researchforce/domain/richtext';
 import type { ValidationContext } from '@researchforce/domain/schemas/common';
 import type { ULID } from '@researchforce/domain/types';
+import { readerSql } from '@researchforce/db/access';
+import type { AccessScope } from '@researchforce/db/access';
+import { sql } from 'drizzle-orm';
+import { SQLiteAsyncDialect } from 'drizzle-orm/sqlite-core';
 import type { ApiEnv } from '../api/app';
 import type { FieldIssue } from '../api/errors';
 
@@ -58,18 +62,22 @@ export function mentionIssues(context: Pick<ValidationContext, 'members' | 'valu
 }
 
 /**
- * The other active Members a save newly mentions, once each: each Member named, then each active holder of a newly
- * mentioned Specialty who is not named, never the author (R16.6, R16.7).
+ * The other active Members a save newly mentions who can read its Research_Item, once each: each Member named, then
+ * each active holder of a newly mentioned Specialty who is not named, never the author (R16.6, R16.7, R47.5).
  */
-export async function mentionRecipients(c: Context<ApiEnv>, added: MentionTargets, authorId: ULID): Promise<MentionRecipient[]> {
+export async function mentionRecipients(c: Context<ApiEnv>, added: MentionTargets, authorId: ULID, scope: AccessScope): Promise<MentionRecipient[]> {
   if (added.members.length + added.specialties.length === 0) return [];
-  const rows = await c.get('accountant').track(c.env.RF_CORE.prepare(`
+  const members = JSON.stringify(added.members);
+  const reader = readerSql(sql.raw('m.id'), scope);
+  const query = new SQLiteAsyncDialect().sqlToQuery(sql`
     SELECT m.id AS memberId, NULL AS specialtyId FROM members m
-      WHERE m.status = 'active' AND m.id <> ?3 AND m.id IN (SELECT value FROM json_each(?1))
+      WHERE m.status = 'active' AND m.id <> ${authorId} AND m.id IN (SELECT value FROM json_each(${members})) AND ${reader}
     UNION ALL
     SELECT m.id AS memberId, min(ps.value_id) AS specialtyId FROM members m JOIN profile_specialties ps ON ps.member_id = m.id
-      WHERE m.status = 'active' AND m.id <> ?3 AND ps.value_id IN (SELECT value FROM json_each(?2)) AND m.id NOT IN (SELECT value FROM json_each(?1))
+      WHERE m.status = 'active' AND m.id <> ${authorId} AND ps.value_id IN (SELECT value FROM json_each(${JSON.stringify(added.specialties)}))
+        AND m.id NOT IN (SELECT value FROM json_each(${members})) AND ${reader}
       GROUP BY m.id
-    ORDER BY memberId`).bind(JSON.stringify(added.members), JSON.stringify(added.specialties), authorId).all<MentionRecipient>());
+    ORDER BY memberId`);
+  const rows = await c.get('accountant').track(c.env.RF_CORE.prepare(query.sql).bind(...query.params).all<MentionRecipient>());
   return rows.results;
 }

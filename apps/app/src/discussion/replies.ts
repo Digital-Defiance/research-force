@@ -15,7 +15,8 @@ import { authorize } from '../auth/authorize';
 import { richText } from '../records/kinds/kind';
 import { validationContext } from '../records/items';
 import { addSubmission, visibleTo } from '../records/submissions';
-import { mentionIssues } from './mentions';
+import { refuseUnreadable } from '../records/access';
+import { addedMentions, mentionIssues } from './mentions';
 
 const replyBody = z.strictObject({ parentId: z.string(), text: replySchema });
 /**
@@ -46,6 +47,7 @@ export async function postReply(c: Context<ApiEnv>, body: unknown): Promise<ULID
   if (!parent) throw new ApiError('validation', { fields: [{ field: 'parentId', rule: 'Reply to a Research Item, Attachment, or Reply that exists.' }] });
   const mentions = mentionIssues(await validationContext(c), undefined, { text });
   if (mentions.length > 0) throw new ApiError('validation', { fields: mentions });
+  await refuseUnreadable(c, addedMentions(undefined, { text }).members, { rootId: parent.rootId });
 
   const id = newULID(now);
   const submissionId = newULID(now);

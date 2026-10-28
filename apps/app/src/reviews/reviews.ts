@@ -3,6 +3,8 @@ import { eq, sql } from 'drizzle-orm';
 import type { SQL } from 'drizzle-orm';
 import { SQLiteAsyncDialect } from 'drizzle-orm/sqlite-core';
 import { z } from 'zod';
+import { canRead, readerSql } from '@researchforce/db/access';
+import type { AccessScope } from '@researchforce/db/access';
 import { GuardedBatch } from '@researchforce/db/batch';
 import { reviewAddressees, reviewRequests } from '@researchforce/db/schema/core';
 import { newULID } from '@researchforce/domain/identifiers';
@@ -18,6 +20,7 @@ import { ApiError } from '../api/errors';
 import type { FieldIssue } from '../api/errors';
 import { parse } from '../api/input';
 import { authorize, permissionContext } from '../auth/authorize';
+import { refuseUnreadable } from '../records/access';
 import { validationContext } from '../records/items';
 import { visibleTo } from '../records/submissions';
 
@@ -26,18 +29,21 @@ const dialect = new SQLiteAsyncDialect();
 /** Active Members, Specialties, and Roles a Review_Request names, each at most once (R17.2). */
 export interface Addressees { readonly memberIds: readonly ULID[]; readonly specialtyIds: readonly ULID[]; readonly roleIds: readonly ULID[] }
 export interface ReviewInput extends Addressees { readonly note?: string | undefined }
-export interface NewReview extends ReviewInput { readonly id: ULID; readonly targetId: ULID; readonly rootId: ULID; readonly requesterId: ULID }
+export interface NewReview extends ReviewInput { readonly id: ULID; readonly targetId: ULID; readonly rootId: ULID; readonly requesterId: ULID; readonly scope: AccessScope }
 type AddresseeType = 'member' | 'specialty' | 'role';
 
-/** The Members who could review: active, not the requester, and named, holding a named Specialty, or in a named Role (R17.4). */
-function eligibleMembers(requesterId: ULID, addressees: Addressees): SQL {
-  return sql`SELECT m.id FROM members m WHERE m.status = 'active' AND m.id <> ${requesterId} AND (
+/**
+ * The Members who could review: active, not the requester, able to read the Research_Item, and named, holding a named
+ * Specialty, or in a named Role (R17.4, R47.5).
+ */
+function eligibleMembers(requesterId: ULID, addressees: Addressees, scope: AccessScope): SQL {
+  return sql`SELECT m.id FROM members m WHERE m.status = 'active' AND m.id <> ${requesterId} AND ${readerSql(sql.raw('m.id'), scope)} AND (
     m.id IN (SELECT value FROM json_each(${JSON.stringify(addressees.memberIds)}))
     OR m.role_id IN (SELECT value FROM json_each(${JSON.stringify(addressees.roleIds)}))
     OR EXISTS (SELECT 1 FROM profile_specialties ps WHERE ps.member_id = m.id AND ps.value_id IN (SELECT value FROM json_each(${JSON.stringify(addressees.specialtyIds)}))))`;
 }
-/** Whether Member `m` is currently an Eligible_Reviewer of request `rr`, from its stored addressees (R17.8, R17.10). */
-const ELIGIBLE_FOR_REQUEST = `m.status = 'active' AND m.id <> rr.requester_id AND EXISTS (SELECT 1 FROM review_addressees a WHERE a.request_id = rr.id AND (
+/** Whether Member `m` is currently an Eligible_Reviewer of request `rr`, from its stored addressees and who can read its item (R17.8, R17.10, R47.5). */
+const ELIGIBLE_FOR_REQUEST = `m.status = 'active' AND m.id <> rr.requester_id AND ${canRead('m.id', 'rr.root_id')} AND EXISTS (SELECT 1 FROM review_addressees a WHERE a.request_id = rr.id AND (
   (a.addressee_type = 'member' AND a.addressee_id = m.id) OR (a.addressee_type = 'role' AND a.addressee_id = m.role_id)
   OR (a.addressee_type = 'specialty' AND a.addressee_id IN (SELECT ps.value_id FROM profile_specialties ps WHERE ps.member_id = m.id))))`;
 
@@ -52,8 +58,8 @@ export function reviewIssues(context: ValidationContext, targetId: ULID, body: R
 }
 
 /** Whether a request with these addressees would have an Eligible_Reviewer now (R17.9). */
-export async function hasEligibleReviewer(c: Context<ApiEnv>, requesterId: ULID, addressees: Addressees): Promise<boolean> {
-  const query = dialect.sqlToQuery(sql`SELECT EXISTS (${eligibleMembers(requesterId, addressees)}) AS ok`);
+export async function hasEligibleReviewer(c: Context<ApiEnv>, requesterId: ULID, addressees: Addressees, scope: AccessScope): Promise<boolean> {
+  const query = dialect.sqlToQuery(sql`SELECT EXISTS (${eligibleMembers(requesterId, addressees, scope)}) AS ok`);
   const row = await c.get('accountant').track(c.env.RF_CORE.prepare(query.sql).bind(...query.params).all<{ ok: number }>());
   return row.results[0]?.ok === 1;
 }
@@ -62,7 +68,7 @@ export const NO_ELIGIBLE_REVIEWER = 'The addressees include no active Member oth
 /** Record a Needs_Review request and its addressees; the guard refuses the whole batch when no Eligible_Reviewer remains (R17.1, R17.3, R17.9). */
 export function writeReview(batch: GuardedBatch, review: NewReview, now: Timestamp): GuardedBatch {
   const addressees = (type: AddresseeType, ids: readonly ULID[]) => ids.map((addresseeId) => ({ requestId: review.id, addresseeType: type, addresseeId }));
-  return batch.guard('review_eligible', sql`EXISTS (${eligibleMembers(review.requesterId, review)})`)
+  return batch.guard('review_eligible', sql`EXISTS (${eligibleMembers(review.requesterId, review, review.scope)})`)
     .insert(reviewRequests, { id: review.id, targetId: review.targetId, rootId: review.rootId, requesterId: review.requesterId, note: review.note ?? null, createdAt: now })
     .bulkInsert(reviewAddressees, [...addressees('member', review.memberIds), ...addressees('specialty', review.specialtyIds), ...addressees('role', review.roleIds)]);
 }
@@ -82,9 +88,11 @@ export async function createReview(c: Context<ApiEnv>, body: unknown): Promise<U
   const checked = reviewIssues(await validationContext(c), (target ? targetId : newULID(c.get('now'))) as ULID, rest);
   const issues = [...(target ? [] : [{ field: 'targetId', rule: 'Choose an Item or Entry Section that exists.' }]), ...checked.issues];
   if (issues.length > 0 || !checked.input || !target) throw new ApiError('validation', { fields: issues });
-  if (!await hasEligibleReviewer(c, actor, checked.input)) throw new ApiError('rule', { details: { rule: 'no_eligible_reviewer', message: NO_ELIGIBLE_REVIEWER } });
+  const scope = { rootId: target.rootId };
+  await refuseUnreadable(c, checked.input.memberIds, scope);
+  if (!await hasEligibleReviewer(c, actor, checked.input, scope)) throw new ApiError('rule', { details: { rule: 'no_eligible_reviewer', message: NO_ELIGIBLE_REVIEWER } });
   const id = newULID(c.get('now'));
-  await writeReview(new GuardedBatch(db, { id: actor, now: c.get('now') }), { ...checked.input, id, targetId: targetId as ULID, rootId: target.rootId, requesterId: actor }, c.get('now'))
+  await writeReview(new GuardedBatch(db, { id: actor, now: c.get('now') }), { ...checked.input, id, targetId: targetId as ULID, rootId: target.rootId, requesterId: actor, scope }, c.get('now'))
     .commit(c.get('accountant'));
   return id;
 }

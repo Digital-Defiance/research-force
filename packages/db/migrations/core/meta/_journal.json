@@ -50,6 +50,13 @@
       "when": 1793149543626,
       "tag": "0006_not_published",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1793150596977,
+      "tag": "0007_restricted_access",
+      "breakpoints": true
     }
   ]
 }

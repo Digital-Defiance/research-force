@@ -123,7 +123,7 @@ describe('POST /reviews', () => {
   it('guards the batch so no request is written once its last Eligible_Reviewer is gone', async () => {
     const item = await world.created('author', 'finding');
     const batch = new GuardedBatch(world.core(), { id: world.ids.author, now: world.at });
-    writeReview(batch, { id: newULID(world.at), targetId: item.id, rootId: item.id, requesterId: world.ids.author, memberIds: [world.ids.author], specialtyIds: [], roleIds: [] }, world.at);
+    writeReview(batch, { id: newULID(world.at), targetId: item.id, rootId: item.id, requesterId: world.ids.author, memberIds: [world.ids.author], specialtyIds: [], roleIds: [], scope: { rootId: item.id } }, world.at);
     await expect(batch.commit()).rejects.toThrow(GuardViolation);
     expect(await world.core().prepare('SELECT count(*) AS n FROM review_requests').first('n')).toBe(0);
   });

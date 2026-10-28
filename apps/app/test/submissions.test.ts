@@ -14,7 +14,7 @@ import { addSubmission, commitWithIdentifiers, completeSubmission, requireProjec
 import { migrated } from './d1';
 import { addMember, call, KeyServer, resetPeople, testApi } from './api';
 import type { TestApi } from './api';
-import { addElement, addItem, addProject, addSubmissionRow, resetRecords } from './units';
+import { addElement, addItem, addProject, addSubmissionRow, researchItemRow, resetRecords } from './units';
 
 const t0 = new Date('2026-10-27T18:00:00.000Z');
 const at = asTimestamp(t0.toISOString());
@@ -59,7 +59,7 @@ describe('the visibility gate', () => {
     const ids = [newULID(at), newULID(at), newULID(at)];
     const batch = new GuardedBatch(core(), { id: author, now: at });
     addSubmission(batch, { id: submissionId, memberId: author, kind: 'bulk_import', now: at, complete: false, counts: { finding: 3 } });
-    await batch.insert(units, ids.map((id) => itemRow(id, projectId, submissionId))).commit();
+    await batch.insert(units, ids.map((id) => itemRow(id, projectId, submissionId))).bulkInsert(researchItems, ids.map((id) => researchItemRow(id, projectId))).commit();
     expect(await visibleIds(colleague)).toEqual([]);
     expect(await core().prepare('SELECT counts, completed_at AS completedAt FROM submissions WHERE id = ?1').bind(submissionId).first()).toEqual({ counts: '{"finding":3}', completedAt: null });
     await completeSubmission(new GuardedBatch(core(), { id: author, now: at }), submissionId, at).commit();
@@ -67,7 +67,7 @@ describe('the visibility gate', () => {
     const normal = newULID(at);
     const item = newULID(at);
     await addSubmission(new GuardedBatch(core(), { id: author, now: at }), { id: normal, memberId: author, kind: 'member', now: at, complete: true })
-      .insert(units, itemRow(item, projectId, normal)).commit();
+      .insert(units, itemRow(item, projectId, normal)).insert(researchItems, researchItemRow(item, projectId)).commit();
     expect(await visibleIds(colleague)).toContain(item);
   });
 });

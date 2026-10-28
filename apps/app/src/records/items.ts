@@ -1,9 +1,11 @@
 import type { Context } from 'hono';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
+import type { AccessScope } from '@researchforce/db/access';
 import { researchItems, units } from '@researchforce/db/schema/core';
 import { dateSortKey, itemDate, logDate } from '@researchforce/domain/dates';
 import { newULID } from '@researchforce/domain/identifiers';
+import { ACCESS_STATEMENT } from '@researchforce/domain/permissions';
 import type { RichText } from '@researchforce/domain/richtext';
 import { validate } from '@researchforce/domain/schemas/common';
 import type { ValidationContext } from '@researchforce/domain/schemas/common';
@@ -23,7 +25,9 @@ import type { FieldIssue } from '../api/errors';
 import { parse } from '../api/input';
 import { authorize } from '../auth/authorize';
 import type { PermissionCheck } from '../auth/authorize';
-import { mentionIssues } from '../discussion/mentions';
+import { addedMentions, mentionIssues } from '../discussion/mentions';
+import { accessChoice, refuseUnreadable, writeAccessGrants } from './access';
+import type { NamedMember } from './access';
 import { KIND_ADAPTERS } from './kinds';
 import { insertStagedSections, prepareSections, stagedSectionChange, stagedSectionIssues, writeStagedSections } from './kinds/journal';
 import type { Section, StagedSections } from './kinds/journal';
@@ -97,6 +101,8 @@ export interface LoadedItem {
   readonly project: { readonly id: ULID; readonly name: string; readonly level: Level };
   readonly names: ReadonlyMap<ULID, string>;
   readonly specialties: readonly { readonly id: ULID; readonly name: string }[];
+  /** The Access_List, empty unless the item is Restricted (R47.1). */
+  readonly accessMembers: readonly NamedMember[];
   /** Every Review_Request of the Item and its Entry_Sections (R17.11). */
   readonly reviews: readonly ReviewView[];
 }
@@ -122,15 +128,18 @@ export async function loadItem(c: Context<ApiEnv>, id: string): Promise<LoadedIt
   if (!isULID(id)) throw new ApiError('not_found');
   const db = c.env.RF_CORE;
   const viewer = c.get('session').member.id;
-  const [baseRows, noteRows, reviewRows, addresseeRows] = await c.get('accountant').track(db.batch([
+  const [baseRows, noteRows, grantRows, reviewRows, addresseeRows] = await c.get('accountant').track(db.batch([
     db.prepare(`SELECT u.id, ri.kind, ri.item_identifier AS identifier, u.project_id AS projectId, u.owner_id AS ownerId, u.credit, u.submission_id AS submissionId,
         u.created_at AS createdAt, u.rev, u.disclosure_level AS disclosureLevel, u.classification_state AS classificationState, u.disclosure_line AS disclosureLine,
         ri.public_presentation AS publicPresentation, u.withdrawn_at AS withdrawnAt, u.withdrawn_by AS withdrawnBy, u.withdrawal_reason AS withdrawalReason,
-        ri.title, ri.status_value_id AS statusValueId, ri.log_summary AS logSummary, ri.log_summary_spans AS logSummarySpans, p.name AS projectName, p.disclosure_level AS projectLevel
+        ri.title, ri.status_value_id AS statusValueId, ri.log_summary AS logSummary, ri.log_summary_spans AS logSummarySpans, ri.access_level AS accessLevel,
+        p.name AS projectName, p.disclosure_level AS projectLevel
       FROM units u JOIN research_items ri ON ri.unit_id = u.id JOIN projects p ON p.id = u.project_id
       WHERE u.id = ?1 AND u.unit_type = 'research_item' AND ${visibleTo('u', '?2')}`).bind(id, viewer),
     db.prepare(`SELECT u.id, u.rev, u.disclosure_level AS level, u.classification_state AS classification, u.owner_id AS ownerId, u.withdrawn_at AS withdrawnAt, r.text, r.text_spans AS spans
       FROM units u JOIN replies r ON r.unit_id = u.id WHERE u.parent_id = ?1 AND u.unit_type = 'reply' AND r.is_group_note = 1 ORDER BY u.id LIMIT 1`).bind(id),
+    db.prepare(`SELECT g.member_id AS id, p.display_name AS displayName FROM access_grants g LEFT JOIN profiles p ON p.member_id = g.member_id
+      WHERE g.root_id = ?1 ORDER BY g.member_id`).bind(id),
     ...itemReviewStatements(db, id),
   ]));
   const row = rowsOf<BaseQueryRow>(baseRows)[0];
@@ -156,6 +165,7 @@ export async function loadItem(c: Context<ApiEnv>, id: string): Promise<LoadedIt
     project: { id: base.projectId, name: projectName, level: projectLevel },
     names: new Map(rowsOf<{ id: ULID; displayName: string }>(results.at(-2)).map((person) => [person.id, person.displayName])),
     specialties: rowsOf<{ id: ULID; name: string }>(results.at(-1)),
+    accessMembers: rowsOf<NamedMember>(grantRows),
     reviews: readItemReviews(reviewRows, addresseeRows),
   };
 }
@@ -188,6 +198,7 @@ export function itemResponse(item: LoadedItem) {
       }),
     }),
     owner: { ...person(base.ownerId), specialties: item.specialties },
+    access: { level: base.accessLevel, members: item.accessMembers, statement: ACCESS_STATEMENT },
     credit: base.credit.map((entry) => ('member' in entry ? { member: person(entry.member) } : entry)),
     disclosure: { ...disclosure(root), ...(base.disclosureLine ? { line: base.disclosureLine } : {}) },
     withdrawal: base.withdrawnAt === null ? null : { at: base.withdrawnAt, by: person(base.withdrawnBy!), reason: base.withdrawalReason },
@@ -236,7 +247,7 @@ function validated(kind: ItemKind, context: ValidationContext, options: Paramete
  * A Journal_Entry's Entry_Sections can come from the parts of a staged save instead of the body.
  */
 export async function createItem(c: Context<ApiEnv>, kind: ItemKind, body: unknown, staged?: StagedSections): Promise<ULID> {
-  const { links, evidence, reviews: reviewList, ...rest } = objectBody(body);
+  const { links, evidence, reviews: reviewList, access, ...rest } = objectBody(body);
   const envelope = parse(createEnvelope, { links, evidence, reviews: reviewList });
   const actor = c.get('session').member.id;
   const now = c.get('now');
@@ -247,7 +258,8 @@ export async function createItem(c: Context<ApiEnv>, kind: ItemKind, body: unkno
   ]);
   const context = await validationContext(c);
   const result = validated(kind, context, { mode: 'submit', ...stagedTotals(staged) }, { ...rest, kind });
-  const issues = [...result.issues.filter((issue) => issue.field !== 'projectId'), ...(result.fields ? mentionIssues(context, undefined, result.fields) : [])];
+  const chosen = accessChoice(context, access, actor);
+  const issues = [...result.issues.filter((issue) => issue.field !== 'projectId'), ...(result.fields ? mentionIssues(context, undefined, result.fields) : []), ...chosen.issues];
   try {
     requireProject(context.projects, rest['projectId']);
   } catch (error) {
@@ -261,9 +273,15 @@ export async function createItem(c: Context<ApiEnv>, kind: ItemKind, body: unkno
     fields = { ...fields, sections: prepared.sections };
     issues.push(...prepared.issues);
   }
+  const scope: AccessScope = { pending: { level: chosen.choice.level, members: chosen.choice.members, ownerId: actor } };
+  if (chosen.issues.length === 0) {
+    const known = new Set(context.members.map((member) => member.id as string));
+    const addressed = (envelope.reviews ?? []).flatMap((review) => (Array.isArray(review['memberIds']) ? review['memberIds'].filter((member): member is string => known.has(member as string)) : []));
+    await refuseUnreadable(c, [...addedMentions(undefined, fields).members, ...addressed], scope);
+  }
   const linked = await saveLinks(c, id, envelope, true);
   issues.push(...linked.issues);
-  const reviews = await submissionReviews(c, context, { id, actor, now, fields, staged: staged !== undefined }, envelope.reviews ?? []);
+  const reviews = await submissionReviews(c, context, { id, actor, now, fields, staged: staged !== undefined, scope }, envelope.reviews ?? []);
   issues.push(...reviews.issues);
   refuse(issues);
   const adapter = KIND_ADAPTERS[kind];
@@ -284,8 +302,9 @@ export async function createItem(c: Context<ApiEnv>, kind: ItemKind, body: unkno
     });
     batch.insert(researchItems, {
       unitId: id, kind, itemIdentifier: issued.get(id)!, projectId, title: fields['title'] as string, statusValueId: (fields['statusValueId'] as string | undefined) ?? null,
-      ...dateKeys(kind, fields, now), ...logSummaryColumns(fields['logSummary'] as RichText | undefined),
+      ...dateKeys(kind, fields, now), ...logSummaryColumns(fields['logSummary'] as RichText | undefined), accessLevel: chosen.choice.level,
     });
+    writeAccessGrants(batch, id, chosen.choice.members, { id: actor, now });
     adapter.insert(batch, { id, projectId, ownerId: actor, credit, submissionId, now }, fields);
     if (staged) {
       insertStagedSections(batch, { id, projectId, ownerId: actor, credit, submissionId, now }, staged);
@@ -356,6 +375,7 @@ export async function editItem(c: Context<ApiEnv>, current: LoadedItem, body: un
   const linked = await saveLinks(c, base.id, envelope, false);
   issues.push(...linked.issues);
   refuse(issues);
+  await refuseUnreadable(c, addedMentions(before, input).members, { rootId: base.id });
 
   const { projectId: _project, kind: _kind, groupNote: _note, ...kept } = input;
   const after = normalized(kept);
@@ -411,7 +431,8 @@ export async function editItem(c: Context<ApiEnv>, current: LoadedItem, body: un
  * a request without an Eligible_Reviewer keeps the whole Submission unsubmitted (R17.1, R17.9).
  */
 async function submissionReviews(
-  c: Context<ApiEnv>, context: ValidationContext, item: { readonly id: ULID; readonly actor: ULID; readonly now: Timestamp; readonly fields: ItemFields; readonly staged: boolean },
+  c: Context<ApiEnv>, context: ValidationContext,
+  item: { readonly id: ULID; readonly actor: ULID; readonly now: Timestamp; readonly fields: ItemFields; readonly staged: boolean; readonly scope: AccessScope },
   requests: readonly Record<string, unknown>[],
 ): Promise<{ reviews: NewReview[]; issues: FieldIssue[] }> {
   const reviews: NewReview[] = [];
@@ -428,7 +449,7 @@ async function submissionReviews(
     const checked = reviewIssues(context, targetId, rest, `reviews.${index}.`);
     issues.push(...checked.issues);
     if (!checked.input) continue;
-    if (await hasEligibleReviewer(c, item.actor, checked.input)) reviews.push({ ...checked.input, id: newULID(item.now), targetId, rootId: item.id, requesterId: item.actor });
+    if (await hasEligibleReviewer(c, item.actor, checked.input, item.scope)) reviews.push({ ...checked.input, id: newULID(item.now), targetId, rootId: item.id, requesterId: item.actor, scope: item.scope });
     else issues.push({ field: `reviews.${index}`, rule: NO_ELIGIBLE_REVIEWER });
   }
   return { reviews, issues };

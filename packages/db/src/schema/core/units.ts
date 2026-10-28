@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { check, index, integer, primaryKey, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
-import { CONSENT_STATUSES, ITEM_KINDS, LEVELS, UNIT_TYPES } from '@researchforce/domain/types';
+import { ACCESS_LEVELS, CONSENT_STATUSES, ITEM_KINDS, LEVELS, UNIT_TYPES } from '@researchforce/domain/types';
 import type { CreditEntry, DisclosureLine } from '@researchforce/domain/types';
 import { FILE_KIND_EXTENSIONS } from '@researchforce/domain/file-kinds';
 import type { FileKind } from '@researchforce/domain/file-kinds';
@@ -77,6 +77,7 @@ export const researchItems = sqliteTable('research_items', {
   firstPublicAt: text('first_public_at'),
   importKey: text('import_key'),
   importRowKey: text('import_row_key'), // decides concurrent Bulk_Imports of one Row_Key (R37.6)
+  accessLevel: text('access_level', { enum: ACCESS_LEVELS }).notNull().default('whole_team'),
 }, (t) => [
   uniqueIndex('research_items_identifier').on(t.itemIdentifier),
   uniqueIndex('research_items_import_row_key').on(t.importRowKey).where(sql`${t.importRowKey} IS NOT NULL`),
@@ -85,7 +86,16 @@ export const researchItems = sqliteTable('research_items', {
   index('research_items_import_key').on(t.projectId, t.importKey),
   oneOf('research_items_kind_values', t.kind, ITEM_KINDS),
   oneOf('research_items_presentation_values', t.publicPresentation, PUBLIC_PRESENTATIONS),
+  oneOf('research_items_access_values', t.accessLevel, ACCESS_LEVELS),
 ]);
+
+/** The Access_List of a Restricted Research_Item; the Owner and Administrators read it without a row (R47.1). */
+export const accessGrants = sqliteTable('access_grants', {
+  rootId: text('root_id').notNull(),
+  memberId: text('member_id').notNull(),
+  grantedBy: text('granted_by').notNull(),
+  grantedAt: text('granted_at').notNull(),
+}, (t) => [primaryKey({ columns: [t.rootId, t.memberId] }), index('access_grants_member').on(t.memberId)]);
 
 export const journalEntries = sqliteTable('journal_entries', {
   unitId: text('unit_id').primaryKey(),

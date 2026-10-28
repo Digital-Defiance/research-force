@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { ITEM_KINDS } from '@researchforce/domain/types';
 import type { ItemKind } from '@researchforce/domain/types';
 import { authorizeRead } from '../../auth/authorize';
+import { changeItemAccess, previewItemAccess } from '../../records/access';
 import { createItem, editItem, itemResponse, loadItem } from '../../records/items';
 import type { ApiEnv } from '../app';
 import { ApiError } from '../errors';
@@ -22,6 +23,15 @@ itemsRoutes.post('/:kind', async (c) => {
 itemsRoutes.get('/:id', async (c) => {
   await authorizeRead(c);
   return c.json({ item: itemResponse(await loadItem(c, c.req.param('id'))) });
+});
+
+/** What an access change would do: the Members who would gain read access and the Public or Withheld units it would reset (R47.7, R47.8). */
+itemsRoutes.post('/:id/access/preview', async (c) => c.json(await previewItemAccess(c, c.req.param('id'), await readJson(c))));
+
+/** Change the Access_Level or Access_List; widening or restricting repeats the preview's confirmation (R47.6 to R47.8). */
+itemsRoutes.post('/:id/access', async (c) => {
+  const access = await changeItemAccess(c, c.req.param('id'), await readJson(c));
+  return c.json({ access, item: itemResponse(await loadItem(c, c.req.param('id'))) });
 });
 
 itemsRoutes.patch('/:id', async (c) => {

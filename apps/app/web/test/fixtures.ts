@@ -1,3 +1,4 @@
+import { ACCESS_STATEMENT } from '@researchforce/domain/permissions';
 import { BUILT_IN_VALUE_IDS, LOCKED_VALUE_IDS } from '@researchforce/domain/value-sets';
 import type { ValueSetKind } from '@researchforce/domain/value-sets';
 import type { FormData } from '../src/items/forms/inputs';
@@ -50,7 +51,7 @@ export function makeItem(overrides: Partial<ItemView> & Pick<ItemView, 'kind'>):
     owner: { id: MEMBER_ID, displayName: 'Ada Example', specialties: [{ id: 'S1', name: 'Historian' }] },
     credit: [{ member: { id: MEMBER_ID, displayName: 'Ada Example' } }],
     disclosure: { level: 'not_published', effective: 'not_published' },
-    withdrawal: null, groupNote: null, reviews: [], pendingReview: false,
+    withdrawal: null, groupNote: null, reviews: [], pendingReview: false, access: { level: 'whole_team', members: [], statement: ACCESS_STATEMENT },
     ...overrides,
   };
 }

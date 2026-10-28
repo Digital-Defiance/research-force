@@ -172,15 +172,20 @@ describe('Mention helpers', () => {
     await world.core().prepare('INSERT INTO profile_specialties (member_id, value_id) VALUES (?1, ?2), (?3, ?2)').bind(holder, OTHER_SPECIALTY, revoked).run();
     const vars: Record<string, unknown> = { accountant: new RequestAccountant() };
     const c = { env: world.bindings, get: (key: string) => vars[key] } as unknown as Context<ApiEnv>;
-    expect(await mentionRecipients(c, { members: [], specialties: [] }, world.ids.author)).toEqual([]);
-    expect(await mentionRecipients(c, { members: [world.ids.colleague, world.ids.author, revoked], specialties: [] }, world.ids.author)).toEqual([{ memberId: world.ids.colleague, specialtyId: null }]);
-    const recipients = await mentionRecipients(c, { members: [world.ids.colleague, world.ids.author], specialties: [OTHER_SPECIALTY, SPECIALTY] }, world.ids.author);
+    const team = { pending: { level: 'whole_team' as const, members: [], ownerId: world.ids.author } };
+    expect(await mentionRecipients(c, { members: [], specialties: [] }, world.ids.author, team)).toEqual([]);
+    expect(await mentionRecipients(c, { members: [world.ids.colleague, world.ids.author, revoked], specialties: [] }, world.ids.author, team)).toEqual([{ memberId: world.ids.colleague, specialtyId: null }]);
+    const recipients = await mentionRecipients(c, { members: [world.ids.colleague, world.ids.author], specialties: [OTHER_SPECIALTY, SPECIALTY] }, world.ids.author, team);
     const expected = [
       { memberId: world.ids.colleague, specialtyId: null },
       { memberId: world.ids.admin, specialtyId: SPECIALTY },
       { memberId: holder, specialtyId: [OTHER_SPECIALTY, SPECIALTY].sort()[0] },
     ].sort((a, b) => a.memberId.localeCompare(b.memberId));
     expect(recipients).toEqual(expected);
+    // A Restricted item reaches only its Access_List and the Administrators, never other Specialty holders (R47.5).
+    const restricted = { pending: { level: 'restricted' as const, members: [world.ids.colleague], ownerId: world.ids.author } };
+    expect(await mentionRecipients(c, { members: [world.ids.colleague], specialties: [OTHER_SPECIALTY, SPECIALTY] }, world.ids.author, restricted))
+      .toEqual(expected.filter((entry) => entry.memberId !== holder));
   });
 });
 

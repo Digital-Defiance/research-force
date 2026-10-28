@@ -222,3 +222,4 @@ export const guardReplyParent = guardTable('_g_reply_parent');
 export const guardReviewEligible = guardTable('_g_review_eligible');
 export const guardReviewerEligible = guardTable('_g_reviewer_eligible');
 export const guardReviewOpen = guardTable('_g_review_open');
+export const guardAccessOwner = guardTable('_g_access_owner');

@@ -14,7 +14,7 @@ const NEEDS_FULL = new Set<DNode['type']>(['entry_section', 'reply', 'dissent_no
 const levelArb = fc.constantFrom<Level>('public', 'public', 'withheld', 'not_published');
 const treeArb = fc.record({
   projects: fc.array(levelArb, { minLength: 1, maxLength: 3 }),
-  items: fc.array(fc.record({ level: levelArb, unclassified: fc.boolean(), presentation: fc.constantFrom<PublicPresentation>('summary_only', 'full_content'), project: fc.nat() }), { minLength: 1, maxLength: 5 }),
+  items: fc.array(fc.record({ level: levelArb, unclassified: fc.boolean(), presentation: fc.constantFrom<PublicPresentation>('summary_only', 'full_content'), project: fc.nat(), restricted: fc.boolean() }), { minLength: 1, maxLength: 5 }),
   children: fc.array(fc.record({
     type: fc.constantFrom<ChildType>('attachment', 'entry_section', 'reply', 'dissent_note'), level: levelArb, unclassified: fc.boolean(), parent: fc.nat(),
   }), { maxLength: 14 }),
@@ -22,7 +22,7 @@ const treeArb = fc.record({
   const nodes: DNode[] = [];
   const projectNodes = projects.map((own, index): DNode => ({ key: `p${index}`, type: 'project', own, unclassified: false }));
   for (const [index, item] of items.entries()) {
-    nodes.push({ key: `i${index}`, type: 'research_item', own: item.level, unclassified: item.unclassified, presentation: item.presentation, project: projectNodes[item.project % projectNodes.length]! });
+    nodes.push({ key: `i${index}`, type: 'research_item', own: item.level, unclassified: item.unclassified, presentation: item.presentation, project: projectNodes[item.project % projectNodes.length]!, ...(item.restricted ? { restricted: true } : {}) });
   }
   for (const [index, child] of children.entries()) {
     const candidates = nodes.filter((node) => PARENTS[child.type].includes(node.type));
@@ -43,7 +43,7 @@ function topDown(tree: { projects: DNode[]; units: DNode[] }, lowered: ReadonlyS
   for (const project of tree.projects) result.set(project.key, own(project));
   const visit = (node: DNode, chainPublic: boolean): void => {
     const root = node.type === 'research_item' ? node : node.root!;
-    const allowed = chainPublic && !(NEEDS_FULL.has(node.type) && root.presentation !== 'full_content');
+    const allowed = chainPublic && root.restricted !== true && !(NEEDS_FULL.has(node.type) && root.presentation !== 'full_content');
     const level = allowed ? own(node) : 'not_published';
     result.set(node.key, level);
     for (const child of tree.units) if (child.parent === node) visit(child, level === 'public');
@@ -52,18 +52,19 @@ function topDown(tree: { projects: DNode[]; units: DNode[] }, lowered: ReadonlyS
   return result;
 }
 
-it('equals the own level exactly when every ancestor is Public (and the Root_Item is Full_Content where required); otherwise Not_Published', () => {
+it('equals the own level exactly when every ancestor is Public, the Root_Item is not Restricted, and it is Full_Content where required; otherwise Not_Published', () => {
   fc.assert(fc.property(treeArb, (tree) => {
     const expected = topDown(tree);
     for (const node of [...tree.projects, ...tree.units]) expect([node.key, effective(node)]).toEqual([node.key, expected.get(node.key)]);
   }));
 });
 
-it('Unclassified units are Not_Published; no unit is more public than an ancestor; every unit of a non-Public Project is Not_Published', () => {
+it('Unclassified units and units of Restricted Research_Items are Not_Published; no unit is more public than an ancestor; every unit of a non-Public Project is Not_Published', () => {
   fc.assert(fc.property(treeArb, (tree) => {
     for (const node of tree.units) {
       const level = effective(node);
       if (node.unclassified) expect(level).toBe('not_published');
+      if ((node.type === 'research_item' ? node : node.root!).restricted) expect(level).toBe('not_published');
       for (const ancestor of ancestors(node)) expect(morePublicThan(level, effective(ancestor))).toBe(false);
       const project = ancestors(node).at(-1)!;
       if (effective(project) !== 'public') expect(level).toBe('not_published');

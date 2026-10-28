@@ -17,6 +17,7 @@ describe('the built-in Role Permission Map', () => {
     expect(Object.keys(BUILT_IN_ROLES.contributor.permissions).sort()).toEqual([
       'item.create', 'attachment.upload', 'reply.post', 'topic.create', 'item.edit', 'item.correct', 'item.withdraw', 'section.edit', 'logSummary.write',
       'link.add', 'link.remove', 'review.request', 'review.complete', 'party.doNotName.on', 'profile.edit', 'dissent.attach', 'dissent.edit', 'dissent.withdraw', 'ai.draft.logSummary',
+      'access.restrict', 'access.widen', 'hold.place', 'hold.lift', 'consent.give', 'attachment.move',
     ].sort());
     for (const permission of ['licence.withdraw', 'constructor', '__proto__']) expect(can(context(true), permission as Permission)).toBe(false);
   });
@@ -45,6 +46,29 @@ describe('the built-in Role Permission Map', () => {
     expect(can(ctx, 'party.doNotName.off')).toBe(admin);
     expect(can(ctx, 'dissent.delete', { type: 'dissent_note', authorId: other })).toBe(admin);
     expect(can(ctx, 'ai.draft.publicSummary', item(other))).toBe(admin);
+  });
+
+  it.each([false, true])('lets only the Owner widen access while Administrator=%s narrows any item (R47.6, R47.7)', (admin) => {
+    const ctx = context(admin);
+    expect(can(ctx, 'access.restrict', item())).toBe(true);
+    expect(can(ctx, 'access.restrict', item(other))).toBe(admin);
+    expect(can(ctx, 'access.widen', item())).toBe(true);
+    expect(can(ctx, 'access.widen', item(other))).toBe(false);
+    expect(can(ctx, 'access.widen')).toBe(false);
+    expect(can(ctx, 'attachment.move', { type: 'attachment', ownerId: other })).toBe(admin);
+    expect(can(ctx, 'attachment.move', item())).toBe(false);
+    expect(can(ctx, 'hold.place', item(other))).toBe(true);
+    expect(can(ctx, 'hold.lift', { type: 'hold', placedById: other, itemOwnerId: actor })).toBe(true);
+    expect(can(ctx, 'hold.lift', { type: 'hold', placedById: actor, itemOwnerId: other })).toBe(true);
+    expect(can(ctx, 'hold.lift', { type: 'hold', placedById: other, itemOwnerId: other })).toBe(false);
+    expect(can(ctx, 'consent.give', { type: 'publication_proposal', consentingMemberId: actor })).toBe(true);
+    expect(can(ctx, 'consent.give', { type: 'publication_proposal', consentingMemberId: other })).toBe(false);
+    expect(can(ctx, 'consent.propose')).toBe(admin);
+    expect(can(ctx, 'dual.propose')).toBe(admin);
+    for (const permission of ['dual.approve', 'dual.decline'] as const) {
+      expect(can(ctx, permission, { type: 'dual_approval', proposedById: other })).toBe(admin);
+      expect(can(ctx, permission, { type: 'dual_approval', proposedById: actor })).toBe(false);
+    }
   });
 
   it('calculates review eligibility from actual current addressees, roles and specialties', () => {
