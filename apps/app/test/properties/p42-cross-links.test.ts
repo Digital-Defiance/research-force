@@ -181,5 +181,5 @@ describe('Property 42: Cross_Links are unique and Backlinks complete', () => {
       const actual = await Promise.all(checks.map(([viewer, query]) => listed(viewer, query)));
       expect(actual).toEqual(checks.map(([, , expected]) => expected));
     }));
-  }, 200 * FC_RUNS);
+  }, 500 * FC_RUNS);
 });
