@@ -2,7 +2,7 @@
 
 ## Overview
 
-ResearchForce (the Research_CMS in requirements.md) is a private Workspace for an informal research group together with a public research archive at researchforce.org. This document designs the system that Requirements 1 to 46 describe. It runs on Cloudflare free plans and sends email through the campaign owner's existing Microsoft 365 tenant. A reference such as R23.6 means Requirement 23, criterion 6. The section "Requirements Traceability" maps every requirement to the design sections and correctness properties that cover it.
+ResearchForce (the Research_CMS in requirements.md) is a private Workspace for an informal research group together with a public research archive at researchforce.org. This document designs the system that Requirements 1 to 50 describe. It runs on Cloudflare free plans and sends email through the campaign owner's existing Microsoft 365 tenant. A reference such as R23.6 means Requirement 23, criterion 6. The section "Requirements Traceability" maps every requirement to the design sections and correctness properties that cover it.
 
 ### Product and installation boundary
 
@@ -21,13 +21,15 @@ The design rests on four ideas.
 3. **Every invocation fits the free plan.** Each Worker invocation stays within 10 ms of CPU time and 50 D1 queries (R28.3). Larger work is split into slices that Durable Object alarms run one after another, expressed as set-based SQL that D1 executes, or done in the Member's browser when the Member supplies the input anyway (journal and manifest parsing, file hashing).
 4. **Atomic writes with a transactional outbox.** Each save is one D1 `batch()`, which D1 runs as a single SQL transaction. The batch writes the change together with its Revisions, flags, Notification_Events, Activity_Feed entry, and outbox rows. Background processors (the Publisher, the Mailer, the search indexer) read the outbox, so a change cannot be stored without its follow-up work being recorded (R4.1, R18.2, R22.1).
 
-New Disclosure_Units are Private (R23.2), and the publication path fails closed: when the Publisher cannot confirm that something may be public, it leaves it out, and when it cannot confirm a removal in time, it raises a System_Alert.
+New Disclosure_Units are Not_Published (R23.2), and the publication path fails closed: when the Publisher cannot confirm that something may be public, it leaves it out, and when it cannot confirm a removal in time, it raises a System_Alert.
+
+Inside the team, a second, independent setting decides who can read a Research_Item: its Access_Level (R47). Whole_Team items are readable by every active Member; Restricted items only by their Owner, their Access_List, and Administrators. Every Workspace read goes through one SQL predicate, `canRead`, so a new read path cannot forget it, and every write that creates per-Member data (flags, Notification_Events, review addressees) selects its recipients through the same predicate. Publication is further gated by the Owner's consent (R23.17 to R23.22) and by Confidentiality_Holds (R48), and the few overrides need two Administrators (R49).
 
 ### Key decisions
 
 | Topic | Decision | Main reason | Requirements |
 |---|---|---|---|
-| Public pages | Prerendered HTML deployed as Workers Static Assets on `researchforce.org` (assets-only Worker `rf-site`), redeployed by the Publisher through the Direct Upload API | Asset requests are free and unlimited; an assets-only Worker serves a Design_System 404 page for unknown and Private addresses without a Worker invocation | R24.7, R28.5, R28.6, R45.1 |
+| Public pages | Prerendered HTML deployed as Workers Static Assets on `researchforce.org` (assets-only Worker `rf-site`), redeployed by the Publisher through the Direct Upload API | Asset requests are free and unlimited; an assets-only Worker serves a Design_System 404 page for unknown and Not_Published addresses without a Worker invocation | R24.7, R28.5, R28.6, R45.1 |
 | Public files | Copies of Public Attachment files in R2 bucket `rf-public` on `files.researchforce.org`; originals stay in private bucket `rf-private` | Files up to 1 GB exceed the 25 MiB asset limit; deleting the copy takes effect at once; downloads cost no Worker requests | R24.3, R25, R28.6 |
 | Workspace | `app.researchforce.org` behind Cloudflare Access; one Worker `rf-app` serves the React SPA as static assets and the Hono API, and verifies the Access JWT on every API request | Access handles login and stores no passwords; the Worker re-checks identity and Member_Status | R1, R2 |
 | Data | Three D1 databases: `rf-core` (all transactional data), `rf-search` (Member search index), `rf-public` (materialized Public_Views and site build state) | 500 MB per database; derived data can be rebuilt; atomic batches need the transactional data in one database | R28.1 |
@@ -38,6 +40,8 @@ New Disclosure_Units are Private (R23.2), and the publication path fails closed:
 | Uploads and downloads | Browsers upload straight to R2 through presigned URLs with SHA-256 checksums that R2 verifies; protected files are delivered only through Download_Links on `dl.researchforce.org` | No file passes through a Worker request body; Download_Links can check revocation | R12, R25 |
 | AI drafts | `@cf/google/gemma-4-26b-a4b-it` through the Workers AI binding, with a Neuron reservation per request | Cloudflare-hosted, available on Workers Free, about 45 Neurons for a typical draft | R44, R28.14 |
 | Design_System | One token set and one markup definition (view functions that build a neutral element tree), rendered to strings for static outputs and to React elements in the Workspace; Fraunces with fallback faces for full character coverage; Temml for MathML | Same components everywhere; CPU-cheap static rendering | R45 |
+| Restricted access | `access_level` on `research_items` and an `access_grants` table; one `canRead(member)` SQL fragment joined into every Workspace read and every per-Member insert; restricting sets every own level under the item to Not_Published in the same batch | One predicate for every read path; lifting a restriction can never republish anything | R2.8, R47 |
+| Consent, holds, and overrides | `publication_consents`, `confidentiality_holds`, and `dual_approvals` tables; consent, hold, and restriction checks added to the kernel's `checkGates`, so previews and applies share them | The same gate code serves every path that widens a Public_View | R23.17 to R23.22, R48, R49 |
 | Parsers | Pure TypeScript Journal_Parser/Printer and Manifest_Parser/Printer that keep source text verbatim; run in the Administrator's browser during imports and in tests | Exact round trips; no parsing of megabytes inside a 10 ms Worker | R27, R38 |
 
 ### Research findings that shaped the design
@@ -61,7 +65,7 @@ Facts measured in the existing material (no content is reproduced here): the jou
 
 ### Scope
 
-All of Requirements 1 to 46 are in scope. The "Not included" list of requirements.md stays out of scope: automatic Run submission by compute rigs, a live public data API, virus scanning of outside files, per-Project membership and Project deletion, AI drafting of other fields, public Policy_Page history, donation features, a manual colour-scheme switch, and profile photographs. The design records the group's chosen policies; it is not legal advice.
+All of Requirements 1 to 50 are in scope. The "Not included" list of requirements.md stays out of scope: automatic Run submission by compute rigs, a live public data API, virus scanning of outside files, per-Project membership and Project deletion, AI drafting of other fields, public Policy_Page history, donation features, a manual colour-scheme switch, and profile photographs. The design records the group's chosen policies; it is not legal advice.
 
 ## Architecture
 
@@ -128,7 +132,7 @@ The `workers.dev` route and preview URLs are turned off for every Worker, so no 
 
 Reasons for this layout:
 
-- **Apex as assets-only Worker.** Unknown paths and the addresses of Private units return the same Design_System `404.html` without running any code (R24.7, R40.10, R45.1), and page views do not count against any daily request limit (R28.5, R28.6). Pages served from R2 would show Cloudflare's generic not-found page on the Free plan.
+- **Apex as assets-only Worker.** Unknown paths and the addresses of Not_Published units return the same Design_System `404.html` without running any code (R24.7, R40.10, R45.1), and page views do not count against any daily request limit (R28.5, R28.6). Pages served from R2 would show Cloudflare's generic not-found page on the Free plan.
 - **Public files in R2.** Assets are limited to 25 MiB per file and Attachments go up to the Attachment_Size_Limit (R24.3). Deleting the public copy makes the file unreachable at once (R25.3), R2 has no egress fees (R25.4), and downloads keep working when the Public_Traffic_Budget is used up because they never reach a Worker (R28.6). The Cache Rule bypasses Cloudflare's cache on this host, so no cached copy outlives a deletion.
 - **Workspace on its own subdomain behind Access.** Access redirects people without a session to the Identity_Provider and back to the requested address (R1.1). Unauthenticated traffic is stopped at the edge and costs no Worker requests. The Worker still validates the JWT and the Member_Status on every API request (R1.3 to R1.6, R2.3).
 - **Separate `submit` and `dl` hosts.** They are the only Worker endpoints reachable without Access, so they carry the WAF rate limits and, for `submit`, the Public_Traffic_Budget block rule. Keeping them off the apex keeps the apex free of scripts.
@@ -334,10 +338,40 @@ The Role_Permission_Map is stored in `rf-core` (`roles`, `role_permissions`). Th
 | `valueSet.manage`, `rights.markPublication`, `methods.describe` | no | yes | |
 | `policy.edit`, `settings.edit` | no | yes | settings include the Responsible_Person (R46.37 to R46.39) |
 | `import.run`, `export.manage`, `backup.manage` | no | yes | backups are delivered only to Administrators (R36.2) |
+| `access.restrict` (Whole_Team to Restricted, remove from an Access_List) | own Research_Items | any Research_Item | narrowing only (R47.6) |
+| `access.widen` (add to an Access_List, Restricted to Whole_Team) | own Research_Items | own Research_Items | another Member's only through a Dual_Approval while that Owner is Revoked (R47.7) |
+| `hold.place`, `hold.lift` | place on any readable Item; lift own holds and holds on own Items | same | a Hold_Override needs a Dual_Approval (R48.8, R48.10) |
+| `consent.give` (approve or decline a Publication_Proposal) | addressed to the Member | addressed to the Member | the Consenting_Member only (R23.19) |
+| `consent.propose` (send a Publication_Proposal) | no | yes | (R23.18) |
+| `dual.propose`, `dual.approve`, `dual.decline` | no | yes | the approver differs from the proposer (R49.3, R49.4) |
+| `attachment.move` | own Attachments | any Attachment | widening a Public_View needs an Administrator and the gates; leaving a Restricted item follows `access.widen` (R12.14, R12.15) |
 
-Read access is not a map Permission: every active Member, in every Role, reads every Project, Item, Entry_Section, Dissent_Note, Revision, Attachment file, Cross_Link, Review_Request, Profile, and the Moderation_Queue (R2.8). A request that needs several Permissions is checked for all of them before any statement runs, so a refusal changes nothing (R2.7). The "at least one active Administrator" rule is a guard statement inside the batch that changes a Role or Member_Status (R2.11), which also covers two Administrators demoting each other at the same moment.
+Read access is not a map Permission. Every active Member, in every Role, reads every Project, Profile, and the Moderation_Queue, and reads every Item, Entry_Section, Dissent_Note, Revision, Attachment file, Cross_Link, and Review_Request of a Research_Item that the Member Can_Read (R2.8, R47); see "Restricted access" below. A request that needs several Permissions is checked for all of them before any statement runs, so a refusal changes nothing (R2.7). The "at least one active Administrator" rule is a guard statement inside the batch that changes a Role or Member_Status (R2.11), which also covers two Administrators demoting each other at the same moment.
 
 **Invitations (R2.1, R2.13, R2.14).** The validator checks the Role, the length limit of 254 characters, the single `@`, the dotted domain, and that no Active Member holds the address, ignoring letter case. The batch upserts the Member as Pending with the selected Role. The API then asks `rf-ops` to add the address to the Access list and queues the invitation email in the Mailer, which sends it within 2 minutes of queue entry. If the Email_Provider refuses it after retries, the Member list shows "invitation email not sent" next to the status until a later invitation succeeds.
+
+### Restricted access (R2.8, R47)
+
+**Data.** `research_items.access_level` (`whole_team` or `restricted`, default `whole_team`) and `access_grants (root_id, member_id, granted_by, granted_at)` with primary key (`root_id`, `member_id`). Every other element reaches its Research_Item through `units.root_id`, so no other table carries access data (R47.3).
+
+**One predicate.** `packages/db/src/access.ts` exports `canRead(memberId, isAdmin, rootColumn)`, an SQL fragment:
+
+```sql
+EXISTS (SELECT 1 FROM research_items ri WHERE ri.unit_id = <root> AND (
+  ri.access_level = 'whole_team' OR :isAdmin = 1
+  OR EXISTS (SELECT 1 FROM units ru WHERE ru.id = ri.unit_id AND ru.owner_id = :member)
+  OR EXISTS (SELECT 1 FROM access_grants g WHERE g.root_id = ri.unit_id AND g.member_id = :member)))
+```
+
+It is joined into the existing visibility gate that every Workspace read already uses (item pages, Threads, history, Cross_Links and Backlinks, Review_Request queues, lists, the Project_Log, the Activity_Feed, badges, Notifications, Download_Link issue, AI_Draft input, Question_Group entries). A route that names an element the Member cannot read answers the shared `not_found` response, the same as for an element that does not exist (R47.4). Feed entries for a Submission that spans readable and unreadable Research_Items keep only the readable references and counts. Member search filters results through the same fragment on the `rf-core` side, so `rf-search` holds no access data and an access change takes effect without reindexing.
+
+**Recipients.** Every `INSERT … SELECT` that creates per-Member rows (New_Flags, Updated_Flags, Notification_Events, Specialty and Role addressees of Review_Requests, Specialty Mentions) adds `canRead` for the recipient, so nobody is flagged or notified about what they cannot read (R47.5). The Mailer re-checks each event's root with `canRead` when it composes an email and drops events the recipient can no longer read. A Mention or Review_Request that names a Member who cannot read the item is refused with `rule: access_addressee`, listing the Members (R47.10).
+
+**Changes (R47.6 to R47.8, R47.14).** `POST /items/{id}/access` with `{ level, add, remove }`, or `POST /access/bulk` for up to 1,000 Research_Items. A change that only narrows needs `access.restrict`; one that adds Members or lifts the restriction needs `access.widen`, and the batch carries the `access_owner` guard, which fails unless the acting Member is still the Owner, so a concurrent ownership change cannot be raced. The client first calls the preview endpoint, which lists the Members who would gain access and, when restricting, every Public or Withheld unit whose own level the change resets. Restricting writes, in the same batch, `disclosure_level = 'not_published'` for each such unit, a Disclosure_Change per unit, Item_Update events for every Administrator, and a `publish` outbox row; the kernel also receives a `restricted` flag on Research_Items and treats a restricted root like a Not_Published ancestor, as a second line of defence (R47.8, R47.9). Every change writes an `access_change` Revision with the previous level and list.
+
+**Imports (R47.13).** The journal import and Bulk_Import screens require an access choice, Restricted preselected; the job writes it on every Research_Item it creates, except manifest rows that fill the optional `access_level` and `access_members` columns (Member display names, matched like Party names).
+
+**Backups (R47.15).** `access_grants` and the column are backed up and restored like other `rf-core` tables.
 
 ### Records_Service (R4 to R10, R39)
 
@@ -348,7 +382,7 @@ All Research_Items, Entry_Sections, Attachments, Replies, and Dissent_Notes are 
 3. **Build the batch:** guard statements, the change-counter increment, the writes, one Revision per Revision_Kind involved, automatic consequences (below), Mention and other Notification_Events, flags, the Activity_Feed entry, and outbox rows for the Publisher and the search indexer.
 4. **Commit** with `batch()`. A guard failure aborts the whole batch, and the API maps it to 409 (conflict) or 422 (rule).
 
-**Guards.** D1 runs a batch as one transaction but has no interactive transactions, so each precondition is re-checked inside the batch. A guard is `INSERT INTO _g_<code>(x) SELECT NULL WHERE NOT (<condition>)` into a one-column table declared `x INTEGER NOT NULL`. When the condition holds, nothing is inserted; when it fails, the NOT NULL violation aborts the batch, and the error names the table, which tells the API which rule failed. Guard codes include `rev` (optimistic concurrency), `evidence` (R5.3, R8.2), `superseding` (R5.4, R5.9), `last_admin` (R2.11), `chain_tip` (R13.7), `decision_open` (R32.16), `preview_fresh` (R23.14), `log_summary_owner` (R41.4), and `dissent_unique` (R42.2).
+**Guards.** D1 runs a batch as one transaction but has no interactive transactions, so each precondition is re-checked inside the batch. A guard is `INSERT INTO _g_<code>(x) SELECT NULL WHERE NOT (<condition>)` into a one-column table declared `x INTEGER NOT NULL`. When the condition holds, nothing is inserted; when it fails, the NOT NULL violation aborts the batch, and the error names the table, which tells the API which rule failed. Guard codes include `rev` (optimistic concurrency), `evidence` (R5.3, R8.2), `superseding` (R5.4, R5.9), `last_admin` (R2.11), `chain_tip` (R13.7), `decision_open` (R32.16), `preview_fresh` (R23.14), `log_summary_owner` (R41.4), `dissent_unique` (R42.2), `access_owner` (R47.7), `consent_valid` and `hold_free` (R23.17, R48.4), and `dual_open` and `dual_distinct` (R49.3, R49.4).
 
 **Optimistic concurrency.** Units, Projects, Policy_Pages, Profiles, and Moderation_Decision state carry a `rev` integer. An edit sends the `rev` it started from, and the `rev` guard rejects it when another save came first. The 409 response lists the Revisions saved since, with the editing Member and time, and the editor keeps the unsaved input (R4.9, R22.10, R42.16, R46.28).
 
@@ -372,10 +406,11 @@ All Research_Items, Entry_Sections, Attachments, Replies, and Dissent_Notes are 
 | Hypothesis | Title 1 to 200; statement 1 to 10,000 (R8.9) | Starts Open (R8.1); Eliminated needs a non-blank Elimination_Scope of at most 1,000 and an Evidence_Link with a Run or Finding (R8.2); a change of Elimination_Scope while Eliminated must be a Correction (R8.7) |
 | Correspondence | Title 1 to 200, date not after today in the saver's time zone, direction, at least two Parties (R9.5) | A new External_Party whose folded name (case and diacritics removed) equals an existing one's needs explicit confirmation (R9.2); one Consent_Status per External_Party per Correspondence, initially Not_Asked (R34.1) |
 | Archival_Request | Title 1 to 200, archive or desk, request text; date sent required for Sent and Replied and not in the future (R10.6) | Replied requires reply date and reply content, with date sent ≤ reply date ≤ today (R10.7); archive or desk and contact are Parties (R10.1) |
-| Topic | Title 1 to 200; body 1 to 50,000 (R16.9) | |
+| Topic | Title 1 to 200; body 1 to 50,000 (R16.9) | Restricted Topics serve as private discussions (R47) |
+| Research_Question | Title 1 to 200; question 1 to 500; introduction at most 20,000; at most 20 Question_Groups, each with a heading of 1 to 200 and at most 200 entries (R50.1, R50.6) | Entries are Cross_Links with the fixed label Addresses, unique per target within the Research_Question, ordered by `question_entries.position` within their group; targets must be live Research_Items or Attachments of the same Project; a target's move or deletion removes its entry in the same batch (R50.2, R50.7); not a Bulk_Import kind (R50.8) |
 | Reply, Group_Note | Text 1 to 50,000 (R16.9, R41.8) | An empty Group_Note field at submission means no Group_Note (R41.8) |
 | Attachment | Title 1 to 255 (default: file name); caption at most 2,000; Origin 1 to 5,000 (R12.2) | Rights_Status, rights holder at most 200, rights terms at most 2,000 (R33.1) |
-| Log_Summary | 1 to 2,000; required at submission for every kind except Journal_Entry and Topic (R41.1, R41.2) | Can be changed but not removed (R41.5) |
+| Log_Summary | 1 to 2,000; required at submission for every kind except Journal_Entry, Topic, and Research_Question (R41.1, R41.2) | Can be changed but not removed (R41.5) |
 
 Whitespace-only text counts as empty everywhere. Item_Date and Log_Date are computed on save and stored as sort keys (R43.2): a partial date sorts at the start of its period, and a range sorts by its start.
 
@@ -412,7 +447,7 @@ Offsets are UTF-16 code units, half-open, and must fall on code point boundaries
 - **Edit marks.** Content edits require the Member to choose Minor_Edit or Correction, with no default, and a reason of 1 to 1,000 characters for a Correction (R22.2, R22.9). Saves that only change status, withdrawal, or disclosure fields, and Restorations, are exempt.
 - **History view.** It lists the creation and every Revision of the Item, its Entry_Sections, and its Dissent_Notes, newest first (R22.3, R42.10). The pure function `stateAt(current, revisions, point)` rebuilds the state immediately after any point by undoing later Revisions from the current state.
 - **Comparison.** Two points are compared field by field; text fields use a word diff (jsdiff `diffWordsWithSpace`) with added and removed words marked (R22.4). Dissent_Note "earlier wording" comparisons use the same function (R42.9).
-- **Restoration.** A pure function computes the restored field values: content and fields return to the chosen point except the fields that Status_Changes, Withdrawals, and Disclosure_Changes set, and except the Log_Summary when the restoring Member is not the Owner or the point had no Log_Summary (R22.5, R41.14). Entry_Sections that the restoration adds back get Private (R23.15). The Restoration Revision names the restored point, and intermediate Revisions stay.
+- **Restoration.** A pure function computes the restored field values: content and fields return to the chosen point except the fields that Status_Changes, Withdrawals, and Disclosure_Changes set, and except the Log_Summary when the restoring Member is not the Owner or the point had no Log_Summary (R22.5, R41.14). Entry_Sections that the restoration adds back get Not_Published (R23.15). The Restoration Revision names the restored point, and intermediate Revisions stay.
 - **Withdrawal.** Withdrawal keeps the Item, its history, and its Disclosure_Level, and marks it withdrawn with date and reason. Before saving, the dialog states whether the Public_Site will show the reason, which is the case when the Item's Effective_Disclosure is Public (R22.6, R24.10).
 - **Permanent deletion.** A `Jobs` object removes the content, fields, and Revisions of the Item and of every element under it, deletes their files from R2 within 24 hours, and writes a Deletion record holding only kind, Item_Identifier, Administrator, time, and reason (R22.7). The identifier stays in the registry. The job lists every Public_Archive_Export and Internal_Backup whose unit index contains a removed element and offers their deletion, stating that copies outside R2 are not affected (R22.8, R42.18).
 - **Immutability.** No API changes or deletes a Revision. A trigger refuses `UPDATE` on `revisions`, and only the deletion job deletes Revision rows (R22.11).
@@ -442,7 +477,9 @@ Offsets are UTF-16 code units, half-open, and must fall on code point boundaries
 | video | mp4, mov, webm, mkv, avi |
 | other | anything else, including names without a dot |
 
-**Versions (R13).** A new version is a new Attachment on the same Parent with `supersedes_unit_id` set. A unique index on that column, and the `chain_tip` guard that refuses a version of an Attachment that already has a successor, keep each Version_Chain linear (R13.1, R13.3, R13.7). When the guard fails, the dialog names the current last version and offers to attach the file there instead. The superseded Attachment is unchanged and stays usable (R13.2). A new version starts Private with Rights_Status Unknown (R13.5, R33.2). Adding a version needs edit Permission on the target (R13.8). The chain view lists all versions with position, upload time, and Owner, marking the viewed one and the last one (R13.4), and every display of a superseded Attachment carries a supersession notice with a link to its successor (R13.6).
+**Versions (R13).** A new version is a new Attachment on the same Parent with `supersedes_unit_id` set. A unique index on that column, and the `chain_tip` guard that refuses a version of an Attachment that already has a successor, keep each Version_Chain linear (R13.1, R13.3, R13.7). When the guard fails, the dialog names the current last version and offers to attach the file there instead. The superseded Attachment is unchanged and stays usable (R13.2). A new version starts Not_Published with Rights_Status Unknown (R13.5, R33.2). Adding a version needs edit Permission on the target (R13.8). The chain view lists all versions with position, upload time, and Owner, marking the viewed one and the last one (R13.4), and every display of a superseded Attachment carries a supersession notice with a link to its successor (R13.6).
+
+**Moves (R12.12 to R12.15).** `POST /attachments/{id}/move` with the new Parent moves the whole Version_Chain (`chain_id`) in one batch by updating `parent_id`, `root_id`, and `project_id` of each Attachment and everything under it; identifiers, files, rights, levels, Classification_States, holds, and Cross_Links stay as they are. Each moved Attachment gets a Revision holding the previous Parent, and the move is one Activity_Feed entry. The preview endpoint computes the views before and after with the kernel: a move that widens any Public_View needs `disclosure.set`, a fresh preview token, and the gates of "Disclosure changes and previews" (Owner consent, holds, rights, consent, Licence_Agreements); a move out of a Restricted Research_Item to a Root_Item that more Members can read needs `access.widen` on the source item, with the `access_owner` guard. Question_Group entries that point at a moved Attachment and would cross Projects are removed in the same batch (R50.7). Moving files out of the Unassigned_Attachments_Source uses the same endpoint.
 
 **Previews (R14).** All previews run in the SPA from bytes fetched through a Download_Link, so no rendering of a file ever happens in the Workspace origin:
 
@@ -527,7 +564,7 @@ Every email (invitations, notification emails, Daily_Digests, emails to Submitte
 **Sending loop.** `Mailer` keeps a log of send attempts with times and recipient counts in its SQLite storage. Before each attempt it checks that fewer than 30 attempts happened in the last 60 seconds and that the recipients addressed in the last 24 hours plus this one stay within the Recipient_Cap in force at that moment (R20.15, R20.16). If either check fails, it sets an alarm for the earliest moment both would pass and keeps the queue order, oldest first (R20.17). For each attempt it:
 
 1. checks that a notification email's recipient is still an active Member (R20.8);
-2. composes the email from the Public_Views current at that moment (R20.6), so a unit that became Private since the event is described only by kind;
+2. composes the email from the Public_Views current at that moment (R20.6), so a unit that became Not_Published since the event is described only by kind;
 3. calls the configured Email_Provider;
 4. on acceptance, marks the email sent; on a 429 response it honours `Retry-After`; on other failures it retries at about 2, 10, 25, and 50 minutes after the first failure, which gives at least 3 retries within the hour (R20.9);
 5. after the final failed retry, creates a System_Alert for every Administrator naming the intended recipient and time, unless the email held only System_Alert events (R20.10). A failed email to a Submitter is shown on the Outside_Submission and also raises a System_Alert (R32.12). A failed invitation is shown next to the Member's status (R2.14).
@@ -545,8 +582,8 @@ The credentials, tokens, and Graph responses never appear in logs, D1, R2, pages
 **Content (R20.6, R20.7, R41.12, R42.15, R45.21).**
 
 - The sender's display name is ResearchForce, and the subject starts with "ResearchForce:".
-- An Item is described only by its current Public_View (title or Public_Summary when Public, the Disclosure_Line when Withheld, nothing when Private), its kind, the Event_Type, the acting Member's display name, and the time in the recipient's time zone.
-- Each item link is `https://app.researchforce.org/go/{ref}` with an opaque reference that resolves after login, so Item_Identifiers of Private items do not travel through the Email_Provider.
+- An Item is described only by its current Public_View (title or Public_Summary when Public, the Disclosure_Line when Withheld, nothing when Not_Published), its kind, the Event_Type, the acting Member's display name, and the time in the recipient's time zone.
+- Each item link is `https://app.researchforce.org/go/{ref}` with an opaque reference that resolves after login, so Item_Identifiers of Not_Published items do not travel through the Email_Provider.
 - Group_Notes, Log_Summaries, and their Dissent_Notes appear only as far as their Public_Views go. A Hypothesis shown as Eliminated carries its Elimination_Scope right after the status (R8.3).
 - An Outside_Submission is described only by Event_Type, Submission_Type, time, the days since receipt for Response_Target reminders, and a login link.
 - Every Member email ends with a link to the Notification_Preferences.
@@ -569,7 +606,7 @@ Emails are composed plain-text first. The HTML version is generated from the sam
 `packages/kernel` is the only definition of what the public may see.
 
 ```ts
-type Level = 'public' | 'withheld' | 'private';
+type Level = 'public' | 'withheld' | 'not_published';
 type UnitType = 'project' | 'research_item' | 'attachment' | 'entry_section' | 'reply' | 'dissent_note';
 
 interface DNode {
@@ -581,15 +618,15 @@ interface DNode {
 
 function effective(n: DNode): Level {
   if (n.type === 'project') return n.own;
-  const own: Level = n.unclassified ? 'private' : n.own;               // R26.5
-  for (const a of ancestors(n)) if (effective(a) !== 'public') return 'private';
+  const own: Level = n.unclassified ? 'not_published' : n.own;               // R26.5
+  for (const a of ancestors(n)) if (effective(a) !== 'public') return 'not_published';
   const needsFull = n.type === 'entry_section' || n.type === 'reply' || n.type === 'dissent_note';
-  if (needsFull && n.root!.presentation !== 'full_content') return 'private';
+  if (needsFull && n.root!.presentation !== 'full_content') return 'not_published';
   return own;
 }
 ```
 
-`ancestors(n)` is the Parent chain up to the Root_Item followed by the Project. An Attachment on a Reply is therefore Private whenever the Reply is, and an Attachment on a Research_Item stays visible under Summary_Only.
+`ancestors(n)` is the Parent chain up to the Root_Item followed by the Project. An Attachment on a Reply is therefore Not_Published whenever the Reply is, and an Attachment on a Research_Item stays visible under Summary_Only.
 
 `project(input): Map<UnitKey, PublicView>` returns a view only for units whose Effective_Disclosure is Public or Withheld:
 
@@ -626,11 +663,21 @@ The kernel also has defensive rules for states that the save path makes impossib
   - a preview token, which is an HMAC over the change set and the list of dependency rows with their `updated_seq` values.
 
   Changes that touch more than a few hundred units are previewed by a `Jobs` object with a progress indicator, and the result is paged.
-- **Gates.** The whole change is refused, listing each unit and reason, when an Attachment would become Public with a Rights_Status that does not permit publication (offering Withheld, R33.4); a Correspondence would become Public while an External_Party's consent is not Granted (offering Withheld when it is Private, R34.2); newly public work is credited to a Member without a Licence_Agreement for the current Content_Licence, or the requesting Administrator lacks one while setting a Public_Summary or Disclosure_Line (R46.17); a Disclosure_Line misses its kind of material or date or exceeds a limit (R23.5); or the set holds more than 1,000 units (R26.14).
+- **Gates.** The whole change is refused, listing each unit and reason, when an Attachment would become Public with a Rights_Status that does not permit publication (offering Withheld, R33.4); a Correspondence would become Public while an External_Party's consent is not Granted (offering Withheld when it is Not_Published, R34.2); newly public work is credited to a Member without a Licence_Agreement for the current Content_Licence, or the requesting Administrator lacks one while setting a Public_Summary or Disclosure_Line (R46.17); a Disclosure_Line misses its kind of material or date or exceeds a limit (R23.5); the set holds more than 1,000 units (R26.14); a unit's own values would widen its Public_View, at once or once its ancestors are Public, without a Publication_Consent from its Consenting_Member that covers them (offering a Publication_Proposal, R23.17); a widened unit is covered by a Confidentiality_Hold (listing each hold, R48.4); or the unit belongs to a Restricted Research_Item (R47.9). The kernel's `checkGates` receives consents, holds, and access levels from `loadProjectionInput`, so the preview, the apply, Publication_Request application, moves, and restorations share one implementation.
 - **Apply.** `POST /api/v1/disclosure/apply` re-checks the token. Its batch starts with the `preview_fresh` guard, which compares every dependency's current `updated_seq` with the value recorded in the token (one statement using `json_each`). If any Public_View shown in the preview could have changed, nothing is applied and the dialog asks for a new preview (R23.14). The batch then re-checks rights and consent with guards, writes the values, sets Classification_State Classified on exactly the selected Unclassified units (R26.6), records one Disclosure_Change Revision per unit, notifies Owners of changed Items they own (R23.7), writes an Activity_Feed entry, and adds an outbox row for the Publisher.
-- **Classification.** Units created by imports and acceptances stay Private while Unclassified, even when an ancestor changes (R26.5). The Unclassified list shows counts per Root_Item, per import, and per accepted Outside_Submission (R26.8). One action can classify 1 to 1,000 units with the same checks per unit (R26.7).
+- **Classification.** Units created by imports and acceptances stay Not_Published while Unclassified, even when an ancestor changes (R26.5). The Unclassified list shows counts per Root_Item, per import, and per accepted Outside_Submission (R26.8). One action can classify 1 to 1,000 units with the same checks per unit (R26.7).
 - **Proposals and notices.** Contributors propose changes through Publication_Requests (R23.10). When a non-Administrator's save changes a field that belongs to the current Public_View of a Public or Withheld unit, every Administrator gets an Item_Update event (R23.13).
 - **Workspace display.** The overview of every Public or Withheld unit (R23.8) reads the current views in `rf-public` and states the time of the last projection. Every Workspace page that shows a unit shows its own Disclosure_Level and its Effective_Disclosure, computed with the kernel's `effective` over the ancestors loaded with the page (R23.9).
+
+### Publication consent, Confidentiality_Holds, and Dual_Approvals (R23.17 to R23.22, R48, R49)
+
+**Widening test.** The kernel gains `widens(before, after, unit)`: true when the unit's own values after the change would present material its view did not present before, evaluated both with the real ancestors and with every ancestor treated as Public and Full_Content. The second evaluation stops a level from being set quietly under a Not_Published Project and exposed later by a Project change, which itself needs no consent (R23.17). Narrowing values never widen.
+
+**Consents.** `publication_consents (id, unit_id, member_id, values_json, source, source_id, given_at, withdrawn_at, used_at)`. A Publication_Request by the unit's Consenting_Member writes a consent row with source `request` while it is open (R23.21). A Publication_Proposal is a Review_Request of type `proposal`, addressed by name to one Consenting_Member, with one entry per unit (R23.18); approving it writes one consent row per unit with source `proposal`, and declining writes none (R23.19). A consent covers a change when the applied level is the consented one or narrower, the presentation is the consented one or Summary_Only, and any Public_Summary or Disclosure_Line equals the consented text exactly (R23.20). Applying marks the consent `used_at`; a used or withdrawn consent covers nothing more. The `consent_valid` guard re-checks, inside the apply batch, that each needed consent row is still unused and not withdrawn. While a Consenting_Member is Revoked, only a Dual_Approval writes new consent rows for that Member's units, with source `dual` (R23.22). A unit whose Consenting_Member is the acting Administrator needs no consent row.
+
+**Holds.** `confidentiality_holds (id, unit_id, member_id, note, placed_at, lifted_by, lifted_at, lift_note, override_id)` with a partial unique index on (`unit_id`, `member_id`) where neither lifted nor overridden (R48.1). A hold covers its Item's subtree, found through `units.root_id` and `parent_id` (R48.2). Placing a hold uses the same preview as restricting: it lists the Public or Withheld units whose own levels the hold resets to Not_Published, and the batch writes them with Disclosure_Changes, Item_Update events for every Administrator and the Owner, and a `publish` outbox row (R48.3). The `hold_free` guard in every apply batch refuses a widening of any covered unit (R48.4). Lifting needs the placer or the Owner (R48.6, R48.10); neither lifting nor overriding changes any level (R48.7). Each placement, lift, and override writes an `access_change` Revision.
+
+**Dual_Approvals.** `dual_approvals (id, action, target_json, effect_json, proposed_by, proposed_at, proposal_reason, state, decided_by, decided_at, decision_reason)` with `action` one of `hold_override`, `access_widen`, `consent_on_behalf` (R49.1) and `state` one of `open`, `approved`, `declined`, `withdrawn`, `lapsed`. Proposing creates Review_Requested events for every other active Administrator and, for a Hold_Override, Item_Update events for the placer and the Owner (R48.8, R49.2). Approving runs the action's own batch with the `dual_open` guard (still open) and the `dual_distinct` guard (approver differs from proposer), plus the action's preconditions: the hold is still active, or the Owner or Consenting_Member is still Revoked (R49.3, R49.4). A proposal whose precondition has gone is set to `lapsed` when it is next read or decided. Rows are never deleted while their element exists and are included in Internal_Backups (R49.7). With fewer than two active Administrators the approve button is disabled with the explanation (R49.6).
 
 ### Publisher and Public_Site generation (R24, R25.3, R25.7, R29, R30.7, R30.8, R34.6, R40, R45.3, R45.4, R46.7, R46.30, R46.34, R46.38)
 
@@ -664,8 +711,8 @@ Only one run is active at a time; changes that arrive during a run go into the n
 |---|---|---|
 | `/` | Featured Projects in Project_Order: Public ones with name, description, and link; Withheld ones as Disclosure_Line only; or the "no Project is featured" notice with a link to `/projects` | R40.1, R40.11 |
 | `/projects`, `/projects/page/{n}` | Every Public or Withheld Project in Project_Order, 50 per page | R40.2 |
-| `/p/{slug}` | Project page with links to the kind listings, Project_Log, Disclosure_Line listing, search, and form; for a Withheld Project only its Disclosure_Line, and every other `/p/{slug}/…` address is not found | R40.3, R40.7, R40.10 |
-| `/p/{slug}/{kind}`, `…/page/{n}` | One listing per kind (journal, findings, sources, runs, hypotheses, correspondence, archival-requests, topics), newest first by Item_Date, 50 per page | R29.1 to R29.4, R29.13, R29.14 |
+| `/p/{slug}` | Project page with its Public Research_Questions first, in the Administrator-set order with title, question, and link (R50.5), then links to the kind listings, Project_Log, Disclosure_Line listing, search, and form; for a Withheld Project only its Disclosure_Line, and every other `/p/{slug}/…` address is not found | R40.3, R40.7, R40.10, R50.5 |
+| `/p/{slug}/{kind}`, `…/page/{n}` | One listing per kind (journal, findings, sources, runs, hypotheses, correspondence, archival-requests, topics, questions), newest first by Item_Date, 50 per page | R29.1 to R29.4, R29.13, R29.14 |
 | `/p/{slug}/log`, `…/page/{n}` | Public Project_Log, newest first by Log_Date then creation time | R40.4 to R40.6 |
 | `/p/{slug}/withheld`, `…/page/{n}` | Disclosure_Lines of Withheld units, newest first by their date | R29.5 |
 | `/p/{slug}/search`, `/search` | Public search, limited to the Project by default from its section | R30, R30.12 |
@@ -683,6 +730,7 @@ Only one run is active at a time; changes that arrive during a run go into the n
 - **Scripts.** Item pages load only the citation-date script. The search and form pages load their modules.
 - **Print (R45.9).** A print stylesheet hides navigation, the search box, pagination, buttons, and form fields, keeps link texts, wraps wide tables, code, and display math inside the page width, prints the page address in full from a `data-url` attribute, and keeps the footer statements. It always uses the light colour scheme.
 - **Times (R45.23).** Times on public pages are in UTC and marked "UTC", so every Visitor gets the same file.
+- **Research_Questions (R50.4, R50.5).** A Public Research_Question's page at `/r/{Item_Identifier}` shows the title, question, Public_Summary, and its Question_Groups in order, each entry rendered like the other end of a Cross_Link (a link when Public, the Disclosure_Line when Withheld, omitted when Not_Published, R24.8), and under Full_Content the introduction. The order on the Project page is stored as `projects.question_order` (a JSON array of Research_Question ids that an Administrator edits); Research_Questions missing from it follow, newest first. A change to any entry's target view re-renders the question page through the normal Cross_Link neighbour expansion.
 
 ### Public search: static index (R30)
 
@@ -719,26 +767,27 @@ Only one run is active at a time; changes that arrive during a run go into the n
 - **Network addresses (R46.20).** `Budget` stores only HMAC-SHA-256(address, key of the day) together with hourly counts. The key rotates daily, keys and counts are deleted within 24 hours, nothing links them to an Outside_Submission, and neither appears in backups or exports.
 - **Moderation_Queue.** The Workspace lists Outside_Submissions with type, Project or General, state, receipt date, Response_Target end date (receipt plus 14 days), and an overdue mark (R46.24), with the same file previews as Attachments (R14.8). Queue entries notify Administrators, and the Responsible_Person for Removal_Requests (R32.3, R46.36).
 - **Decisions** (R32.4 to R32.18, R46.23, R46.33):
-  - **Accept (Material, Correction, Comment).** The Administrator selects at least one Item to create: Research_Items of any kind, Replies, or Attachments on Parents chosen from existing Items or Items created in the same acceptance. Every unit is created Private and Unclassified, credited to the Submitter's name and affiliation, in the Outside_Submission's Project unless the Administrator picks another (for the General_Choice, choosing a Project is required). Research_Items need Log_Summaries (R41.2). The acceptance is one Submission by the accepting Administrator, and it is all-or-nothing.
+  - **Accept (Material, Correction, Comment).** The Administrator selects at least one Item to create: Research_Items of any kind, Replies, or Attachments on Parents chosen from existing Items or Items created in the same acceptance. Every unit is created Not_Published and Unclassified, credited to the Submitter's name and affiliation, in the Outside_Submission's Project unless the Administrator picks another (for the General_Choice, choosing a Project is required). Research_Items need Log_Summaries (R41.2). The acceptance is one Submission by the accepting Administrator, and it is all-or-nothing.
   - **Accept or reject a Removal_Request.** Requires a statement of 1 to 5,000 characters, records the Items, Entry_Sections, Dissent_Notes, External_Parties, or Policy_Pages named as changed, and creates no Item. After acceptance the files are deleted within 24 hours and the email address is erased 90 to 91 days later (R46.26).
   - **More_Information_Requested.** Sends the confirmed message with a Response_Link valid for 30 days (R32.6).
   - **Reject.** Deletes the files within 24 hours and erases the Submitter's email address 90 to 91 days later (R32.8).
   - Every decision shows the exact email text and is applied only after confirmation (R32.10). It is recorded with Administrator, time, text, and created Items, without changing earlier decisions (R32.13). The `decision_open` guard refuses a decision on an Outside_Submission that already has a final one, including one recorded by another Administrator a moment earlier (R32.16). Emails go only to the address given in that Outside_Submission (R32.11).
 - **Timers.** Erasure dates are stored at decision time and applied by the hourly sweep. Response_Target reminders go to Administrators at 10, 14, 21, 28, … days while no decision exists (R46.25).
+- **Contact_Reviews (R32.19 to R32.22).** Accepting an Outside_Submission other than a Removal_Request sets `contact_review_due_at` to the acceptance time plus 12 months. The hourly sweep marks Outside_Submissions whose due time has passed and whose email is still held, and once a day creates one Reminder per Administrator listing those that became due that day, plus a repeat for each that has been due for a further 30 days (R32.19, R32.21). `POST /moderation/{id}/contact-review` with `{ choice: 'keep' | 'erase', reason }` appends a `contact_reviews` row (never updated); Keep moves `contact_review_due_at` 12 months on, Erase sets `email_erase_after` to now so the sweep erases it within 24 hours (R32.20). `POST /moderation/{id}/contact` corrects the name, affiliation, or email, or erases the email at once, with a reason; the previous values go into a `submitter_corrections` row (the erased email is not kept), and a corrected name or affiliation is rewritten into the Credit of every Item created from the Outside_Submission in the same batch, with a Revision per Item (R32.22). The Moderation_Queue has a "due for contact review" filter.
 
 ### Migration_Service: journal and attachment import (R26, R27)
 
 **Flow.**
 
 1. The Administrator creates the P1030680 Project, then opens "Import journal" and selects the journal Markdown file and the attachments folder, together with a JSON export of the current site's attachment metadata (title, kind, credit, credit line, caption, size label, Origin, site path). A small script in `tools/` produces that JSON from the existing TypeScript module.
-2. In the browser, the Journal_Parser builds the Journal_Entries and Entry_Sections. The Journal_Printer prints them back, and both Markdown texts are rendered with the same renderer and compared (R27.7). The import report preview lists entries, sections, unassigned spans, attachments with their Parents, and files that no entry references.
+2. In the browser, the Journal_Parser builds the Journal_Entries and Entry_Sections. The Journal_Printer prints them back, and both Markdown texts are rendered with the same renderer and compared (R27.7). The import report preview lists entries, sections, unassigned spans, attachments with their Parents, and files that no entry references, which will go to the Unassigned_Attachments_Source. The Administrator chooses the Access_Level for the imported Research_Items, with Restricted preselected (R47.13).
 3. The browser uploads each attachment file with its SHA-256, which R2 verifies; the server then compares stored size and checksum with the source values before it creates the Attachment (R26.3).
-4. A `Jobs` object commits one Journal_Entry per batch with all its Entry_Sections, so an interrupted import never leaves a partial entry (R26.13). Attachments follow. Every unit is Private and Unclassified (R26.4). No Findings and no labels are created from imported text (R26.1). Rights_Status is Unknown (R26.2).
+4. A `Jobs` object commits one Journal_Entry per batch with all its Entry_Sections, so an interrupted import never leaves a partial entry (R26.13). Attachments follow. Every unit is Not_Published and Unclassified (R26.4). No Findings and no labels are created from imported text (R26.1). Rights_Status is Unknown (R26.2).
 5. At the end, the job writes one Activity_Feed entry with the counts, sets no New_Flags, and creates no Notification_Events (R26.9). The import report lists created, skipped, and failed entries and files with reasons, and includes the Journal_Printer output as a downloadable Markdown file, whether it passes the comparison, and the title and line range of each entry that fails the comparison against its own source lines (R26.11, R27.8).
 
 **Re-imports (R26.10).** Journal_Entries are matched by phase identifier, the front-matter entry by the import key `front-matter`, and attachments by original file name. Matches are skipped and left untouched, including their disclosure, classification, and edits.
 
-**Attachments (R26.2, R26.12).** An attachment's Parent is the first Journal_Entry, in source order, whose content references the file. A reference is a Markdown link or image destination, an autolink, or a path token in text or a code span that equals the file's site path or ends with `/{file name}`. This rule is needed because the journal refers to files by path inside code spans. The import keeps title, original file name, file kind, size label, caption, and Origin, and records the crediting contributor as the Credit. Where the metadata has no Origin, the Origin is the fixed text "No origin recorded in the source journal", and the report flags the file for curation. A file that no entry references, or whose stored copy does not match, is not imported, any stored copy is deleted, and the report lists it as failed (R26.12). Today this would affect the 6 metadata entries that the journal does not reference (see Open Questions).
+**Attachments (R26.2, R26.12, R26.15).** An attachment's Parent is the first Journal_Entry, in source order, whose content references the file. A reference is a Markdown link or image destination, an autolink, or a path token in text or a code span that equals the file's site path or ends with `/{file name}`. This rule is needed because the journal refers to files by path inside code spans. The import keeps title, original file name, file kind, size label, caption, and Origin, and records the crediting contributor as the Credit. Where the metadata has no Origin, the Origin is the fixed text "No origin recorded in the source journal", and the report flags the file for curation. A file whose stored copy does not match, or that cannot be read or stored, is not imported, any stored copy is deleted, and the report lists it as failed (R26.12). A file that no entry references is attached to the Project's Unassigned_Attachments_Source, which the job creates on first need (Source "Unassigned legacy attachments", Primary, reliability Unknown, Rights_Status Unknown, Not_Published, Unclassified, with the import's Access_Level) and records with the import key `unassigned-attachments` so that re-imports reuse it; the file's Origin is the metadata Origin followed by, or in its absence, "Not referenced in the source journal; provenance unknown", and the report lists the file as unassigned (R26.15). `resolveAttachmentParent()` keeps its signature; the job treats its `undefined` result as the Unassigned_Attachments_Source. Today this would place the 6 metadata entries that the journal does not reference.
 
 **Journal_Parser (R27.1 to R27.4).**
 
@@ -796,7 +845,7 @@ Every section's text is the exact source slice, so code spans, LaTeX math, and H
 - A `Jobs` object creates one row at a time in one batch per row: a Research_Item of the row's kind in the chosen Project (R37.17), with Findings and Hypotheses Open (R37.18), and one Attachment per file with the row's Origin, caption, Credit, and rights (R33.9). Parties link to existing Members or External_Parties of the same name, or to new External_Parties (R37.12).
 - A row whose Row_Key matches a Research_Item from an earlier or concurrent Bulk_Import is skipped. A unique index on `import_row_key` decides the race (R37.6).
 - A file that fails to store or to match its checksum fails the whole row, and no Item of that row is kept (R37.9, R37.13).
-- Every unit is Private and Unclassified (R37.5).
+- Every unit is Not_Published and Unclassified (R37.5).
 - The job meters its D1 writes against an import allowance, initially 30,000 rows per UTC day, and pauses until the next day when the allowance is used, so other Member_Operations stay within their budget (R37.14).
 - The created Items stay invisible until the final step, which writes their New_Flags and the New_Submission events in chunks and then sets the Submission complete in one statement, so the import counts as one Submission (R37.10).
 - The report lists created, skipped, and failed rows and Attachments with row number, Row_Key, and reason (R37.11).
@@ -856,7 +905,7 @@ MANIFEST.json, SHA256SUMS          Export_Manifest: every file with size and SHA
 
 ### Projects (R39, R40)
 
-- **Creation (R39.4, R39.5).** Name (1 to 100 characters, unique ignoring letter case), short description (1 to 500), and Project_Slug (1 to 40 characters from `a-z`, `0-9`, and `-`, starting with a letter or digit, unique, not one of the reserved names shown next to the field). A new Project starts Private, not featured, and last in the Project_Order.
+- **Creation (R39.4, R39.5).** Name (1 to 100 characters, unique ignoring letter case), short description (1 to 500), and Project_Slug (1 to 40 characters from `a-z`, `0-9`, and `-`, starting with a letter or digit, unique, not one of the reserved names shown next to the field). A new Project starts Not_Published, not featured, and last in the Project_Order.
 - **Slug (R39.6, R40.8).** The disclosure batch that first gives a Project Public or Withheld sets `slug_fixed_at`. After that, any save that changes the slug is refused as a whole. Section addresses therefore never change.
 - **Order and featuring (R39.7).** Moving a Project rewrites the positions of the Projects between its old and new place in one batch, so the order stays a permutation and the others keep their relative order. Any number of Projects can be featured.
 - **History (R39.8, R39.18).** Every change is recorded as a Revision of the Project: Disclosure_Change for level and Disclosure_Line, Minor_Edit for everything else. A Project disclosure change appears in the Activity_Feed as one entry naming the Project, with a link to its history (R39.11).
@@ -869,7 +918,7 @@ MANIFEST.json, SHA256SUMS          Export_Manifest: every file with size and SHA
 - **Log_Summary (R41.1 to R41.6, R41.13).** A RichText field of the Research_Item, edited in its own section of the item page and labelled with the Owner as author (R41.9). The `log_summary_owner` guard refuses any change by another Member, even inside a request that changes other fields (R41.4). An Owner's edit that would empty an existing Log_Summary is refused with "a Log_Summary can be changed but not removed" (R41.5). Changes are Revisions marked Minor_Edit or Correction (R41.6). When an Administrator opens an empty Public_Summary, the editor pre-fills it with a copy of the Log_Summary's text and labels; the saved Public_Summary is a separate value (R41.13).
 - **Group_Note (R41.7, R41.8, R41.12, R41.15).** Posted in the same batch as its Research_Item as a Reply flagged `is_group_note`, owned and credited by the submitter, placed first in the Thread, and subject to every Reply rule. Emails about the Submission carry a login link to it and its Public_View.
 - **Dissent_Notes (R42).**
-  - Attaching records text, author, time, and a snapshot of the Log_Summary's text and labels; the note starts Private (R42.1). The `dissent_unique` guard allows one non-withdrawn note per Member per Log_Summary, and the Owner cannot dissent from their own (R42.2).
+  - Attaching records text, author, time, and a snapshot of the Log_Summary's text and labels; the note starts Not_Published (R42.1). The `dissent_unique` guard allows one non-withdrawn note per Member per Log_Summary, and the Owner cannot dissent from their own (R42.2).
   - Notes appear directly after the Log_Summary wherever Members see it, oldest first by attachment time, with author and last-saved time; where only an excerpt is shown (search results), their count appears instead (R42.3).
   - Only the author edits or withdraws a note; Administrators change its disclosure or delete it permanently (R42.5, R42.6, R42.11). Restorations and Log_Summary changes never touch notes. Each save stores a new snapshot of the Log_Summary (R42.7).
   - A note whose snapshot differs from the current Log_Summary is marked "written about an earlier wording", with a link to the word diff (R42.9). The editor's save is refused when the Log_Summary or the note changed after the editor opened (R42.16).
@@ -962,9 +1011,11 @@ Every state-changing route requires the `X-RF-CSRF` header and an `Origin` of `h
 | | `methods_terms` | Fixed Methods_Terms (Disclosure_Levels, label kinds, Source_Kinds, Scope_Caveat, and so on) with Public_Descriptions | R46.11, R46.12 |
 | | `settings` | `key`, `value` (JSON), `updated_by`, `updated_at` | R2.5, R46.37 |
 | | `counters` | `k` (PK), `v`: the change sequence and other counters | |
-| Projects | `projects` | `id`, `name`, `name_key` (unique), `short_description`, `slug` (unique), `slug_fixed_at`, `featured`, `position` (unique), `accent`, `disclosure_level`, `disclosure_line`, `created_by`, `created_at`, `rev`, `updated_seq` | R39, R40, R45.3 |
+| Projects | `projects` | `id`, `name`, `name_key` (unique), `short_description`, `slug` (unique), `slug_fixed_at`, `featured`, `position` (unique), `accent`, `disclosure_level`, `disclosure_line`, `question_order` (JSON array of Research_Question ids), `created_by`, `created_at`, `rev`, `updated_seq` | R39, R40, R45.3, R50.5 |
 | Units | `units` | Every Disclosure_Unit except Projects (see below) | R23, R39.1 |
-| | `research_items` | `unit_id`, `kind`, `item_identifier` (unique), `project_id`, `title`, `status_value_id`, `item_date_key`, `log_date_key`, `log_date_is_creation`, `log_summary` and spans, `public_summary` and spans, `public_presentation`, `first_public_at`, `import_key`, `import_row_key` (unique when set) | R24.1, R29.9, R41, R43 |
+| | `research_items` | `unit_id`, `kind`, `item_identifier` (unique), `project_id`, `title`, `status_value_id`, `item_date_key`, `log_date_key`, `log_date_is_creation`, `log_summary` and spans, `public_summary` and spans, `public_presentation`, `first_public_at`, `import_key`, `import_row_key` (unique when set), `access_level` (`whole_team` or `restricted`) | R24.1, R29.9, R41, R43, R47.1 |
+| | `access_grants` | (`root_id`, `member_id`) primary key, `granted_by`, `granted_at`; the Access_List of a Restricted Research_Item | R47 |
+| | `research_questions`, `question_groups`, `question_entries` | Question and introduction with spans; groups with `position` and heading; entries with `group_id`, `position`, `cross_link_id`, and a unique (`question_id`, `target_id`) | R50 |
 | | `journal_entries`, `je_members` | `phase_id`, `heading_text`, `heading_raw`, `start_date`, `end_date`, `trailing`; related Members | R4.2, R4.3, R27 |
 | | `entry_sections` | `unit_id`, `text` and spans, `sep_before`, `group_kind`, `group_id`, `src_line_start`, `src_line_end`, `unassigned` | R4.4, R27.3, R27.4 |
 | | `findings`, `sources`, `runs`, `run_counts`, `hypotheses`, `correspondences`, `correspondence_parties`, `archival_requests`, `topics`, `replies` | Kind fields of R5 to R10 and R16; `run_counts.value` is a digit string; `correspondence_parties.consent_status`; `replies.is_group_note` | R5 to R10, R16, R34.1, R41.7 |
@@ -974,7 +1025,10 @@ Every state-changing route requires the `X-RF-CSRF` header and an `Origin` of `h
 | | `deletions` | `unit_id` (PK), `unit_type`, `kind`, `item_identifier`, `root_id`, `project_id`, `deleted_by`, `deleted_at`, `reason` | R15.8, R16.10, R22.7, R43.7 |
 | Parties | `external_parties` | `id`, `name`, `name_fold` (case- and diacritic-folded, indexed), `do_not_name`, `generic_label`, `rev`, `updated_seq` | R9.2, R34.4 |
 | Links and reviews | `cross_links` | `id`, `origin_id`, `target_id`, `relation_value_id`, `added_by`, `added_at`, `removed_by`, `removed_at`; partial unique index on (origin, target, label) where not removed; index on `target_id` | R15 |
-| | `review_requests`, `review_addressees` | State, requester, note, reviewer, review note, Publication_Request proposal, outcome, applied values; addressees by type and id | R17, R23.10 to R23.12 |
+| | `review_requests`, `review_addressees` | State, requester, note, reviewer, review note, type (review, publication request, Publication_Proposal), proposal entries, outcome, applied values; addressees by type and id | R17, R23.10 to R23.12, R23.18 |
+| Consent and holds | `publication_consents` | `unit_id`, `member_id`, `values_json`, `source` (request, proposal, dual), `source_id`, `given_at`, `withdrawn_at`, `used_at` | R23.17 to R23.22 |
+| | `confidentiality_holds` | `unit_id`, `member_id`, `note`, `placed_at`, `lifted_by`, `lifted_at`, `lift_note`, `override_id`; partial unique (`unit_id`, `member_id`) while active | R48 |
+| | `dual_approvals` | `action`, `target_json`, `effect_json`, `proposed_by`, `proposed_at`, `proposal_reason`, `state`, `decided_by`, `decided_at`, `decision_reason`; never deleted while the element exists | R49 |
 | History | `revisions` | See Drizzle excerpt; an `UPDATE` trigger refuses all changes | R22, R39.8, R42.7, R46.27 |
 | | `policy_pages`, `policy_sections` | `page_key`, `section_key`, `text` and spans, `rev`; last change dates | R46 |
 | Activity | `submissions` | `id`, `member_id`, `kind` (member, outside acceptance, bulk import, journal import), `started_at`, `completed_at`, per-kind counts | R18.2, R18.11 |
@@ -990,9 +1044,10 @@ Every state-changing route requires the `X-RF-CSRF` header and an `Origin` of `h
 | | `jobs`, `import_rows` | Type, state, cursor, progress, report key; manifest rows with outcome | R26, R37 |
 | | `exports` | Type (public or backup), scope, scheduled flag, requester, times, state, incomplete details, volume list, unit index key, staleness, delivered-to-Administrator time | R35, R36 |
 | Outside | `outside_sessions` | `id`, `purpose`, `created_at`, `expires_at`, `outside_submission_id` | R31.3 |
-| | `outside_submissions` | `id`, `reference` (unique), `type`, `project_id` or `general`, `message`, `name`, `email`, `affiliation`, `page_ref`, `licence_agreed`, `received_at`, `state`, `email_erase_after`, `email_erased_at`, `files_deleted_at` | R31, R32, R46.24 |
+| | `outside_submissions` | `id`, `reference` (unique), `type`, `project_id` or `general`, `message`, `name`, `email`, `affiliation`, `page_ref`, `licence_agreed`, `received_at`, `state`, `email_erase_after`, `email_erased_at`, `files_deleted_at`, `contact_review_due_at` | R31, R32, R46.24 |
+| | `contact_reviews`, `submitter_corrections` | Append-only Contact_Reviews (choice, reason, Administrator, time) and corrections (previous name and affiliation, whether the email was erased, reason, Administrator, time) | R32.19 to R32.22 |
 | | `outside_files`, `outside_responses`, `moderation_decisions`, `response_links` | Files per submission or response; responses; decisions (immutable rows); Response_Link token hashes with expiry and use | R32.7, R32.13, R32.14 |
-| Guards | `_g_rev`, `_g_evidence`, `_g_superseding`, `_g_last_admin`, `_g_chain_tip`, `_g_decision_open`, `_g_preview_fresh`, `_g_log_summary_owner`, `_g_dissent_unique`, `_g_frozen` | One column `x INTEGER NOT NULL` each; never hold rows | |
+| Guards | `_g_rev`, `_g_evidence`, `_g_superseding`, `_g_last_admin`, `_g_chain_tip`, `_g_decision_open`, `_g_preview_fresh`, `_g_log_summary_owner`, `_g_dissent_unique`, `_g_frozen`, `_g_access_owner`, `_g_consent_valid`, `_g_hold_free`, `_g_dual_open`, `_g_dual_distinct`, and the other codes in `GUARD_CODES` | One column `x INTEGER NOT NULL` each; never hold rows | |
 
 Central tables in Drizzle:
 
@@ -1011,7 +1066,7 @@ export const units = sqliteTable('units', {
   credit: text('credit', { mode: 'json' }).notNull(),           // CreditEntry[]
   submissionId: text('submission_id').notNull(),
   createdAt: text('created_at').notNull(),
-  disclosureLevel: text('disclosure_level', { enum: ['public', 'withheld', 'private'] }).notNull().default('private'),
+  disclosureLevel: text('disclosure_level', { enum: ['public', 'withheld', 'not_published'] }).notNull().default('not_published'),
   classificationState: text('classification_state', { enum: ['unclassified', 'classified'] }),
   classifiedBy: text('classified_by'),
   classifiedAt: text('classified_at'),
@@ -1035,7 +1090,7 @@ export const revisions = sqliteTable('revisions', {
   targetId: text('target_id').notNull(),
   rootId: text('root_id'),
   kind: text('kind', {
-    enum: ['minor_edit', 'correction', 'status_change', 'withdrawal', 'disclosure_change', 'restoration', 'deletion'],
+    enum: ['minor_edit', 'correction', 'status_change', 'withdrawal', 'disclosure_change', 'access_change', 'restoration', 'deletion'],
   }).notNull(),
   memberId: text('member_id').notNull(),
   at: text('at').notNull(),
@@ -1157,7 +1212,7 @@ CREATE TABLE publish_runs (id TEXT PRIMARY KEY, started_at TEXT, finished_at TEX
                            urgent INTEGER, version_id TEXT, verified_at TEXT);
 ```
 
-A unit that becomes Private gets its current version closed and no new row, so no current view exists for it. Closed versions older than 30 days are pruned unless an export in progress started before them.
+A unit that becomes Not_Published gets its current version closed and no new row, so no current view exists for it. Closed versions older than 30 days are pruned unless an export in progress started before them.
 
 ### R2 buckets
 
@@ -1224,7 +1279,8 @@ type PublicView =
 | Outside_Submission without a final decision: text, files, name, email, affiliation | Until a final decision |
 | Rejected Outside_Submission or accepted Removal_Request: files and email address | Files deleted within 24 hours; email erased 90 to 91 days after the decision |
 | Rejected Outside_Submission or accepted Removal_Request: text, name, affiliation | No time limit, as the record of the decision |
-| Accepted Outside_Submission of another type: text, name, email, affiliation | While the Outside_Submission or a credited Item exists (open question 3 of requirements.md) |
+| Accepted Outside_Submission of another type: text, name, affiliation | While the Outside_Submission or a credited Item exists, as the Submitter_Attribution |
+| Accepted Outside_Submission of another type: email address | Reviewed 12 months after acceptance and every 12 months after that; kept with a reason or erased (R32.19) |
 | Response_Links | Valid 30 days; token hashes deleted 30 days after expiry |
 | Public_Archive_Exports | Requested: 7 days; scheduled: the 3 most recent complete ones |
 | Internal_Backups | 7 days |
@@ -1248,9 +1304,9 @@ The prework analysis classified every acceptance criterion. Criteria about Cloud
 
 ### Property 1: Effective_Disclosure follows the ancestor rule
 
-For any workspace tree of Projects, Research_Items, Attachments, Entry_Sections, Replies, and Dissent_Notes with arbitrary Disclosure_Levels, Public_Presentations, and Classification_States, the kernel's Effective_Disclosure of each unit equals its own level when every ancestor's Effective_Disclosure is Public (and, for Entry_Sections, Replies, and Dissent_Notes, the Root_Item is Full_Content), and Private otherwise; Unclassified units are Private; consequently no unit is more public than an ancestor, and every unit of a non-Public Project is Private.
+For any workspace tree of Projects, Research_Items, Attachments, Entry_Sections, Replies, and Dissent_Notes with arbitrary Disclosure_Levels, Public_Presentations, and Classification_States, the kernel's Effective_Disclosure of each unit equals its own level when every ancestor's Effective_Disclosure is Public (and, for Entry_Sections, Replies, and Dissent_Notes, the Root_Item is Full_Content), and Not_Published otherwise; Unclassified units are Not_Published, and so is every unit whose Root_Item is Restricted; consequently no unit is more public than an ancestor, and every unit of a non-Public Project is Not_Published.
 
-**Validates: Requirements 23.1, 23.3, 24.5, 26.5**
+**Validates: Requirements 23.1, 23.3, 24.5, 26.5, 47.9**
 
 ### Property 2: Own Disclosure_Levels are independent of ancestors
 
@@ -1258,15 +1314,15 @@ For any sequence of ancestor level changes, Public_Presentation changes, Journal
 
 **Validates: Requirements 4.8, 9.3, 23.3, 39.12**
 
-### Property 3: New Disclosure_Units start Private
+### Property 3: New Disclosure_Units start Not_Published
 
-For any creation path other than restoring an Internal_Backup (Member submission, Attachment version, Group_Note, Dissent_Note, Project creation, journal import, Bulk_Import, Outside_Submission acceptance, Entry_Section re-added by a Restoration), the new unit's Disclosure_Level is Private, imported and accepted units are Unclassified, and new Sources and Attachments without a supplied value have Rights_Status Unknown.
+For any creation path other than restoring an Internal_Backup (Member submission, Attachment version, Group_Note, Dissent_Note, Project creation, journal import, Bulk_Import, Outside_Submission acceptance, Entry_Section re-added by a Restoration), the new unit's Disclosure_Level is Not_Published, imported and accepted units are Unclassified, and new Sources and Attachments without a supplied value have Rights_Status Unknown.
 
 **Validates: Requirements 13.5, 23.2, 23.15, 26.4, 32.4, 33.2, 37.5, 39.4, 42.1**
 
-### Property 4: Unclassified units stay Private and classification is selective
+### Property 4: Unclassified units stay Not_Published and classification is selective
 
-For any sequence of disclosure actions on any mix of Classified and Unclassified units, an Unclassified unit keeps Disclosure_Level Private, and each action marks Classified exactly the units it selected, leaving unselected descendants of selected units unchanged.
+For any sequence of disclosure actions on any mix of Classified and Unclassified units, an Unclassified unit keeps Disclosure_Level Not_Published, and each action marks Classified exactly the units it selected, leaving unselected descendants of selected units unchanged.
 
 **Validates: Requirements 26.5, 26.6, 26.7**
 
@@ -1282,9 +1338,9 @@ For any Withheld unit other than a withdrawn Dissent_Note, every public represen
 
 **Validates: Requirements 24.4, 29.5, 30.9, 40.1, 40.2, 40.7, 45.11**
 
-### Property 7: Private and nonexistent are indistinguishable
+### Property 7: Not_Published and nonexistent are indistinguishable
 
-For any public address form (Research_Item and Attachment Public_URLs, Project_Section addresses, public file addresses, Download_Link addresses with any invalid token, page references and Project choices in Outside_Submissions), the response for a unit or Project that is Private, including one that was public before, is byte-identical to the response for one that never existed.
+For any public address form (Research_Item and Attachment Public_URLs, Project_Section addresses, public file addresses, Download_Link addresses with any invalid token, page references and Project choices in Outside_Submissions), the response for a unit or Project that is Not_Published, including one that was public before, is byte-identical to the response for one that never existed.
 
 **Validates: Requirements 24.7, 25.6, 31.6, 31.14, 40.10**
 
@@ -1344,7 +1400,7 @@ For any Public Research_Item, Attachment, or Project view, its rendered page con
 
 ### Property 17: Public Cross_Links follow the other end's view
 
-For any public page, each Cross_Link and Backlink appears as a link when the other end is Public, as the other end's Disclosure_Line when it is Withheld, and is absent from the page and from every count when it is Private.
+For any public page, each Cross_Link and Backlink appears as a link when the other end is Public, as the other end's Disclosure_Line when it is Withheld, and is absent from the page and from every count when it is Not_Published.
 
 **Validates: Requirements 24.8**
 
@@ -1356,7 +1412,7 @@ For any set of Projects and Public_Views, each kind listing, public Project_Log,
 
 ### Property 19: Public addresses are stable and content-free
 
-For any sequence of edits, Withdrawals, disclosure changes (including a return to Public or Withheld after a period as Private), moves, and permanent deletions, each Public_URL and Project_Section address names only the unit or Project it first named, is formed only from the Item_Identifier or Project_Slug and fixed text, and contains no title, file name, or name; a Project_Slug cannot change once the Project has been Public or Withheld.
+For any sequence of edits, Withdrawals, disclosure changes (including a return to Public or Withheld after a period as Not_Published), moves, and permanent deletions, each Public_URL and Project_Section address names only the unit or Project it first named, is formed only from the Item_Identifier or Project_Slug and fixed text, and contains no title, file name, or name; a Project_Slug cannot change once the Project has been Public or Withheld.
 
 **Validates: Requirements 29.6, 29.7, 29.8, 39.6, 40.3, 40.8**
 
@@ -1446,7 +1502,7 @@ For any sequence of edits, label changes, Status_Changes, Withdrawals, Disclosur
 
 ### Property 34: Restoration changes only content fields
 
-For any history and restore point, a Restoration sets content and other fields to their values at that point except the fields that Status_Changes, Withdrawals, and Disclosure_Changes set, keeps the current Log_Summary when the restorer is not the Owner or the point had none, never changes a Dissent_Note, gives re-added Entry_Sections Disclosure_Level Private, and keeps every intermediate Revision.
+For any history and restore point, a Restoration sets content and other fields to their values at that point except the fields that Status_Changes, Withdrawals, and Disclosure_Changes set, keeps the current Log_Summary when the restorer is not the Owner or the point had none, never changes a Dissent_Note, gives re-added Entry_Sections Disclosure_Level Not_Published, and keeps every intermediate Revision.
 
 **Validates: Requirements 22.5, 23.15, 41.14, 42.5**
 
@@ -1662,9 +1718,9 @@ For any CSV input with or without a byte order mark and any XLSX input, parsed v
 
 ### Property 70: Imports are idempotent and map rows and files correctly
 
-For any journal with attachments and any valid manifest with files, a second run of the same import creates nothing and leaves existing records unchanged; each attachment's Parent is the first Journal_Entry in source order that references the file, and unreferenced files fail; each manifest row creates one Research_Item of its kind with its values mapped as R37.12 and R37.15 state, Findings and Hypotheses Open, one Attachment per named file with the row's rights, and Version_Chains in the declared order.
+For any journal with attachments and any valid manifest with files, a second run of the same import creates nothing and leaves existing records unchanged; each attachment's Parent is the first Journal_Entry in source order that references the file, and every unreferenced file is attached to the one Unassigned_Attachments_Source of the Project, which a re-import reuses; each manifest row creates one Research_Item of its kind with its values mapped as R37.12 and R37.15 state, Findings and Hypotheses Open, one Attachment per named file with the row's rights, and Version_Chains in the declared order.
 
-**Validates: Requirements 26.2, 26.10, 26.12, 33.9, 37.6, 37.7, 37.12, 37.15, 37.18**
+**Validates: Requirements 26.2, 26.10, 26.12, 26.15, 33.9, 37.6, 37.7, 37.12, 37.15, 37.18, 47.13**
 
 ### Property 71: Import reports account for every input
 
@@ -1722,7 +1778,7 @@ For any submissions and edit sequences, a Research_Item of a kind other than Jou
 
 ### Property 80: Dissent_Notes stay attached to the wording they concern
 
-For any sequence of Log_Summary changes and Dissent_Note attachments, edits, withdrawals, and disclosure changes, each Member has at most one non-withdrawn Dissent_Note per Log_Summary and none on their own, notes start Private, display directly after the Log_Summary oldest first by attachment time, carry the earlier-wording mark exactly when the current Log_Summary text or labels differ from those recorded at the author's last save, and withdrawn notes appear only on the item page and in history.
+For any sequence of Log_Summary changes and Dissent_Note attachments, edits, withdrawals, and disclosure changes, each Member has at most one non-withdrawn Dissent_Note per Log_Summary and none on their own, notes start Not_Published, display directly after the Log_Summary oldest first by attachment time, carry the earlier-wording mark exactly when the current Log_Summary text or labels differ from those recorded at the author's last save, and withdrawn notes appear only on the item page and in history.
 
 **Validates: Requirements 42.1, 42.2, 42.3, 42.8, 42.9, 42.14**
 
@@ -1758,9 +1814,9 @@ For any save of a field into which an AI_Draft was placed since its last save, t
 
 ### Property 86: Retention sweeps act on time
 
-For any records with timestamps and states, the sweepers select exactly: uploads started more than 24 hours earlier that belong to no completed Submission or complete Outside_Submission; files of rejected Outside_Submissions and accepted Removal_Requests; Submitter email addresses 90 days after such decisions; network-address counters older than 24 hours; requested exports older than 7 days; and backups older than 7 days; and each selected item is removed before its deadline when the hourly sweep runs.
+For any records with timestamps and states, the sweepers select exactly: uploads started more than 24 hours earlier that belong to no completed Submission or complete Outside_Submission; files of rejected Outside_Submissions and accepted Removal_Requests; Submitter email addresses 90 days after such decisions and within 24 hours of an Erase Contact_Review; network-address counters older than 24 hours; requested exports older than 7 days; and backups older than 7 days; each selected item is removed before its deadline when the hourly sweep runs; and an accepted Outside_Submission is due for Contact_Review exactly when 12 months have passed since its acceptance or its last Keep review while its email is held, with a repeat Reminder for each further 30 days without a review.
 
-**Validates: Requirements 12.8, 31.8, 32.8, 35.11, 36.3, 46.20, 46.26**
+**Validates: Requirements 12.8, 31.8, 32.8, 32.19, 32.20, 32.21, 35.11, 36.3, 46.20, 46.26**
 
 ### Property 87: Reminder and alert schedules
 
@@ -1840,6 +1896,48 @@ For any existing External_Parties and new name, creating the new External_Party 
 
 **Validates: Requirements 9.2**
 
+### Property 100: Members see nothing of Research_Items they cannot read
+
+For any workspace with Whole_Team and Restricted Research_Items, Access_Lists, Members in each Role and Member_Status, and any sequence of submissions, replies, reviews, access changes, and moves, every Workspace read path (item and Attachment pages, Threads, history, Cross_Links and Backlinks, lists, the Project_Log, the Activity_Feed, badges, Notifications, search results, Review_Request queues, Download_Link issue, AI_Draft input, and Question_Group entries) returns to each Member exactly the elements of Research_Items that the Member Can_Read at that moment, answers requests for other elements with the not-found response, and every flag, Notification_Event, and Specialty or Role addressee created goes only to Members who Can_Read the Research_Item when it is created.
+
+**Validates: Requirements 2.8, 47.3, 47.4, 47.5, 47.10**
+
+### Property 101: Only the Owner widens access, and restricting unpublishes
+
+For any sequence of access changes by Owners, Administrators, and other Members, an Access_List gains Members or a Research_Item becomes Whole_Team only through its Owner or, while the Owner is Revoked, through an approved Dual_Approval; any Member allowed by R47.6 can narrow access; each change records an Access_Change Revision with the previous level and list; and after a Research_Item becomes Restricted no unit under it has an own Disclosure_Level of Public or Withheld, and returning it to Whole_Team changes no Disclosure_Level.
+
+**Validates: Requirements 47.6, 47.7, 47.8, 47.12, 47.14**
+
+### Property 102: Publication follows the Consenting_Member's consent
+
+For any Disclosure_Units with Consenting_Members, Publication_Requests, Publication_Proposals with approvals, declines, and withdrawals, and any requested disclosure change, the change is applied exactly when every unit whose own values it widens (at once or with every ancestor treated as Public) either has the acting Administrator as its Consenting_Member or has an unused, unwithdrawn Publication_Consent whose values cover the applied values under the narrowing rule of R23.20; a covered change uses its consent, so the same consent never covers a second change; and a Project's level change never needs consent.
+
+**Validates: Requirements 23.17, 23.18, 23.19, 23.20, 23.21, 23.22**
+
+### Property 103: Confidentiality_Holds block publication until lifted or overridden
+
+For any Items with Confidentiality_Holds placed, lifted, and overridden in any order, no change widens the Public_View of a unit covered by an active hold; placing a hold leaves no covered unit with an own level of Public or Withheld; a hold is lifted only by the Member who placed it, the Item's Owner, or an approved Hold_Override; and lifting or overriding changes no Disclosure_Level.
+
+**Validates: Requirements 48.1, 48.2, 48.3, 48.4, 48.6, 48.7, 48.10**
+
+### Property 104: Dual_Approvals need two different active Administrators
+
+For any sequence of proposals, approvals, declines, withdrawals, revocations, and Role changes, a Dual_Approval's action takes effect exactly once, only when an active Administrator other than the proposer approves it while it is open and its precondition still holds; a proposal whose precondition has gone lapses without effect; and no action that R49.1 lists takes effect by any other path.
+
+**Validates: Requirements 23.22, 47.7, 48.8, 48.9, 49.1, 49.3, 49.4, 49.5, 49.6**
+
+### Property 105: Attachment moves keep identity and move whole Version_Chains
+
+For any Attachments with Version_Chains, levels, holds, and Cross_Links, and any move, every Attachment of the chain gets the new Parent, Root_Item, and Project and keeps its Item_Identifier, rights, Disclosure_Level, Classification_State, holds, chain position, and Cross_Links; a move that would widen a Public_View or let a Member read an Attachment that the Member could not read before is applied only when R12.14 or R12.15 allows it.
+
+**Validates: Requirements 12.12, 12.13, 12.14, 12.15**
+
+### Property 106: Research_Question entries are valid and follow their targets
+
+For any Research_Questions and sequences of edits, moves, and permanent deletions of their targets, every Question_Group entry names a live Research_Item or Attachment of the same Project at most once per Research_Question, is stored as an Addresses Cross_Link, keeps its order, and disappears in the same save as its target's move to another Project or deletion; on the Public_Site each entry appears as a link, a Disclosure_Line, or not at all according to its target's Public_View, and a Project's page lists exactly its Public Research_Questions in the Administrator-set order.
+
+**Validates: Requirements 50.1, 50.2, 50.4, 50.5, 50.6, 50.7**
+
 ## Error Handling
 
 **Principles.**
@@ -1864,7 +1962,7 @@ For any existing External_Parties and new name, creating the new External_Party 
 | `frozen` | 503 | A backup's write freeze is active | Show "saving is paused for a backup"; retry automatically |
 | `unavailable` | 503 | `rf-submit` budget exhausted (R28.11) | Public pages show the notice from `status.json` |
 | `rate_limited` | 429 | Outside_Submission_Limits reached (R31.4) | State the limit reached |
-| `not_found` | 404 | Unknown or Private unit, invalid Download_Link | Identical body for every case (R24.7, R25.6) |
+| `not_found` | 404 | Unknown or Not_Published unit, invalid Download_Link | Identical body for every case (R24.7, R25.6) |
 
 **Platform limits.**
 
@@ -1999,9 +2097,10 @@ PBT applies to this feature: the privacy kernel, the parsers and printers, the s
 **Personal data.**
 
 - Network addresses are stored only as daily-keyed HMACs with counts and deleted within 24 hours (R46.20).
-- Submitter email addresses are erased on schedule (R32.8, R46.26).
+- Submitter email addresses are erased on schedule (R32.8, R46.26), and those of accepted Outside_Submissions are reviewed yearly (R32.19).
+- Restricted Research_Items keep personal exchanges from Members outside their Access_List; Administrators can still read them, which the Privacy page's "Members" section states.
 - Microsoft 365 keeps its own message traces outside the Research_CMS; the Privacy page's "Services that process data" section names Microsoft 365 for email and Workers AI for drafting.
-- AI drafting sends possibly Private text to Workers AI inside the team's account. The chosen model is Cloudflare-hosted, no AI Gateway or stateful feature is used, and the AI_Drafting_Setting can turn it off.
+- AI drafting sends possibly Not_Published text to Workers AI inside the team's account. The chosen model is Cloudflare-hosted, no AI Gateway or stateful feature is used, and the AI_Drafting_Setting can turn it off.
 
 **Destructive actions.** Permanent deletion asks the Administrator to type the Item_Identifier. The last-Administrator guard (R2.11) and the immutable Revisions (R22.11) provide the audit trail.
 
@@ -2034,7 +2133,7 @@ PBT applies to this feature: the privacy kernel, the parsers and printers, the s
 | Requirement | Main design sections | Properties |
 |---|---|---|
 | R1 Authentication | Authentication_Service | 21, 22 |
-| R2 Roles and Permissions | Access_Control_Service | 21 to 25 |
+| R2 Roles and Permissions | Access_Control_Service, Restricted access | 21 to 25, 100 |
 | R3 Profiles | Access_Control_Service, Records_Service (value sets), Data Models | 23, 26, 27, 31, 65 |
 | R4 Journal_Entries | Records_Service, Execution model (staged commits) | 2, 27, 28, 29, 31, 32 |
 | R5 Findings | Records_Service, Identifiers and Cross_Links | 9, 27, 30, 65 |
@@ -2044,7 +2143,7 @@ PBT applies to this feature: the privacy kernel, the parsers and printers, the s
 | R9 Correspondence | Records_Service, Disclosure kernel | 2, 10, 13, 27, 65, 99 |
 | R10 Archival_Requests | Records_Service, cron | 27, 31, 65, 87 |
 | R11 Labels | Text model | 33, 37, 38, 39 |
-| R12 Attachments | Attachment_Service | 27, 44, 86 |
+| R12 Attachments | Attachment_Service | 27, 44, 86, 105 |
 | R13 Versions | Attachment_Service | 3, 23, 43 |
 | R14 Previews | Attachment_Service | 46 |
 | R15 Links and identifiers | Identifiers and Cross_Links | 36, 41, 42 |
@@ -2055,7 +2154,7 @@ PBT applies to this feature: the privacy kernel, the parsers and printers, the s
 | R20 Email | Mailer and email pipeline, Operations | 5, 27, 56 to 59 |
 | R21 Search | Search_Service | 60, 61, 64 |
 | R22 History | History_Service | 27, 29, 33 to 36 |
-| R23 Disclosure | Disclosure kernel, Disclosure changes and previews | 1 to 3, 12, 14, 27, 34, 54, 65 |
+| R23 Disclosure | Disclosure kernel, Disclosure changes and previews, Publication consent | 1 to 3, 12, 14, 27, 34, 54, 65, 102, 104 |
 | R24 Public presentation | Publisher, Public_Site structure | 5 to 8, 15 to 17 |
 | R25 Protected files | Attachment_Service, Publisher | 7, 15, 45 |
 | R26 Migration | Migration_Service | 3, 4, 12, 28, 65, 67, 70, 71 |
@@ -2064,7 +2163,7 @@ PBT applies to this feature: the privacy kernel, the parsers and printers, the s
 | R29 Public archive | Public_Site structure | 9, 16, 18, 19 |
 | R30 Public search | Public search: static index | 5, 61 to 64 |
 | R31 Outside_Submission_Form | Moderation_Service and public API | 5, 7, 27, 78, 86, 88 |
-| R32 Moderation | Moderation_Service and public API | 28, 29, 54, 58, 78, 86, 89, 90 |
+| R32 Moderation | Moderation_Service and public API (Contact_Reviews) | 28, 29, 54, 58, 78, 86, 89, 90 |
 | R33 Rights | Attachment_Service, Disclosure changes | 3, 12, 13, 27, 31, 69, 70 |
 | R34 Consent and naming | Records_Service, Disclosure kernel | 10, 12, 13, 14, 23, 27 |
 | R35 Public export | Export_Service | 45, 72, 73, 75, 86, 87 |
@@ -2079,6 +2178,10 @@ PBT applies to this feature: the privacy kernel, the parsers and printers, the s
 | R44 AI drafts | AI drafting | 23, 27, 83 to 85 |
 | R45 Presentation | Design_System, Public_Site structure | 16, 20, 37, 38, 59, 91 to 94 |
 | R46 Policy pages | Policy_Pages and group identity, Moderation_Service | 11, 12, 16, 23, 27, 31, 54, 75, 86, 87, 90, 95 to 98 |
+| R47 Restricted access | Restricted access, Access_Control_Service, Migration_Service, Bulk import | 1, 70, 100, 101, 104 |
+| R48 Confidentiality_Holds | Publication consent, Confidentiality_Holds, and Dual_Approvals | 103, 104 |
+| R49 Dual_Approvals | same | 104 |
+| R50 Research_Questions | Records_Service, Public_Site structure | 106 |
 
 Criteria classified as integration, smoke, or example tests in the prework are covered by the tests listed under Testing Strategy.
 
@@ -2101,7 +2204,7 @@ Criteria classified as integration, smoke, or example tests in the prework are c
 1. **Plain-text email part (R45.21).** The Graph JSON request that allows `saveToSentItems: false` (R20.24) carries a single HTML body, so the plain-text version relies on Exchange Online's conversion for external recipients. Emails are written so that this conversion shows every link as its full address, but the Research_CMS does not write the plain-text part itself, and recipients inside the tenant may get HTML only. MIME submission would let the Research_CMS write both parts but always saves a copy to Sent Items. Is the conversion acceptable?
 2. **Residual copies in the sending mailbox (R20.24).** With `saveToSentItems: false`, Exchange can still keep a copy in the hidden Recoverable Items folder until the Managed Folder Assistant purges it. The design turns single item recovery off and sets the shortest retention. Should the Privacy page state this residual retention, or is a different provider preferred?
 3. **Public search under an exhausted budget (R28.11).** Public search in this design uses no Worker request and no D1 read, so switching it off when the Public_Traffic_Budget is used up protects nothing. The design follows R28.11 as written. Should R28.11 drop public search from the features that are switched off?
-4. **Attachments the journal does not reference (R26.2, R26.12).** Six of the 23 files in the current site's attachment metadata are not referenced anywhere in the journal Markdown, and the journal references one file that the metadata does not describe. As specified, the six would fail import. Should references be added to the journal before migration, or should the import accept a file-to-phase mapping (a requirements change)?
+4. **Attachments the journal does not reference (closed, October 2026).** The six metadata files that the journal does not reference are imported under the Project's Unassigned_Attachments_Source with their provenance recorded as unknown, and Members move them later (R26.15, R12.12). The journal file that the metadata does not describe is still reported by the dry-run.
 5. **Content on helut.org (closed).** helut.org is offline, so no journal content is public there and nothing needs withdrawing.
 6. **Download_Links and R1.3.** `dl.researchforce.org` authorizes requests by the Download_Link token that R25.5 describes, not by an Access assertion, so links work without login as R25.5 requires. Is this the intended reading of R1.3 for file delivery?
 7. **AI drafting default.** Workers AI had a cross-tenant exposure in one model in August and September 2026; the chosen model was not affected. Should the AI_Drafting_Setting still start On?
@@ -2110,6 +2213,7 @@ Criteria classified as integration, smoke, or example tests in the prework are c
 10. **Bulk_Import pace.** With 100,000 D1 rows written per day for the whole account and an import allowance of 30,000, a Bulk_Import of several thousand Items with Attachments takes several days. Is that acceptable, or should large imports use a temporary Workers Paid month?
 11. **Write freeze for backups.** Saving pauses for about a minute while an Internal_Backup is taken. Is that acceptable?
 12. **Item_Identifier format.** Twelve random characters in groups of four, such as `K7QM-3XRW-9DPA`. Is this format acceptable for citations?
-13. **Open questions carried over from requirements.md.** The Content_Licence (question 1), naming of outside parties in Withheld lines (question 2), retention of accepted Submitters' data (question 3), and the size of the curator's material (question 4) remain open. The design treats the licence and the retention period as configuration, so answers need no redesign.
+13. **Open questions carried over from requirements.md.** The Content_Licence (question 1), naming of outside parties in Withheld lines (question 2), and the size of the curator's material (question 4) remain open; the curator expects a lot of material, brought in stages (research notes and source lists first, then correspondence they may share, then the larger scans). Retention of accepted Submitters' data (question 3) is closed by the yearly Contact_Review. The design treats the licence as configuration, so an answer needs no redesign.
+14. **Restricted access and Administrators.** Administrators can read every Restricted Research_Item (R47), so a Restricted Topic keeps a discussion from the other Contributors but not from Administrators. If the team later wants discussions that Administrators cannot read, that is a requirements change, and the backup and moderation duties of Administrators would need rethinking.
 
 If any of these answers changes a requirement, the requirements document can be revised before the task plan is written.

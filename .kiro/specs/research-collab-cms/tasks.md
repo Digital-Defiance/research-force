@@ -20,12 +20,32 @@ Points that the design leaves open are implemented as written and kept in one pl
 | Plain-text email part (design open question 1) | Graph JSON `sendMail` with one HTML body and Exchange's conversion for the plain-text part | `apps/app/src/mail/providers/graph.ts`, `BODY_MODE = 'html-with-exchange-conversion'` |
 | Residual Recoverable Items copies (open question 2) | Mailbox settings in the Microsoft 365 setup script; no statement on the Privacy page | `STATE_MAILBOX_RESIDUAL_COPIES = false` in `packages/db/src/seed/policy-sections.ts` |
 | Public search under an exhausted budget (open question 3, R28.11) | `status.json` marks search unavailable and the search page shows the notice | `PUBLIC_SEARCH_FOLLOWS_BUDGET = true` in `apps/app/src/budget/status.ts` |
-| Journal-unreferenced attachments (open question 4, R26.12) | Reported early by the dry-run; they fail import as specified | `resolveAttachmentParent()` in `packages/markdown/src/journal/attachments.ts` |
+| Journal-unreferenced attachments (open question 4, closed: R26.15) | Reported early by the dry-run; imported under the Project's Unassigned_Attachments_Source | `resolveAttachmentParent()` in `packages/markdown/src/journal/attachments.ts` (an `undefined` result means unassigned) |
 | AI_Drafting_Setting default (open question 7) | Starts On | `SETTINGS.aiDrafting.default` in `packages/domain/src/settings.ts` |
 | Backup write freeze (open question 11) | `frozen` guard while the backup reads `rf-core` | `apps/app/src/jobs/backup.ts`, `FREEZE` constants |
 | Item_Identifier format (open question 12) | 12 random Crockford base-32 characters in groups of four | `ITEM_ID_FORMAT` in `packages/domain/src/identifiers.ts` |
 
-Tests use synthetic data only. No task copies, quotes, or commits content from the existing journal or its attachments. The dry-run and the import read those files from paths the user gives, the dry-run prints only counts, phase identifiers, line ranges, and file names, and the import creates every unit Private and Unclassified.
+Tests use synthetic data only. No task copies, quotes, or commits content from the existing journal or its attachments. The dry-run and the import read those files from paths the user gives, the dry-run prints only counts, phase identifiers, line ranges, and file names, and the import creates every unit Not_Published and Unclassified.
+
+### Build order after the October 2026 revision
+
+The October 2026 revision of the requirements (restricted access, Owner consent, Confidentiality_Holds, Dual_Approvals, Research_Questions, Unassigned legacy attachments, Contact_Reviews, and the rename of Private to Not_Published) adds tasks 51 to 55 and changes the order in which the remaining tasks are built. Task numbers stay as they are, because tasks refer to each other by number. The remaining work is built in four milestones, so that the first one gives the team a working shared archive as early as possible and the team can learn from using it before the public site is built.
+
+1. **Team archive** (the smallest useful version: preserve and connect sources, findings, tests, and decisions inside the team):
+   - 51 (rename Not_Published), 52 (restricted access, including the read paths that tasks 17 to 24 built);
+   - 25 (flags and Activity_Feed), 28 (Member search), 29 (checkpoint);
+   - 30 (files), 55.1 to 55.3 and 55.5 (Research_Questions in the Workspace), 53 (Attachment moves, which use 55.2's entry removal);
+   - 36 (journal import), 37 (Bulk_Import; its New_Submission events wait for task 26's fan-out, and its New_Flags are written as specified);
+   - 40 (Project_Log and lists);
+   - 38.3 to 38.7 and 38.10 (Internal_Backup, restore, and package volume streaming; the screens of 38.6 without the export parts);
+   - 45 (security headers), 50 (local development);
+   - from 48: 48.1, 48.4, 48.6, and 48.9 for a Workspace-only deployment and the journal import rehearsal; the `site` scope step of 48.4 and the first `rf-site` deployment wait for milestone 3;
+   - 39 (checkpoint).
+2. **Notifications and email:** 26, 27, 44, and from 48: 48.2, 48.3, 48.7, and 48.8; then 47 (checkpoint).
+3. **Public archive:** 31, 54 (Owner consent, Confidentiality_Holds, Dual_Approvals), 32, 55.4 (public Research_Question pages), 33 (checkpoint), 38.1, 38.2, 38.8, 38.9, 38.11, 38.13, 43, 46, 48.5, and 48.10.
+4. **Outside contributions and the rest:** 34, 35 (including Contact_Reviews), 38.12, 41, 42, then 49 (final checkpoint).
+
+Where a task in an earlier milestone produces something that a later task delivers (for example Notification_Event rows written before task 26 adds the fan-out and the Notification_Centre), the earlier task writes the rows as its own sub-task specifies and the later task adds the delivery.
 
 ## Tasks
 
@@ -159,7 +179,7 @@ Tests use synthetic data only. No task copies, quotes, or commits content from t
 
 - [x] 6. Build the privacy kernel in `packages/kernel`
   - [x] 6.1 Implement Effective_Disclosure in `packages/kernel/src/effective.ts`
-    - `DNode`, `ancestors(n)` (Parent chain to the Root_Item, then the Project), and `effective(n)` as the design defines it: Unclassified units are Private, any non-Public ancestor makes a unit Private, and Entry_Sections, Replies, and Dissent_Notes also need a Full_Content Root_Item
+    - `DNode`, `ancestors(n)` (Parent chain to the Root_Item, then the Project), and `effective(n)` as the design defines it: Unclassified units are Not_Published, any non-Public ancestor makes a unit Not_Published, and Entry_Sections, Replies, and Dissent_Notes also need a Full_Content Root_Item
     - _Requirements: 23.1, 23.3, 24.5, 26.5_
   - [x] 6.2 Implement the Public_View projection in `packages/kernel/src/project.ts`
     - `project(input)` returning a `PublicView` only for Public and Withheld units, with the fields of the design's view table for each unit type; Withheld views hold only the Disclosure_Line; Summary_Only views have no slot for Entry_Sections, Replies, Log_Summaries, or other free text; no view has a slot for review state, flags, Submitter addresses, or Consent_Status
@@ -393,7 +413,7 @@ Tests use synthetic data only. No task copies, quotes, or commits content from t
     - A label-only change is an edit of the field that contains it, with the same Permission checks and a Revision whose previous values include the old spans; the server confirms the text is unchanged
     - _Requirements: 4.1, 4.5, 4.9, 11.7, 11.8, 22.1, 22.2, 22.9, 22.10, 28.13_
   - [x] 16.2 Implement Projects in `apps/app/src/records/projects.ts` and `apps/app/src/api/routes/projects.ts`
-    - Create (Private, not featured, last in the Project_Order, creator and time recorded), edit with validation, refusal of a whole save that changes a fixed Project_Slug, featured toggle, `move-position` rewriting the positions between the old and new places in one batch, and Project_Accent set or clear from the palette by Administrators only
+    - Create (Not_Published, not featured, last in the Project_Order, creator and time recorded), edit with validation, refusal of a whole save that changes a fixed Project_Slug, featured toggle, `move-position` rewriting the positions between the old and new places in one batch, and Project_Accent set or clear from the palette by Administrators only
     - A Revision for every change (Disclosure_Change for level and Disclosure_Line, Minor_Edit otherwise), `GET /projects/{id}/history` with before and after values, and `project:{id}` outbox rows
     - _Requirements: 39.4, 39.5, 39.6, 39.7, 39.8, 39.18, 45.3, 45.4, 45.22_
   - [x]* 16.3 Write property test for the Project_Order
@@ -517,7 +537,7 @@ Tests use synthetic data only. No task copies, quotes, or commits content from t
     - _Requirements: 22.4_
   - [x] 23.3 Implement Restoration in `packages/domain/src/restore.ts` and `POST /items/{id}/restore`
     - Pure `restoreFields` returning content and fields at the chosen point, except the fields that Status_Changes, Withdrawals, and Disclosure_Changes set, and except the Log_Summary when the restorer is not the Owner or the point had none
-    - The Owner or an Administrator restores; Entry_Sections added back get Private; the Restoration Revision names the point and intermediate Revisions stay
+    - The Owner or an Administrator restores; Entry_Sections added back get Not_Published; the Restoration Revision names the point and intermediate Revisions stay
     - _Requirements: 2.4, 22.5, 23.15, 41.14_
   - [x] 23.4 Implement Withdrawal in `POST /items/{id}/withdraw`
     - Reason of 1 to 1,000 characters; the Item, its history, and its Disclosure_Level stay; withdrawn date and reason shown to Members; a Finding becomes Withdrawn with a Withdrawal Revision; a preview response states whether the Public_Site will show the reason (Effective_Disclosure Public)
@@ -563,8 +583,8 @@ Tests use synthetic data only. No task copies, quotes, or commits content from t
 
 - [ ] 25. Build the Activity_Service: flags, views, badges, and the Activity_Feed
   - [ ] 25.1 Implement New_Flags in `apps/app/src/activity/flags.ts`
-    - The batch that completes a Submission inserts a `new` flag on each of its Items for every other Member who is Active or Pending and whose account was created before completion, with `INSERT … SELECT`
-    - _Requirements: 18.1, 18.2, 18.6_
+    - The batch that completes a Submission inserts a `new` flag on each of its Items for every other Member who is Active or Pending, whose account was created before completion, and who Can_Read the Item's Research_Item, with `INSERT … SELECT` joined to the `canRead` fragment from task 52.2; every flag insert, feed read, and badge count in this task uses that fragment
+    - _Requirements: 18.1, 18.2, 18.6, 47.4, 47.5_
   - [ ] 25.2 Implement Updated_Flags in `apps/app/src/activity/flags.ts`
     - A Correction, Withdrawal, or Status_Change on an Item or one of its Entry_Sections inserts an `updated` flag for every other active Member with a `views` row for the Item, in the batch of the Revision
     - _Requirements: 18.4_
@@ -599,7 +619,8 @@ Tests use synthetic data only. No task copies, quotes, or commits content from t
   - [ ] 26.1 Implement the event fan-out in `apps/app/src/notifications/fanout.ts`
     - One rule per Event_Type from the design's table, written with `INSERT … SELECT` in the batch of the causing action: New_Submission, Item_Update (Owner and Thread posters), the Administrator Item_Updates for automatic downgrades and for a non-Administrator's save that alters a Public_View, Reply, Mention (from task 24.2), Review_Requested, Review_Completed, and System_Alert; rules for Outside_Submission, Reminder, and Dissent events are added by the tasks that introduce them
     - The acting Member is excluded except for System_Alerts; Muted_Projects remove only New_Submission, Reply, and ordinary Item_Update events; each event stores the recipient's email mode at creation
-    - _Requirements: 9.6, 16.6, 16.7, 17.4, 17.6, 19.1, 19.2, 19.3, 19.4, 19.8, 23.13, 34.3, 39.9_
+    - Every rule about a Research_Item or anything under it joins the `canRead` fragment, so no event goes to a Member who cannot read it; rules for Publication_Proposals, Confidentiality_Holds, and Dual_Approvals are added by task 54, and Access_Change events written by task 52 before this task get their fan-out here
+    - _Requirements: 9.6, 16.6, 16.7, 17.4, 17.6, 19.1, 19.2, 19.3, 19.4, 19.8, 23.13, 34.3, 39.9, 47.5_
   - [ ] 26.2 Implement Notifications and the Notification_Centre in `apps/app/src/notifications/centre.ts` and `apps/app/src/api/routes/notifications.ts`
     - All events that one Submission causes for one recipient with in-app On form one Notification, added in the same batch; `GET /notifications` newest first with Event_Types, actor, time, read state, and what it concerns; `POST /notifications/{id}/read`; deleted Root_Items shown by kind and the Deletion record's time and reason; Group_Note indication; the unread count added to `GET /me/badges`
     - _Requirements: 19.5, 19.6, 19.7, 19.11, 19.12, 19.13, 41.11_
@@ -632,9 +653,9 @@ Tests use synthetic data only. No task copies, quotes, or commits content from t
     - A quarter-hour check finds Members whose local digest hour has passed since their last digest and queues one email of their unlisted Daily_Digest events from before that hour, grouped by Root_Item, or nothing when none qualifies
     - _Requirements: 20.4, 20.5, 20.13_
   - [ ] 27.4 Implement the `Mailer` Durable Object in `apps/app/src/do/mailer.ts`
-    - One sending queue for invitations, notification emails, and Submitter emails, oldest first; an attempt log enforcing at most 30 attempts per 60 seconds and the Recipient_Cap in force over 24 hours, holding emails until both allow; the recipient of a notification email must be an active Member at each attempt; composition from the current Public_Views at send time; the configured provider read at each attempt
+    - One sending queue for invitations, notification emails, and Submitter emails, oldest first; an attempt log enforcing at most 30 attempts per 60 seconds and the Recipient_Cap in force over 24 hours, holding emails until both allow; the recipient of a notification email must be an active Member at each attempt and still Can_Read every Root_Item it describes (items the recipient can no longer read are left out, and an email left with nothing is dropped); composition from the current Public_Views at send time; the configured provider read at each attempt
     - Retries at about 2, 10, 25, and 50 minutes, honouring `Retry-After` on 429; after the final failure a System_Alert for every Administrator unless the email held only System_Alerts; a failed invitation sets `invite_email_state` until a later invitation succeeds; queue time recorded so time limits exclude it
-    - _Requirements: 2.1, 2.14, 20.8, 20.9, 20.10, 20.11, 20.15, 20.16, 20.17, 20.18_
+    - _Requirements: 2.1, 2.14, 20.8, 20.9, 20.10, 20.11, 20.15, 20.16, 20.17, 20.18, 47.5_
   - [ ] 27.5 Implement the Microsoft Graph provider in `apps/app/src/mail/providers/graph.ts`
     - The `send(message)` Email_Provider interface; client-credentials tokens from `login.microsoftonline.com` with a certificate assertion signed by WebCrypto, held only in the `Mailer` instance's memory; `POST /v1.0/users/{Sending_Address}/sendMail` with one recipient, an HTML body, and `saveToSentItems: false`; `BODY_MODE = 'html-with-exchange-conversion'` as the one place the plain-text strategy is chosen; credentials, tokens, and Graph responses never logged or stored
     - _Requirements: 20.11, 20.19, 20.20, 20.21, 20.22, 20.24, 45.21_
@@ -664,7 +685,8 @@ Tests use synthetic data only. No task copies, quotes, or commits content from t
   - [ ] 28.2 Implement queries in `apps/app/src/search/query.ts` and `GET /search`
     - Shared validation; FTS5 expressions with `"word"*` terms, quoted phrases, and "ß"/"ss" expansion capped at 16 alternatives; own-title matches first, then the rest, newest first, in pages of 20; filters by root kind, Credit person, current Specialty holders, own Disclosure_Level, Projects, and an inclusive creation date range in the viewer's zone
     - Results with kind, title (the Root_Item's for sections and Replies), Credit, creation date, markers, Disclosure_Level and Effective_Disclosure, Project name, and excerpts of at most 300 characters located in the stored text with their labels and highlighted terms; Dissent_Note matches marked with the author; "no result matched" when empty
-    - _Requirements: 21.2, 21.3, 21.4, 21.5, 21.7, 21.8, 21.9, 23.9, 39.14, 39.15, 42.13_
+    - Matches are filtered with the `canRead` fragment on each document's Research_Item before ranking and paging, so no result, count, or excerpt reveals a Restricted Research_Item to a Member outside its Access_List; Restricted results show the Restricted mark
+    - _Requirements: 21.2, 21.3, 21.4, 21.5, 21.7, 21.8, 21.9, 23.9, 39.14, 39.15, 42.13, 47.4, 47.11_
   - [ ] 28.3 Build the search screen in `apps/app/web/src/search/`
     - Query form and filters; after 10 seconds without a response, "search is unavailable", with the 00:00 UTC note for daily limits; query and filters kept as entered
     - _Requirements: 21.9, 21.10_
@@ -688,12 +710,12 @@ Tests use synthetic data only. No task copies, quotes, or commits content from t
     - Hourly sweep deleting objects of uploads started more than 24 hours earlier that belong to no completed Submission
     - _Requirements: 6.4, 7.3, 12.1, 12.2, 12.8, 16.5, 33.1, 33.2, 33.3_
   - [ ] 30.3 Implement Attachment versions in `apps/app/src/files/versions.ts`
-    - A new version is a new Attachment on the same Parent with `supersedes_unit_id`, last in the Version_Chain, Private, with Rights_Status Unknown; the `chain_tip` guard refuses a version of a superseded Attachment and names the last version so the dialog can offer it; adding a version needs edit Permission on the target; the superseded Attachment stays unchanged and usable
+    - A new version is a new Attachment on the same Parent with `supersedes_unit_id`, last in the Version_Chain, Not_Published, with Rights_Status Unknown; the `chain_tip` guard refuses a version of a superseded Attachment and names the last version so the dialog can offer it; adding a version needs edit Permission on the target; the superseded Attachment stays unchanged and usable
     - Chain data for every Attachment (positions from 1, upload time, Owner, viewed and last marks) and supersession notices with the successor's upload time and link
     - _Requirements: 13.1, 13.2, 13.3, 13.4, 13.5, 13.6, 13.7, 13.8_
   - [ ] 30.4 Implement Download_Link issue in `apps/app/src/files/links.ts` and `POST /files/{id}/link`
-    - Tokens `base64url(objectKey, memberId, issuedAt, purpose)` with an HMAC-SHA-256 under a Workers secret, issued only to active Members, at `https://dl.researchforce.org/t/{token}` for files and `/x/{token}` for package volumes
-    - _Requirements: 14.9, 25.1, 25.5_
+    - Tokens `base64url(objectKey, memberId, issuedAt, purpose)` with an HMAC-SHA-256 under a Workers secret, issued only to active Members who Can_Read the file's Research_Item, at `https://dl.researchforce.org/t/{token}` for files and `/x/{token}` for package volumes
+    - _Requirements: 14.9, 25.1, 25.5, 47.4_
   - [ ] 30.5 Implement the `rf-dl` Worker in `apps/dl/src/index.ts`
     - Accept a token only with a valid signature, at most 15 minutes after issue, for an Active Member at request time, and for an Administrator when the purpose is an Internal_Backup; support `Range` and `HEAD`; serve with `Content-Disposition: attachment`, `Content-Type: application/octet-stream`, `X-Content-Type-Options: nosniff`, `Content-Security-Policy: sandbox; default-src 'none'`, `Cross-Origin-Resource-Policy: same-site`, and CORS limited to the Workspace origin
     - Every refusal returns the same 404 response as an unknown path; register `rf-dl` responses to non-Members in `packages/testing/src/public-channels.ts`
@@ -734,14 +756,16 @@ Tests use synthetic data only. No task copies, quotes, or commits content from t
     - _Requirements: 23.8, 26.8, 33.7, 39.14_
   - [ ] 31.4 Implement Publication_Request proposal, apply, and decline in `apps/app/src/reviews/publication.ts`
     - A Contributor's proposal creates a Review_Request addressed to the Administrator Role with the proposed level and optional Public_Summary, Public_Presentation, or Disclosure_Line within limits; applying pre-fills the disclosure change, runs the same preview and checks, and marks it Reviewed with outcome Applied and the applied values; a consent refusal leaves it Needs_Review; declining needs a note of 1 to 2,000 characters and changes no disclosure value
-    - _Requirements: 17.5, 23.10, 23.11, 23.12, 34.2_
+    - A proposal for the proposer's own Disclosure_Units also records the proposer's Publication_Consent for the proposed values (task 54.3 adds the consent rows and the check on edited values)
+    - _Requirements: 17.5, 23.10, 23.11, 23.12, 23.21, 34.2_
   - [ ] 31.5 Implement the rights and consent rules in `apps/app/src/disclosure/rights.ts`
     - A save that sets a non-permitting Rights_Status on a Public Attachment makes it Withheld in the same batch with a Disclosure_Line of only file kind and upload date, a Disclosure_Change by the saving Member, and an Administrator Item_Update; marking a Rights_Status value as not permitting shows the count of affected Public Attachments, then downgrades them all in one batch with a Disclosure_Change each and one Item_Update per Administrator listing them
     - Making an Attachment Public with a non-permitting Rights_Status, or a Correspondence Public while any consent is not Granted, is refused with Withheld offered; turning Do_Not_Name off goes through the preview
     - _Requirements: 33.4, 33.5, 33.8, 34.2, 34.6, 34.9_
   - [ ] 31.6 Implement item moves in `apps/app/src/records/move.ts` and `POST /items/{id}/move`
-    - Update `project_id` on the Research_Item and every element under it in one statement, leaving everything else unchanged, and record a Revision holding the previous Project (Disclosure_Change when a Public_View changes, Minor_Edit otherwise); a move that alters a Public_View needs a confirmed, fresh preview
-    - _Requirements: 23.3, 39.12, 39.13_
+    - Update `project_id` on the Research_Item and every element under it in one statement, leaving everything else unchanged (including its Access_Level and Access_List), and record a Revision holding the previous Project (Disclosure_Change when a Public_View changes, Minor_Edit otherwise); a move that alters a Public_View needs a confirmed, fresh preview
+    - The same batch removes every Question_Group entry that names the moved Research_Item or anything under it from Research_Questions of the old Project, recording the removal in each Research_Question's history (task 55.2 supplies the shared helper)
+    - _Requirements: 23.3, 39.12, 39.13, 47.12, 50.7_
   - [ ] 31.7 Build the disclosure screens in `apps/app/web/src/disclosure/`
     - The disclosure dialog with the preview (changed views, Party names, Dissent_Notes that will not be Public, Licence_Agreement states, gate failures with Withheld offers), set selection up to 1,000 units, the Public_Summary editor pre-filled from the Log_Summary when empty or from a Publication_Request being applied, the Unclassified list, the public overview, Publication_Request apply and decline, the move dialog, and Consent_Status, Do_Not_Name, and Generic_Label on Correspondence pages and previews
     - _Requirements: 23.6, 23.8, 23.11, 23.12, 26.8, 34.7, 41.13_
@@ -749,7 +773,7 @@ Tests use synthetic data only. No task copies, quotes, or commits content from t
     - **Property 2: Own Disclosure_Levels are independent of ancestors**
     - **Validates: Requirements 4.8, 9.3, 23.3, 39.12**
   - [ ] 31.9 Write property test for Unclassified units
-    - **Property 4: Unclassified units stay Private and classification is selective**
+    - **Property 4: Unclassified units stay Not_Published and classification is selective**
     - **Validates: Requirements 26.5, 26.6, 26.7**
   - [ ] 31.10 Write property test for publication gates
     - **Property 12: Publication gates reject the whole change**
@@ -775,11 +799,11 @@ Tests use synthetic data only. No task copies, quotes, or commits content from t
     - `deploySite(manifest)`: start a Direct Upload session with the manifest of paths, hashes, and sizes, upload only the files the platform reports missing (resuming across invocations while the upload token is valid), create an assets-only `rf-site` version with `html_handling: auto-trailing-slash` and `not_found_handling: 404-page`, and deploy it to 100%
     - _Requirements: 24.7, 24.11, 24.12, 28.6, 28.16_
   - [ ] 32.2 Implement the Publisher projection step in `apps/app/src/do/publisher.ts`
-    - Dirty scopes from the `publish` outbox topic (`unit`, `root`, `project`, `party`, `member`, `emails`, `value`, `policy`, `site`) expanded to root keys; one run at a time; slices of at most about 500 KB of text that compute views, compare hashes with the current versions in `rf-public`, write new versions, and close old ones; Private units get their version closed and no new row; closed versions older than 30 days pruned unless an export in progress started before them
+    - Dirty scopes from the `publish` outbox topic (`unit`, `root`, `project`, `party`, `member`, `emails`, `value`, `policy`, `site`) expanded to root keys; one run at a time; slices of at most about 500 KB of text that compute views, compare hashes with the current versions in `rf-public`, write new versions, and close old ones; Not_Published units get their version closed and no new row; closed versions older than 30 days pruned unless an export in progress started before them
     - _Requirements: 24.11, 24.12, 34.6, 46.7, 46.34_
   - [ ] 32.3 Implement planning and rendering in `apps/app/src/publisher/plan.ts` and `apps/app/src/publisher/render.ts`
-    - Map changed views to every affected output (unit, Parent, and root pages; every page of affected listings, Project_Logs, and Disclosure_Line listings; Project, home, and projects pages; People and Policy pages; search index files; file operations), render with `public-render` and `search-public`, include the `site-shell` build, `robots.txt`, `sitemap.xml`, and `_headers`, hash each file as the Direct Upload API specifies, store new content under `rf-private/build/{hash}`, and keep the manifest in `rf-public.site_files`; alert at 16,000 files
-    - No file is rendered for a Private Project's addresses or for any address of a Withheld Project other than its page, so those addresses get the same `404.html` as unknown ones; Policy_Pages, metadata, print styles, fonts, scripts, and images ship only as static assets
+    - Map changed views to every affected output (unit, Parent, and root pages; every page of affected listings, Project_Logs, and Disclosure_Line listings; Project, home, and projects pages; Research_Question pages and the Project page's Research_Question part from task 55.4; People and Policy pages; search index files; file operations), render with `public-render` and `search-public`, include the `site-shell` build, `robots.txt`, `sitemap.xml`, and `_headers`, hash each file as the Direct Upload API specifies, store new content under `rf-private/build/{hash}`, and keep the manifest in `rf-public.site_files`; alert at 16,000 files
+    - No file is rendered for a Not_Published Project's addresses or for any address of a Withheld Project other than its page, so those addresses get the same `404.html` as unknown ones; Policy_Pages, metadata, print styles, fonts, scripts, and images ship only as static assets
     - _Requirements: 24.1, 24.2, 24.4, 24.5, 28.16, 29.1, 30.7, 30.8, 40.4, 40.9, 40.10, 45.4_
   - [ ] 32.4 Implement public file copies in `apps/app/src/publisher/files.ts`
     - Copy an Attachment that becomes Public to `rf-public` at `f/{Item_Identifier}` with a server-side `CopyObject` before any page links to it, with a content type from the file kind (`application/octet-stream` for script-capable types) and `Content-Disposition` naming `{Item_Identifier}.{ext}`; delete copies first for removals and retry failed deletions each slice
@@ -829,7 +853,7 @@ Tests use synthetic data only. No task copies, quotes, or commits content from t
     - _Requirements: 2.8, 32.1, 32.2, 32.17, 39.14, 46.20, 46.24_
   - [ ] 35.2 Implement Moderation_Decisions in `apps/app/src/moderation/decide.ts`
     - Every decision returns the exact email text first and applies only after confirmation; messages and reasons up to 5,000 characters; the `decision_open` guard refuses a decision after an Accepted or Rejected one and shows the recorded decision; decision rows are never changed and record Administrator, time, text, and created Items; emails go only to the address in that Outside_Submission
-    - Accept for Material, Correction, or Comment creates the selected Items (at least one; Research_Items with Log_Summaries, Replies, or Attachments on existing or newly created Parents), credited to the Submitter's name and affiliation, Private and Unclassified, in the Outside_Submission's Project unless another is chosen (a choice is required for the General_Choice), all-or-nothing, as one Submission by the accepting Administrator
+    - Accept for Material, Correction, or Comment creates the selected Items (at least one; Research_Items with Log_Summaries, Replies, or Attachments on existing or newly created Parents), credited to the Submitter's name and affiliation, Not_Published and Unclassified, in the Outside_Submission's Project unless another is chosen (a choice is required for the General_Choice), all-or-nothing, as one Submission by the accepting Administrator
     - Removal_Requests need a statement of 1 to 5,000 characters, record the elements named as changed, and create no Item; More_Information_Requested sends the message and a Response_Link valid for 30 days; Reject and an accepted Removal_Request store the dates for deleting files within 24 hours and erasing the email address 90 to 91 days later; outcome emails go through the `Mailer`, and a finally failed Submitter email shows on the Outside_Submission
     - _Requirements: 32.4, 32.5, 32.6, 32.9, 32.10, 32.11, 32.12, 32.13, 32.15, 32.16, 32.18, 41.2, 46.23, 46.33_
   - [ ] 35.3 Implement Response_Links in `apps/submit/src/respond.ts` and `apps/site-shell/src/respond.ts`
@@ -845,7 +869,7 @@ Tests use synthetic data only. No task copies, quotes, or commits content from t
     - The queue with filters and overdue marks, the Outside_Submission view with the Attachment previews, decision forms with the email text confirmation, the acceptance builder for Items, Parents, Projects, and Log_Summaries, the Removal_Request statement with changed elements, and failed-email notices
     - _Requirements: 14.8, 32.10, 32.17, 46.23, 46.24_
   - [ ] 35.7 Write property test for not-found responses
-    - **Property 7: Private and nonexistent are indistinguishable**
+    - **Property 7: Not_Published and nonexistent are indistinguishable**
     - **Validates: Requirements 24.7, 25.6, 31.6, 31.14, 40.10**
   - [ ]* 35.8 Write property test for Project choice
     - **Property 78: Project choice and preselection**
@@ -859,22 +883,32 @@ Tests use synthetic data only. No task copies, quotes, or commits content from t
   - [ ]* 35.11 Write integration tests for moderation flows
     - Acceptance creates one Submission with flags and New_Submission events; More_Information_Requested emails a Response_Link; decisions apply only after confirmation; rejection schedules file deletion and email erasure
     - _Requirements: 32.5, 32.6, 32.8, 32.9, 32.10_
+  - [ ] 35.12 Implement Contact_Reviews and submitter corrections in `apps/app/src/moderation/contact-review.ts`
+    - Store `contact_review_due_at` on acceptance of an Outside_Submission other than a Removal_Request (acceptance plus 12 months, from the retention constants in `packages/domain`); the hourly sweep marks due Outside_Submissions whose email is still held, and once a day creates one Reminder per Administrator listing those that became due that day, marks those due for 30 days or more as overdue, and repeats their Reminder every 30 days until a Contact_Review is recorded
+    - `POST /moderation/{id}/contact-review` with Keep and a reason of 1 to 1,000 characters (next due date 12 months later) or Erase (erasure within 24 hours), appended to `contact_reviews` and never changed; both keep the Submitter_Attribution and the submitted text
+    - `POST /moderation/{id}/contact` corrects the Submitter_Attribution or the Submitter_Contact, or erases the Submitter_Contact, at any time, with a reason, appending to `submitter_corrections` with the previous values except an erased contact; a corrected Submitter_Attribution becomes the Credit of every Item created from the Outside_Submission, with a Minor_Edit Revision on each
+    - Register the Reminder in `fanout.ts`; include `contact_reviews` and `submitter_corrections` in the Internal_Backup table list of task 38.4; update `retentionRows()` with the separate attribution and contact rows
+    - _Requirements: 32.19, 32.20, 32.21, 32.22, 46.19_
+  - [ ] 35.13 Build the Contact_Review screens in `apps/app/web/src/moderation/contact-review.tsx`
+    - The due and overdue marks and filter in the Moderation_Queue, the Contact_Review form with Keep and Erase, the correction form on the Outside_Submission view, and the history of Contact_Reviews and corrections
+    - _Requirements: 32.19, 32.20, 32.21, 32.22_
 
 - [ ] 36. Build the journal and attachment migration service
   - [ ] 36.1 Implement the journal import job in `apps/app/src/jobs/journal-import.ts` and `POST /imports/journal`
-    - The server re-validates every parsed entry it receives; a `Jobs` object commits one Journal_Entry with all its Entry_Sections per batch in the P1030680 Project, with phase identifier, dates, and Campaign_Status where the journal states them, Owner the importing Administrator, every unit Private and Unclassified, and no Findings or labels
+    - The server re-validates every parsed entry it receives; a `Jobs` object commits one Journal_Entry with all its Entry_Sections per batch in the P1030680 Project, with phase identifier, dates, and Campaign_Status where the journal states them, Owner the importing Administrator, every unit Not_Published and Unclassified, the Access_Level chosen for the import (Restricted with an empty Access_List, or Whole_Team) on every Research_Item, and no Findings or labels
     - Re-imports skip entries matched by phase identifier or the `front-matter` key and leave them unchanged; at the end one Activity_Feed entry with the counts, no New_Flags, and no Notification_Events; the import report (created, skipped, and failed entries and files with reasons, the Journal_Printer output as a downloadable Markdown file, the comparison result, and failing entries with titles and line ranges) is stored under `rf-private/imports/{job}/`
-    - _Requirements: 26.1, 26.4, 26.9, 26.10, 26.11, 26.13, 27.4, 27.8_
+    - _Requirements: 26.1, 26.4, 26.9, 26.10, 26.11, 26.13, 27.4, 27.8, 47.13_
   - [ ] 36.2 Implement the attachment import in `apps/app/src/jobs/journal-import.ts`
     - Verify each stored file's size and checksum against the source values before creating its Attachment; Parent from `resolveAttachmentParent`; keep title, original file name, file kind, size label, caption, and Origin (or the fixed text "No origin recorded in the source journal", flagged in the report); Credit from the crediting contributor; Rights_Status Unknown; skip files matched by original file name
-    - A file that no entry references, that cannot be read or stored, or whose copy mismatches gets no Attachment, has any stored copy deleted, and is listed as failed with the reason
-    - _Requirements: 26.2, 26.3, 26.10, 26.12_
+    - A file that no entry references (`resolveAttachmentParent` returns `undefined`) becomes an Attachment of the Project's Unassigned_Attachments_Source, created once per Project under the import key `unassigned-attachments` as the Source "Unassigned legacy attachments" (Primary, reliability Unknown, Rights_Status Unknown, Not_Published, Unclassified, with the import's Access_Level); the file's Origin is its metadata Origin followed by, or in its absence, "Not referenced in the source journal; provenance unknown"; a re-import reuses the Source; the report lists these files as unassigned
+    - A file that cannot be read or stored, or whose copy mismatches, gets no Attachment, has any stored copy deleted, and is listed as failed with the reason
+    - _Requirements: 26.2, 26.3, 26.10, 26.12, 26.15_
   - [ ] 36.3 Build the journal import screen in `apps/app/web/src/imports/journal.tsx`
-    - Select the journal file, the attachment folder, and the metadata JSON; parse, print, and compare in a Web Worker; show the report preview (entries, sections, unassigned spans, attachments with Parents, unreferenced files); hash and upload the files; start the job and show progress and the report
-    - _Requirements: 26.1, 26.3, 26.11, 27.7, 27.8_
+    - Select the journal file, the attachment folder, and the metadata JSON; parse, print, and compare in a Web Worker; show the report preview (entries, sections, unassigned spans, attachments with Parents, files that will go to the Unassigned_Attachments_Source); choose the Access_Level for the import, with Restricted preselected and the statement that the importing Administrator, as Owner, and every Administrator can read Restricted items; hash and upload the files; start the job and show progress and the report with the access choice
+    - _Requirements: 26.1, 26.3, 26.11, 26.15, 27.7, 27.8, 47.13_
   - [ ]* 36.4 Write integration tests for the journal import
-    - The import sets no flags and creates no events but adds one feed entry; an interrupted import leaves no partial Journal_Entry and resumes; a re-import skips everything
-    - _Requirements: 26.9, 26.10, 26.13_
+    - The import sets no flags and creates no events but adds one feed entry; an interrupted import leaves no partial Journal_Entry and resumes; a re-import skips everything; unreferenced files land in one Unassigned_Attachments_Source per Project; every Research_Item gets the chosen Access_Level
+    - _Requirements: 26.9, 26.10, 26.13, 26.15, 47.13_
 
 - [ ] 37. Build the Bulk_Import with the Manifest_Parser and Manifest_Printer
   - [ ] 37.1 Implement the Manifest_Parser in `packages/manifest/src/parse.ts`
@@ -893,16 +927,17 @@ Tests use synthetic data only. No task copies, quotes, or commits content from t
     - **Validates: Requirements 33.10, 37.1, 37.2, 37.3, 37.8, 37.16, 38.1, 38.2, 38.3, 38.6, 38.7, 38.9**
   - [ ] 37.5 Implement Bulk_Import validation in `apps/app/src/jobs/bulk-validate.ts`
     - Re-run the parser and row rules on the server, then check Party, archive or desk, and contact names against at most one Member or External_Party; files that exist, are named by one row only, and fit the Attachment_Size_Limit; version marks without branches or cycles that name only the row's files; kind-specific columns filled for the row's kind and empty otherwise, with the date column empty for Findings, Hypotheses, and Topics; each row's values against the kind's schema with the Log_Summary checked only for length; an Origin of 1 to 5,000 characters for rows with files
+    - The optional `access_level` (`whole_team` or `restricted`) and `access_members` columns: names in `access_members` are matched against exactly one Pending or Active Member like Party names, and `access_members` filled with `access_level` other than `restricted` is a row error; a `research_question` kind is a row error (R50.8)
     - Any error creates no Item and the report lists every error with row, column, file name, and reason; folder files that no row names are listed as not imported without being errors
-    - _Requirements: 33.10, 37.2, 37.3, 37.4, 37.8, 37.16_
+    - _Requirements: 33.10, 37.2, 37.3, 37.4, 37.8, 37.16, 47.13, 50.8_
   - [ ] 37.6 Implement the Bulk_Import job in `apps/app/src/jobs/bulk-import.ts` and `POST /imports/bulk`
-    - In the chosen Project, one batch per row: a Research_Item of the row's kind (Findings and Hypotheses Open) with the mapped values, an Attachment per file with the row's Origin, caption, Credit, and rights, the row's rights on a Source, Parties linked by name or created as External_Parties, and Version_Chains in the declared order; every unit Private and Unclassified
+    - In the chosen Project, one batch per row: a Research_Item of the row's kind (Findings and Hypotheses Open) with the mapped values, an Attachment per file with the row's Origin, caption, Credit, and rights, the row's rights on a Source, Parties linked by name or created as External_Parties, and Version_Chains in the declared order; every unit Not_Published and Unclassified; the row's own Access_Level and Access_List when its access columns are filled, otherwise the access choice made for the import
     - A Row_Key already used by an earlier or concurrent Bulk_Import skips the row through the unique index; a file that fails to store or match fails the whole row; writes are metered against the daily import allowance and the job pauses until the next UTC day when it is used
-    - The final step writes New_Flags and New_Submission events in chunks and sets the Submission complete in one statement; the report lists created, skipped, and failed rows and Attachments with row number, Row_Key, and reason
-    - _Requirements: 33.9, 37.5, 37.6, 37.7, 37.9, 37.10, 37.11, 37.12, 37.13, 37.14, 37.15, 37.17, 37.18_
+    - The final step writes New_Flags and New_Submission events in chunks, both joined to the `canRead` fragment, and sets the Submission complete in one statement; the report lists created, skipped, and failed rows and Attachments with row number, Row_Key, and reason, and states the access choice
+    - _Requirements: 33.9, 37.5, 37.6, 37.7, 37.9, 37.10, 37.11, 37.12, 37.13, 37.14, 37.15, 37.17, 37.18, 47.5, 47.13_
   - [ ] 37.7 Build the Bulk_Import screen in `apps/app/web/src/imports/bulk.tsx`
-    - Choose the Project, select the manifest and folder, show the browser-side validation report, hash and upload the files, start the job, and show progress and the report
-    - _Requirements: 37.3, 37.11, 37.17_
+    - Choose the Project and the Access_Level for rows that do not set their own (Restricted preselected, with the statement of who can read Restricted items), select the manifest and folder, show the browser-side validation report, hash and upload the files, start the job, and show progress and the report
+    - _Requirements: 37.3, 37.11, 37.17, 47.13_
   - [ ]* 37.8 Write property test for import idempotency and mapping
     - **Property 70: Imports are idempotent and map rows and files correctly**
     - **Validates: Requirements 26.2, 26.10, 26.12, 33.9, 37.6, 37.7, 37.12, 37.15, 37.18**
@@ -931,9 +966,9 @@ Tests use synthetic data only. No task copies, quotes, or commits content from t
     - _Requirements: 28.8, 35.9, 36.2_
   - [ ] 38.4 Implement the Internal_Backup job in `apps/app/src/jobs/backup.ts` and `POST /backups`
     - `FREEZE` constants and the `frozen` guard added as the first statement of every write batch in `packages/db/src/batch.ts`; while frozen, saves answer `frozen`; read the backed-up tables in keyset pages of about 1,000 rows into JSON Lines under `rf-private/backups/{id}/`, then lift the freeze and copy the files
-    - Back up Projects with slug, featured flag, position, accent, and level, units and kind tables, labels, Revisions, Cross_Links, Review_Requests, Outside_Submissions with decisions, External_Parties, Members with Role and status, Profiles, value sets with Public_Descriptions, settings including the Responsible_Person, and Policy_Sections with Revisions; leave out flags, views, Notifications, events, email batches, sessions, outbox, staging, and network-address counters
+    - Back up Projects with slug, featured flag, position, accent, level, and Research_Question order, units and kind tables with Access_Levels, `access_grants`, Research_Questions with Question_Groups and entries, labels, Revisions, Cross_Links, Review_Requests, Publication_Proposals and Publication_Consents, Confidentiality_Holds with liftings and overrides, Dual_Approvals, Outside_Submissions with decisions, Contact_Reviews, and submitter corrections, External_Parties, Members with Role and status, Profiles, value sets with Public_Descriptions, settings including the Responsible_Person, and Policy_Sections with Revisions; leave out flags, views, Notifications, events, email batches, sessions, outbox, staging, and network-address counters
     - Mark a backup incomplete when an element is missing, it takes over 24 hours, or a file mismatches, and report this to the requester; deliver only to Administrators; delete every file within 1 hour once 7 days old; Reminders for every Administrator at each 30-day multiple since the latest complete, fully downloaded backup, or since the first Item
-    - _Requirements: 28.8, 36.1, 36.2, 36.3, 36.6, 36.7, 36.11_
+    - _Requirements: 28.8, 36.1, 36.2, 36.3, 36.6, 36.7, 36.11, 47.15, 48.11, 49.7_
   - [ ] 38.5 Implement restore in `apps/app/src/jobs/restore.ts` and `POST /restores`
     - Accept a backup still in R2 or an uploaded package whose files the browser verified; refuse before any change when the package is not an Internal_Backup, the system is not empty, or a manifest file is missing or mismatched, reporting each reason
     - Insert rows in dependency order with original ids, Item_Identifiers, levels, classification states, and Revisions using `INSERT OR IGNORE` and per-table cursors, so a stopped restore resumes without duplicates and reports created and remaining counts; copy files to their original keys; replace the seeded Policy_Sections; set no flags and create no events; keep the Publisher paused until completion, then rebuild `rf-search`, `rf-public`, and the site
@@ -973,8 +1008,8 @@ Tests use synthetic data only. No task copies, quotes, or commits content from t
     - Filters by kind, Member (Owner or Credit), current Specialty, and an inclusive Log_Date range, with an end-before-start range refused while the previous results stay; data read live on each page load
     - _Requirements: 43.1, 43.2, 43.3, 43.4, 43.5, 43.6, 43.7, 43.8_
   - [ ] 40.2 Implement the Workspace lists in `apps/app/src/lists/` and `apps/app/src/api/routes/lists.ts`
-    - The Findings ledger (newest first, filters by Finding_Status, Credit person, and Specialty), Runs (newest start first with the listed columns and filters), Hypotheses (statement and status, status filter), Correspondences (newest date first, filters by Party, direction, and date range), Archival_Requests (Follow_Up_Due marks, filters by status and archive or desk), and the Projects list with every field of Requirement 39.16; every list applies the visibility gate, filters by one or more Projects, and names each Research_Item's Project
-    - _Requirements: 5.7, 7.6, 8.5, 9.7, 10.4, 39.14, 39.15, 39.16_
+    - The Findings ledger (newest first, filters by Finding_Status, Credit person, and Specialty), Runs (newest start first with the listed columns and filters), Hypotheses (statement and status, status filter), Correspondences (newest date first, filters by Party, direction, and date range), Archival_Requests (Follow_Up_Due marks, filters by status and archive or desk), and the Projects list with every field of Requirement 39.16; every list applies the visibility gate with the `canRead` fragment, filters by one or more Projects, names each Research_Item's Project, and shows the Restricted mark; the Project_Log of 40.1 and the Projects list's counts apply the same fragment, so no entry or count reveals a Restricted Research_Item to a Member outside its Access_List
+    - _Requirements: 5.7, 7.6, 8.5, 9.7, 10.4, 39.14, 39.15, 39.16, 47.4, 47.11_
   - [ ] 40.3 Build the Project_Log and list screens in `apps/app/web/src/lists/` and `apps/app/web/src/projects/log.tsx`
     - The Project_Log with Project switcher, order toggle, filters, and page links; after 10 seconds without a page, "the Project_Log is unavailable", with the 00:00 UTC note for daily limits, keeping Project, order, and filters; the list pages and the Projects list
     - _Requirements: 39.16, 43.1, 43.6, 43.8, 43.9_
@@ -987,7 +1022,7 @@ Tests use synthetic data only. No task copies, quotes, or commits content from t
 
 - [ ] 41. Build Dissent_Notes
   - [ ] 41.1 Implement the Dissent_Note API in `apps/app/src/dissent/dissent.ts` and `apps/app/src/api/routes/dissent.ts`
-    - `POST /dissent` by an active Member other than the Owner on a Research_Item with a Log_Summary, withdrawn or not, recording text, author, time, and a snapshot of the Log_Summary's text and labels, Private, with the `dissent_unique` guard; `PATCH /dissent/{id}` and `POST /dissent/{id}/withdraw` by the author only, with marks and reasons, a new snapshot on each text change, and refusal when the Log_Summary or the note changed since the editor opened, returning the current Log_Summary and the changes since
+    - `POST /dissent` by an active Member other than the Owner on a Research_Item with a Log_Summary, withdrawn or not, recording text, author, time, and a snapshot of the Log_Summary's text and labels, Not_Published, with the `dissent_unique` guard; `PATCH /dissent/{id}` and `POST /dissent/{id}/withdraw` by the author only, with marks and reasons, a new snapshot on each text change, and refusal when the Log_Summary or the note changed since the editor opened, returning the current Log_Summary and the changes since
     - `DELETE /dissent/{id}` by Administrators with a reason, removing text, values, and Revisions and leaving a Deletion record; disclosure changes through the disclosure API; Restorations and Log_Summary changes never touch notes; Activity_Feed entries naming the Research_Item; the Dissent event rule in `fanout.ts`; search and publish outbox rows; package lists for deletions through the export indexes
     - _Requirements: 42.1, 42.2, 42.4, 42.5, 42.6, 42.7, 42.11, 42.12, 42.16, 42.17, 42.18_
   - [ ] 41.2 Implement Dissent_Note display in `apps/app/src/dissent/display.ts` and update `apps/app/src/projects/log.ts`
@@ -998,7 +1033,7 @@ Tests use synthetic data only. No task copies, quotes, or commits content from t
     - Attach, edit, and withdraw forms with marks and reasons, the earlier-wording mark and comparison, the conflict view, and Administrator deletion and disclosure controls
     - _Requirements: 42.3, 42.9, 42.16, 42.17_
   - [ ] 41.4 Write property test for new Disclosure_Units
-    - **Property 3: New Disclosure_Units start Private**
+    - **Property 3: New Disclosure_Units start Not_Published**
     - **Validates: Requirements 13.5, 23.2, 23.15, 26.4, 32.4, 33.2, 37.5, 39.4, 42.1**
   - [ ]* 41.5 Write property test for permanent deletion
     - **Property 36: Permanent deletion removes the subtree and leaves only a tombstone**
@@ -1012,9 +1047,9 @@ Tests use synthetic data only. No task copies, quotes, or commits content from t
 
 - [ ] 42. Build AI drafting
   - [ ] 42.1 Implement the AI draft API in `apps/app/src/ai/drafts.ts`, `GET /ai/status`, and `POST /ai/drafts`
-    - Check the AI_Drafting_Setting and the Permission for the field; select the input in Workspace display order (Research_Item fields, Entry_Sections, Group_Note, Attachment metadata, never file contents), using the editor's unsaved text where open; cut it to the AI_Input_Limit and flag left-out text; send nothing for empty input
+    - Check the AI_Drafting_Setting, the Permission for the field, and that the requesting Member Can_Read the Research_Item (R47.4); select the input in Workspace display order (Research_Item fields, Entry_Sections, Group_Note, Attachment metadata, never file contents), using the editor's unsaved text where open; cut it to the AI_Input_Limit and flag left-out text; send nothing for empty input
     - Reserve the worst-case Neurons in `Budget` and refuse when used plus reserved would exceed 10,000 minus a 300-Neuron margin; `GET /ai/status` offers drafting only while the remaining Neurons cover one worst-case draft at the current limit; call `@cf/google/gemma-4-26b-a4b-it` (fallback `@cf/meta/llama-3.1-8b-instruct-fp8-fast`) through the `AI` binding with an allow-list of Cloudflare-hosted models and no AI Gateway, logging, caching, or batch API, a fixed system prompt, `max_tokens` 800 or 200, and a 30-second deadline; settle the reservation with the reported usage; store and log neither prompts nor drafts; refuse Public_Traffic, imports, and restores
-    - _Requirements: 28.14, 28.15, 44.1, 44.2, 44.3, 44.4, 44.9, 44.10, 44.11, 44.12, 44.13, 44.17, 44.18_
+    - _Requirements: 28.14, 28.15, 44.1, 44.2, 44.3, 44.4, 44.9, 44.10, 44.11, 44.12, 44.13, 44.17, 44.18, 47.4_
   - [ ] 42.2 Implement draft output shaping in `packages/domain/src/ai-output.ts`
     - Cut drafts at the last sentence or word boundary within 2,000, 100, or 200 characters, remove Markdown headings, add no label, return only kind and note for Disclosure_Line drafts, and flag the quotation-mark notice when a listed quotation mark stands at the start or after a space, line break, or opening bracket
     - _Requirements: 44.2, 44.7, 44.8, 44.14_
@@ -1121,7 +1156,7 @@ Tests use synthetic data only. No task copies, quotes, or commits content from t
     - SPF `v=spf1 include:spf.protection.outlook.com -all`, the DKIM CNAMEs as DNS-only records, and DMARC `p=none` with reports to an address other than the Sending_Address; the check resolves and validates all three
     - _Requirements: 20.22, 20.23_
   - [ ] 48.4 Write the deployment and bootstrap scripts in `scripts/deploy.ts`, `tools/bootstrap.ts`, and `.github/workflows/ci.yml`
-    - Apply D1 migrations and deploy `rf-app`, `rf-dl`, `rf-submit`, and `rf-ops` per environment, then enqueue a `site` scope so the Publisher creates the first `rf-site` deployment; bootstrap the first Administrator and Responsible_Person from an email given on the command line and the P1030680 Project (Private); CI runs `npm run ci` on every push
+    - Apply D1 migrations and deploy `rf-app`, `rf-dl`, `rf-submit`, and `rf-ops` per environment, then enqueue a `site` scope so the Publisher creates the first `rf-site` deployment; bootstrap the first Administrator and Responsible_Person from an email given on the command line and the P1030680 Project (Not_Published); CI runs `npm run ci` on every push
     - Accept validated installation configuration and initial Project inputs; provide ResearchForce.org as an explicit example. Require the instance owner's content-licence name, URL, and export text before enabling research publication or collecting licence agreements, with no default from the software's MIT licence
     - _Requirements: 2.2, 26.1, 46.37_
   - [ ]* 48.5 Write the staging verification suites in `tests/staging/` and `infra/m365/Verify-ResearchForceMail.ps1`
@@ -1137,7 +1172,7 @@ Tests use synthetic data only. No task copies, quotes, or commits content from t
     - The user publishes the SPF, DKIM, and DMARC records, enables DKIM signing for researchforce.org in Microsoft 365, and runs `tools/check-email-dns.ts`
     - _Requirements: 20.22, 20.23_
   - [ ] 48.9 User setup checklist (needs account access for deployment)
-    - The user deploys to staging, runs the staging suites and the performance harness, rehearses the journal import on staging with the real files (checking only the counts in the import report), then deploys production, runs `tools/bootstrap.ts`, and runs the production journal import, which creates everything Private and Unclassified
+    - The user deploys to staging, runs the staging suites and the performance harness, rehearses the journal import on staging with the real files (checking only the counts in the import report), then deploys production, runs `tools/bootstrap.ts`, and runs the production journal import, which creates everything Not_Published and Unclassified
     - _Requirements: 26.4, 26.11, 27.7_
   - [ ] 48.10 Prepare the reusable source release and independent-installation guide
     - Document installation configuration, migration and upgrade steps, and the separate software/content licensing boundaries; include the MIT licence and required third-party notices in software distributions
@@ -1161,13 +1196,120 @@ Tests use synthetic data only. No task copies, quotes, or commits content from t
     - Stub the `OPS` service binding and Workers AI with deterministic responses; capture outgoing email in a local outbox page instead of calling Microsoft Graph; document in `README.md` what runs locally and what does not (Cloudflare Access, Workers AI, Microsoft 365)
     - _Requirements: none (developer tooling)_
 
+- [ ] 51. Rename the stored Disclosure_Level `private` to `not_published`
+  - [ ] 51.1 Rename the value in the domain, database, and kernel
+    - Replace `'private'` with `'not_published'` in the Disclosure_Level and classification types in `packages/domain`, the Drizzle schema in `packages/db/src/schema`, every column default, and `packages/kernel`
+    - Add the next `rf-core` migration, which rebuilds `projects` and `units` (their level checks, their `'private'` defaults, and the check `units_unclassified_private`, renamed `units_unclassified_not_published`) with the new value, copies the rows with `'private'` mapped to `'not_published'`, and recreates their indexes and triggers; add the matching `rf-search` migration for `search_docs`; generate both with drizzle-kit and check them against local databases holding synthetic rows of every level
+    - _Requirements: 23.1_
+  - [ ] 51.2 Rename the value in the API, the Workspace, and the tests
+    - API request and response values, the Workspace labels ("Not published"), seed texts, and every test and fixture that uses `'private'` as a level; rename the titles of Properties 3, 4, and 7 in their test files' tag comments and `describe` names to the design's current titles
+    - `rg -n "'private'"` over `apps` and `packages` finds no Disclosure_Level use afterwards
+    - _Requirements: 23.1_
+
+- [ ] 52. Build restricted access inside the team
+  - [ ] 52.1 Add the access data and Permissions
+    - The next migration adds `research_items.access_level` (`whole_team` or `restricted`, default `whole_team`), `access_grants (root_id, member_id, granted_by, granted_at)` with primary key (`root_id`, `member_id`), the guard table `_g_access_owner`, and the Revision_Kind `access_change`; add `access_owner` to `GUARD_CODES` in `packages/db/src/batch.ts`
+    - Add the Permissions `access.restrict`, `access.widen`, `hold.place`, `hold.lift`, `consent.give`, `consent.propose`, `dual.propose`, `dual.approve`, `dual.decline`, and `attachment.move` to the Role_Permission_Map in `packages/domain/src/permissions.ts` as the design's table assigns them, so that tasks 53 to 55 use them without changing the map again
+    - _Requirements: 2.4, 2.5, 47.1_
+  - [ ] 52.2 Implement the `canRead` fragment and retrofit the existing read paths
+    - `canRead(memberId, isAdmin, rootColumn)` in `packages/db/src/access.ts`, the SQL fragment of the design; join it into `visibleTo` in `apps/app/src/records/submissions.ts`, so that every read path from tasks 17 to 24 that uses the visibility gate applies it: item pages and sections, history and comparisons, Threads and Replies, Cross_Links and Backlinks, Mentions, Review_Request queues and responses, the Projects list counts, and Parties' item lists
+    - A request that names an element the Member cannot read answers the shared `not_found` response; Activity_Feed entries already written keep only readable references when read (the feed itself arrives with task 25)
+    - _Requirements: 2.8, 47.3, 47.4_
+  - [ ] 52.3 Apply access to Submissions, Mentions, and Review_Requests
+    - Submissions accept `access: { level, members }` for each new Research_Item, with members limited to Pending or Active Members and the statement that the Owner and every Administrator can read Restricted items returned for display
+    - Mentions and Review_Requests that name a Member who cannot read the Research_Item are refused with `rule: access_addressee` listing the Members, keeping the input; Specialty Mentions and Specialty or Role addressees reach only holders who Can_Read the Research_Item
+    - _Requirements: 47.1, 47.2, 47.5, 47.10_
+  - [ ] 52.4 Implement access changes in `apps/app/src/records/access.ts`
+    - `POST /items/{id}/access` with `{ level, add, remove }`, `POST /access/bulk` for 1 to 1,000 Research_Items, and their preview endpoint, which lists the Members who would gain read access and, when restricting, every Public or Withheld unit whose own level the change resets, with the Public_Views removed
+    - A change that only narrows needs `access.restrict`; a change that adds Members or lifts the restriction needs `access.widen` and the `access_owner` guard (task 54.5 adds the Dual_Approval path for a Revoked Owner); restricting writes, in the same batch, `not_published` on each listed unit, a Disclosure_Change per unit, Item_Update events for every Administrator, and a `publish` outbox row; every change writes an `access_change` Revision with the previous level and list; a bulk change applies to every Research_Item or none and states the reason
+    - _Requirements: 47.6, 47.7, 47.8, 47.14_
+  - [ ] 52.5 Treat Restricted roots as Not_Published in the kernel
+    - `loadProjectionInput` and the kernel input carry a `restricted` flag on Research_Items, and `effective()` treats a Restricted root like a Not_Published ancestor; `checkGates` refuses any change that sets a Public or Withheld level, a Public_Presentation, a Public_Summary, or a Disclosure_Line on a Restricted Research_Item, naming it as Restricted
+    - _Requirements: 23.1, 47.9_
+  - [ ] 52.6 Build the access screens in `apps/app/web/src/access/`
+    - The access fields in the item form (Whole_Team or Restricted, a Member picker, and the statement of who can always read), the Restricted mark with the Owner and the Access_List on item pages, lists, and Thread headers, the access dialog with the preview and confirmation, and bulk selection on lists
+    - _Requirements: 47.2, 47.7, 47.8, 47.11, 47.14_
+  - [ ] 52.7 Write property test for restricted reads
+    - Generate Members, Administrators, Research_Items with access settings, and every element kind under them; check every read endpoint built so far and every per-Member insert
+    - **Property 100: Members see nothing of Research_Items they cannot read**
+    - **Validates: Requirements 2.8, 47.3, 47.4, 47.5, 47.10**
+  - [ ] 52.8 Write property test for access changes
+    - **Property 101: Only the Owner widens access, and restricting unpublishes**
+    - **Validates: Requirements 47.6, 47.7, 47.8, 47.12, 47.14**
+
+- [ ] 53. Build Attachment moves
+  - [ ] 53.1 Implement the move API in `apps/app/src/files/move.ts` and `POST /attachments/{id}/move`
+    - Move the whole Version_Chain to the new Parent in one batch, updating `parent_id`, `root_id`, and `project_id` of each Attachment and everything under it while identifiers, files, rights, levels, Classification_States, holds, and Cross_Links stay unchanged; a Revision per moved Attachment holding the previous Parent (Disclosure_Change when a Public_View changes, Minor_Edit otherwise) and one Activity_Feed entry
+    - A preview endpoint computes the views before and after; a move that widens a Public_View needs `disclosure.set`, a fresh preview token, and the disclosure gates; a move out of a Restricted Research_Item to a Root_Item that more Members can read needs `access.widen` on the source with the `access_owner` guard; Question_Group entries that would cross Projects are removed in the same batch through task 55.2's helper
+    - _Requirements: 12.12, 12.13, 12.14, 12.15, 50.7_
+  - [ ] 53.2 Build the move dialog in `apps/app/web/src/files/move.tsx`
+    - Choose the new Parent (a Research_Item or Reply the Member can edit), show the preview with changed views and Members who gain read access, and confirm; offered on every Attachment page, including those of the Unassigned_Attachments_Source
+    - _Requirements: 12.12, 12.14_
+  - [ ]* 53.3 Write property test for Attachment moves
+    - **Property 105: Attachment moves keep identity and move whole Version_Chains**
+    - **Validates: Requirements 12.12, 12.13, 12.14, 12.15**
+
+- [ ] 54. Build Owner consent, Confidentiality_Holds, and Dual_Approvals
+  - [ ] 54.1 Add the consent, hold, and approval data
+    - The next migration adds `publication_consents`, `confidentiality_holds` with its partial unique index, and `dual_approvals` as the design defines them, the Review_Request type `proposal`, and the guard tables `_g_consent_valid`, `_g_hold_free`, `_g_dual_open`, and `_g_dual_distinct`; add the codes to `GUARD_CODES`
+    - _Requirements: 23.18, 48.1, 49.2_
+  - [ ] 54.2 Add the widening test and the new gates to the kernel and `loadProjectionInput`
+    - `widens(before, after, unit)` in `packages/kernel`, evaluated with the real ancestors and with every ancestor treated as Public and Full_Content; `checkGates` refuses a widening of a unit whose Consenting_Member is another Member without a covering Publication_Consent (listing the units and Members and offering a Publication_Proposal), and of a unit covered by an active Confidentiality_Hold (listing each hold); a Project level change needs no consent
+    - `loadProjectionInput` loads consents, active holds over each unit's ancestors, and Access_Levels; the apply batch of task 31.2 adds the `consent_valid` and `hold_free` guards and marks used consents
+    - _Requirements: 23.17, 23.20, 48.2, 48.4_
+  - [ ] 54.3 Implement Publication_Proposals and consents in `apps/app/src/reviews/proposals.ts`
+    - `POST /proposals` creates one Publication_Proposal per Consenting_Member with the proposed values, an optional note, and the resulting Public_Views, and a Review_Requested event; the addressee approves or declines with an optional note, writing one consent row per unit on approval and a Review_Completed event for the proposer; withdrawing an approval before it is used
+    - A Publication_Request by the unit's Consenting_Member writes a consent row with source `request` while it is open; applying it with edited values needs a new consent for each value that the consent does not cover
+    - _Requirements: 23.18, 23.19, 23.20, 23.21_
+  - [ ] 54.4 Implement Confidentiality_Holds in `apps/app/src/disclosure/holds.ts`
+    - `POST /items/{id}/holds` with a note and a preview that lists the units whose own levels the hold resets; the batch writes them as Not_Published with Disclosure_Changes, Item_Update events for every Administrator and the Owner, an `access_change` Revision, and a `publish` outbox row
+    - Lifting by the placer or the Owner with an optional note, events for the placer and every Administrator, and no level change; any other lift is refused with an authorization error; holds shown on item pages, previews, Publication_Requests and Publication_Proposals, and the Unclassified list
+    - _Requirements: 48.1, 48.2, 48.3, 48.5, 48.6, 48.7, 48.10_
+  - [ ] 54.5 Implement Dual_Approvals in `apps/app/src/reviews/dual.ts`
+    - Propose, approve, decline, and withdraw for the actions `hold_override`, `access_widen` (an Owner who is Revoked), and `consent_on_behalf` (a Consenting_Member who is Revoked), with reasons, the `dual_open` and `dual_distinct` guards, and each action's preconditions checked in the approving batch; proposals whose precondition is gone become `lapsed`
+    - Review_Requested events for every other active Administrator, Item_Update events for the placer and Owner on Hold_Override proposals and outcomes, one Activity_Feed entry on approval, the list of open Dual_Approvals, and the disabled approve control with its explanation while fewer than two Administrators are active
+    - Register the event rules for this task and task 54.3 in `fanout.ts`
+    - _Requirements: 23.22, 47.7, 48.8, 48.9, 49.1, 49.2, 49.3, 49.4, 49.5, 49.6, 49.7_
+  - [ ] 54.6 Build the consent, hold, and approval screens in `apps/app/web/src/disclosure/` and `apps/app/web/src/reviews/`
+    - The consent failure in the disclosure dialog with the offer to send Publication_Proposals, the Consenting_Member's proposal page with the preview, approve, decline, and withdraw; the hold panel on item pages with place, lift, and the proposal of a Hold_Override; the open Dual_Approvals list with approve, decline, and withdraw; and holds and approvals in item history
+    - _Requirements: 23.17, 23.18, 23.19, 48.5, 48.8, 49.2, 49.6, 49.7_
+  - [ ] 54.7 Write property test for publication consent
+    - **Property 102: Publication follows the Consenting_Member's consent**
+    - **Validates: Requirements 23.17, 23.18, 23.19, 23.20, 23.21, 23.22**
+  - [ ] 54.8 Write property test for Confidentiality_Holds
+    - **Property 103: Confidentiality_Holds block publication until lifted or overridden**
+    - **Validates: Requirements 48.1, 48.2, 48.3, 48.4, 48.6, 48.7, 48.10**
+  - [ ] 54.9 Write property test for Dual_Approvals
+    - **Property 104: Dual_Approvals need two different active Administrators**
+    - **Validates: Requirements 23.22, 47.7, 48.8, 48.9, 49.1, 49.3, 49.4, 49.5, 49.6**
+
+- [ ] 55. Build Research_Questions
+  - [ ] 55.1 Add the Research_Question kind
+    - The kind in `packages/domain` (kind names, Item_Identifier prefix, the zod schema with the limits of R50.1), the next migration adding `research_questions`, `question_groups`, `question_entries`, and `projects.question_order`, and the fixed relation label Addresses seeded as locked and not offered for ordinary Cross_Links
+    - _Requirements: 50.1, 50.2, 50.8_
+  - [ ] 55.2 Implement Research_Questions in `apps/app/src/records/kinds/question.ts`
+    - Create and edit through the records pipeline: each entry stored as an Addresses Cross_Link with its group and position; targets must be live Research_Items or Attachments of the same Project, at most once per Research_Question; no Log_Summary required; invalid input saves nothing and names each invalid value
+    - A shared helper `removeQuestionEntries(targets, reason)` that removes entries in the caller's batch and records the removal in each Research_Question's history, called by item moves (task 31.6), Attachment moves (task 53.1), and permanent deletion
+    - _Requirements: 41.2, 50.1, 50.2, 50.6, 50.7_
+  - [ ] 55.3 Build the Research_Question screens in `apps/app/web/src/items/question/`
+    - The form with groups and entries (add, remove, and reorder with buttons as well as dragging) and the page with question, introduction, and groups, omitting entries the viewer cannot read
+    - _Requirements: 50.1, 50.3_
+  - [ ] 55.4 Render Research_Questions on the Public_Site in `packages/public-render` and `apps/app/src/publisher/plan.ts`
+    - The question page at `/r/{Item_Identifier}` with each entry rendered like the other end of a Cross_Link and the introduction under Full_Content; the Project page's Research_Question part before the listings in `question_order`, then newest first; a `questions` listing; `PATCH /projects/{id}` accepting `question_order` from Administrators; re-rendering through Cross_Link neighbour expansion
+    - _Requirements: 29.1, 50.4, 50.5_
+  - [ ]* 55.5 Write property test for Research_Questions
+    - Exercise 55.4's rendering only once it exists; until then the test checks the Workspace invariants and the public assertions are added with 55.4
+    - **Property 106: Research_Question entries are valid and follow their targets**
+    - **Validates: Requirements 50.1, 50.2, 50.4, 50.5, 50.6, 50.7**
+
 ## Notes
 
-- Sub-tasks marked with `*` are optional and can be skipped for a faster MVP. The required test sub-tasks are the privacy-kernel and disclosure properties (Properties 1 to 8, 10 to 15, 17, and 63) and the parser and printer properties (Properties 66, 67, and 68).
-- Each of the 99 correctness properties has exactly one property-based test sub-task. Each test lives in its own file, `test/properties/pNN-<slug>.test.ts` inside the package or app under test, runs at least 100 fast-check iterations, and starts with the tag comment `// Feature: research-collab-cms, Property N: <title>`.
+- Sub-tasks marked with `*` are optional and can be skipped for a faster MVP. The required test sub-tasks are the privacy-kernel and disclosure properties (Properties 1 to 8, 10 to 15, 17, and 63), the restricted-access, consent, hold, and approval properties (Properties 100 to 104), and the parser and printer properties (Properties 66, 67, and 68).
+- Each of the 106 correctness properties has exactly one property-based test sub-task. Each test lives in its own file, `test/properties/pNN-<slug>.test.ts` inside the package or app under test, runs at least 100 fast-check iterations, and starts with the tag comment `// Feature: research-collab-cms, Property N: <title>`.
 - A property that spans several features is placed after the last code it exercises. Property 5 is the exception: its test (task 6.6) checks every channel in `packages/testing/src/public-channels.ts`, and tasks 9.5, 10.1, 27.1, 30.5, 34.4, and 38.1 register their channels there, so the confinement test covers each public channel as soon as it exists.
 - All tests run in single-run mode with `vitest --run` (`npm test`); no test starts a watcher or a development server. Task 50 adds `npm run dev` for running the Workspace locally by hand.
-- Tests and fixtures use synthetic data. The existing journal and its attachments are never copied into the repository; task 7.10 and checklist 48.9 read them from paths the user gives, and the import creates every unit Private and Unclassified.
+- Tests and fixtures use synthetic data. The existing journal and its attachments are never copied into the repository; task 7.10 and checklist 48.9 read them from paths the user gives, and the import creates every unit Not_Published and Unclassified.
+- Tasks 51 to 55 and sub-tasks 35.12 and 35.13 come from the October 2026 revision. The milestone build order in the Overview decides when each remaining task is built. The dependency graph below keeps the original waves and appends the new sub-tasks as its last waves, in the order they must follow each other; their prerequisites among the earlier tasks are only these: tasks 51 and 52 need task 24; 55.1 to 55.3 need 52; 53 needs 30, 52, and 55.2; 54 needs 31 and 52; 55.4 needs 32; 35.12 and 35.13 need 35.6. Tasks 31.6 and 53.1 call 55.2's helper, which the milestone order builds first.
 - Several tasks write the same shared files: `apps/app/src/api/app.ts` (route registration), `apps/app/src/index.ts` (Durable Object exports), `apps/app/src/cron.ts`, `apps/app/src/records/pipeline.ts`, `apps/app/src/notifications/fanout.ts`, `apps/app/web/src/routes.tsx`, `apps/ops/src/index.ts`, and `packages/testing/src/public-channels.ts`. The dependency graph keeps those tasks in separate waves.
 - Sub-tasks 48.6 to 48.9 are setup checklists that need the user's Cloudflare, Microsoft 365, DNS, or deployment access. The agent prepares the scripts in 48.1 to 48.5, then stops and asks the user to run the checklist and report the results.
 - The design's open points stay behind the single locations listed in the Overview, so an answer from the user changes one constant, one function, or one seed text.
@@ -1313,7 +1455,26 @@ Tests use synthetic data only. No task copies, quotes, or commits content from t
     { "id": 132, "tasks": ["48.6", "48.7", "48.8"] },
     { "id": 133, "tasks": ["48.9"] },
     { "id": 134, "tasks": ["50.1", "50.3"] },
-    { "id": 135, "tasks": ["50.2"] }
+    { "id": 135, "tasks": ["50.2"] },
+    { "id": 136, "tasks": ["51.1"] },
+    { "id": 137, "tasks": ["51.2"] },
+    { "id": 138, "tasks": ["52.1"] },
+    { "id": 139, "tasks": ["52.2"] },
+    { "id": 140, "tasks": ["52.3", "52.5"] },
+    { "id": 141, "tasks": ["52.4"] },
+    { "id": 142, "tasks": ["52.6", "52.7", "52.8"] },
+    { "id": 143, "tasks": ["55.1"] },
+    { "id": 144, "tasks": ["55.2"] },
+    { "id": 145, "tasks": ["53.1", "55.3"] },
+    { "id": 146, "tasks": ["53.2", "53.3"] },
+    { "id": 147, "tasks": ["54.1"] },
+    { "id": 148, "tasks": ["54.2"] },
+    { "id": 149, "tasks": ["54.3", "54.4"] },
+    { "id": 150, "tasks": ["54.5"] },
+    { "id": 151, "tasks": ["54.6", "54.7", "54.8", "54.9"] },
+    { "id": 152, "tasks": ["55.4"] },
+    { "id": 153, "tasks": ["55.5", "35.12"] },
+    { "id": 154, "tasks": ["35.13"] }
   ]
 }
 ```
