@@ -24,6 +24,7 @@ import { membersRoutes } from './routes/members';
 import { memberProfileRoutes, meRoutes } from './routes/profile';
 import { accessRoutes } from './routes/access';
 import { activityRoutes } from './routes/activity';
+import { notificationRoutes } from './routes/notifications';
 import { discussionRoutes } from './routes/discussion';
 import { historyRoutes } from './routes/history';
 import { itemsRoutes } from './routes/items';
@@ -131,6 +132,7 @@ export function createApi(config: ApiConfig): Hono<ApiEnv> {
   v1.route('/parties', partiesRoutes);
   v1.route('/', discussionRoutes);
   v1.route('/', activityRoutes);
+  v1.route('/', notificationRoutes);
   v1.route('/items', historyRoutes);
   v1.route('/items', itemsRoutes);
   v1.route('/access', accessRoutes);

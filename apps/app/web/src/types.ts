@@ -186,3 +186,17 @@ export interface FeedEntry {
 }
 export interface FeedPage { readonly openedAt: string; readonly entries: readonly FeedEntry[]; readonly next: string | null }
 export interface SubmissionItems { readonly submission: { readonly id: string; readonly at: string; readonly actor: PersonRef }; readonly items: readonly FeedItem[] }
+
+/** One entry of the Notification_Centre (R19.11). */
+export interface NotificationConcerned {
+  readonly id: string; readonly kind: string | null; readonly identifier: string | null; readonly title?: string | null;
+  readonly deleted?: { readonly at: string; readonly reason: string };
+}
+export interface NotificationEntry {
+  readonly id: string; readonly at: string; readonly read: boolean; readonly types: readonly string[]; readonly actor: PersonRef | null;
+  readonly items: readonly NotificationConcerned[]; readonly itemCount: number; readonly submissionId: string | null;
+  readonly groupNote: { readonly rootId: string | null; readonly replyId: string | null } | null;
+  readonly outsideSubmission: { readonly id: string; readonly type: string } | null;
+  readonly alert: { readonly key: string; readonly detail: unknown } | null;
+}
+export interface NotificationPage { readonly notifications: readonly NotificationEntry[]; readonly next: string | null }

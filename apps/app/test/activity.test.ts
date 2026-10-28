@@ -293,6 +293,7 @@ describe('GET /me/badges', () => {
     await world.created('author', 'run');
     await world.created('author', 'run', { access: { level: 'restricted', members: [] } });
     await world.request('author', 'POST', '/replies', { parentId: finding.id, text: rich('Synthetic.') });
+    await world.core().prepare('DELETE FROM notifications').run();
     await world.core().prepare('INSERT INTO notifications (id, member_id, created_at, group_key, summary) VALUES (?1, ?2, ?3, ?4, ?5)').bind(world.ids.admin, world.ids.colleague, world.at, 'root:x', '{}').run();
     expect(await badges('colleague')).toEqual({ counts: { finding: 2, run: 1, reply: 1 }, total: 4, unreadNotifications: 1 });
     expect((await badges('admin')).counts).toEqual({ finding: 2, run: 2, reply: 1 });

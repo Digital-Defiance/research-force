@@ -174,7 +174,7 @@ describe('Property 101: Only the Owner widens access, and restricting unpublishe
           for (const plan of plans.filter((entry) => entry.changed)) {
             counts.access += 1;
             counts.disclosure += plan.resets.length;
-            if (plan.restricting) counts.events += 2;
+            if (plan.restricting) counts.events += isAdmin(step.actor) ? 1 : 2; // the acting Administrator is not told of their own action (R19.4)
             for (const unit of plan.resets) unit.level = 'not_published';
             plan.item.level = plan.level;
             plan.item.list = plan.list;

@@ -97,6 +97,7 @@ export class GuardedBatch {
   readonly #dialect = new SQLiteAsyncDialect();
   readonly #statements: { readonly sql: string; readonly params: readonly unknown[] }[] = [];
   readonly #topics = new Set<OutboxTopic>();
+  readonly #deferred = new Map<string, (batch: GuardedBatch) => void>();
 
   constructor(db: D1Database, readonly actor: BatchActor, readonly options: { readonly ignoreFreeze?: boolean } = {}) {
     this.#db = db;
@@ -202,8 +203,19 @@ export class GuardedBatch {
       SELECT ${topic}, value, ${CHANGE_SEQ}, ${this.actor.now} FROM json_each(${JSON.stringify(distinct)}) ORDER BY key`);
   }
 
+  /**
+   * Add statements that must follow all the others, once however many writes ask for them: `add` runs when the batch
+   * commits, and a second call with the same `key` changes nothing.
+   */
+  defer(key: string, add: (batch: GuardedBatch) => void): this {
+    if (!this.#deferred.has(key)) this.#deferred.set(key, add);
+    return this;
+  }
+
   /** Run the batch. A failing guard aborts everything and surfaces as a GuardViolation naming its rule. */
   async commit(accountant?: RequestAccountant): Promise<D1Result[]> {
+    for (const add of this.#deferred.values()) add(this);
+    this.#deferred.clear();
     if (this.size > OPERATIONS.maxD1Statements) throw new BatchTooLarge(this.size);
     const statements = [
       ...(this.options.ignoreFreeze ? [] : [this.#db.prepare(FROZEN_GUARD)]),

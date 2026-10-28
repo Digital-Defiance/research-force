@@ -6,8 +6,7 @@ import { readerSql } from '@researchforce/db/access';
 import type { AccessScope } from '@researchforce/db/access';
 import { GuardedBatch } from '@researchforce/db/batch';
 import type { RevisionInput } from '@researchforce/db/batch';
-import { accessGrants, notificationEvents, researchItems, units } from '@researchforce/db/schema/core';
-import { newULID } from '@researchforce/domain/identifiers';
+import { accessGrants, researchItems, units } from '@researchforce/db/schema/core';
 import { ACCESS_STATEMENT, can, ROLE_IDS } from '@researchforce/domain/permissions';
 import type { ValidationContext } from '@researchforce/domain/schemas/common';
 import { ACCESS_LEVELS, isULID } from '@researchforce/domain/types';
@@ -18,6 +17,7 @@ import { ApiError } from '../api/errors';
 import type { FieldIssue } from '../api/errors';
 import { parse } from '../api/input';
 import { authorizeRead, permissionContext } from '../auth/authorize';
+import { notifyAdministrators } from '../notifications/fanout';
 import { visibleTo } from './submissions';
 
 export type { AccessScope };
@@ -231,11 +231,6 @@ async function commit(c: Context<ApiEnv>, result: Plan, confirmation: string | u
   const widened = changed.filter((item) => item.widens).map((item) => item.id);
   const resets = changed.flatMap((item) => item.resets);
   const restricting = changed.filter((item) => item.restricting);
-  const admins = [...result.members.values()].filter((member) => member.status === 'active' && member.roleId === ROLE_IDS.administrator).map((member) => member.id);
-  const prefs = restricting.length === 0 || admins.length === 0 ? [] : (await c.get('accountant').track(c.env.RF_CORE.prepare(
-    "SELECT member_id AS memberId, email FROM notification_prefs WHERE event_type = 'item_update' AND member_id IN (SELECT value FROM json_each(?1))",
-  ).bind(json(admins)).all<{ memberId: ULID; email: 'immediate' | 'daily_digest' | 'off' }>())).results;
-  const emailMode = new Map(prefs.map((row) => [row.memberId, row.email]));
   const expected = changed.map((item) => ({ id: item.id, level: item.from.level, members: item.from.members }));
 
   const batch = new GuardedBatch(c.env.RF_CORE, { id: actor, now })
@@ -268,10 +263,7 @@ async function commit(c: Context<ApiEnv>, result: Plan, confirmation: string | u
     })),
     ...resets.map((unit): RevisionInput => ({ targetType: 'unit', targetId: unit.id, rootId: unit.rootId, kind: 'disclosure_change', prev: { disclosureLevel: unit.level } })),
   ]);
-  batch.bulkInsert(notificationEvents, restricting.flatMap((item) => admins.map((memberId) => ({
-    id: newULID(now), memberId, eventType: 'item_update' as const, at: now, actorId: actor, rootId: item.id,
-    detail: { change: 'access', level: 'restricted', resetUnits: item.resets.length }, emailMode: emailMode.get(memberId) ?? 'immediate',
-  }))));
+  notifyAdministrators(batch, restricting.map((item) => item.id), { change: 'access', level: 'restricted' });
   batch.outboxMany('publish', changed.filter((item) => item.restricting || item.resets.length > 0).map((item) => `unit:${item.id}`));
   await batch.commit(c.get('accountant'));
   return preview;

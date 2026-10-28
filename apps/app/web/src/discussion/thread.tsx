@@ -81,11 +81,11 @@ function ReplyView({ node, props, replyingTo, setReplyingTo }: {
   return (
     <li>
       {reply.owner === undefined || reply.text === undefined ? (
-        <article className="rf-companion" aria-label={`Deleted ${noun}`}>
+        <article className="rf-companion" id={`reply-${reply.id}`} aria-label={`Deleted ${noun}`}>
           <p className="rf-meta">{`This ${noun} was permanently deleted on ${formatDate(reply.deletedAt ?? reply.postedAt)}.`}</p>
         </article>
       ) : (
-        <article className="rf-companion" aria-label={`${noun} by ${name}`}>
+        <article className="rf-companion" id={`reply-${reply.id}`} aria-label={`${noun} by ${name}`}>
           <p>
             {reply.isGroupNote && <><span className="rf-status">Group Note</span>{' '}</>}
             <FlagMark flag={props.flagOf?.(reply.id)} />{props.flagOf?.(reply.id) ? ' ' : ''}

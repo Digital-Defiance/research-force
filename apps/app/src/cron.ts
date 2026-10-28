@@ -1,6 +1,7 @@
 import type { Timestamp } from '@researchforce/domain/types';
 import type { Env } from './env';
 import type { Logger } from './log';
+import { sweepFollowUps } from './notifications/reminders';
 import { kickAll } from './outbox';
 import { sweepStages } from './records/stages';
 
@@ -17,6 +18,7 @@ export interface Sweep {
 /** The hourly sweeps in order; each feature adds its own. */
 export const HOURLY_SWEEPS: readonly Sweep[] = [
   { name: 'staging_rows', run: (env, now) => sweepStages(env.RF_CORE, now) },
+  { name: 'follow_up_reminders', run: sweepFollowUps },
 ];
 
 /** Run every sweep; one that fails is logged and the rest still run. */

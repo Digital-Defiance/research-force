@@ -5,6 +5,7 @@ import { ITEM_KINDS } from '@researchforce/domain/types';
 import type { ItemKind } from '@researchforce/domain/types';
 import { ActivityBadges, FeedScreen, SubmissionItemsScreen } from './activity/activity';
 import { useApiStatus } from './api';
+import { NotificationCentre } from './notifications/centre';
 import { DeletePage } from './history/delete';
 import { ItemHistoryPage } from './history/history';
 import { WithdrawPage } from './history/withdraw';
@@ -136,6 +137,7 @@ export function WorkspaceRoutes() {
       <Route path="/projects/:id/edit" element={<EditProjectRoute />} />
       <Route path="/projects/:id/history" element={<ProjectHistoryRoute />} />
       <Route path="/reviews" element={<ReviewQueuePage />} />
+      <Route path="/notifications" element={<NotificationCentre />} />
       <Route path="/activity" element={<FeedScreen />} />
       <Route path="/activity/submissions/:id" element={<SubmissionItemsRoute />} />
       <Route path="*" element={<NotFound />} />

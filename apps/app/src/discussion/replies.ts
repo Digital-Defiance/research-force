@@ -17,7 +17,8 @@ import { richText } from '../records/kinds/kind';
 import { validationContext } from '../records/items';
 import { addSubmission, visibleTo } from '../records/submissions';
 import { refuseUnreadable } from '../records/access';
-import { addedMentions, mentionIssues } from './mentions';
+import { notifyMentions, notifyReply } from '../notifications/fanout';
+import { addedMentions, mentionIssues, mentionRecipients } from './mentions';
 
 const replyBody = z.strictObject({ parentId: z.string(), text: replySchema });
 /**
@@ -52,6 +53,7 @@ export async function postReply(c: Context<ApiEnv>, body: unknown): Promise<ULID
 
   const id = newULID(now);
   const submissionId = newULID(now);
+  const mentioned = (await mentionRecipients(c, addedMentions(undefined, { text }), actor, { rootId: parent.rootId })).map((recipient) => recipient.memberId);
   const batch = new GuardedBatch(db, { id: actor, now })
     .guard('reply_parent', sql`EXISTS (SELECT 1 FROM units p WHERE p.id = ${input.parentId} AND ${sql.raw(LIVE_PARENT)})`);
   addSubmission(batch, { id: submissionId, memberId: actor, kind: 'member', now, complete: true });
@@ -61,6 +63,8 @@ export async function postReply(c: Context<ApiEnv>, body: unknown): Promise<ULID
   }).insert(replies, { unitId: id, text: text.text, textSpans: [...text.spans], isGroupNote: false })
     .outbox('publish', `unit:${id}`);
   announceSubmission(batch, submissionId);
+  notifyReply(batch, id, submissionId);
+  notifyMentions(batch, mentioned, parent.rootId, submissionId, { replyId: id });
   await batch.commit(c.get('accountant'));
   return id;
 }
@@ -100,7 +104,7 @@ export async function loadThread(c: Context<ApiEnv>, rootId: string): Promise<Th
       )
       SELECT u.id, u.parent_id AS parentId, u.created_at AS postedAt, u.rev, u.owner_id AS ownerId, p.display_name AS displayName,
         u.withdrawn_at AS withdrawnAt, u.withdrawal_reason AS withdrawalReason, r.text, r.text_spans AS spans,
-        coalesce(r.is_group_note, u.position = 0) AS isGroupNote, d.deleted_at AS deletedAt, f.flag
+        coalesce(r.is_group_note, u.position = 0) AS isGroupNote, d.deleted_at AS deletedAt, CASE WHEN d.deleted_at IS NULL THEN f.flag END AS flag
       FROM thread t JOIN units u ON u.id = t.id LEFT JOIN replies r ON r.unit_id = u.id LEFT JOIN deletions d ON d.unit_id = u.id
         LEFT JOIN profiles p ON p.member_id = u.owner_id LEFT JOIN flags f ON f.unit_id = u.id AND f.member_id = ?2
       WHERE ${visibleTo('u', '?2')} ORDER BY u.id`).bind(rootId, viewer),

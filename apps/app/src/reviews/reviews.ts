@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { canRead, readerSql } from '@researchforce/db/access';
 import type { AccessScope } from '@researchforce/db/access';
 import { GuardedBatch } from '@researchforce/db/batch';
+import { notifyReviewCompleted, notifyReviewRequested } from '../notifications/fanout';
 import { reviewAddressees, reviewRequests } from '@researchforce/db/schema/core';
 import { newULID } from '@researchforce/domain/identifiers';
 import { can } from '@researchforce/domain/permissions';
@@ -68,9 +69,10 @@ export const NO_ELIGIBLE_REVIEWER = 'The addressees include no active Member oth
 /** Record a Needs_Review request and its addressees; the guard refuses the whole batch when no Eligible_Reviewer remains (R17.1, R17.3, R17.9). */
 export function writeReview(batch: GuardedBatch, review: NewReview, now: Timestamp): GuardedBatch {
   const addressees = (type: AddresseeType, ids: readonly ULID[]) => ids.map((addresseeId) => ({ requestId: review.id, addresseeType: type, addresseeId }));
-  return batch.guard('review_eligible', sql`EXISTS (${eligibleMembers(review.requesterId, review, review.scope)})`)
+  batch.guard('review_eligible', sql`EXISTS (${eligibleMembers(review.requesterId, review, review.scope)})`)
     .insert(reviewRequests, { id: review.id, targetId: review.targetId, rootId: review.rootId, requesterId: review.requesterId, note: review.note ?? null, createdAt: now })
     .bulkInsert(reviewAddressees, [...addressees('member', review.memberIds), ...addressees('specialty', review.specialtyIds), ...addressees('role', review.roleIds)]);
+  return notifyReviewRequested(batch, eligibleMembers(review.requesterId, review, review.scope), review.rootId, review.id);
 }
 
 /** Ask for review of an Item or Entry_Section the Member can see, at any time after its Submission (R17.1, R17.9). */
@@ -121,11 +123,12 @@ export async function completeReview(c: Context<ApiEnv>, id: string, body: unkno
   }
   const actor = c.get('session').member.id;
   const now = c.get('now');
-  await new GuardedBatch(db, { id: actor, now })
+  const batch = new GuardedBatch(db, { id: actor, now })
     .guard('review_open', sql`EXISTS (SELECT 1 FROM review_requests WHERE id = ${id} AND state = 'needs_review')`)
     .guard('reviewer_eligible', sql`EXISTS (SELECT 1 FROM members m JOIN review_requests rr ON rr.id = ${id} WHERE m.id = ${actor} AND ${sql.raw(ELIGIBLE_FOR_REQUEST)})`)
-    .update(reviewRequests, { state: 'reviewed', reviewerId: actor, reviewedAt: now, reviewNote: input.note ?? null }, eq(reviewRequests.id, id))
-    .commit(c.get('accountant'));
+    .update(reviewRequests, { state: 'reviewed', reviewerId: actor, reviewedAt: now, reviewNote: input.note ?? null }, eq(reviewRequests.id, id));
+  notifyReviewCompleted(batch, id);
+  await batch.commit(c.get('accountant'));
 }
 
 interface RequestRow {

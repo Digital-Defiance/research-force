@@ -617,27 +617,28 @@ Where a task in an earlier milestone produces something that a later task delive
     - **Validates: Requirements 18.5**
 
 - [ ] 26. Build the Notification_Service
-  - [ ] 26.1 Implement the event fan-out in `apps/app/src/notifications/fanout.ts`
+  - [x] 26.1 Implement the event fan-out in `apps/app/src/notifications/fanout.ts`
+    - Done as `notify*` functions in `fanout.ts` that add their events and settle the Notifications once at commit (`GuardedBatch.defer`); a Submission of only Replies makes Reply events, not New_Submission events. Tasks 27, 32, 33, 34, 36, 42, 46 and 54 call the functions there for their events: `notifyAdministrators`, `notifyOwner`, `notifySystemAlert`, `notifyAdministratorsReminder`, and the Outside_Submission and Dissent events still to add.
     - One rule per Event_Type from the design's table, written with `INSERT … SELECT` in the batch of the causing action: New_Submission, Item_Update (Owner and Thread posters), the Administrator Item_Updates for automatic downgrades and for a non-Administrator's save that alters a Public_View, Reply, Mention (from task 24.2), Review_Requested, Review_Completed, and System_Alert; rules for Outside_Submission, Reminder, and Dissent events are added by the tasks that introduce them
     - The acting Member is excluded except for System_Alerts; Muted_Projects remove only New_Submission, Reply, and ordinary Item_Update events; each event stores the recipient's email mode at creation
     - Every rule about a Research_Item or anything under it joins the `canRead` fragment, so no event goes to a Member who cannot read it; rules for Publication_Proposals, Confidentiality_Holds, and Dual_Approvals are added by task 54, and Access_Change events written by task 52 before this task get their fan-out here
     - _Requirements: 9.6, 16.6, 16.7, 17.4, 17.6, 19.1, 19.2, 19.3, 19.4, 19.8, 23.13, 34.3, 39.9, 47.5_
-  - [ ] 26.2 Implement Notifications and the Notification_Centre in `apps/app/src/notifications/centre.ts` and `apps/app/src/api/routes/notifications.ts`
+  - [x] 26.2 Implement Notifications and the Notification_Centre in `apps/app/src/notifications/centre.ts` and `apps/app/src/api/routes/notifications.ts`
     - All events that one Submission causes for one recipient with in-app On form one Notification, added in the same batch; `GET /notifications` newest first with Event_Types, actor, time, read state, and what it concerns; `POST /notifications/{id}/read`; deleted Root_Items shown by kind and the Deletion record's time and reason; Group_Note indication; the unread count added to `GET /me/badges`
     - _Requirements: 19.5, 19.6, 19.7, 19.11, 19.12, 19.13, 41.11_
-  - [ ] 26.3 Implement Follow_Up_Due Reminders in `apps/app/src/notifications/reminders.ts`
+  - [x] 26.3 Implement Follow_Up_Due Reminders in `apps/app/src/notifications/reminders.ts`
     - The hourly sweep creates a Reminder for the Owner within 24 hours after an Archival_Request becomes Follow_Up_Due in the Owner's time zone, and again after each further Follow_Up_Interval
     - _Requirements: 10.3, 10.4_
-  - [ ] 26.4 Build the notification screens in `apps/app/web/src/notifications/`
+  - [x] 26.4 Build the notification screens in `apps/app/web/src/notifications/`
     - The Notification_Centre, the unread count on every Workspace page, and opening a Notification at its Root_Item, its list of Root_Items, or the Group_Note scrolled into view
     - _Requirements: 19.7, 19.11, 19.12, 41.10_
-  - [ ]* 26.5 Write property test for Mentions
+  - [x]* 26.5 Write property test for Mentions
     - **Property 40: Mentions are explicit and notify once**
     - **Validates: Requirements 16.6, 16.7, 16.8**
-  - [ ]* 26.6 Write property test for counts
+  - [x]* 26.6 Write property test for counts
     - **Property 52: Counts match flags and Notifications**
     - **Validates: Requirements 18.7, 19.12**
-  - [ ]* 26.7 Write property test for Notification grouping
+  - [x]* 26.7 Write property test for Notification grouping
     - **Property 55: One Notification per Submission per recipient**
     - **Validates: Requirements 19.6**
 

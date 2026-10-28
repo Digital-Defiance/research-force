@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
-import { Link } from 'react-router';
+import { Link, useLocation } from 'react-router';
 import { ITEM_KIND_NAMES } from '@researchforce/domain/kind-names';
 import type { RichText } from '@researchforce/domain/richtext';
 import { ITEM_KINDS } from '@researchforce/domain/types';
@@ -188,6 +188,11 @@ export function ItemDetails({ data }: { readonly data: ItemPageData }) {
   const ownFlags = [{ id: item.id, flag: item.flag }, ...(item.groupNote ? [{ id: item.groupNote.id, flag: item.groupNote.flag }] : []), ...data.thread.map((reply) => ({ id: reply.id, flag: reply.flag }))];
   const flagOf = useFlagSnapshot(ownFlags);
   useRecordViews(ownFlags.map((entry) => entry.id));
+  const { hash } = useLocation();
+  useEffect(() => {
+    // A Notification opens the page at its Group_Note or Reply (R41.10).
+    if (hash.startsWith('#reply-')) document.getElementById(hash.slice(1))?.scrollIntoView?.();
+  }, [hash]);
   const onChanged = data.onChanged ?? (() => undefined);
   const sectionNumber = (id: string) => {
     const index = item.sections?.findIndex((section) => section.id === id) ?? -1;

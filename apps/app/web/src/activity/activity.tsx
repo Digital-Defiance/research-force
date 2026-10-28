@@ -9,7 +9,7 @@ import type { Badges, FeedEntry, FeedFilter, FeedItem, FeedPage, FlagKind, Membe
 import { Button, formatDate, LoadState, Notice, PersonLink, SaveFailure, SelectField, TextField, useLoad } from '../ui';
 
 /** Raised after flags are cleared, so the counts in the header are read again. */
-const FLAGS_CHANGED = 'rf:flags-changed';
+export const FLAGS_CHANGED = 'rf:flags-changed';
 /** Units one `POST /views` call reports. */
 const VIEWS_PER_CALL = 200;
 
@@ -88,6 +88,7 @@ export function ActivityBadges() {
   return (
     <div className="rf-badges">
       <Link className="rf-nav__link" to="/activity">{badges === undefined ? 'Activity feed' : `Activity feed (${badges.total})`}</Link>
+      <Link className="rf-nav__link" to="/notifications">{badges === undefined ? 'Notifications' : `Notifications (${badges.unreadNotifications})`}</Link>
       {badges !== undefined && (
         <ul className="rf-list rf-meta" aria-label="New and updated Items">
           {GROUPS.map((group) => <li key={group}>{`${bucketPlural(group)}: ${badges.counts[group] ?? 0}`}</li>)}

@@ -5,6 +5,7 @@ import type { GuardedBatch } from '@researchforce/db/batch';
 import type { ACTIVITY_KINDS, REVISION_TARGET_TYPES } from '@researchforce/db/schema/core';
 import { newULID } from '@researchforce/domain/identifiers';
 import type { RevisionKind, ULID } from '@researchforce/domain/types';
+import { notifyItemUpdate, notifyNewSubmission } from '../notifications/fanout';
 
 /** The unit types that are Items: Research_Items, Attachments, and Replies (R18, glossary "Item"). */
 export const ITEM_UNIT_TYPES = ['research_item', 'attachment', 'reply'] as const;
@@ -32,6 +33,7 @@ const FEED_KINDS: Readonly<Partial<Record<RevisionKind, ActivityKind>>> = {
 export function announceSubmission(batch: GuardedBatch, submissionId: ULID): GuardedBatch {
   const { actor } = batch;
   const activityId = newULID(actor.now);
+  notifyNewSubmission(batch, submissionId);
   return batch
     .run(sql`INSERT INTO flags (member_id, unit_id, flag, bucket, set_at)
       SELECT m.id, u.id, 'new', ${sql.raw(BUCKET)}, ${actor.now}
@@ -102,6 +104,7 @@ export function recordTargetActivity(batch: GuardedBatch, entry: ActivityEntry &
 export function announceRevisions(batch: GuardedBatch, target: { readonly type: ActivityTarget; readonly id: string }, kinds: readonly RevisionKind[]): void {
   if (target.type === 'unit') {
     if (kinds.some((kind) => UPDATING.has(kind))) flagUpdated(batch, target.id);
+    notifyItemUpdate(batch, target.id, kinds);
     for (const kind of kinds) {
       const feed = FEED_KINDS[kind];
       if (feed !== undefined) recordItemActivity(batch, { kind: feed, targetId: target.id });

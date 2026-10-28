@@ -26,7 +26,8 @@ import type { FieldIssue } from '../api/errors';
 import { parse } from '../api/input';
 import { authorize } from '../auth/authorize';
 import type { PermissionCheck } from '../auth/authorize';
-import { addedMentions, mentionIssues } from '../discussion/mentions';
+import { addedMentions, mentionIssues, mentionRecipients } from '../discussion/mentions';
+import { notifyMentions } from '../notifications/fanout';
 import { accessChoice, refuseUnreadable, writeAccessGrants } from './access';
 import type { NamedMember } from './access';
 import { KIND_ADAPTERS } from './kinds';
@@ -299,6 +300,7 @@ export async function createItem(c: Context<ApiEnv>, kind: ItemKind, body: unkno
   const projectId = fields['projectId'] as ULID;
   const credit: CreditEntry[] = [{ member: actor }];
   const submissionId = newULID(now);
+  const mentioned = (await mentionRecipients(c, addedMentions(undefined, fields), actor, scope)).map((recipient) => recipient.memberId);
   const groupNote = fields['groupNote'] as RichText | undefined;
   const withdrawn = kind === 'finding' && fields['statusValueId'] === BUILT_IN_VALUE_IDS.findingWithdrawn;
   await commitWithIdentifiers(c.env.RF_CORE, { id: actor, now }, [id], (batch, issued) => {
@@ -323,6 +325,7 @@ export async function createItem(c: Context<ApiEnv>, kind: ItemKind, body: unkno
     for (const review of reviews.reviews) writeReview(batch, review, now);
     rules.write?.(batch);
     announceSubmission(batch, submissionId);
+    notifyMentions(batch, mentioned, id, submissionId);
     batch.outbox('publish', `unit:${id}`);
   }, { accountant: c.get('accountant') });
   return id;
@@ -404,6 +407,7 @@ export async function editItem(c: Context<ApiEnv>, current: LoadedItem, body: un
   if (changes.length === 0 && !sectionsChange && linked.links.length === 0) return false;
 
   const changed = new Set(changes.map((change) => change.field));
+  const mentioned = (await mentionRecipients(c, addedMentions(before, input), actor, { rootId: base.id })).map((recipient) => recipient.memberId);
   const summaryChanged = changed.has('logSummary');
   await commitSave(c, {
     target: { type: 'unit', id: base.id, rootId: base.id },
@@ -429,6 +433,7 @@ export async function editItem(c: Context<ApiEnv>, current: LoadedItem, body: un
       }
       if (linked.links.length > 0) writeLinks(batch, linked.links, { id: actor, now });
       rules.write?.(batch);
+      notifyMentions(batch, mentioned, base.id, null);
     },
     outbox: [['publish', `unit:${base.id}`]],
   });
