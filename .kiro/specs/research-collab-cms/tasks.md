@@ -704,8 +704,9 @@ Where a task in an earlier milestone produces something that a later task delive
     - **Property 61: Search excerpts are bounded, highlighted, and labelled**
     - **Validates: Requirements 21.7, 30.5, 30.13**
 
-- [ ] 29. Checkpoint - Ensure all tests pass
+- [x] 29. Checkpoint - Ensure all tests pass
   - Run `npm test` (`vitest --run`) and `npm run lint`; ensure all tests pass, ask the user if questions arise.
+  - Done 2026-10-28 in the cloud workspace: lint and `tsc -b` clean; 945 of 946 tests pass with `--testTimeout=180000`. `p42-cross-links` takes about 24 s there against its own 200 ms-per-run limit (20 s at 100 runs) and also did on the commit before Task 25, so it is slow on that machine rather than broken.
 
 - [ ] 30. Build files: uploads, Attachments, versions, previews, Download_Links, and `rf-dl`
   - [ ] 30.1 Implement uploads in `apps/app/src/files/uploads.ts` and `apps/app/src/api/routes/uploads.ts`
