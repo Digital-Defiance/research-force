@@ -64,7 +64,7 @@ describe('GET /items/{id}/history', () => {
       expect(state!.item['title']).toBe(view.title);
       expect(state!.item['logSummary']).toEqual(view['logSummary']);
       expect(state!.item['sections']).toEqual(sectionsOf(view).map((section) => ({ id: section.id, content: section.content })));
-      expect(state!.item['disclosureLevel']).toBe('private');
+      expect(state!.item['disclosureLevel']).toBe('not_published');
     }
   });
 
@@ -74,13 +74,13 @@ describe('GET /items/{id}/history', () => {
     const [section] = sectionsOf(created);
     await world.core().prepare("UPDATE units SET disclosure_level = 'public' WHERE id = ?1").bind(section!.id).run();
     await new GuardedBatch(world.core(), { id: world.ids.admin, now: world.at })
-      .revision({ targetType: 'unit', targetId: section!.id, rootId: created.id, kind: 'disclosure_change', prev: { disclosureLevel: 'private' } })
-      .revision({ targetType: 'unit', targetId: sectionsOf(other)[0]!.id, rootId: other.id, kind: 'disclosure_change', prev: { disclosureLevel: 'private' } })
+      .revision({ targetType: 'unit', targetId: section!.id, rootId: created.id, kind: 'disclosure_change', prev: { disclosureLevel: 'not_published' } })
+      .revision({ targetType: 'unit', targetId: sectionsOf(other)[0]!.id, rootId: other.id, kind: 'disclosure_change', prev: { disclosureLevel: 'not_published' } })
       .commit();
     const { entries } = await history(created.id);
     expect(entries.map((entry) => [entry.kind, entry.sectionId])).toEqual([['disclosure_change', section!.id], ['creation', null]]);
     expect((await history(created.id, entries[0]!.id)).state!.sections[section!.id]).toEqual({ disclosureLevel: 'public' });
-    expect((await history(created.id, 'creation')).state!.sections[section!.id]).toEqual({ disclosureLevel: 'private' });
+    expect((await history(created.id, 'creation')).state!.sections[section!.id]).toEqual({ disclosureLevel: 'not_published' });
   });
 
   it('refuses a point outside the Item’s history and hides unknown Items', async () => {
@@ -121,7 +121,7 @@ describe('POST /items/{id}/restore', () => {
     expect(body.item.title).toBe(created.title);
     expect(body.item['logSummary']).toEqual(created['logSummary']);
     expect(sectionsOf(body.item).map((section) => [section.id, section.content.text, section.disclosure.level])).toEqual(
-      sectionsOf(created).map((section) => [section.id, section.content.text, 'private']),
+      sectionsOf(created).map((section) => [section.id, section.content.text, 'not_published']),
     );
     expect(sectionsOf(body.item)[0]!.id).toBe(first.id);
     const { entries } = await history(created.id);
@@ -148,13 +148,13 @@ describe('POST /items/{id}/restore', () => {
     expect(item.withdrawal).toMatchObject({ reason: 'Synthetic reason.' });
   });
 
-  it('restores one Entry_Section, adding a removed one back as Private at its earlier position', async () => {
+  it('restores one Entry_Section, adding a removed one back as Not_Published at its earlier position', async () => {
     const { created, first, second } = await editedEntry();
     const response = await world.request('author', 'POST', `/items/${created.id}/restore`, { rev: 4, point: 'creation', sectionId: first.id });
     const item = await saved(response);
     expect(item.title).toBe('A retitled entry');
     expect(sectionsOf(item).map((section) => section.content.text)).toEqual(['First synthetic section.', 'Second section, corrected.', 'A third section.']);
-    expect(sectionsOf(item)[0]).toMatchObject({ id: first.id, disclosure: { level: 'private' } });
+    expect(sectionsOf(item)[0]).toMatchObject({ id: first.id, disclosure: { level: 'not_published' } });
     const restoredSecond = await saved(await world.request('author', 'POST', `/items/${created.id}/restore`, { rev: 5, point: 'creation', sectionId: second.id }));
     expect(sectionsOf(restoredSecond)[1]!.content.text).toBe('Second synthetic section.');
     expect(await errorOf(await world.request('author', 'POST', `/items/${created.id}/restore`, { rev: 6, point: 'creation', sectionId: newULID(world.at) })))
@@ -193,7 +193,7 @@ describe('POST /items/{id}/withdraw', () => {
     expect(body.item.withdrawal).toEqual({ at: world.at, by: { id: world.ids.author, displayName: expect.any(String) }, reason: 'Synthetic reason.' });
     expect(body.item['statusValueId']).toBe(V.findingWithdrawn);
     expect(body.item['withdrawalReason']).toBe('Synthetic reason.');
-    expect(body.item.disclosure.level).toBe('private');
+    expect(body.item.disclosure.level).toBe('not_published');
     const { entries } = await history(finding.id);
     expect(entries.map((entry) => [entry.kind, entry.reason])).toEqual([['withdrawal', 'Synthetic reason.'], ['creation', null]]);
     expect(entries[0]!.fields.sort()).toEqual(['statusValueId', 'withdrawalReason', 'withdrawnAt', 'withdrawnBy']);

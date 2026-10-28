@@ -106,7 +106,7 @@ const restoreSchema = z.strictObject({ rev: z.int().min(1), point: z.string().mi
 /**
  * Restore the Item, or one of its Entry_Sections, to the point the Member chose, as a Restoration Revision through the
  * edit pipeline, so the same checks apply (R22.5). Status, withdrawal, and disclosure fields keep their values, and
- * Entry_Sections added back start Private (R23.15). Resolves to whether anything changed.
+ * Entry_Sections added back start Not_Published (R23.15). Resolves to whether anything changed.
  */
 export async function restoreItem(c: Context<ApiEnv>, item: LoadedItem, body: unknown): Promise<boolean> {
   const input = parse(restoreSchema, body);

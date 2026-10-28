@@ -15,7 +15,7 @@ import type {
 } from './views';
 
 export interface Projection {
-  /** One view per Public or Withheld unit and Project; Private units have none (R24.5). */
+  /** One view per Public or Withheld unit and Project; Not_Published units have none (R24.5). */
   readonly views: ReadonlyMap<UnitKey, PublicView>;
   /** Every unit's and Project's level as projected: Effective_Disclosure after the defensive rules. */
   readonly levels: ReadonlyMap<UnitKey, Level>;
@@ -112,7 +112,7 @@ class Projector {
     return node;
   }
 
-  /** Malformed structure (unknown Parent or Project, a disallowed Parent type, a cycle) leaves the unit without a node: Private. */
+  /** Malformed structure (unknown Parent or Project, a disallowed Parent type, a cycle) leaves the unit without a node: Not_Published. */
   private unitNode(id: string): DNode | undefined {
     const key = unitKey(id);
     const cached = this.nodes.get(key);
@@ -150,12 +150,12 @@ class Projector {
     if (node.type === 'project') {
       if (level === 'withheld' && !(record as ProjectRecord).disclosureLine) {
         this.breach(node.key, 'missing_line', 'A Withheld Project has no Disclosure_Line.');
-        return 'private';
+        return 'not_published';
       }
       return level;
     }
     const unit = record as UnitRecord;
-    if (unit.type === 'dissent_note' && unit.withdrawal) return 'private'; // R42.8
+    if (unit.type === 'dissent_note' && unit.withdrawal) return 'not_published'; // R42.8
     let adjusted = level;
     if (adjusted === 'public') {
       const code = publicationBreach(unit, this.values);
@@ -169,7 +169,7 @@ class Projector {
     }
     if (adjusted === 'withheld' && !this.withheldLine(unit)) {
       this.breach(node.key, 'missing_line', 'A Withheld unit has no Disclosure_Line.');
-      return 'private';
+      return 'not_published';
     }
     return adjusted;
   };
@@ -184,11 +184,11 @@ class Projector {
 
   levelOfProject(id: string): Level {
     const node = this.projectNode(id);
-    return node ? effective(node, this.adjust, this.memo) : 'private';
+    return node ? effective(node, this.adjust, this.memo) : 'not_published';
   }
   levelOf(id: string): Level {
     const node = this.unitNode(id);
-    return node ? effective(node, this.adjust, this.memo) : 'private';
+    return node ? effective(node, this.adjust, this.memo) : 'not_published';
   }
 
   private rootOf(unit: UnitRecord): ItemUnit {
@@ -207,7 +207,7 @@ class Projector {
     return this.rootOf(unit).item.title;
   }
   private visibleChildren(id: string, type: UnitType, order: (a: UnitRecord, b: UnitRecord) => number): ChildRef[] {
-    return (this.children.get(id) ?? []).filter((child) => child.type === type && this.levelOf(child.id) !== 'private').sort(order).map((child) => ({ key: unitKey(child.id) }));
+    return (this.children.get(id) ?? []).filter((child) => child.type === type && this.levelOf(child.id) !== 'not_published').sort(order).map((child) => ({ key: unitKey(child.id) }));
   }
 
   private valueRef(id: string | undefined): ValueRef | undefined {
@@ -423,7 +423,7 @@ class Projector {
       if (level === 'public') add(key, { tag: 'project', key, path: PUBLIC_PATHS.project(project.slug), name: project.name, description: project.description, slug: project.slug, ...(project.accent === undefined ? {} : { accent: project.accent }) });
       else if (level === 'withheld') add(key, { tag: 'withheld', key, path: PUBLIC_PATHS.project(project.slug), line: lineView(project.disclosureLine!, this.directory) });
     }
-    for (const unit of this.input.units) if (levels.get(unitKey(unit.id)) !== 'private') add(unitKey(unit.id), this.unitView(unit));
+    for (const unit of this.input.units) if (levels.get(unitKey(unit.id)) !== 'not_published') add(unitKey(unit.id), this.unitView(unit));
     return { views, levels, invariantBreaches: [...this.breachList], emailMarks };
   }
 }

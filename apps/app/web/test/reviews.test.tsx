@@ -159,8 +159,8 @@ describe('reviews on the item page', () => {
     const item = makeItem({
       kind: 'journal_entry', pendingReview: true, reviews: [review('R1')],
       sections: [
-        { id: 'S1', content: rich('First.'), rev: 1, disclosure: { level: 'private', effective: 'private' }, pendingReview: false },
-        { id: 'S2', content: rich('Second.'), rev: 1, disclosure: { level: 'private', effective: 'private' }, pendingReview: true },
+        { id: 'S1', content: rich('First.'), rev: 1, disclosure: { level: 'not_published', effective: 'not_published' }, pendingReview: false },
+        { id: 'S2', content: rich('Second.'), rev: 1, disclosure: { level: 'not_published', effective: 'not_published' }, pendingReview: true },
       ],
     });
     const view = renderScreen(<ItemDetails data={{ item, valueSets: VALUE_SETS, parties: [PARTY], members: MEMBERS, links: [], backlinks: [], thread: [] }} />, { client: fakeApi({}).client });

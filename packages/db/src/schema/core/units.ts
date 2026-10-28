@@ -34,7 +34,7 @@ export const units = sqliteTable('units', {
   submissionId: text('submission_id').notNull(),
   createdAt: text('created_at').notNull(),
   createdAi: text('created_ai', { mode: 'json' }).$type<AiProvenance>(),
-  disclosureLevel: text('disclosure_level', { enum: LEVELS }).notNull().default('private'),
+  disclosureLevel: text('disclosure_level', { enum: LEVELS }).notNull().default('not_published'),
   classificationState: text('classification_state', { enum: CLASSIFICATION_STATES }),
   classifiedBy: text('classified_by'),
   classifiedAt: text('classified_at'),
@@ -54,8 +54,8 @@ export const units = sqliteTable('units', {
   oneOf('units_level_values', t.disclosureLevel, LEVELS),
   oneOf('units_classification_values', t.classificationState, CLASSIFICATION_STATES, true),
   check('units_withheld_line', sql`${t.disclosureLevel} <> 'withheld' OR ${t.disclosureLine} IS NOT NULL`),
-  // Unclassified units stay Private until an Administrator classifies them (R26.5).
-  check('units_unclassified_private', sql`${t.classificationState} IS NOT 'unclassified' OR ${t.disclosureLevel} = 'private'`),
+  // Unclassified units stay Not_Published until an Administrator classifies them (R26.5).
+  check('units_unclassified_not_published', sql`${t.classificationState} IS NOT 'unclassified' OR ${t.disclosureLevel} = 'not_published'`),
   check('units_root_shape', sql`(${t.unitType} = 'research_item') = (${t.rootId} = ${t.id} AND ${t.parentId} IS NULL)`),
 ]);
 

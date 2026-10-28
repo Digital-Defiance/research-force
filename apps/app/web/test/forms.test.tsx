@@ -69,7 +69,7 @@ describe('the form model', () => {
   it('reads every stored field back into the form unchanged', () => {
     const item = makeItem({
       kind: 'source', sourceKind: 'secondary', reliabilityId: RELIABILITY_HIGH, documentDate: { value: '1950', approx: false }, recoverer: { kind: 'member', id: MEMBER_ID },
-      sections: [{ id: 'S', content: rich('x'), rev: 1, disclosure: { level: 'private', effective: 'private' } }],
+      sections: [{ id: 'S', content: rich('x'), rev: 1, disclosure: { level: 'not_published', effective: 'not_published' } }],
     });
     const values = valuesFromItem(item);
     expect(values['documentDate']).toEqual({ start: { value: '1950', approx: false }, end: { value: '', approx: false } });

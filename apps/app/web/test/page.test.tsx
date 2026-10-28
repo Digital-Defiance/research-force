@@ -63,12 +63,12 @@ describe('the item page', () => {
   it('names the Project and shows the Disclosure_Level and Effective_Disclosure of the item and its sections (R23.9, R39.15)', () => {
     const view = show(makeItem({
       kind: 'journal_entry', disclosure: { level: 'public', effective: 'withheld', line: 'Kept back for now.' },
-      sections: [{ id: 'S1', content: rich('First section.'), rev: 1, disclosure: { level: 'private', effective: 'private' } }],
+      sections: [{ id: 'S1', content: rich('First section.'), rev: 1, disclosure: { level: 'not_published', effective: 'not_published' } }],
     }));
     expect(view.container.textContent).toContain('Project: Synthetic project');
     expect(view.container.textContent).toContain('Disclosure level: Public; effective disclosure: Withheld');
     expect(view.container.textContent).toContain('Kept back for now.');
-    expect(screen.getByRole('region', { name: 'Entry Section 1' }).textContent).toContain('Disclosure level: Private; effective disclosure: Private');
+    expect(screen.getByRole('region', { name: 'Entry Section 1' }).textContent).toContain('Disclosure level: Not published; effective disclosure: Not published');
   });
 
   it('shows the Log_Summary with its author, or that none is recorded, and the Group_Note labelled first in the Thread (R41.9)', () => {

@@ -12,7 +12,7 @@ import { applyChange, diffViews } from '../../src/preview';
 import type { ChangeSet, UnitChange } from '../../src/preview';
 import { projectDetailed } from '../../src/project';
 
-const levelArb = fc.constantFrom<Level>('public', 'withheld', 'private');
+const levelArb = fc.constantFrom<Level>('public', 'withheld', 'not_published');
 
 function changeArb(state: WorkspaceState): fc.Arbitrary<ChangeSet> {
   const { input } = state;

@@ -124,7 +124,7 @@ function describe(compared: Compared, after: ProjectionInput, contentLicence: st
     if (view?.tag !== 'research_item' || (view.publicSummary === undefined && view.full?.logSummary === undefined)) return [];
     const notes = after.units
       .filter((unit): unit is Extract<UnitRecord, { type: 'dissent_note' }> => unit.type === 'dissent_note' && unit.parentId === idOf(entry.key) && !unit.withdrawal)
-      .map((note) => ({ note, effective: compared.after.levels.get(unitKey(note.id)) ?? 'private' }))
+      .map((note) => ({ note, effective: compared.after.levels.get(unitKey(note.id)) ?? 'not_published' }))
       .filter(({ effective }) => effective !== 'public')
       .sort((a, b) => (a.note.attachedAt < b.note.attachedAt ? -1 : a.note.attachedAt > b.note.attachedAt ? 1 : 0))
       .map(({ note, effective }) => ({ key: unitKey(note.id), authorId: note.authorId, author: members.get(note.authorId)?.displayName ?? '', text: note.text, effective }));
@@ -197,7 +197,7 @@ function gates(change: ChangeSet, state: GateState, after: ProjectionInput, comp
       const missing = unit.item.parties.filter((party) => party.kind === 'external' && party.consent !== 'granted');
       if (missing.length) failures.push({
         key: entry.key, reason: 'consent', message: 'Every External_Party must have Granted consent before a Correspondence becomes Public.',
-        offerWithheld: beforeUnits.get(id)?.level === 'private',
+        offerWithheld: beforeUnits.get(id)?.level === 'not_published',
         details: missing.map((party) => `${parties.get(party.id)?.name ?? party.id}: ${party.consent ?? 'not_asked'}`),
       });
     }

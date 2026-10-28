@@ -196,7 +196,7 @@ describe('Correspondences', () => {
     });
     expect(response.status).toBe(200);
     const line = { kindOfMaterial: 'correspondence', date: { value: '2026-10-01', approx: false }, partyIds: [world.ids.author, granted, added] };
-    expect((await response.json<{ item: ItemView }>()).item.disclosure).toEqual({ level: 'withheld', effective: 'private', line });
+    expect((await response.json<{ item: ItemView }>()).item.disclosure).toEqual({ level: 'withheld', effective: 'not_published', line });
     const revisions = await world.core().prepare('SELECT kind, member_id AS m, prev FROM revisions WHERE target_id = ?1 ORDER BY kind').bind(item.id).all<{ kind: string; m: string; prev: string }>();
     expect(revisions.results.map((row) => ({ ...row, prev: JSON.parse(row.prev) }))).toEqual([
       { kind: 'disclosure_change', m: world.ids.author, prev: { disclosureLevel: 'public', disclosureLine: null } },
@@ -205,7 +205,7 @@ describe('Correspondences', () => {
     expect(await world.core().prepare('SELECT rev FROM units WHERE id = ?1').bind(item.id).first('rev')).toBe(2);
   });
 
-  it('withholds a Public Correspondence that loses a Granted consent, and leaves a Private one alone', async () => {
+  it('withholds a Public Correspondence that loses a Granted consent, and leaves a Not_Published one alone', async () => {
     const party = await world.party();
     const body = { parties: parties({ kind: 'member', id: world.ids.author }, { kind: 'external', id: party, consent: 'granted' }) };
     const [shown, hidden] = [await world.created('author', 'correspondence', body), await world.created('author', 'correspondence', body)];
@@ -215,7 +215,7 @@ describe('Correspondences', () => {
     expect((await world.edit('author', hidden.id, refusing)).status).toBe(200);
     expect((await world.view('author', shown.id)).disclosure.level).toBe('withheld');
     expect((await world.view('author', hidden.id))['parties']).toEqual(refusing.parties);
-    expect((await world.view('author', hidden.id)).disclosure.level).toBe('private');
+    expect((await world.view('author', hidden.id)).disclosure.level).toBe('not_published');
     expect((await world.edit('author', shown.id, { rev: 2, mark: { mark: 'minor_edit' }, title: 'Still withheld' })).status).toBe(200);
   });
 });

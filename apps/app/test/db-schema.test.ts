@@ -96,9 +96,9 @@ describe('D1 migrations and seeds', () => {
     const memberId = await addMember(ROLE_IDS.contributor);
     const unitId = await addItem(memberId);
     const batch = () => new GuardedBatch(core, { id: memberId, now });
-    // Withheld needs a Disclosure_Line, and Unclassified units stay Private (R23.5, R26.5).
+    // Withheld needs a Disclosure_Line, and Unclassified units stay Not_Published (R23.5, R26.5).
     expect((await refusal(batch().update(units, { disclosureLevel: 'withheld' }, eq(units.id, unitId)).commit())).message).toContain('units_withheld_line');
-    expect((await refusal(batch().update(units, { classificationState: 'unclassified', disclosureLevel: 'public' }, eq(units.id, unitId)).commit())).message).toContain('units_unclassified_private');
+    expect((await refusal(batch().update(units, { classificationState: 'unclassified', disclosureLevel: 'public' }, eq(units.id, unitId)).commit())).message).toContain('units_unclassified_not_published');
     // Run counts stay digit strings of 1 to 30 digits (R7.9).
     for (const value of ['', '12a', '1'.repeat(31), '-1']) {
       expect((await refusal(core.prepare('INSERT INTO run_counts (unit_id, position, name, value) VALUES (?, 0, ?, ?)').bind(unitId, value || 'empty', value).run())).message).toContain('run_counts_digits');
@@ -222,7 +222,7 @@ describe('guarded batch helper', () => {
     expect(accountant.usage.statements).toBe(batch.size);
     expect(accountant.usage.rowsWritten).toBeGreaterThanOrEqual(10_000);
     const first = await core.prepare('SELECT e.text, e.text_spans, e.unassigned, u.updated_seq, u.actor_id, u.disclosure_level FROM entry_sections e JOIN units u ON u.id = e.unit_id WHERE e.unit_id = ?').bind(sections[0]!.id).first();
-    expect(first).toEqual({ text: sections[0]!.text, text_spans: '[{"k":"lang","s":0,"e":5,"lang":"de"}]', unassigned: 0, updated_seq: await changeSeq(), actor_id: memberId, disclosure_level: 'private' });
+    expect(first).toEqual({ text: sections[0]!.text, text_spans: '[{"k":"lang","s":0,"e":5,"lang":"de"}]', unassigned: 0, updated_seq: await changeSeq(), actor_id: memberId, disclosure_level: 'not_published' });
     expect(await core.prepare('SELECT unassigned FROM entry_sections WHERE unit_id = ?').bind(sections[1]!.id).first('unassigned')).toBe(1);
     expect(await core.prepare('SELECT count(*) AS n FROM units WHERE root_id = ? AND unit_type = ?').bind(rootId, 'entry_section').first('n')).toBe(5000);
   });
@@ -248,8 +248,8 @@ describe('search index', () => {
     const search = bindings.RF_SEARCH;
     const insert = search.prepare('INSERT INTO search_docs (doc_key, unit_id, result_unit_id, root_id, root_kind, project_id, unit_type, disclosure_level, created_at, completed, title, body) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)');
     await search.batch([
-      insert.bind(1024, 'u1', 'u1', 'u1', 'finding', 'p', 'research_item', 'private', now, 'Schlüsselzettel', 'Synthetic café notes'),
-      insert.bind(2048, 'u2', 'u2', 'u2', 'source', 'p', 'research_item', 'private', now, 'Other', 'Unrelated'),
+      insert.bind(1024, 'u1', 'u1', 'u1', 'finding', 'p', 'research_item', 'not_published', now, 'Schlüsselzettel', 'Synthetic café notes'),
+      insert.bind(2048, 'u2', 'u2', 'u2', 'source', 'p', 'research_item', 'not_published', now, 'Other', 'Unrelated'),
     ]);
     const match = async (query: string): Promise<number[]> => (await search.prepare('SELECT rowid FROM search_fts WHERE search_fts MATCH ? ORDER BY rowid DESC').bind(query).all<{ rowid: number }>()).results.map((row) => row.rowid);
     expect(await match('"cafe"*')).toEqual([1024]);

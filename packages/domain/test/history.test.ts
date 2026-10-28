@@ -60,7 +60,7 @@ describe('stateAt', () => {
     revision('r1', 1, { title: 'First' }),
     revision('r2', 2, { title: 'Second' }, { kind: 'correction' }),
     revision('r2s', 2, { statusValueId: 'open' }, { kind: 'status_change' }),
-    revision('r3', 3, { disclosureLevel: 'private' }, { targetId: 's1', kind: 'disclosure_change' }),
+    revision('r3', 3, { disclosureLevel: 'not_published' }, { targetId: 's1', kind: 'disclosure_change' }),
     revision('del', 4, { kind: 'finding' }, { kind: 'deletion' }),
   ];
 
@@ -69,7 +69,7 @@ describe('stateAt', () => {
   });
 
   it('undoes every later save, including Entry_Section Revisions', () => {
-    expect(stateAt(current, revisions, 'r2')).toEqual({ ...current, sections: { s1: { disclosureLevel: 'private' } } });
+    expect(stateAt(current, revisions, 'r2')).toEqual({ ...current, sections: { s1: { disclosureLevel: 'not_published' } } });
     expect(stateAt(current, revisions, 'r1').item).toEqual({ title: 'Second', statusValueId: 'open', sections: current.item['sections'] });
   });
 
@@ -95,14 +95,14 @@ describe('stateAt', () => {
     const removal = [revision('remove', 1, { sections: { order: ['s9'], content: { s9: rich('nine') } } })];
     expect(stateAt(removed, removal, CREATION)).toEqual({ id: 'item', item: { sections: [{ id: 's9', content: rich('nine') }] }, sections: {} });
     // Added back by a Restoration under its old id, the section's new unit row says nothing about the old one.
-    const readded: HistoryState = { id: 'item', item: { sections: [{ id: 's9', content: rich('nine') }] }, sections: { s9: { disclosureLevel: 'private' } } };
+    const readded: HistoryState = { id: 'item', item: { sections: [{ id: 's9', content: rich('nine') }] }, sections: { s9: { disclosureLevel: 'not_published' } } };
     const cycle = [
-      revision('public', 1, { disclosureLevel: 'private' }, { targetId: 's9', kind: 'disclosure_change' }),
+      revision('public', 1, { disclosureLevel: 'not_published' }, { targetId: 's9', kind: 'disclosure_change' }),
       revision('remove', 2, { sections: { order: ['s9'], content: { s9: rich('nine') } } }),
       revision('back', 3, { sections: { order: [], content: {} } }, { kind: 'restoration' }),
     ];
     expect(stateAt(readded, cycle, 'public').sections).toEqual({});
-    expect(stateAt(readded, cycle, 'back').sections).toEqual({ s9: { disclosureLevel: 'private' } });
+    expect(stateAt(readded, cycle, 'back').sections).toEqual({ s9: { disclosureLevel: 'not_published' } });
   });
 
   it('refuses a point outside the history', () => {

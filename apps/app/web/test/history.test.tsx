@@ -12,7 +12,7 @@ import { makeItem, rich } from './fixtures';
 
 const ITEM = makeItem({
   kind: 'journal_entry', title: 'A retitled entry', logSummary: rich('A newer summary.'),
-  sections: [{ id: 'S2', content: rich('Second, corrected.'), rev: 2, disclosure: { level: 'private', effective: 'private' } }],
+  sections: [{ id: 'S2', content: rich('Second, corrected.'), rev: 2, disclosure: { level: 'not_published', effective: 'not_published' } }],
 });
 const entry = (id: string, kind: string, extra: Partial<HistoryEntry> = {}): HistoryEntry => ({
   id, kind, memberId: MEMBER_ID, displayName: 'Ada Example', at: '2026-10-27T18:00:00.000Z', reason: null, restoredPoint: null, sectionId: null, fields: [], ...extra,
@@ -24,7 +24,7 @@ const ENTRIES = [
   entry('creation', 'creation'),
 ];
 const STATE: ItemHistoryView['state'] = {
-  item: { title: 'A synthetic journal_entry', logSummary: rich('Old summary.'), disclosureLevel: 'private', sections: [{ id: 'S1', content: rich('First.') }, { id: 'S2', content: rich('Second.') }] },
+  item: { title: 'A synthetic journal_entry', logSummary: rich('Old summary.'), disclosureLevel: 'not_published', sections: [{ id: 'S1', content: rich('First.') }, { id: 'S2', content: rich('Second.') }] },
   sections: { S2: { disclosureLevel: 'public' } },
 };
 const historyApi = (extra: Parameters<typeof fakeApi>[0] = {}) => fakeApi({
@@ -64,7 +64,7 @@ describe('the history list', () => {
     fireEvent.click(within(state).getByRole('button', { name: 'Restore this version' }));
     const dialog = screen.getByRole('dialog', { name: 'Restore' });
     expect(dialog.textContent).toContain('Status, withdrawal, and disclosure stay as they are now.');
-    expect(dialog.textContent).toContain('starts Private');
+    expect(dialog.textContent).toContain('starts Not published');
     expect(dialog.textContent).not.toContain('only the Owner restores it');
     fireEvent.click(within(dialog).getByRole('button', { name: 'Restore' }));
     await screen.findByText('The Restoration was saved.');
@@ -115,7 +115,7 @@ describe('comparisons', () => {
       { field: 'title', before: 'A synthetic journal_entry', after: 'A retitled entry', words: [{ value: 'A ' }, { value: 'synthetic journal_entry', removed: true }, { value: 'retitled entry', added: true }] },
       { field: 'sections.S2', before: rich('Second.'), after: { text: 'Second.', spans: [{ s: 0, e: 6, k: 'quote', source: 'Book' }] }, words: [{ value: 'Second.' }], labels: { removed: [], added: [{ s: 0, e: 6, k: 'quote', source: 'Book' }] } },
       { field: 'sections.order', before: ['S1', 'S2'], after: ['S2'] },
-      { field: 'disclosureLevel', before: 'private', after: 'public' },
+      { field: 'disclosureLevel', before: 'not_published', after: 'public' },
     ];
     const api = historyApi({ [`GET /items/${ITEM.id}/compare?from=creation&to=R3`]: { differences } });
     renderScreen(<ItemHistoryPage id={ITEM.id} />, { client: api.client });
@@ -132,7 +132,7 @@ describe('comparisons', () => {
     expect(region.textContent).toContain('Label added: Quote on characters 1 to 6 (Book)');
     expect(region.textContent).toContain('Order of the Entry Sections');
     expect(region.textContent).toContain('S1, S2 → S2');
-    expect(region.textContent).toContain('Private → Public');
+    expect(region.textContent).toContain('Not published → Public');
   });
 
   it('says when nothing differs and names removed Entry Sections', () => {

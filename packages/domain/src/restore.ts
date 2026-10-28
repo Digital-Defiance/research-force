@@ -40,7 +40,7 @@ export function restoreSection(current: readonly SectionValue[], point: readonly
   return next;
 }
 
-/** Sections the restored list has that the current list does not: the Restoration adds them back as Private (R23.15). */
+/** Sections the restored list has that the current list does not: the Restoration adds them back as Not_Published (R23.15). */
 export function addedBack(current: readonly SectionValue[], restored: readonly SectionValue[]): string[] {
   const now = new Set(current.map((section) => section.id));
   return restored.filter((section) => !now.has(section.id)).map((section) => section.id);

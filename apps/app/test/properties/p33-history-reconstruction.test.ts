@@ -96,7 +96,7 @@ describe('Property 33: History reconstructs every past state', () => {
           await record(['withdrawal'], (await response.json<{ item: ItemView }>()).item);
         } else if (op.type === 'disclose') {
           const section = current.sections[op.section % current.sections.length]!;
-          const level = current.levels[section.id] === 'public' ? 'private' : 'public';
+          const level = current.levels[section.id] === 'public' ? 'not_published' : 'public';
           await core.prepare('UPDATE units SET disclosure_level = ?2 WHERE id = ?1').bind(section.id, level).run();
           await new GuardedBatch(core, { id: world.ids.admin, now: world.at })
             .revision({ targetType: 'unit', targetId: section.id, rootId: created.id, kind: 'disclosure_change', prev: { disclosureLevel: current.levels[section.id] } })

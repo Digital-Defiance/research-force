@@ -55,7 +55,7 @@ function uniqueFieldError(error: unknown): ApiError | undefined {
   return undefined;
 }
 
-/** A new Project: Private, not featured, last in the Project_Order, with its creator and time (R39.4, R39.5). */
+/** A new Project: Not_Published, not featured, last in the Project_Order, with its creator and time (R39.4, R39.5). */
 export async function createProject(c: Context<ApiEnv>, body: unknown): Promise<ProjectRecord> {
   const existing = await listProjects(c);
   const input = parse(projectSchema({ now: c.get('now'), valueSets: {}, members: [], roleIds: [], externalPartyIds: [], projects: existing }), body);

@@ -49,7 +49,7 @@ export function makeItem(overrides: Partial<ItemView> & Pick<ItemView, 'kind'>):
     id: '01J0000000000000000000IT01', identifier: 'RF-0001', rev: 3, createdAt: '2026-10-20T10:00:00.000Z', project: PROJECT, title: 'A synthetic record',
     owner: { id: MEMBER_ID, displayName: 'Ada Example', specialties: [{ id: 'S1', name: 'Historian' }] },
     credit: [{ member: { id: MEMBER_ID, displayName: 'Ada Example' } }],
-    disclosure: { level: 'private', effective: 'private' },
+    disclosure: { level: 'not_published', effective: 'not_published' },
     withdrawal: null, groupNote: null, reviews: [], pendingReview: false,
     ...overrides,
   };

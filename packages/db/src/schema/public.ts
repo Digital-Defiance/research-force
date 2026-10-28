@@ -5,7 +5,7 @@ export const EFFECTIVE_PUBLIC_LEVELS = ['public', 'withheld'] as const;
 
 /**
  * rf-public: versioned Public_Views and site build state, rebuildable from rf-core and history.
- * A unit that becomes Private gets its current version closed and no new row.
+ * A unit that becomes Not_Published gets its current version closed and no new row.
  */
 export const publicViews = sqliteTable('public_views', {
   unitKey: text('unit_key').notNull(), // 'p:<projectId>' or 'u:<unitId>'

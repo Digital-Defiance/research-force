@@ -25,12 +25,12 @@ describe('Journal_Entries', () => {
       project: { id: world.projectId, name: expect.stringMatching(/^Synthetic project/u) },
       owner: { id: world.ids.author, displayName: `Member ${world.ids.author}`, specialties: [{ id: expect.any(String), name: 'Historian' }] },
       credit: [{ member: { id: world.ids.author, displayName: `Member ${world.ids.author}` } }],
-      disclosure: { level: 'private', effective: 'private' }, withdrawal: null, groupNote: null,
+      disclosure: { level: 'not_published', effective: 'not_published' }, withdrawal: null, groupNote: null,
     });
     expect(item.identifier).toMatch(/^[0-9A-Z]{4}-[0-9A-Z]{4}-[0-9A-Z]{4}$/u);
     expect(item).not.toHaveProperty('logSummary');
     expect(sectionTexts(item)).toEqual(['First synthetic section.', 'Second synthetic section.']);
-    expect((item['sections'] as { disclosure: unknown }[]).map((section) => section.disclosure)).toEqual([{ level: 'private', effective: 'private' }, { level: 'private', effective: 'private' }]);
+    expect((item['sections'] as { disclosure: unknown }[]).map((section) => section.disclosure)).toEqual([{ level: 'not_published', effective: 'not_published' }, { level: 'not_published', effective: 'not_published' }]);
     const submission = await world.core().prepare('SELECT s.member_id AS m, s.completed_at AS c, s.has_group_note AS g FROM submissions s JOIN units u ON u.submission_id = s.id WHERE u.id = ?1').bind(item.id).first();
     expect(submission).toEqual({ m: world.ids.author, c: world.at, g: 0 });
     expect(await world.core().prepare("SELECT count(*) AS n FROM units WHERE root_id = ?1 AND unit_type = 'entry_section' AND submission_id = (SELECT submission_id FROM units WHERE id = ?1)").bind(item.id).first('n')).toBe(2);
@@ -180,7 +180,7 @@ describe('Log_Summaries and Group_Notes', () => {
 
   it('posts a non-empty Group_Note first in the Thread, owned and credited by the submitter, in the same Submission', async () => {
     const item = await world.created('colleague', 'finding', { groupNote: rich('Please check the caveat.') });
-    expect(item.groupNote).toMatchObject({ text: rich('Please check the caveat.'), owner: { id: world.ids.colleague }, withdrawn: false, disclosure: { level: 'private', effective: 'private' } });
+    expect(item.groupNote).toMatchObject({ text: rich('Please check the caveat.'), owner: { id: world.ids.colleague }, withdrawn: false, disclosure: { level: 'not_published', effective: 'not_published' } });
     const row = await world.core().prepare(`SELECT u.unit_type AS t, u.parent_id AS p, u.root_id AS r, u.position AS pos, u.owner_id AS o, u.credit, u.submission_id = i.submission_id AS same, r2.is_group_note AS g, s.has_group_note AS hg
       FROM units u JOIN replies r2 ON r2.unit_id = u.id JOIN units i ON i.id = u.root_id JOIN submissions s ON s.id = i.submission_id WHERE u.root_id = ?1 AND u.unit_type = 'reply'`).bind(item.id).first();
     expect(row).toEqual({ t: 'reply', p: item.id, r: item.id, pos: 0, o: world.ids.colleague, credit: JSON.stringify([{ member: world.ids.colleague }]), same: 1, g: 1, hg: 1 });
@@ -209,10 +209,10 @@ describe('item routes', () => {
     ]);
     const item = await world.view('colleague', entry.id);
     expect(item.disclosure).toEqual({ level: 'public', effective: 'public' });
-    expect((item['sections'] as { disclosure: unknown }[]).map((section) => section.disclosure)).toEqual([{ level: 'public', effective: 'public' }, { level: 'private', effective: 'private' }]);
-    expect(item.groupNote?.disclosure).toEqual({ level: 'private', effective: 'private' });
+    expect((item['sections'] as { disclosure: unknown }[]).map((section) => section.disclosure)).toEqual([{ level: 'public', effective: 'public' }, { level: 'not_published', effective: 'not_published' }]);
+    expect(item.groupNote?.disclosure).toEqual({ level: 'not_published', effective: 'not_published' });
     await world.core().prepare("UPDATE projects SET disclosure_level = 'withheld', disclosure_line = '{}'").run();
-    expect((await world.view('colleague', entry.id)).disclosure).toEqual({ level: 'public', effective: 'private' });
+    expect((await world.view('colleague', entry.id)).disclosure).toEqual({ level: 'public', effective: 'not_published' });
   });
 
   it('answers 404 for unknown kinds, unknown items, and another Member’s unfinished Submission', async () => {

@@ -53,7 +53,7 @@ describe('staged saves of new Journal_Entries', () => {
     const units = await world.core().prepare(`SELECT u.position, u.owner_id AS owner, u.credit, u.submission_id = i.submission_id AS same, u.created_at AS at, u.actor_id AS actor, u.disclosure_level AS level
       FROM units u JOIN units i ON i.id = u.parent_id WHERE u.parent_id = ?1 ORDER BY u.position`).bind(item.id).all();
     expect(units.results).toEqual([0, 1, 2, 3].map((position) => ({
-      position, owner: world.ids.author, credit: JSON.stringify([{ member: world.ids.author }]), same: 1, at: world.at, actor: world.ids.author, level: 'private',
+      position, owner: world.ids.author, credit: JSON.stringify([{ member: world.ids.author }]), same: 1, at: world.at, actor: world.ids.author, level: 'not_published',
     })));
     expect(await world.core().prepare('SELECT s.text_spans AS spans FROM entry_sections s JOIN units u ON u.id = s.unit_id WHERE u.parent_id = ?1 AND u.position = 2').bind(item.id).first('spans'))
       .toBe(JSON.stringify(labelled.spans));

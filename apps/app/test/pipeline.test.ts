@@ -48,19 +48,19 @@ async function refusal(promise: Promise<unknown>): Promise<ApiError> {
 describe('diffFields', () => {
   const classes = { title: 'content', level: 'disclosure', note: 'detail' } as const;
   it('lists only the fields present in the edit whose values differ, with their classes', () => {
-    expect(diffFields({ title: text('A'), level: 'private', note: 'x' }, { title: text('B'), level: 'private' }, classes)).toEqual([
+    expect(diffFields({ title: text('A'), level: 'not_published', note: 'x' }, { title: text('B'), level: 'not_published' }, classes)).toEqual([
       { field: 'title', before: text('A'), after: text('B'), fieldClass: 'content' },
     ]);
-    expect(diffFields({ title: text('A'), level: 'private', note: 'x' }, { note: 'y', level: 'public' }, classes)).toEqual([
-      { field: 'level', before: 'private', after: 'public', fieldClass: 'disclosure' }, { field: 'note', before: 'x', after: 'y', fieldClass: 'detail' },
+    expect(diffFields({ title: text('A'), level: 'not_published', note: 'x' }, { note: 'y', level: 'public' }, classes)).toEqual([
+      { field: 'level', before: 'not_published', after: 'public', fieldClass: 'disclosure' }, { field: 'note', before: 'x', after: 'y', fieldClass: 'detail' },
     ]);
   });
   it('compares structure rather than key order and treats a missing value as null', () => {
     type Fields = { title: unknown; level: string; note: string | null | undefined };
-    expect(diffFields<Fields>({ title: { spans: [], text: 'A' }, level: 'private', note: null }, { title: text('A'), note: undefined }, classes)).toEqual([]);
+    expect(diffFields<Fields>({ title: { spans: [], text: 'A' }, level: 'not_published', note: null }, { title: text('A'), note: undefined }, classes)).toEqual([]);
     expect(diffFields<Partial<Fields>>({ title: text('A') }, { note: null }, classes)).toEqual([]);
     expect(diffFields<Partial<Fields>>({ title: text('A') }, { note: 'x' }, classes)).toEqual([{ field: 'note', before: null, after: 'x', fieldClass: 'detail' }]);
-    expect(diffFields<Fields>({ title: text('A'), level: 'private', note: null }, { note: '' }, classes)).toEqual([{ field: 'note', before: null, after: '', fieldClass: 'detail' }]);
+    expect(diffFields<Fields>({ title: text('A'), level: 'not_published', note: null }, { note: '' }, classes)).toEqual([{ field: 'note', before: null, after: '', fieldClass: 'detail' }]);
   });
   it('ignores fields that have no class', () => {
     expect(diffFields<Record<string, unknown>>({ title: 'A', other: 1 }, { other: 2 }, { title: 'content' })).toEqual([]);
@@ -98,7 +98,7 @@ describe('revisionsFor', () => {
   it('writes one Revision per Revision_Kind, in kind order, with the previous value of each changed field', () => {
     const change: ChangeSet = {
       fields: [
-        { field: 'level', before: 'private', after: 'public', fieldClass: 'disclosure' },
+        { field: 'level', before: 'not_published', after: 'public', fieldClass: 'disclosure' },
         { field: 'title', before: 'A', after: 'B', fieldClass: 'content' },
         { field: 'withdrawnAt', before: null, after: at, fieldClass: 'withdrawal' },
         { field: 'body', before: 'x', after: 'y', fieldClass: 'content' },
@@ -112,7 +112,7 @@ describe('revisionsFor', () => {
       { ...common, kind: 'correction', reason: 'Fixed a figure.', prev: { title: 'A', body: 'x' }, restoredPoint: null },
       { ...common, kind: 'status_change', reason: 'Resolved.', prev: { status: 'open' }, restoredPoint: null },
       { ...common, kind: 'withdrawal', reason: 'Superseded.', prev: { withdrawnAt: null }, restoredPoint: null },
-      { ...common, kind: 'disclosure_change', reason: null, prev: { level: 'private' }, restoredPoint: null },
+      { ...common, kind: 'disclosure_change', reason: null, prev: { level: 'not_published' }, restoredPoint: null },
     ]);
   });
   it('folds a Minor_Edit mark into the detail Revision and names the restored point of a Restoration', () => {
@@ -122,7 +122,7 @@ describe('revisionsFor', () => {
     expect(revisionsFor(target, { fields: [position(1)], restoredPoint: 'REV1', mark: { mark: 'correction', reason: 'ignored' } })).toEqual([
       { ...common, kind: 'restoration', reason: null, prev: { position: 0 }, restoredPoint: 'REV1' },
     ]);
-    expect(revisionsFor(target, { fields: [position(1), { field: 'level', before: 'public', after: 'private', fieldClass: 'disclosure' }], restoredPoint: 'REV1' })).toEqual([
+    expect(revisionsFor(target, { fields: [position(1), { field: 'level', before: 'public', after: 'not_published', fieldClass: 'disclosure' }], restoredPoint: 'REV1' })).toEqual([
       { ...common, kind: 'disclosure_change', reason: null, prev: { level: 'public' }, restoredPoint: null },
       { ...common, kind: 'restoration', reason: null, prev: { position: 0 }, restoredPoint: 'REV1' },
     ]);

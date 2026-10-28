@@ -66,7 +66,7 @@ it('a Summary_Only item shows only its allowed fields everywhere, and a Full_Con
       }
 
       if (unit.item.logSummary === undefined) { expect(summary).toBeUndefined(); continue; }
-      const dissent = input.units.filter((note) => note.type === 'dissent_note' && note.parentId === unit.id && model.levels.get(`u:${note.id}`) !== 'private');
+      const dissent = input.units.filter((note) => note.type === 'dissent_note' && note.parentId === unit.id && model.levels.get(`u:${note.id}`) !== 'not_published');
       expect(new Set(view.full!.dissent.map((ref) => ref.key))).toEqual(new Set(dissent.map((note) => `u:${note.id}`)));
       const markers = [logSummaryTokens[0]!, ...view.full!.dissent.map((ref) => {
         const note = units.get(ref.key.slice(2))!;

@@ -55,12 +55,12 @@ class Editor {
   }
 }
 
-/** The input with every text that no Public_View presents edited: Private units and Projects, Withheld ones beyond their Disclosure_Line and address, the hidden fields of Summary_Only items, and Do_Not_Name names. */
+/** The input with every text that no Public_View presents edited: Not_Published units and Projects, Withheld ones beyond their Disclosure_Line and address, the hidden fields of Summary_Only items, and Do_Not_Name names. */
 function editHiddenText(input: ProjectionInput, editor: Editor): ProjectionInput {
   const { levels } = referenceModel(input);
   const units = input.units.map((unit): UnitRecord => {
     const level = levels.get(`u:${unit.id}`);
-    if (level === 'private') {
+    if (level === 'not_published') {
       const edited = editor.deep(unit, NOTHING);
       return edited.type === 'research_item' ? { ...edited, item: editor.maybeAdd(edited.item, 'publicSummary') } : edited;
     }
@@ -75,7 +75,7 @@ function editHiddenText(input: ProjectionInput, editor: Editor): ProjectionInput
   });
   const projects = input.projects.map((entry) => {
     const level = levels.get(`p:${entry.id}`);
-    if (level === 'private') return editor.deep(entry, NOTHING);
+    if (level === 'not_published') return editor.deep(entry, NOTHING);
     if (level === 'withheld') return editor.deep(entry, new Set(['slug', 'disclosureLine']));
     return entry;
   });

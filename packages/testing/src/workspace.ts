@@ -55,7 +55,7 @@ const FILE_KINDS: readonly FileKind[] = ['pdf', 'image', 'csv', 'text_log', 'oth
 const CONSENTS: readonly ConsentStatus[] = ['granted', 'granted', 'granted', 'not_asked', 'requested', 'refused'];
 
 /** Biased towards Public so that deep descendants often have an all-Public ancestor chain. */
-const levelArb = fc.constantFrom<Level>('public', 'public', 'public', 'public', 'withheld', 'private');
+const levelArb = fc.constantFrom<Level>('public', 'public', 'public', 'public', 'withheld', 'not_published');
 const unitPlanArb = fc.record({
   type: fc.constantFrom<UnitType>('research_item', 'research_item', 'entry_section', 'attachment', 'reply', 'dissent_note'),
   kind: fc.constantFrom<ItemKind>(...ITEM_KINDS),
@@ -334,7 +334,7 @@ export function referenceModel(input: ProjectionInput): ReferenceModel {
     if (unit.type === 'attachment') return { kindOfMaterial: 'file kind', date: partialDate(unit.attachment.uploadedAt.slice(0, 10)), partyIds: [] };
     return undefined;
   };
-  const projectLevel = (project: ProjectRecord): Level => (project.level === 'withheld' && !project.disclosureLine ? 'private' : project.level);
+  const projectLevel = (project: ProjectRecord): Level => (project.level === 'withheld' && !project.disclosureLine ? 'not_published' : project.level);
   const rootOf = (unit: UnitRecord, seen = new Set<string>()): Extract<UnitRecord, { type: 'research_item' }> | undefined => {
     if (seen.has(unit.id)) return undefined;
     seen.add(unit.id);
@@ -345,7 +345,7 @@ export function referenceModel(input: ProjectionInput): ReferenceModel {
   const unitLevel = (unit: UnitRecord, seen: Set<string>): Level => {
     const known = levels.get(`u:${unit.id}`);
     if (known) return known;
-    if (seen.has(unit.id)) return 'private';
+    if (seen.has(unit.id)) return 'not_published';
     seen.add(unit.id);
     let ancestorsPublic: boolean;
     if (unit.type === 'research_item') {
@@ -358,12 +358,12 @@ export function referenceModel(input: ProjectionInput): ReferenceModel {
     const root = rootOf(unit);
     const needsFull = unit.type === 'entry_section' || unit.type === 'reply' || unit.type === 'dissent_note';
     let level: Level = unit.level;
-    if (!ancestorsPublic || !root || (needsFull && root.item.presentation !== 'full_content') || unit.unclassified) level = 'private';
-    if (unit.type === 'dissent_note' && unit.withdrawal) level = 'private';
+    if (!ancestorsPublic || !root || (needsFull && root.item.presentation !== 'full_content') || unit.unclassified) level = 'not_published';
+    if (unit.type === 'dissent_note' && unit.withdrawal) level = 'not_published';
     const consentMissing = unit.type === 'research_item' && unit.item.kind === 'correspondence' && unit.item.parties.some((party) => party.kind === 'external' && party.consent !== 'granted');
     const rightsMissing = unit.type === 'attachment' && values.get(unit.attachment.rightsStatusId)?.permitsPublication !== true;
     if (level === 'public' && (consentMissing || rightsMissing)) { defensive.add(`u:${unit.id}`); level = 'withheld'; }
-    if (level === 'withheld' && !lineOfUnit(unit)) level = 'private';
+    if (level === 'withheld' && !lineOfUnit(unit)) level = 'not_published';
     levels.set(`u:${unit.id}`, level);
     return level;
   };

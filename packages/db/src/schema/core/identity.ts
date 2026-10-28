@@ -165,7 +165,7 @@ export const projects = sqliteTable('projects', {
   // Reordering must move positions out of the way first, because SQLite checks uniqueness row by row.
   position: integer('position').notNull(),
   accent: text('accent'),
-  disclosureLevel: text('disclosure_level', { enum: LEVELS }).notNull().default('private'),
+  disclosureLevel: text('disclosure_level', { enum: LEVELS }).notNull().default('not_published'),
   disclosureLine: text('disclosure_line', { mode: 'json' }).$type<DisclosureLine>(),
   createdBy: text('created_by').notNull(),
   createdAt: text('created_at').notNull(),

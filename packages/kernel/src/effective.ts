@@ -18,7 +18,7 @@ export interface DNode {
 /** Called with a unit's level once every ancestor is Public; it can only lower that level. */
 export type LevelAdjustment = (node: DNode, level: Level) => Level;
 
-const RANK: Readonly<Record<Level, number>> = { private: 0, withheld: 1, public: 2 };
+const RANK: Readonly<Record<Level, number>> = { not_published: 0, withheld: 1, public: 2 };
 export function lessPublic(a: Level, b: Level): Level { return RANK[a] <= RANK[b] ? a : b; }
 export function morePublicThan(a: Level, b: Level): boolean { return RANK[a] > RANK[b]; }
 
@@ -56,11 +56,11 @@ function compute(node: DNode, adjust: LevelAdjustment | undefined, memo: Map<DNo
   if (node.type === 'project') {
     level = adjust ? lessPublic(adjust(node, node.own), node.own) : node.own;
   } else {
-    const own: Level = node.unclassified ? 'private' : node.own; // R26.5
+    const own: Level = node.unclassified ? 'not_published' : node.own; // R26.5
     const needsFull = node.type === 'entry_section' || node.type === 'reply' || node.type === 'dissent_note';
-    if (ancestors(node).some((ancestor) => compute(ancestor, adjust, memo) !== 'public')) level = 'private';
-    else if (needsFull && rootOf(node)!.presentation !== 'full_content') level = 'private';
-    else level = adjust && own !== 'private' ? lessPublic(adjust(node, own), own) : own;
+    if (ancestors(node).some((ancestor) => compute(ancestor, adjust, memo) !== 'public')) level = 'not_published';
+    else if (needsFull && rootOf(node)!.presentation !== 'full_content') level = 'not_published';
+    else level = adjust && own !== 'not_published' ? lessPublic(adjust(node, own), own) : own;
   }
   memo.set(node, level);
   return level;

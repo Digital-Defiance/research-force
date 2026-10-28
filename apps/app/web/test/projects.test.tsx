@@ -10,7 +10,7 @@ import { failure, fakeApi, MEMBER_ID, renderScreen } from './helpers';
 
 const project = (position: number, overrides: Partial<ProjectRecord> = {}): ProjectRecord => ({
   id: `P${position}`, name: `Project ${position}`, description: 'A synthetic project.', slug: `project-${position}`, slugFixed: false, featured: false, accent: null,
-  position, disclosureLevel: 'private', disclosureLine: null, createdBy: MEMBER_ID, createdAt: '2026-10-01T00:00:00.000Z', rev: 2, researchItems: position, ...overrides,
+  position, disclosureLevel: 'not_published', disclosureLine: null, createdBy: MEMBER_ID, createdAt: '2026-10-01T00:00:00.000Z', rev: 2, researchItems: position, ...overrides,
 });
 const PROJECTS = [project(0, { featured: true }), project(1, { muted: true }), project(2)];
 
@@ -79,7 +79,7 @@ describe('the Project_Order', () => {
     expect(api.writes().map((call) => [call.path, call.body])).toEqual([['/projects/P1/move-position', { position: 0 }], ['/projects/P1/move-position', { position: 2 }]]);
     expect(order.textContent).toContain('Featured');
     expect(order.textContent).toContain('Muted');
-    expect(order.textContent).toContain('/project-2 · Private · 2 Research Items');
+    expect(order.textContent).toContain('/project-2 · Not published · 2 Research Items');
   });
 
   it('moves a dragged Project to the position it is dropped on', async () => {
@@ -111,13 +111,13 @@ describe('the Project history', () => {
   it('shows each Revision newest first with its fields before and after, and the creation (R39.18)', () => {
     renderScreen(<ProjectHistory entries={[
       { kind: 'correction', memberId: MEMBER_ID, displayName: 'Ada Example', at: '2026-10-03T10:00:00.000Z', reason: 'Wrong name.', changes: [{ field: 'name', before: 'Tils', after: 'Tiles' }, { field: 'featured', before: false, after: true }] },
-      { kind: 'minor_edit', memberId: MEMBER_ID, displayName: null, at: '2026-10-02T10:00:00.000Z', changes: [{ field: 'position', before: 2, after: 0 }, { field: 'accent', before: null, after: 'teal' }, { field: 'disclosureLevel', before: 'private', after: 'public' }] },
+      { kind: 'minor_edit', memberId: MEMBER_ID, displayName: null, at: '2026-10-02T10:00:00.000Z', changes: [{ field: 'position', before: 2, after: 0 }, { field: 'accent', before: null, after: 'teal' }, { field: 'disclosureLevel', before: 'not_published', after: 'public' }] },
       { kind: 'creation', memberId: MEMBER_ID, displayName: 'Ada Example', at: '2026-10-01T10:00:00.000Z', values: { name: 'Tils', slug: 'tiles' } },
     ]} />, { client: fakeApi({}).client });
     const entries = screen.getAllByRole('listitem').filter((item) => item.classList.contains('rf-section'));
     expect(entries.map((entry) => [...entry.querySelectorAll('p, li')].map((line) => line.textContent))).toEqual([
       ['Correction by Ada Example at 2026-10-03 10:00 UTC', 'Reason: Wrong name.', 'Name: Tils → Tiles', 'Featured: off → on'],
-      ['Minor edit by a Member without a display name at 2026-10-02 10:00 UTC', 'Position: 3 → 1', 'Accent colour: none → teal', 'Disclosure level: Private → Public'],
+      ['Minor edit by a Member without a display name at 2026-10-02 10:00 UTC', 'Position: 3 → 1', 'Accent colour: none → teal', 'Disclosure level: Not published → Public'],
       ['Creation by Ada Example at 2026-10-01 10:00 UTC', 'Name: Tils', 'Project Slug: tiles'],
     ]);
     expect(within(entries[0]!).getByRole('link', { name: 'Ada Example' }).getAttribute('href')).toBe(`/members/${MEMBER_ID}`);

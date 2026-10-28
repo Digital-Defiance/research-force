@@ -9,9 +9,9 @@ const topic = (id: string, unit = {}) => item(id, { kind: 'topic', body: rich('B
 
 describe('applyChange', () => {
   it('marks exactly the units given a level Classified and leaves the rest as stored', () => {
-    const input = state([topic('a', { level: 'private', unclassified: true }), topic('b', { level: 'private', unclassified: true })]);
+    const input = state([topic('a', { level: 'not_published', unclassified: true }), topic('b', { level: 'not_published', unclassified: true })]);
     const after = applyChange(input, { units: [{ key: 'u:a', level: 'public' }] });
-    expect(after.units.map((unit) => [unit.id, unit.level, unit.unclassified])).toEqual([['a', 'public', false], ['b', 'private', true]]);
+    expect(after.units.map((unit) => [unit.id, unit.level, unit.unclassified])).toEqual([['a', 'public', false], ['b', 'not_published', true]]);
   });
 
   it('clears a Public_Summary or Disclosure_Line given null, moves items, and turns Do_Not_Name off', () => {
@@ -27,13 +27,13 @@ describe('applyChange', () => {
 describe('previewChange', () => {
   it('lists the newly shown Party names and the non-Public Dissent_Notes on a presented summary', () => {
     const input = state([
-      item('a', { kind: 'correspondence', date: partialDate('1944-02'), channel: 'post', direction: 'sent', content: rich('x'), parties: [{ kind: 'external', id: 'party-1', consent: 'granted' }], logSummary: rich('Log') }, { level: 'private' }),
-      dissent('d', 'a', 'I disagree', { level: 'private' }),
+      item('a', { kind: 'correspondence', date: partialDate('1944-02'), channel: 'post', direction: 'sent', content: rich('x'), parties: [{ kind: 'external', id: 'party-1', consent: 'granted' }], logSummary: rich('Log') }, { level: 'not_published' }),
+      dissent('d', 'a', 'I disagree', { level: 'not_published' }),
     ]);
     const { diff } = previewChange({ units: [{ key: 'u:a', level: 'public' }] }, gateState(input));
     expect(diff.changed.map((entry) => entry.key)).toEqual(['u:a']);
     expect(diff.partyNames).toEqual(['a private correspondent']);
-    expect(diff.dissent).toEqual([{ itemKey: 'u:a', notes: [{ key: 'u:d', authorId: 'member-2', author: 'Ben Example', text: rich('I disagree'), effective: 'private' }] }]);
+    expect(diff.dissent).toEqual([{ itemKey: 'u:a', notes: [{ key: 'u:d', authorId: 'member-2', author: 'Ben Example', text: rich('I disagree'), effective: 'not_published' }] }]);
   });
 
   it('shows real names after Do_Not_Name is turned off', () => {
@@ -49,23 +49,23 @@ describe('checkGates', () => {
   });
 
   it('names an Attachment whose Rights_Status does not permit publication and offers Withheld', () => {
-    const input = state([topic('a'), attachment('f', 'a', { rightsStatusId: RESTRICTED }, { level: 'private' })]);
+    const input = state([topic('a'), attachment('f', 'a', { rightsStatusId: RESTRICTED }, { level: 'not_published' })]);
     expect(checkGates({ units: [{ key: 'u:f', level: 'public' }] }, gateState(input))).toEqual([
       expect.objectContaining({ key: 'u:f', reason: 'rights', offerWithheld: true, details: ['Restricted'] }),
     ]);
   });
 
-  it('names each External_Party without Granted consent, offering Withheld only from Private', () => {
-    const corr = (level: 'private' | 'withheld') => item('c', {
+  it('names each External_Party without Granted consent, offering Withheld only from Not_Published', () => {
+    const corr = (level: 'not_published' | 'withheld') => item('c', {
       kind: 'correspondence', date: partialDate('1944-02'), channel: 'post', direction: 'sent', content: rich('x'), parties: [{ kind: 'external', id: 'party-2', consent: 'refused' }],
     }, { level, disclosureLine: LINE });
     const change = { units: [{ key: 'u:c', level: 'public' as const }] };
-    expect(checkGates(change, gateState(state([corr('private')])))).toEqual([expect.objectContaining({ key: 'u:c', reason: 'consent', offerWithheld: true, details: ['Open Archive: refused'] })]);
+    expect(checkGates(change, gateState(state([corr('not_published')])))).toEqual([expect.objectContaining({ key: 'u:c', reason: 'consent', offerWithheld: true, details: ['Open Archive: refused'] })]);
     expect(checkGates(change, gateState(state([corr('withheld')])))).toEqual([expect.objectContaining({ reason: 'consent', offerWithheld: false })]);
   });
 
   it('requires a valid Disclosure_Line for a Withheld unit', () => {
-    const input = state([topic('a', { level: 'private' })]);
+    const input = state([topic('a', { level: 'not_published' })]);
     expect(checkGates({ units: [{ key: 'u:a', level: 'withheld' }] }, gateState(input))).toEqual([expect.objectContaining({ key: 'u:a', reason: 'disclosure_line' })]);
     expect(checkGates({ units: [{ key: 'u:a', level: 'withheld', disclosureLine: { ...LINE, kindOfMaterial: '' } }] }, gateState(input)))
       .toEqual([expect.objectContaining({ key: 'u:a', reason: 'disclosure_line', details: expect.any(Array) })]);
@@ -73,7 +73,7 @@ describe('checkGates', () => {
   });
 
   it('requires Licence_Agreements from credited Members of newly presented work and from a requester setting a summary', () => {
-    const input = state([topic('a', { level: 'private', credit: [{ member: id('member-2') }] })]);
+    const input = state([topic('a', { level: 'not_published', credit: [{ member: id('member-2') }] })]);
     expect(checkGates({ units: [{ key: 'u:a', level: 'public' }] }, gateState(input))).toEqual([
       expect.objectContaining({ key: 'u:a', reason: 'licence', memberId: 'member-2', offerWithheld: true }),
     ]);

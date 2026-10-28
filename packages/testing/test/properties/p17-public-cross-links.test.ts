@@ -25,7 +25,7 @@ const stateArb = fc.tuple(workspaceStateArb, fc.array(fc.record({ from: fc.nat()
   return { ...state, input: { ...input, links } };
 });
 
-it('each Cross_Link and Backlink on a public page is a link to a Public other end, the Disclosure_Line of a Withheld one, and absent for a Private one', () => {
+it('each Cross_Link and Backlink on a public page is a link to a Public other end, the Disclosure_Line of a Withheld one, and absent for a Not_Published one', () => {
   fc.assert(fc.property(stateArb, (state) => {
     const { input } = state;
     const out = publicOutput(state);

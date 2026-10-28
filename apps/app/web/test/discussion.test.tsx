@@ -27,7 +27,7 @@ function show(entries: readonly ThreadEntryView[], options: { canReply?: boolean
   const api = fakeApi(options.handlers ?? {});
   const changes: number[] = [];
   const view = renderScreen(<Thread rootId={ROOT} entries={entries} mentions={FORM_DATA.mentions} canReply={options.canReply ?? true} onChanged={() => changes.push(1)}
-    groupNote={{ id: 'G', disclosure: { level: 'private', effective: 'private' } }} />, { client: api.client });
+    groupNote={{ id: 'G', disclosure: { level: 'not_published', effective: 'not_published' } }} />, { client: api.client });
   return { api, changes, view };
 }
 const editorIn = (form: HTMLElement): EditorView => EditorView.findFromDOM(form.querySelector('.cm-editor') as HTMLElement)!;
@@ -58,7 +58,7 @@ describe('the Thread', () => {
     const groupNote = screen.getByRole('article', { name: 'Group Note by Ada Example' });
     expect(groupNote.querySelector('.rf-status')?.textContent).toBe('Group Note');
     expect(groupNote.textContent).toContain('Please check the caveat.');
-    expect(groupNote.textContent).toContain('Disclosure level: Private');
+    expect(groupNote.textContent).toContain('Disclosure level: Not published');
     const withdrawn = screen.getAllByRole('article', { name: 'Reply by Ben Sample' }).find((article) => article.textContent?.includes('Reply B.'))!;
     expect(within(withdrawn).getByRole('alert').textContent).toBe('This Reply was withdrawn on 2026-10-20 10:05 UTC.Posted twice.');
     expect(within(withdrawn).getByRole('link', { name: 'Ben Sample' }).getAttribute('href')).toBe(`/members/${OTHER_ID}`);

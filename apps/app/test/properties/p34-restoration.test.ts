@@ -64,7 +64,7 @@ describe('Property 34: Restoration changes only content fields', () => {
           await saved((await response.json<{ item: ItemView }>()).item);
         } else if (op.type === 'disclose') {
           const section = current.sections[op.section % current.sections.length]!;
-          const level = current.levels[section.id] === 'public' ? 'private' : 'public';
+          const level = current.levels[section.id] === 'public' ? 'not_published' : 'public';
           await core.prepare('UPDATE units SET disclosure_level = ?2 WHERE id = ?1').bind(section.id, level).run();
           await new GuardedBatch(core, { id: world.ids.admin, now: world.at })
             .revision({ targetType: 'unit', targetId: section.id, rootId: created.id, kind: 'disclosure_change', prev: { disclosureLevel: current.levels[section.id] } })
@@ -89,7 +89,7 @@ describe('Property 34: Restoration changes only content fields', () => {
       const summary = run.restorer === 'author' && target.logSummary !== null ? target.logSummary : current.logSummary;
       expect(after).toEqual({
         title: target.title, logSummary: summary, statusValueId: current.statusValueId, withdrawalReason: current.withdrawalReason, sections: target.sections,
-        levels: Object.fromEntries(target.sections.map(({ id }) => [id, current.levels[id] ?? 'private'])),
+        levels: Object.fromEntries(target.sections.map(({ id }) => [id, current.levels[id] ?? 'not_published'])),
       });
       const changed = JSON.stringify([after.title, after.logSummary, after.sections]) !== JSON.stringify([current.title, current.logSummary, current.sections]);
       expect(body.restored).toBe(changed);

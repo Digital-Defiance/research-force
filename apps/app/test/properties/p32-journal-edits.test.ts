@@ -6,9 +6,9 @@ import { itemWorld, rich } from '../items';
 import type { ItemView } from '../items';
 
 const world = itemWorld();
-/** Disclosure states a section can hold; Unclassified units stay Private (R26.5). */
+/** Disclosure states a section can hold; Unclassified units stay Not_Published (R26.5). */
 const STATES = [
-  { level: 'private', classification: null, line: null }, { level: 'private', classification: 'unclassified', line: null },
+  { level: 'not_published', classification: null, line: null }, { level: 'not_published', classification: 'unclassified', line: null },
   { level: 'public', classification: 'classified', line: null }, { level: 'withheld', classification: null, line: '{"kindOfMaterial":"entry","date":{"value":"2026","approx":false},"partyIds":[]}' },
 ] as const;
 

@@ -149,7 +149,7 @@ export function PersonLink({ person }: { readonly person: PersonRef }) {
   return <Link to={`/members/${person.id}`}>{person.displayName ?? 'Member without a display name'}</Link>;
 }
 
-const LEVEL_NAMES: Readonly<Record<string, string>> = { private: 'Private', withheld: 'Withheld', public: 'Public' };
+const LEVEL_NAMES: Readonly<Record<string, string>> = { not_published: 'Not published', withheld: 'Withheld', public: 'Public' };
 export const levelName = (level: string): string => LEVEL_NAMES[level] ?? level;
 
 /** A Disclosure_Unit's Disclosure_Level and Effective_Disclosure (R23.9). */

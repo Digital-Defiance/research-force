@@ -1196,12 +1196,12 @@ Where a task in an earlier milestone produces something that a later task delive
     - Stub the `OPS` service binding and Workers AI with deterministic responses; capture outgoing email in a local outbox page instead of calling Microsoft Graph; document in `README.md` what runs locally and what does not (Cloudflare Access, Workers AI, Microsoft 365)
     - _Requirements: none (developer tooling)_
 
-- [ ] 51. Rename the stored Disclosure_Level `private` to `not_published`
-  - [ ] 51.1 Rename the value in the domain, database, and kernel
+- [x] 51. Rename the stored Disclosure_Level `private` to `not_published`
+  - [x] 51.1 Rename the value in the domain, database, and kernel
     - Replace `'private'` with `'not_published'` in the Disclosure_Level and classification types in `packages/domain`, the Drizzle schema in `packages/db/src/schema`, every column default, and `packages/kernel`
     - Add the next `rf-core` migration, which rebuilds `projects` and `units` (their level checks, their `'private'` defaults, and the check `units_unclassified_private`, renamed `units_unclassified_not_published`) with the new value, copies the rows with `'private'` mapped to `'not_published'`, and recreates their indexes and triggers; add the matching `rf-search` migration for `search_docs`; generate both with drizzle-kit and check them against local databases holding synthetic rows of every level
     - _Requirements: 23.1_
-  - [ ] 51.2 Rename the value in the API, the Workspace, and the tests
+  - [x] 51.2 Rename the value in the API, the Workspace, and the tests
     - API request and response values, the Workspace labels ("Not published"), seed texts, and every test and fixture that uses `'private'` as a level; rename the titles of Properties 3, 4, and 7 in their test files' tag comments and `describe` names to the design's current titles
     - `rg -n "'private'"` over `apps` and `packages` finds no Disclosure_Level use afterwards
     - _Requirements: 23.1_

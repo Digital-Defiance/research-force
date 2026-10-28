@@ -61,14 +61,14 @@ beforeEach(async () => {
 });
 
 describe('creating Projects', () => {
-  it('creates a Private, unfeatured Project last in the Project_Order with its creator and time', async () => {
+  it('creates a Not_Published, unfeatured Project last in the Project_Order with its creator and time', async () => {
     const first = await create('Alpha', 'alpha');
     const second = await create('Beta', 'beta', deputy);
     expect(first).toEqual({
       id: first.id, name: 'Alpha', description: 'About Alpha.', slug: 'alpha', slugFixed: false, featured: false, accent: null, position: 0,
-      disclosureLevel: 'private', disclosureLine: null, createdBy: adminId, createdAt: at, rev: 1,
+      disclosureLevel: 'not_published', disclosureLine: null, createdBy: adminId, createdAt: at, rev: 1,
     });
-    expect(second).toMatchObject({ position: 1, disclosureLevel: 'private', featured: false });
+    expect(second).toMatchObject({ position: 1, disclosureLevel: 'not_published', featured: false });
     expect(await core().prepare('SELECT name_key FROM projects WHERE id = ?1').bind(first.id).first('name_key')).toBe('alpha');
     expect(await outboxScopes()).toEqual([{ topic: 'publish', scope: `project:${first.id}` }, { topic: 'publish', scope: `project:${second.id}` }]);
     expect((await list()).map((project) => project.id)).toEqual([first.id, second.id]);
@@ -102,7 +102,7 @@ describe('editing Projects', () => {
       { kind: 'minor_edit', memberId: adminId, displayName: `Member ${adminId}`, at, reason: null, changes: [{ field: 'description', before: 'About Alpha.', after: 'Revised.' }, { field: 'accent', before: null, after: accent }] },
       { kind: 'minor_edit', memberId: expect.any(String), displayName: expect.stringMatching(/^Member /u), at, reason: null, changes: [{ field: 'name', before: 'Alpha', after: 'Alpha Prime' }, { field: 'featured', before: false, after: true }] },
       { kind: 'creation', memberId: adminId, displayName: `Member ${adminId}`, at, values: {
-        name: 'Alpha', description: 'About Alpha.', slug: 'alpha', featured: false, accent: null, position: 0, disclosureLevel: 'private', disclosureLine: null,
+        name: 'Alpha', description: 'About Alpha.', slug: 'alpha', featured: false, accent: null, position: 0, disclosureLevel: 'not_published', disclosureLine: null,
       } },
     ]);
   });
@@ -112,10 +112,10 @@ describe('editing Projects', () => {
     const line = { text: 'A synthetic line.', spans: [] };
     await core().prepare("UPDATE projects SET disclosure_level = 'withheld', disclosure_line = ?1, rev = 2 WHERE id = ?2").bind(JSON.stringify(line), project.id).run();
     await core().prepare(`INSERT INTO revisions (id, target_type, target_id, kind, member_id, at, prev, seq) VALUES (?1, 'project', ?2, 'disclosure_change', ?3, ?4, ?5, 99)`)
-      .bind(newULID(at), project.id, adminId, at, JSON.stringify({ disclosureLevel: 'private', disclosureLine: null })).run();
+      .bind(newULID(at), project.id, adminId, at, JSON.stringify({ disclosureLevel: 'not_published', disclosureLine: null })).run();
     const entries = await history(project);
-    expect(entries[0]).toMatchObject({ kind: 'disclosure_change', changes: [{ field: 'disclosureLevel', before: 'private', after: 'withheld' }, { field: 'disclosureLine', before: null, after: line }] });
-    expect(entries[1]).toMatchObject({ kind: 'creation', values: { disclosureLevel: 'private', disclosureLine: null } });
+    expect(entries[0]).toMatchObject({ kind: 'disclosure_change', changes: [{ field: 'disclosureLevel', before: 'not_published', after: 'withheld' }, { field: 'disclosureLine', before: null, after: line }] });
+    expect(entries[1]).toMatchObject({ kind: 'creation', values: { disclosureLevel: 'not_published', disclosureLine: null } });
   });
 
   it('answers an unchanged save without a Revision and refuses a stale one with the Revisions since', async () => {

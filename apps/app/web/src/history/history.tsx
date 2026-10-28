@@ -175,7 +175,7 @@ export function RestoreDialog({ item, point, pointName, sectionId, onCancel, onR
       <h2>{sectionId === undefined ? 'Restore this version' : 'Restore this Entry Section'}</h2>
       <p>{`The content returns to how it was after: ${pointName}. Status, withdrawal, and disclosure stay as they are now.`}</p>
       {sectionId === undefined && !owner && <p>The Log Summary stays as it is, because only the Owner restores it.</p>}
-      <p>An Entry Section that comes back starts Private. A new Restoration revision is recorded and no revision is removed.</p>
+      <p>An Entry Section that comes back starts Not published. A new Restoration revision is recorded and no revision is removed.</p>
       <SaveFailure error={error} />
       <div className="rf-actions">
         <Button variant="primary" onClick={() => void restore()} disabled={busy}>Restore</Button>

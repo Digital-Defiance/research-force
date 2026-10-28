@@ -22,10 +22,10 @@ describe('project', () => {
     expect(view).toMatchObject({ tag: 'research_item', publicSummary: { text: 'Shown' } });
     expect(view).not.toHaveProperty('full');
     expect(projection.views.has('u:s')).toBe(false);
-    expect(projection.levels.get('u:s')).toBe('private');
+    expect(projection.levels.get('u:s')).toBe('not_published');
   });
 
-  it('shows only the Disclosure_Line for a Withheld unit, and makes its descendants Private', () => {
+  it('shows only the Disclosure_Line for a Withheld unit, and makes its descendants Not_Published', () => {
     const projection = projectDetailed(state([item('a', { kind: 'topic', body: rich('Body') }, { level: 'withheld', disclosureLine: { ...LINE, partyIds: [id('party-2')] } }), section('s', 'a', 'Text')]));
     expect(projection.views.get('u:a')).toEqual({
       tag: 'withheld', key: 'u:a', path: '/r/RI-a', line: { kindOfMaterial: 'letters', date: LINE.date, parties: ['Open Archive'] }, project: PROJECT_REF,
@@ -63,7 +63,7 @@ describe('project', () => {
     const projection = projectDetailed(state([
       item('a', { kind: 'topic', body: rich('Body') }),
       attachment('f1', 'a'), attachment('f2', 'a', { supersedesId: 'f1', uploadedAt: '2026-02-07T09:00:00.000Z' as never }),
-      attachment('f3', 'a', { supersedesId: 'f2' }, { level: 'private' }),
+      attachment('f3', 'a', { supersedesId: 'f2' }, { level: 'not_published' }),
     ]));
     expect(projection.views.get('u:f1')).toMatchObject({ supersededBy: { key: 'u:f2', path: '/a/AT-f2', uploadedOn: '2026-02-07' } });
     expect(projection.views.get('u:f2')).not.toHaveProperty('supersededBy');
@@ -78,7 +78,7 @@ describe('project', () => {
     expect(projection.views.get('u:a')).toEqual({
       tag: 'withheld', key: 'u:a', path: '/r/RI-a', line: { kindOfMaterial: 'correspondence', date: partialDate('1944-02-03'), parties: ['a private correspondent', 'Ada Example'] }, project: PROJECT_REF,
     });
-    expect(projection.levels.get('u:f')).toBe('private');
+    expect(projection.levels.get('u:f')).toBe('not_published');
     expect(projection.invariantBreaches).toEqual([expect.objectContaining({ key: 'u:a', code: 'consent' })]);
   });
 
@@ -88,7 +88,7 @@ describe('project', () => {
     expect(projection.invariantBreaches).toEqual([expect.objectContaining({ key: 'u:f', code: 'rights' })]);
   });
 
-  it('makes a Withheld Project without a Disclosure_Line Private', () => {
+  it('makes a Withheld Project without a Disclosure_Line Not_Published', () => {
     const projection = projectDetailed({ ...state([item('a', { kind: 'topic', body: rich('Body') })]), projects: [{ ...project, level: 'withheld' }] });
     expect(projection.views.size).toBe(0);
     expect(projection.invariantBreaches).toEqual([expect.objectContaining({ key: 'p:project-1', code: 'missing_line' })]);
@@ -106,11 +106,11 @@ describe('project', () => {
     expect(projection.views.get('u:a')).toMatchObject({ full: { dissent: [{ key: 'u:d1' }, { key: 'u:d2' }] } });
   });
 
-  it('shows a Cross_Link to a Withheld unit as its Disclosure_Line and leaves out links to Private units', () => {
+  it('shows a Cross_Link to a Withheld unit as its Disclosure_Line and leaves out links to Not_Published units', () => {
     const projection = projectDetailed(state([
       item('a', { kind: 'topic', body: rich('Body') }),
       item('b', { kind: 'topic', body: rich('Body') }, { level: 'withheld', disclosureLine: LINE }),
-      item('c', { kind: 'topic', body: rich('Body') }, { level: 'private' }),
+      item('c', { kind: 'topic', body: rich('Body') }, { level: 'not_published' }),
     ], { links: [{ id: 'l1', originId: 'a', targetId: 'b' }, { id: 'l2', originId: 'c', targetId: 'a' }] }));
     expect(projection.views.get('u:a')).toMatchObject({
       links: [{ direction: 'outgoing', target: { tag: 'withheld', key: 'u:b', path: '/r/RI-b', line: { kindOfMaterial: 'letters' } } }],

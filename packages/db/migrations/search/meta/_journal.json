@@ -15,6 +15,13 @@
       "when": 1793125210021,
       "tag": "0001_fts",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1793149543916,
+      "tag": "0002_not_published",
+      "breakpoints": true
     }
   ]
 }

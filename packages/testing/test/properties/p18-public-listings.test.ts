@@ -109,7 +109,7 @@ it('kind listings, Project_Logs, and Disclosure_Line listings hold exactly their
   }));
 });
 
-const projectsArb = fc.array(fc.record({ level: fc.constantFrom('public', 'withheld', 'private'), featured: fc.boolean() }), { maxLength: 120, size: 'max' })
+const projectsArb = fc.array(fc.record({ level: fc.constantFrom('public', 'withheld', 'not_published'), featured: fc.boolean() }), { maxLength: 120, size: 'max' })
   .chain((projects) => fc.tuple(fc.constant(projects), fc.shuffledSubarray([...projects.keys()], { minLength: projects.length, maxLength: projects.length })));
 
 it('the home page and the projects listing follow the Project_Order and show Withheld Projects without link or slug', () => {
@@ -122,7 +122,7 @@ it('the home page and the projects listing follow the Project_Order and show Wit
     const site = syntheticSite(views, {
       projectOrder: order.map((index) => `p:${index}`), featured: new Set(plan.flatMap((entry, index) => (entry.featured ? [`p:${index}`] : []))),
     });
-    const shown = order.filter((index) => plan[index]!.level !== 'private');
+    const shown = order.filter((index) => plan[index]!.level !== 'not_published');
     const describe = (index: number): string => (plan[index]!.level === 'public' ? `link:/p/s${index}` : `line:Withheld ${index}`);
     const read = (entry: HtmlElement): string => {
       const link = find(entry.children, byTag('a'));
