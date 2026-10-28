@@ -1,6 +1,8 @@
 import { canonicalJson } from '@researchforce/kernel/views';
 import { project } from '@researchforce/kernel/project';
 import { projectProfile } from '@researchforce/kernel/substitute';
+import { composeEmail } from '@researchforce/public-render/email/compose';
+import { emailEntryFor } from '@researchforce/public-render/email/views';
 import { renderSite } from '@researchforce/public-render/render-site';
 import { buildSearchIndex } from '@researchforce/search-public/build';
 import { siteInputFor } from './site';
@@ -46,4 +48,21 @@ const publicSearchIndex: PublicChannel = {
   },
 };
 
-export const PUBLIC_CHANNELS: readonly PublicChannel[] = [kernelViews, kernelProfiles, publicSite, publicSearchIndex];
+/** The address emails link to in tests. */
+export const EMAIL_ORIGIN = 'https://app.example.test';
+
+/** Notification emails describe Items by their Public_View alone: one email per Research_Item view, text and HTML (R20.6). */
+const notificationEmails: PublicChannel = {
+  name: 'notification emails',
+  *artifacts(state) {
+    for (const [key, view] of project(state.input)) {
+      const entry = emailEntryFor(view, EMAIL_ORIGIN);
+      if (entry === null) continue;
+      const email = composeEmail({ subject: 'New Submission', entries: [entry], preferencesUrl: `${EMAIL_ORIGIN}/me/preferences` });
+      yield { name: `email:${key}:text`, content: `${email.subject}\n${email.text}` };
+      yield { name: `email:${key}:html`, content: email.html };
+    }
+  },
+};
+
+export const PUBLIC_CHANNELS: readonly PublicChannel[] = [kernelViews, kernelProfiles, publicSite, publicSearchIndex, notificationEmails];

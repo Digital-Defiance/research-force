@@ -19,6 +19,12 @@ export interface Env {
   /** Secrets: `https://<team>.cloudflareaccess.com` and the Access application's AUD tag. */
   ACCESS_TEAM_DOMAIN: string;
   ACCESS_AUD: string;
+  /** Secrets of the Microsoft Graph Email_Provider: the app registration, its certificate key (PKCS#8 PEM) and SHA-1 thumbprint, and the Sending_Address. */
+  GRAPH_TENANT_ID?: string;
+  GRAPH_CLIENT_ID?: string;
+  GRAPH_CERT_KEY?: string;
+  GRAPH_CERT_THUMBPRINT?: string;
+  SENDING_ADDRESS?: string;
   /** The installation's current Content_Licence name; unset until the owner chooses one (no default). */
   CONTENT_LICENCE_NAME?: string;
 }

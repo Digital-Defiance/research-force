@@ -165,6 +165,14 @@ export const emailBatches = sqliteTable('email_batches', {
   windowMinutes: integer('window_minutes').notNull(), // copied from the setting at window start
   windowEnd: text('window_end').notNull(),
   state: text('state', { enum: BATCH_STATES }).notNull(),
+  // The sending queue's record of the email (R20.9, R20.18): when it became sendable, the failures, and the time the limits held it.
+  queuedAt: text('queued_at'),
+  attempts: integer('attempts').notNull().default(0),
+  nextAttemptAt: text('next_attempt_at'),
+  firstFailedAt: text('first_failed_at'),
+  heldMs: integer('held_ms').notNull().default(0),
+  sentAt: text('sent_at'),
+  failedAt: text('failed_at'),
 }, (t) => [
   uniqueIndex('batch_open').on(t.memberId, t.groupKey).where(sql`${t.state} = 'open'`),
   index('batch_due').on(t.state, t.windowEnd),
@@ -185,6 +193,7 @@ export const outgoingEmails = sqliteTable('outgoing_emails', {
   createdAt: text('created_at').notNull(),
   sendableAt: text('sendable_at').notNull(),
   heldMs: integer('held_ms').notNull().default(0), // time spent behind the rate limits (R20.18)
+  firstFailedAt: text('first_failed_at'), // retries come about 2, 10, 25, and 50 minutes after it (R20.9)
   sentAt: text('sent_at'),
   failedAt: text('failed_at'),
   ...versioned(),

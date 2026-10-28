@@ -154,7 +154,7 @@ describe('commitSave', () => {
     await save(editor, 1, { fields: [position(3)], mark: { mark: 'correction', reason: 'Wrong order.' } });
     expect(await unitRev()).toEqual({ rev: 2, position: 3 });
     expect(await revisionRows()).toEqual([{ kind: 'correction', memberId: editor, reason: 'Wrong order.', prev: JSON.stringify({ position: 0 }), restoredPoint: null }]);
-    expect((await core().prepare('SELECT topic, scope FROM outbox').all()).results).toEqual([{ topic: 'publish', scope: `project:${unitId}` }]);
+    expect((await core().prepare('SELECT topic, scope FROM outbox WHERE topic = "publish"').all()).results).toEqual([{ topic: 'publish', scope: `project:${unitId}` }]);
   });
 
   it('refuses an unmarked content edit without writing anything', async () => {

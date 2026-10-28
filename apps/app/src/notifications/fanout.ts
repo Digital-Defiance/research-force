@@ -4,10 +4,8 @@ import { canRead } from '@researchforce/db/access';
 import type { GuardedBatch } from '@researchforce/db/batch';
 import { newULID } from '@researchforce/domain/identifiers';
 import { ROLE_IDS } from '@researchforce/domain/permissions';
+import { batchEmails } from '../mail/batching';
 import type { EventType, RevisionKind, ULID } from '@researchforce/domain/types';
-
-/** The actor of batches that no Member causes: the hourly sweeps. */
-export const SYSTEM_ACTOR = '00000000000000000000000000' as ULID;
 
 /** The Revision_Kinds that cause an Item_Update for the Owner and the Thread's posters (R19.2). */
 export const ITEM_UPDATE_KINDS: ReadonlySet<RevisionKind> = new Set<RevisionKind>(['correction', 'withdrawal', 'status_change', 'disclosure_change']);
@@ -51,12 +49,13 @@ function insertEvents(batch: GuardedBatch, rows: EventRows): GuardedBatch {
   const none = sql`${null}`;
   const detail = rows.detail === undefined ? none : isSQL(rows.detail) ? rows.detail : sql`${JSON.stringify(rows.detail)}`;
   batch.defer('settle-notifications', settleNotifications);
+  batch.defer('batch-emails', batchEmails);
   return batch.run(sql`INSERT INTO notification_events (id, member_id, event_type, at, actor_id, root_id, submission_id, outside_submission_id, alert_key, detail, email_mode)
     SELECT ${ulid(actor.now)}, m.id, ${rows.type}, ${actor.now}, ${rows.anonymous === true ? none : sql`${actor.id}`}, ${rows.roots === undefined ? rows.rootId ?? none : sql`r.value`}, ${rows.submissionId ?? none}, ${rows.outsideSubmissionId ?? none},
       ${rows.alertKey ?? none}, ${detail}, COALESCE(np.email, ${DEFAULT_EMAIL_MODE})
     FROM members m ${rows.roots === undefined ? sql`` : sql`JOIN json_each(${JSON.stringify(rows.roots)}) r`}
       LEFT JOIN notification_prefs np ON np.member_id = m.id AND np.event_type = ${rows.type}
-    WHERE m.status = 'active' AND m.id IN (${rows.recipients}) AND (${rows.includeActor === true ? sql`true` : sql`m.id <> ${actor.id}`})
+    WHERE m.status = 'active' AND m.id IN (${rows.recipients}) AND (${rows.includeActor === true || actor.id === null ? sql`true` : sql`m.id <> ${actor.id}`})
       AND (COALESCE(np.in_app, 1) = 1 OR COALESCE(np.email, ${DEFAULT_EMAIL_MODE}) <> 'off') AND (${sql.raw(rows.where ?? 'true')})`);
 }
 

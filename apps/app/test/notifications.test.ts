@@ -205,3 +205,35 @@ describe('Follow_Up_Due Reminders', () => {
     expect(await sweepFollowUps(env(), at(40))).toBe(0);
   });
 });
+
+describe('email batches', () => {
+  const batches = async () => (await world.core().prepare("SELECT member_id AS member, group_key AS key, state, window_minutes AS minutes, window_start AS start, window_end AS end FROM email_batches ORDER BY member_id, group_key").all<{ member: string; key: string; state: string; minutes: number; start: string; end: string }>()).results;
+
+  it('puts the Immediate events of one Root_Item into one open batch with the window in force (R20.1, R20.12)', async () => {
+    await world.core().prepare("INSERT INTO settings (key, value, updated_at, updated_seq) VALUES ('emailBatchWindow', '10', ?1, 0) ON CONFLICT (key) DO UPDATE SET value = '10'").bind(world.at).run();
+    const item = await world.created('author', 'finding');
+    await reply('colleague', item.id, mention(world.ids.author));
+    const rows = await batches();
+    const mine = rows.filter((row) => row.member === world.ids.author);
+    expect(mine).toHaveLength(1);
+    expect(mine[0]).toMatchObject({ key: `root:${item.id}`, state: 'open', minutes: 10, start: world.at, end: '2026-10-27T18:10:00.000Z' });
+    const events = (await world.core().prepare('SELECT count(*) AS n FROM notification_events WHERE member_id = ?1 AND email_batch_id = ?2').bind(world.ids.author, (await world.core().prepare('SELECT id FROM email_batches WHERE member_id = ?1').bind(world.ids.author).first<string>('id'))).first<number>('n'));
+    expect(events).toBe(2);
+    await world.core().prepare("UPDATE settings SET value = '5' WHERE key = 'emailBatchWindow'").run();
+  });
+
+  it('opens a new batch for an event after the window ended, queueing the old one (R20.3)', async () => {
+    const item = await world.created('author', 'finding');
+    await reply('colleague', item.id);
+    await world.core().prepare("UPDATE email_batches SET window_end = '2026-10-27T17:59:00.000Z'").run();
+    await reply('colleague', item.id);
+    const states = (await batches()).filter((row) => row.member === world.ids.author).map((row) => row.state).sort();
+    expect(states).toEqual(['open', 'queued']);
+  });
+
+  it('keeps Daily_Digest and Off events out of batches and groups a System_Alert as alert', async () => {
+    await world.core().prepare("INSERT INTO notification_prefs (member_id, event_type, in_app, email) VALUES (?1, 'new_submission', 1, 'daily_digest')").bind(world.ids.colleague).run();
+    await world.created('author', 'finding');
+    expect((await batches()).map((row) => row.member)).toEqual([world.ids.admin]);
+  });
+});

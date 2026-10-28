@@ -643,40 +643,42 @@ Where a task in an earlier milestone produces something that a later task delive
     - **Validates: Requirements 19.6**
 
 - [ ] 27. Build the Mailer and email pipeline
-  - [ ] 27.1 Implement the email templates in `packages/public-render/src/email/`
+  - [x] 27.1 Implement the email templates in `packages/public-render/src/email/`
     - Plain-text-first structure with an HTML version from the Design_System email components using only token typefaces and colours; sender name ResearchForce; subjects starting with "ResearchForce:"; every link's visible text is its full address; a Notification_Preferences link in every Member email
     - Items described only by their current Public_View, kind, Event_Type, actor display name, and time in the recipient's zone, with `https://app.researchforce.org/go/{ref}` login links; Outside_Submissions by Event_Type, Submission_Type, time, and days since receipt for Reminders; Elimination_Scope after Eliminated statuses; Group_Note links and views; Log_Summaries followed by their Dissent_Notes' views
     - Register the email outputs in `packages/testing/src/public-channels.ts`
+    - Done as `compose.ts` (the structure and HTML) and `views.ts` (an entry from a Public_View, which the `notification emails` channel uses); `apps/app/src/mail/compose.ts` builds the entries from the database at send time. `/go/{ref}` is a new web route that redirects to the Item, or to a Reply with `~{replyId}`. Kinds of `outgoing_emails` other than the invitation have no composer yet: task 32 adds them, and task 42 adds the Log_Summary and Dissent_Note views.
     - _Requirements: 8.3, 20.6, 20.7, 41.12, 42.15, 45.21_
-  - [ ] 27.2 Implement batching in `apps/app/src/mail/batching.ts`
+  - [x] 27.2 Implement batching in `apps/app/src/mail/batching.ts`
     - Group keys `root:`, `sub:`, `os:`, and `alert`; a window starts at the first event and copies the Email_Batch_Window length in force; events after the window end open a new batch; closed batches are queued within 2 minutes of the window end
     - _Requirements: 20.1, 20.2, 20.3, 20.12_
-  - [ ] 27.3 Implement Daily_Digests in `apps/app/src/mail/digest.ts`
+  - [x] 27.3 Implement Daily_Digests in `apps/app/src/mail/digest.ts`
     - A quarter-hour check finds Members whose local digest hour has passed since their last digest and queues one email of their unlisted Daily_Digest events from before that hour, grouped by Root_Item, or nothing when none qualifies
     - _Requirements: 20.4, 20.5, 20.13_
-  - [ ] 27.4 Implement the `Mailer` Durable Object in `apps/app/src/do/mailer.ts`
+  - [x] 27.4 Implement the `Mailer` Durable Object in `apps/app/src/do/mailer.ts`
     - One sending queue for invitations, notification emails, and Submitter emails, oldest first; an attempt log enforcing at most 30 attempts per 60 seconds and the Recipient_Cap in force over 24 hours, holding emails until both allow; the recipient of a notification email must be an active Member at each attempt and still Can_Read every Root_Item it describes (items the recipient can no longer read are left out, and an email left with nothing is dropped); composition from the current Public_Views at send time; the configured provider read at each attempt
+    - Done in `mail/mailer.ts` (the queue, testable without the Durable Object) and `do/mailer.ts` (the alarm and the attempt log in SQLite storage). Migration 0008 adds the queue columns. Held time is recorded when the limits stop a pass (the predicted wait), so a wake that comes late may count a little less.
     - Retries at about 2, 10, 25, and 50 minutes, honouring `Retry-After` on 429; after the final failure a System_Alert for every Administrator unless the email held only System_Alerts; a failed invitation sets `invite_email_state` until a later invitation succeeds; queue time recorded so time limits exclude it
     - _Requirements: 2.1, 2.14, 20.8, 20.9, 20.10, 20.11, 20.15, 20.16, 20.17, 20.18, 47.5_
-  - [ ] 27.5 Implement the Microsoft Graph provider in `apps/app/src/mail/providers/graph.ts`
+  - [x] 27.5 Implement the Microsoft Graph provider in `apps/app/src/mail/providers/graph.ts`
     - The `send(message)` Email_Provider interface; client-credentials tokens from `login.microsoftonline.com` with a certificate assertion signed by WebCrypto, held only in the `Mailer` instance's memory; `POST /v1.0/users/{Sending_Address}/sendMail` with one recipient, an HTML body, and `saveToSentItems: false`; `BODY_MODE = 'html-with-exchange-conversion'` as the one place the plain-text strategy is chosen; credentials, tokens, and Graph responses never logged or stored
     - _Requirements: 20.11, 20.19, 20.20, 20.21, 20.22, 20.24, 45.21_
-  - [ ]* 27.6 Write property test for companion fields
+  - [x]* 27.6 Write property test for companion fields
     - **Property 9: Companion fields are rendered together**
     - **Validates: Requirements 5.6, 5.10, 6.3, 7.4, 8.3, 29.2, 29.3, 29.4, 43.3**
-  - [ ]* 27.7 Write property test for email batching
+  - [x]* 27.7 Write property test for email batching
     - **Property 56: Email batching partitions events correctly**
     - **Validates: Requirements 20.1, 20.2, 20.3, 20.12**
-  - [ ]* 27.8 Write property test for Daily_Digests
+  - [x]* 27.8 Write property test for Daily_Digests
     - **Property 57: Daily_Digests list each event once**
     - **Validates: Requirements 20.4, 20.5**
-  - [ ]* 27.9 Write property test for the sending queue
+  - [x]* 27.9 Write property test for the sending queue
     - **Property 58: The sending queue respects every limit**
     - **Validates: Requirements 20.8, 20.9, 20.10, 20.15, 20.16, 20.17, 20.18, 32.11, 32.12**
-  - [ ]* 27.10 Write property test for email branding
+  - [x]* 27.10 Write property test for email branding
     - **Property 59: Emails carry the brand and full-address links**
     - **Validates: Requirements 20.7, 45.21**
-  - [ ]* 27.11 Write integration tests for the Mailer with a mocked Graph endpoint
+  - [x]* 27.11 Write integration tests for the Mailer with a mocked Graph endpoint
     - 429 and 5xx retries, a provider change between attempts, the invitation-failure state, and a request body with `saveToSentItems: false` and one recipient
     - _Requirements: 2.14, 20.9, 20.11, 20.24_
 

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Link, Route, Routes, useParams, useSearchParams } from 'react-router';
+import { Link, Navigate, Route, Routes, useParams, useSearchParams } from 'react-router';
 import { ITEM_KIND_NAMES } from '@researchforce/domain/kind-names';
 import { ITEM_KINDS } from '@researchforce/domain/types';
 import type { ItemKind } from '@researchforce/domain/types';
@@ -114,6 +114,12 @@ function SubmissionItemsRoute() {
   const { id = '' } = useParams();
   return <SubmissionItemsScreen key={id} id={id} />;
 }
+/** The opaque address in a notification email: a Root_Item, optionally with the Reply (a Group_Note) to scroll to (R20.6, R41.12). */
+function GoRoute() {
+  const { ref = '' } = useParams();
+  const [root, reply] = ref.split('~');
+  return root ? <Navigate to={`/items/${root}${reply ? `#reply-${reply}` : ''}`} replace /> : <NotFound />;
+}
 function NotFound() {
   return <Notice tone="warning" title="This page does not exist." />;
 }
@@ -137,6 +143,7 @@ export function WorkspaceRoutes() {
       <Route path="/projects/:id/edit" element={<EditProjectRoute />} />
       <Route path="/projects/:id/history" element={<ProjectHistoryRoute />} />
       <Route path="/reviews" element={<ReviewQueuePage />} />
+      <Route path="/go/:ref" element={<GoRoute />} />
       <Route path="/notifications" element={<NotificationCentre />} />
       <Route path="/activity" element={<FeedScreen />} />
       <Route path="/activity/submissions/:id" element={<SubmissionItemsRoute />} />

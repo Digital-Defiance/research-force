@@ -57,6 +57,13 @@
       "when": 1793150596977,
       "tag": "0007_restricted_access",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1793157784471,
+      "tag": "0008_email_queue",
+      "breakpoints": true
     }
   ]
 }

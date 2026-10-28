@@ -11,7 +11,7 @@ export async function resetRecords(core: D1Database): Promise<void> {
     'units', 'research_items', 'attachments', 'entry_sections', 'replies', 'dissent_notes', 'submissions', 'cross_links', 'deletions', 'external_parties', 'projects',
     'journal_entries', 'je_members', 'findings', 'sources', 'runs', 'run_counts', 'hypotheses', 'correspondences', 'correspondence_parties', 'archival_requests', 'topics', 'revisions',
     'staging_rows', 'review_requests', 'review_addressees', 'access_grants', 'notification_events',
-    'flags', 'views', 'activity', 'activity_tags', 'notifications',
+    'flags', 'views', 'activity', 'activity_tags', 'notifications', 'email_batches',
   ].map((table) => core.prepare(`DELETE FROM ${table}`)));
 }
 

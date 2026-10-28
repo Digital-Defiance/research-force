@@ -6,7 +6,7 @@ import type { Timestamp, ULID } from '@researchforce/domain/types';
 import type { Env } from '../env';
 import { isFollowUpDue } from '../records/kinds/archival';
 import { BUILT_IN_VALUE_IDS } from '@researchforce/domain/value-sets';
-import { notifyOwnersReminder, SYSTEM_ACTOR } from './fanout';
+import { notifyOwnersReminder } from './fanout';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 /** Reminders one batch writes; each takes two statements' worth of rows, not statements. */
@@ -36,7 +36,7 @@ export async function sweepFollowUps(env: Env, now: Timestamp): Promise<number> 
   ));
   if (due.length === 0) return 0;
   const ids = due.map((row) => row.id);
-  const batch = new GuardedBatch(db, { id: SYSTEM_ACTOR, now });
+  const batch = new GuardedBatch(db, { id: null, now });
   notifyOwnersReminder(batch, ids, { reminder: 'follow_up_due', intervalDays: interval });
   batch.run(sql`UPDATE archival_requests SET follow_up_reminded_at = ${now} WHERE unit_id IN (SELECT value FROM json_each(${JSON.stringify(ids)}))`);
   await batch.commit();
