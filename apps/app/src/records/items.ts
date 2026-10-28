@@ -19,6 +19,7 @@ import { BUILT_IN_VALUE_IDS } from '@researchforce/domain/value-sets';
 import { effective } from '@researchforce/kernel/effective';
 import type { DNode } from '@researchforce/kernel/effective';
 import { canonicalJson } from '@researchforce/kernel/views';
+import { announceSubmission } from '../activity/flags';
 import type { ApiEnv } from '../api/app';
 import { ApiError } from '../api/errors';
 import type { FieldIssue } from '../api/errors';
@@ -105,6 +106,8 @@ export interface LoadedItem {
   readonly accessMembers: readonly NamedMember[];
   /** Every Review_Request of the Item and its Entry_Sections (R17.11). */
   readonly reviews: readonly ReviewView[];
+  /** The viewer's New_Flag or Updated_Flag on the Item and its Group_Note as they stand now, before the page clears them (R18.10). */
+  readonly flags: ReadonlyMap<ULID, 'new' | 'updated'>;
 }
 interface BaseQueryRow extends Omit<BaseRow, 'credit' | 'disclosureLine' | 'logSummary'> {
   credit: string; disclosureLine: string | null; logSummary: string | null; logSummarySpans: string; projectName: string; projectLevel: Level;
@@ -128,7 +131,7 @@ export async function loadItem(c: Context<ApiEnv>, id: string): Promise<LoadedIt
   if (!isULID(id)) throw new ApiError('not_found');
   const db = c.env.RF_CORE;
   const viewer = c.get('session').member.id;
-  const [baseRows, noteRows, grantRows, reviewRows, addresseeRows] = await c.get('accountant').track(db.batch([
+  const [baseRows, noteRows, grantRows, flagRows, reviewRows, addresseeRows] = await c.get('accountant').track(db.batch([
     db.prepare(`SELECT u.id, ri.kind, ri.item_identifier AS identifier, u.project_id AS projectId, u.owner_id AS ownerId, u.credit, u.submission_id AS submissionId,
         u.created_at AS createdAt, u.rev, u.disclosure_level AS disclosureLevel, u.classification_state AS classificationState, u.disclosure_line AS disclosureLine,
         ri.public_presentation AS publicPresentation, u.withdrawn_at AS withdrawnAt, u.withdrawn_by AS withdrawnBy, u.withdrawal_reason AS withdrawalReason,
@@ -140,6 +143,8 @@ export async function loadItem(c: Context<ApiEnv>, id: string): Promise<LoadedIt
       FROM units u JOIN replies r ON r.unit_id = u.id WHERE u.parent_id = ?1 AND u.unit_type = 'reply' AND r.is_group_note = 1 ORDER BY u.id LIMIT 1`).bind(id),
     db.prepare(`SELECT g.member_id AS id, p.display_name AS displayName FROM access_grants g LEFT JOIN profiles p ON p.member_id = g.member_id
       WHERE g.root_id = ?1 ORDER BY g.member_id`).bind(id),
+    db.prepare(`SELECT f.unit_id AS id, f.flag FROM flags f WHERE f.member_id = ?2 AND (f.unit_id = ?1
+      OR f.unit_id IN (SELECT u.id FROM units u JOIN replies r ON r.unit_id = u.id WHERE u.parent_id = ?1 AND r.is_group_note = 1))`).bind(id, viewer),
     ...itemReviewStatements(db, id),
   ]));
   const row = rowsOf<BaseQueryRow>(baseRows)[0];
@@ -167,6 +172,7 @@ export async function loadItem(c: Context<ApiEnv>, id: string): Promise<LoadedIt
     specialties: rowsOf<{ id: ULID; name: string }>(results.at(-1)),
     accessMembers: rowsOf<NamedMember>(grantRows),
     reviews: readItemReviews(reviewRows, addresseeRows),
+    flags: new Map(rowsOf<{ id: ULID; flag: 'new' | 'updated' }>(flagRows).map((row) => [row.id, row.flag])),
   };
 }
 
@@ -204,10 +210,12 @@ export function itemResponse(item: LoadedItem) {
     withdrawal: base.withdrawnAt === null ? null : { at: base.withdrawnAt, by: person(base.withdrawnBy!), reason: base.withdrawalReason },
     groupNote: item.groupNote && {
       id: item.groupNote.id, rev: item.groupNote.rev, text: item.groupNote.text, owner: person(item.groupNote.ownerId), withdrawn: item.groupNote.withdrawn,
+      flag: item.flags.get(item.groupNote.id) ?? null,
       disclosure: disclosure(childNode(item.groupNote, 'reply')),
     },
     reviews: item.reviews,
     pendingReview: pending.has(base.id),
+    flag: item.flags.get(base.id) ?? null,
   };
 }
 
@@ -314,6 +322,7 @@ export async function createItem(c: Context<ApiEnv>, kind: ItemKind, body: unkno
     if (linked.links.length > 0) writeLinks(batch, linked.links, { id: actor, now });
     for (const review of reviews.reviews) writeReview(batch, review, now);
     rules.write?.(batch);
+    announceSubmission(batch, submissionId);
     batch.outbox('publish', `unit:${id}`);
   }, { accountant: c.get('accountant') });
   return id;

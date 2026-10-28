@@ -8,6 +8,7 @@ import { identifiers, submissions } from '@researchforce/db/schema/core';
 import { newItemIdentifier } from '@researchforce/domain/identifiers';
 import { isULID } from '@researchforce/domain/types';
 import type { SUBMISSION_KINDS, Timestamp, ULID } from '@researchforce/domain/types';
+import { announceSubmission } from '../activity/flags';
 import type { ApiEnv } from '../api/app';
 import { ApiError, isUniqueViolation } from '../api/errors';
 
@@ -35,9 +36,12 @@ export function addSubmission(batch: GuardedBatch, start: SubmissionStart): Guar
     ...(start.counts === undefined ? {} : { counts: { ...start.counts } }), hasGroupNote: start.hasGroupNote ?? false,
   });
 }
-/** Makes every unit of an import or acceptance visible in one step, in its final batch (R18.2). */
+/**
+ * Makes every unit of an import or acceptance visible in one step, in its final batch, and flags and lists it for the
+ * other Members (R18.1, R18.2, R18.8). Imports that must not flag use their own entry (R26.9).
+ */
 export function completeSubmission(batch: GuardedBatch, id: ULID, now: Timestamp): GuardedBatch {
-  return batch.update(submissions, { completedAt: now }, eq(submissions.id, id));
+  return announceSubmission(batch.update(submissions, { completedAt: now }, eq(submissions.id, id)), id);
 }
 
 export interface IdentifierSource { (): { readonly identifier: string; readonly registryKey: string } }

@@ -9,6 +9,7 @@ import { BUILT_IN_VALUE_IDS, RESUMABLE_RUN_OUTCOME_IDS } from '@researchforce/do
 import type { ValueSetKind } from '@researchforce/domain/value-sets';
 import { AccessSummary, RestrictedMark } from '../access/access';
 import { RichTextView } from '../editor/RichTextView';
+import { FlagMark, useFlagSnapshot, useRecordViews } from '../activity/activity';
 import { Thread, mentionOptions } from '../discussion/thread';
 import { DeletedItem, deletionOf } from '../history/delete';
 import { PendingReview, ReviewList, ReviewRequestForm, reviewOptions } from '../reviews/reviews';
@@ -166,6 +167,7 @@ function LinkList({ title, entries, empty }: { readonly title: string; readonly 
               <li key={entry.id}>
                 {entry.relation !== null && <span className="rf-status">{entry.relation.name}</span>}{' '}
                 {end.deletedAt === undefined ? <Link to={`/items/${end.rootId ?? end.id}`}>{name}</Link> : <span>{name}</span>}
+                {end.flag != null && <>{' '}<FlagMark flag={end.flag} /></>}
                 {end.restricted === true && <>{' '}<RestrictedMark /></>}
                 {end.source !== undefined && <span className="rf-meta">{` (${end.source.sourceKind === 'primary' ? 'Primary' : 'Secondary'} source; reliability: ${end.source.reliability})`}</span>}
                 {end.withdrawn && <Notice tone="warning" title="This record has been withdrawn." />}
@@ -183,6 +185,9 @@ function LinkList({ title, entries, empty }: { readonly title: string; readonly 
 export function ItemDetails({ data }: { readonly data: ItemPageData }) {
   const { item } = data;
   const session = useSession();
+  const ownFlags = [{ id: item.id, flag: item.flag }, ...(item.groupNote ? [{ id: item.groupNote.id, flag: item.groupNote.flag }] : []), ...data.thread.map((reply) => ({ id: reply.id, flag: reply.flag }))];
+  const flagOf = useFlagSnapshot(ownFlags);
+  useRecordViews(ownFlags.map((entry) => entry.id));
   const onChanged = data.onChanged ?? (() => undefined);
   const sectionNumber = (id: string) => {
     const index = item.sections?.findIndex((section) => section.id === id) ?? -1;
@@ -196,6 +201,7 @@ export function ItemDetails({ data }: { readonly data: ItemPageData }) {
       <header>
         <p className="rf-meta">{`${ITEM_KIND_NAMES[item.kind]} ${item.identifier}`}</p>
         <h1>{item.title}</h1>
+        {flagOf(item.id) && <p><FlagMark flag={flagOf(item.id)} /></p>}
         {item.access.level === 'restricted' && <p><RestrictedMark /></p>}
         {item.pendingReview && <p><PendingReview /></p>}
         <p>{'Project: '}<strong>{item.project.name}</strong></p>
@@ -259,7 +265,7 @@ export function ItemDetails({ data }: { readonly data: ItemPageData }) {
       <section className="rf-section" aria-label="Thread">
         <h2>Thread{item.access.level === 'restricted' && <>{' '}<RestrictedMark /></>}</h2>
         <Thread rootId={item.id} entries={data.thread} mentions={mentionOptions(data.members, session.me.specialtyOptions)} canReply={session.can('reply.post')}
-          onChanged={onChanged} groupNote={item.groupNote} />
+          onChanged={onChanged} groupNote={item.groupNote} flagOf={flagOf} />
       </section>
       <section className="rf-section" aria-label="Submit from here">
         <h2>Submit a new record in this Project</h2>

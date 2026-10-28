@@ -27,9 +27,11 @@ export interface Me {
   readonly contentLicence: string | null;
 }
 
+/** The viewer's New_Flag or Updated_Flag on an Item (R18.10). */
+export type FlagKind = 'new' | 'updated';
 export interface SubmissionSummary {
   readonly id: string; readonly kind: string; readonly completedAt: string;
-  readonly items: readonly { readonly id: string; readonly unitType: string; readonly rootId: string }[];
+  readonly items: readonly { readonly id: string; readonly unitType: string; readonly rootId: string; readonly flag?: FlagKind }[];
 }
 export interface ProfileView {
   readonly member: { readonly id: string; readonly status: string };
@@ -70,6 +72,7 @@ export type CreditView = { readonly member: PersonRef } | { readonly outside: un
 export interface SectionView { readonly id: string; readonly content: RichText; readonly rev: number; readonly disclosure: DisclosureView; readonly pendingReview?: boolean }
 export interface GroupNoteView {
   readonly id: string; readonly rev: number; readonly text: RichText; readonly owner: PersonRef; readonly withdrawn: boolean; readonly disclosure: DisclosureView;
+  readonly flag?: FlagKind | null;
 }
 /** Who can read a Research_Item: everyone, or its Owner, its Access_List, and Administrators (R47.1). */
 export interface AccessView { readonly level: AccessLevel; readonly members: readonly PersonRef[]; readonly statement: string }
@@ -101,6 +104,8 @@ export interface ItemView {
   /** Whether the Item itself has a Needs_Review request (R17.7). */
   readonly pendingReview: boolean;
   readonly access: AccessView;
+  /** The viewer's flag on the Item when the page was read (R18.10). */
+  readonly flag?: FlagKind | null;
   readonly [field: string]: unknown;
 }
 
@@ -124,6 +129,7 @@ export interface ReviewView {
 export interface ThreadEntryView {
   readonly id: string; readonly parentId: string; readonly postedAt: string; readonly isGroupNote: boolean; readonly rev: number;
   readonly owner?: PersonRef; readonly text?: RichText; readonly withdrawal?: { readonly at: string; readonly reason: string | null } | null; readonly deletedAt?: string;
+  readonly flag?: FlagKind;
 }
 
 export interface LinkEnd {
@@ -132,6 +138,7 @@ export interface LinkEnd {
   readonly source?: { readonly sourceKind: string; readonly reliability: string };
   readonly deletedAt?: string;
   readonly restricted?: true;
+  readonly flag?: FlagKind;
 }
 export interface LinkEntry {
   readonly id: string; readonly relation: { readonly id: string; readonly name: string } | null;
@@ -161,3 +168,21 @@ export interface DeletionRecord { readonly kind: ItemKind; readonly identifier: 
 
 export interface RevisionSummary { readonly kind: string; readonly memberId: string; readonly displayName: string | null; readonly at: string }
 export interface ConflictDetails { readonly rev: number; readonly revisions?: readonly RevisionSummary[] }
+
+/** The Member's flag counts for every page, with one count for each Research_Item kind, Attachments, and Replies (R18.7). */
+export interface Badges { readonly counts: Readonly<Record<string, number>>; readonly total: number; readonly unreadNotifications: number }
+export interface FeedFilter {
+  readonly itemKind?: string | undefined; readonly actor?: string | undefined; readonly specialty?: string | undefined;
+  readonly project?: string | undefined; readonly from?: string | undefined; readonly to?: string | undefined;
+}
+export interface FeedItem {
+  readonly id: string; readonly unitType: string; readonly bucket: string; readonly rootId: string;
+  readonly identifier: string | null; readonly title: string | null; readonly flag: FlagKind | null;
+}
+export interface FeedEntry {
+  readonly id: string; readonly at: string; readonly kind: string; readonly actor: PersonRef; readonly submissionId: string | null;
+  readonly target: { readonly type: string; readonly id: string } | null;
+  readonly items: readonly FeedItem[] | null; readonly counts: Readonly<Record<string, number>> | null;
+}
+export interface FeedPage { readonly openedAt: string; readonly entries: readonly FeedEntry[]; readonly next: string | null }
+export interface SubmissionItems { readonly submission: { readonly id: string; readonly at: string; readonly actor: PersonRef }; readonly items: readonly FeedItem[] }

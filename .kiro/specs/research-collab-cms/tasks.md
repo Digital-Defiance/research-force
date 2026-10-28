@@ -582,37 +582,37 @@ Where a task in an earlier milestone produces something that a later task delive
     - **Validates: Requirements 16.3, 16.4, 41.7**
 
 - [ ] 25. Build the Activity_Service: flags, views, badges, and the Activity_Feed
-  - [ ] 25.1 Implement New_Flags in `apps/app/src/activity/flags.ts`
+  - [x] 25.1 Implement New_Flags in `apps/app/src/activity/flags.ts`
     - The batch that completes a Submission inserts a `new` flag on each of its Items for every other Member who is Active or Pending, whose account was created before completion, and who Can_Read the Item's Research_Item, with `INSERT … SELECT` joined to the `canRead` fragment from task 52.2; every flag insert, feed read, and badge count in this task uses that fragment
     - _Requirements: 18.1, 18.2, 18.6, 47.4, 47.5_
-  - [ ] 25.2 Implement Updated_Flags in `apps/app/src/activity/flags.ts`
+  - [x] 25.2 Implement Updated_Flags in `apps/app/src/activity/flags.ts`
     - A Correction, Withdrawal, or Status_Change on an Item or one of its Entry_Sections inserts an `updated` flag for every other active Member with a `views` row for the Item, in the batch of the Revision
     - _Requirements: 18.4_
-  - [ ] 25.3 Implement views and flag clearing in `apps/app/src/api/routes/views.ts`
+  - [x] 25.3 Implement views and flag clearing in `apps/app/src/api/routes/activity.ts`
     - `POST /views` deletes the viewer's flags on the given units and upserts `views`; the SPA calls it only when a Research_Item page opens, an Attachment opens or downloads, or a page shows a Reply, and a failed call leaves the page displayed and the flags in place
     - _Requirements: 18.3, 18.12_
-  - [ ] 25.4 Implement the Activity_Feed in `apps/app/src/activity/feed.ts` and `apps/app/src/api/routes/feed.ts`
+  - [x] 25.4 Implement the Activity_Feed in `apps/app/src/activity/feed.ts` and `apps/app/src/api/routes/feed.ts`
     - One `activity` row per Submission, Correction, Withdrawal, Status_Change, and Disclosure_Change, with up to 10 Item references or per-kind counts, and `activity_tags` for Root_Item kinds and Projects
     - `GET /feed` in keyset pages of 50 with filters by kind, acting Member, the acting Member's current Specialty, an inclusive date range in the viewer's time zone, and Project; the feed-open time; `POST /feed/mark-seen` clearing flags on matching entries' Items set no later than that time
     - Muted_Projects never change flags or which feed entries a Member sees
     - _Requirements: 18.5, 18.8, 18.9, 39.14, 39.17_
-  - [ ] 25.5 Implement badge counts in `GET /me/badges`
+  - [x] 25.5 Implement badge counts in `GET /me/badges`
     - Counts of the viewer's flags per Research_Item kind, Attachment, and Reply over units that are not deleted, in one indexed query
     - _Requirements: 18.7_
-  - [ ] 25.6 Build the activity screens in `apps/app/web/src/activity/`
+  - [x] 25.6 Build the activity screens in `apps/app/web/src/activity/`
     - Badge counts on every page, new and updated marks in listings, search results, Threads, and Attachment lists as the flags stood when the page opened, and the feed page with filters and "mark all as seen"
     - List entries of Restricted Research_Items show `RestrictedMark` from `apps/app/web/src/access/access.tsx`, and listings offer bulk access changes through its `useSelection` and `BulkAccess` (R47.11, R47.14)
     - _Requirements: 16.4, 18.5, 18.7, 18.8, 18.10_
-  - [ ]* 25.7 Write property test for New_Flags
+  - [x]* 25.7 Write property test for New_Flags
     - **Property 49: New_Flags mark exactly the unseen Items of others' Submissions**
     - **Validates: Requirements 18.1, 18.3, 18.6, 39.17**
-  - [ ]* 25.8 Write property test for Updated_Flags
+  - [x]* 25.8 Write property test for Updated_Flags
     - **Property 50: Updated_Flags mark changes after a view**
     - **Validates: Requirements 18.4**
-  - [ ]* 25.9 Write property test for Submission visibility
+  - [x]* 25.9 Write property test for Submission visibility
     - **Property 51: Submissions become visible all at once**
     - **Validates: Requirements 18.2, 18.11**
-  - [ ]* 25.10 Write property test for mark-all-seen
+  - [x]* 25.10 Write property test for mark-all-seen
     - **Property 53: Mark-all-seen clears exactly the matching, older flags**
     - **Validates: Requirements 18.5**
 
@@ -689,6 +689,7 @@ Where a task in an earlier milestone produces something that a later task delive
     - Matches are filtered with the `canRead` fragment on each document's Research_Item before ranking and paging, so no result, count, or excerpt reveals a Restricted Research_Item to a Member outside its Access_List; Restricted results show the Restricted mark
     - _Requirements: 21.2, 21.3, 21.4, 21.5, 21.7, 21.8, 21.9, 23.9, 39.14, 39.15, 42.13, 47.4, 47.11_
   - [ ] 28.3 Build the search screen in `apps/app/web/src/search/`
+    - Flags (Task 25): show `FlagMark` from `apps/app/web/src/activity/activity.tsx` on entries, read as the page opened them with `useFlagSnapshot`, and call `useRecordViews` with the Items the page opens.
     - Query form and filters; after 10 seconds without a response, "search is unavailable", with the 00:00 UTC note for daily limits; query and filters kept as entered
     - Restricted results show `RestrictedMark` from `apps/app/web/src/access/access.tsx`, and result lists offer bulk access changes through its `useSelection` and `BulkAccess` (R47.11, R47.14)
     - _Requirements: 21.9, 21.10_
@@ -730,6 +731,7 @@ Where a task in an earlier milestone produces something that a later task delive
     - Magic-byte checks; notices naming the cause for damaged, password-protected, mismatched, or unavailable files while metadata and download stay available; renderings only in the browser's memory; pure `previewText` and `previewCsv` helpers in `truncate.ts`
     - _Requirements: 14.1, 14.2, 14.3, 14.4, 14.5, 14.7, 14.9_
   - [ ] 30.8 Build the Attachment screens in `apps/app/web/src/files/attachment-page.tsx`
+    - Flags (Task 25): show `FlagMark` from `apps/app/web/src/activity/activity.tsx` on entries, read as the page opened them with `useFlagSnapshot`, and call `useRecordViews` with the Items the page opens.
     - Metadata, Origin, rights with whether the Rights_Status permits publication, download link, preview, Version_Chain list, and supersession notices on the Attachment and wherever a Cross_Link or Backlink shows a superseded Attachment
     - _Requirements: 13.4, 13.6, 14.5, 33.7_
   - [ ]* 30.9 Write property test for Version_Chains
@@ -1015,6 +1017,7 @@ Where a task in an earlier milestone produces something that a later task delive
     - The Findings ledger (newest first, filters by Finding_Status, Credit person, and Specialty), Runs (newest start first with the listed columns and filters), Hypotheses (statement and status, status filter), Correspondences (newest date first, filters by Party, direction, and date range), Archival_Requests (Follow_Up_Due marks, filters by status and archive or desk), and the Projects list with every field of Requirement 39.16; every list applies the visibility gate with the `canRead` fragment, filters by one or more Projects, names each Research_Item's Project, and shows the Restricted mark; the Project_Log of 40.1 and the Projects list's counts apply the same fragment, so no entry or count reveals a Restricted Research_Item to a Member outside its Access_List
     - _Requirements: 5.7, 7.6, 8.5, 9.7, 10.4, 39.14, 39.15, 39.16, 47.4, 47.11_
   - [ ] 40.3 Build the Project_Log and list screens in `apps/app/web/src/lists/` and `apps/app/web/src/projects/log.tsx`
+    - Flags (Task 25): show `FlagMark` from `apps/app/web/src/activity/activity.tsx` on entries, read as the page opened them with `useFlagSnapshot`, and call `useRecordViews` with the Items the page opens.
     - The Project_Log with Project switcher, order toggle, filters, and page links; after 10 seconds without a page, "the Project_Log is unavailable", with the 00:00 UTC note for daily limits, keeping Project, order, and filters; the list pages and the Projects list
     - _Requirements: 39.16, 43.1, 43.6, 43.8, 43.9_
   - [ ]* 40.4 Write property test for query and date-range validation
@@ -1210,36 +1213,36 @@ Where a task in an earlier milestone produces something that a later task delive
     - `rg -n "'private'"` over `apps` and `packages` finds no Disclosure_Level use afterwards
     - _Requirements: 23.1_
 
-- [x] 52. Build restricted access inside the team
-  - [x] 52.1 Add the access data and Permissions
+- [ ] 52. Build restricted access inside the team
+  - [ ] 52.1 Add the access data and Permissions
     - The next migration adds `research_items.access_level` (`whole_team` or `restricted`, default `whole_team`), `access_grants (root_id, member_id, granted_by, granted_at)` with primary key (`root_id`, `member_id`), the guard table `_g_access_owner`, and the Revision_Kind `access_change`; add `access_owner` to `GUARD_CODES` in `packages/db/src/batch.ts`
     - Adding `access_change` changes the `revisions_kind_values` check, so the migration rebuilds `revisions` as task 51's migration rebuilt `units`, and recreates the `revisions_immutable` trigger from `0001_raw.sql`, which dropping the table removes; extend the migration test pattern of `apps/app/test/migration-not-published.test.ts` to check the rows, the indexes, and that the trigger still refuses updates
     - Add the Permissions `access.restrict`, `access.widen`, `hold.place`, `hold.lift`, `consent.give`, `consent.propose`, `dual.propose`, `dual.approve`, `dual.decline`, and `attachment.move` to the Role_Permission_Map in `packages/domain/src/permissions.ts` as the design's table assigns them, so that tasks 53 to 55 use them without changing the map again
     - _Requirements: 2.4, 2.5, 47.1_
-  - [x] 52.2 Implement the `canRead` fragment and retrofit the existing read paths
+  - [ ] 52.2 Implement the `canRead` fragment and retrofit the existing read paths
     - `canRead(memberId, isAdmin, rootColumn)` in `packages/db/src/access.ts`, the SQL fragment of the design; join it into `visibleTo` in `apps/app/src/records/submissions.ts`, so that every read path from tasks 17 to 24 that uses the visibility gate applies it: item pages and sections, history and comparisons, Threads and Replies, Cross_Links and Backlinks, Mentions, Review_Request queues and responses, the Projects list counts, and Parties' item lists
     - A request that names an element the Member cannot read answers the shared `not_found` response; Activity_Feed entries already written keep only readable references when read (the feed itself arrives with task 25)
     - _Requirements: 2.8, 47.3, 47.4_
-  - [x] 52.3 Apply access to Submissions, Mentions, and Review_Requests
+  - [ ] 52.3 Apply access to Submissions, Mentions, and Review_Requests
     - Submissions accept `access: { level, members }` for each new Research_Item, with members limited to Pending or Active Members and the statement that the Owner and every Administrator can read Restricted items returned for display
     - Mentions and Review_Requests that name a Member who cannot read the Research_Item are refused with `rule: access_addressee` listing the Members, keeping the input; Specialty Mentions and Specialty or Role addressees reach only holders who Can_Read the Research_Item
     - _Requirements: 47.1, 47.2, 47.5, 47.10_
-  - [x] 52.4 Implement access changes in `apps/app/src/records/access.ts`
+  - [ ] 52.4 Implement access changes in `apps/app/src/records/access.ts`
     - `POST /items/{id}/access` with `{ level, add, remove }`, `POST /access/bulk` for 1 to 1,000 Research_Items, and their preview endpoint, which lists the Members who would gain read access and, when restricting, every Public or Withheld unit whose own level the change resets, with the Public_Views removed
     - A change that only narrows needs `access.restrict`; a change that adds Members or lifts the restriction needs `access.widen` and the `access_owner` guard (task 54.5 adds the Dual_Approval path for a Revoked Owner); restricting writes, in the same batch, `not_published` on each listed unit, a Disclosure_Change per unit, Item_Update events for every Administrator, and a `publish` outbox row; every change writes an `access_change` Revision with the previous level and list; a bulk change applies to every Research_Item or none and states the reason
     - Item history (`apps/app/src/records/history.ts`, `packages/domain/src/history.ts`, and the history screen) lists Access_Change Revisions with the previous and new level and list; a Restoration never changes the Access_Level or Access_List, so add them to `ALWAYS_KEPT` beside the disclosure fields
     - _Requirements: 47.6, 47.7, 47.8, 47.14_
-  - [x] 52.5 Treat Restricted roots as Not_Published in the kernel
+  - [ ] 52.5 Treat Restricted roots as Not_Published in the kernel
     - `loadProjectionInput` and the kernel input carry a `restricted` flag on Research_Items, and `effective()` treats a Restricted root like a Not_Published ancestor; `checkGates` refuses any change that sets a Public or Withheld level, a Public_Presentation, a Public_Summary, or a Disclosure_Line on a Restricted Research_Item, naming it as Restricted
     - _Requirements: 23.1, 47.9_
-  - [x] 52.6 Build the access screens in `apps/app/web/src/access/`
+  - [ ] 52.6 Build the access screens in `apps/app/web/src/access/`
     - The access fields in the item form (Whole_Team or Restricted, a Member picker, and the statement of who can always read), the Restricted mark with the Owner and the Access_List on item pages, lists, and Thread headers, the access dialog with the preview and confirmation, and bulk selection on lists
     - _Requirements: 47.2, 47.7, 47.8, 47.11, 47.14_
-  - [x] 52.7 Write property test for restricted reads
+  - [ ] 52.7 Write property test for restricted reads
     - Generate Members, Administrators, Research_Items with access settings, and every element kind under them; check every read endpoint built so far and every per-Member insert
     - **Property 100: Members see nothing of Research_Items they cannot read**
     - **Validates: Requirements 2.8, 47.3, 47.4, 47.5, 47.10**
-  - [x] 52.8 Write property test for access changes
+  - [ ] 52.8 Write property test for access changes
     - **Property 101: Only the Owner widens access, and restricting unpublishes**
     - **Validates: Requirements 47.6, 47.7, 47.8, 47.12, 47.14**
 

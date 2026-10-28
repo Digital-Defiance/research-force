@@ -145,6 +145,8 @@ export interface LinkEnd {
   readonly rootId?: ULID;
   /** A Source end's Source_Kind and reliability rating, shown wherever the link names the Source (R6.3). */
   readonly source?: { readonly sourceKind: string; readonly reliability: string };
+  /** The viewer's New_Flag or Updated_Flag on the end as it stands when the list is read (R18.10). */
+  readonly flag?: 'new' | 'updated';
   /** Set when the end has been permanently deleted (R15.8). */
   readonly deletedAt?: Timestamp;
 }
@@ -158,7 +160,7 @@ interface LinkRow {
   id: ULID; relationId: ULID | null; relationName: string | null; addedBy: ULID; addedByName: string | null; addedAt: Timestamp;
   removedBy: ULID | null; removedByName: string | null; removedAt: Timestamp | null;
   endId: ULID; rootId: ULID | null; unitType: string | null; itemKind: string | null; title: string | null; identifier: string | null; withdrawnAt: string | null; accessLevel: string | null;
-  sourceKind: string | null; reliabilityName: string | null;
+  sourceKind: string | null; reliabilityName: string | null; flag: 'new' | 'updated' | null;
   deletedType: string | null; deletedKind: string | null; deletedIdentifier: string | null; deletedAt: Timestamp | null;
 }
 
@@ -182,7 +184,7 @@ export async function linkEntries(c: Context<ApiEnv>, query: LinkQuery): Promise
         u.root_id AS rootId, u.unit_type AS unitType, ri.kind AS itemKind, s.source_kind AS sourceKind, rv.name AS reliabilityName,
         CASE WHEN u.unit_type = 'attachment' THEN a.title ELSE ri.title END AS title,
         CASE WHEN u.unit_type = 'attachment' THEN a.item_identifier ELSE ri.item_identifier END AS identifier,
-        coalesce(u.withdrawn_at, root.withdrawn_at) AS withdrawnAt, ri.access_level AS accessLevel,
+        coalesce(u.withdrawn_at, root.withdrawn_at) AS withdrawnAt, ri.access_level AS accessLevel, lf.flag,
         d.unit_type AS deletedType, d.kind AS deletedKind, d.item_identifier AS deletedIdentifier, d.deleted_at AS deletedAt
       FROM cross_links l
       LEFT JOIN units u ON u.id = l.${far}
@@ -192,6 +194,7 @@ export async function linkEntries(c: Context<ApiEnv>, query: LinkQuery): Promise
       LEFT JOIN sources s ON s.unit_id = u.root_id AND u.unit_type <> 'attachment'
       LEFT JOIN config_values rv ON rv.id = s.reliability_id
       LEFT JOIN deletions d ON d.unit_id = l.${far}
+      LEFT JOIN flags lf ON lf.unit_id = u.id AND lf.member_id = ?2
       LEFT JOIN config_values v ON v.id = l.relation_value_id
       LEFT JOIN profiles ap ON ap.member_id = l.added_by
       LEFT JOIN profiles rp ON rp.member_id = l.removed_by
@@ -212,6 +215,7 @@ export async function linkEntries(c: Context<ApiEnv>, query: LinkQuery): Promise
         id: row.endId, rootId: row.rootId!, kind: row.unitType === 'research_item' ? row.itemKind! : row.unitType!, title: row.title, identifier: row.identifier,
         ...(row.sourceKind === null ? {} : { source: { sourceKind: row.sourceKind, reliability: row.reliabilityName ?? '' } }), withdrawn: row.withdrawnAt !== null,
         ...(row.accessLevel === 'restricted' ? { restricted: true as const } : {}),
+        ...(row.flag === null ? {} : { flag: row.flag }),
       },
   }));
   return { entries, next: rows.length > LINKS_PER_PAGE ? entries.at(-1)!.id : null };

@@ -260,15 +260,16 @@ memberProfileRoutes.get('/:id/profile', async (c) => {
   const profile = storedProfile(results.slice(1, 5));
   const submissions = (results[5] as D1Result<{ id: ULID; kind: string; completedAt: string }>).results;
   const items = submissions.length === 0 ? [] : (await c.get('accountant').track(db.prepare(
-    `SELECT id, unit_type AS unitType, root_id AS rootId, submission_id AS submissionId FROM units
+    `SELECT id, unit_type AS unitType, root_id AS rootId, submission_id AS submissionId,
+       (SELECT f.flag FROM flags f WHERE f.unit_id = units.id AND f.member_id = ?2) AS flag FROM units
        WHERE submission_id IN (SELECT value FROM json_each(?1)) AND unit_type IN (${ITEM_TYPES}) AND ${canRead('?2', 'units.root_id')} ORDER BY created_at, id`,
-  ).bind(JSON.stringify(submissions.map((submission) => submission.id)), c.get('session').member.id).all<{ id: ULID; unitType: string; rootId: ULID; submissionId: ULID }>())).results;
+  ).bind(JSON.stringify(submissions.map((submission) => submission.id)), c.get('session').member.id).all<{ id: ULID; unitType: string; rootId: ULID; submissionId: ULID; flag: 'new' | 'updated' | null }>())).results;
   return c.json({
     member,
     profile: profile ? present(profile, c.get('contentLicence')) : null,
     submissions: submissions.map((submission) => ({
       ...submission,
-      items: items.filter((item) => item.submissionId === submission.id).map(({ submissionId: _submission, ...item }) => item),
+      items: items.filter((item) => item.submissionId === submission.id).map(({ submissionId: _submission, flag, ...item }) => ({ ...item, ...(flag === null ? {} : { flag }) })),
     })),
   });
 });

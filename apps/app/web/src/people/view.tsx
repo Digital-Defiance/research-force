@@ -1,3 +1,4 @@
+import { FlagMark } from '../activity/activity';
 import { Link } from 'react-router';
 import type { ProfileView } from '../types';
 import { formatDate, LoadState, Notice, useLoad } from '../ui';
@@ -28,7 +29,7 @@ export function ProfileDetails({ view }: { readonly view: ProfileView }) {
                 <p>{formatDate(submission.completedAt)}</p>
                 <ul>
                   {submission.items.map((item) => (
-                    <li key={item.id}><Link to={`/items/${item.rootId}`}>{`${UNIT_NAMES[item.unitType] ?? item.unitType} ${item.id}`}</Link></li>
+                    <li key={item.id}><Link to={`/items/${item.rootId}`}>{`${UNIT_NAMES[item.unitType] ?? item.unitType} ${item.id}`}</Link>{item.flag && <>{' '}<FlagMark flag={item.flag} /></>}</li>
                   ))}
                 </ul>
               </li>

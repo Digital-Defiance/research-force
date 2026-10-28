@@ -3,6 +3,7 @@ import { Link, Route, Routes, useParams, useSearchParams } from 'react-router';
 import { ITEM_KIND_NAMES } from '@researchforce/domain/kind-names';
 import { ITEM_KINDS } from '@researchforce/domain/types';
 import type { ItemKind } from '@researchforce/domain/types';
+import { ActivityBadges, FeedScreen, SubmissionItemsScreen } from './activity/activity';
 import { useApiStatus } from './api';
 import { DeletePage } from './history/delete';
 import { ItemHistoryPage } from './history/history';
@@ -49,6 +50,7 @@ export function Header() {
             <li><Link className="rf-nav__link" to="/me/preferences">Notification settings</Link></li>
           </ul>
         </nav>
+        <ActivityBadges />
       </div>
     </header>
   );
@@ -107,6 +109,10 @@ function ProjectHistoryRoute() {
   const { id = '' } = useParams();
   return <ProjectHistoryPage key={id} id={id} />;
 }
+function SubmissionItemsRoute() {
+  const { id = '' } = useParams();
+  return <SubmissionItemsScreen key={id} id={id} />;
+}
 function NotFound() {
   return <Notice tone="warning" title="This page does not exist." />;
 }
@@ -130,6 +136,8 @@ export function WorkspaceRoutes() {
       <Route path="/projects/:id/edit" element={<EditProjectRoute />} />
       <Route path="/projects/:id/history" element={<ProjectHistoryRoute />} />
       <Route path="/reviews" element={<ReviewQueuePage />} />
+      <Route path="/activity" element={<FeedScreen />} />
+      <Route path="/activity/submissions/:id" element={<SubmissionItemsRoute />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

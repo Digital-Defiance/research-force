@@ -3,12 +3,13 @@ import type { FormEvent } from 'react';
 import { buildThread } from '@researchforce/domain/thread';
 import type { ThreadNode } from '@researchforce/domain/thread';
 import type { RichText } from '@researchforce/domain/richtext';
+import { FlagMark } from '../activity/activity';
 import { ApiFailure, useApi } from '../api';
 import { RichTextEditor } from '../editor/RichTextEditor';
 import type { MentionOptions } from '../editor/RichTextEditor';
 import { RichTextView } from '../editor/RichTextView';
 import { usePersistentForm } from '../persist';
-import type { DisclosureView, MemberRow, SpecialtyRef, ThreadEntryView } from '../types';
+import type { DisclosureView, FlagKind, MemberRow, SpecialtyRef, ThreadEntryView } from '../types';
 import { Button, DisclosureStatus, formatDate, Notice, PersonLink, RestoredNotice, SaveFailure } from '../ui';
 
 /** A Mention can name an active Member with a display name or a Specialty that is not retired (R16.8). */
@@ -67,6 +68,8 @@ interface ThreadProps {
   readonly onChanged: () => void;
   /** The Group_Note's disclosure, which the item response carries. */
   readonly groupNote?: { readonly id: string; readonly disclosure: DisclosureView } | null;
+  /** The flag each Reply had when the page opened (R18.10). */
+  readonly flagOf?: (id: string) => FlagKind | null;
 }
 
 function ReplyView({ node, props, replyingTo, setReplyingTo }: {
@@ -85,6 +88,7 @@ function ReplyView({ node, props, replyingTo, setReplyingTo }: {
         <article className="rf-companion" aria-label={`${noun} by ${name}`}>
           <p>
             {reply.isGroupNote && <><span className="rf-status">Group Note</span>{' '}</>}
+            <FlagMark flag={props.flagOf?.(reply.id)} />{props.flagOf?.(reply.id) ? ' ' : ''}
             {'By '}<PersonLink person={reply.owner} /><span className="rf-meta">{` on ${formatDate(reply.postedAt)}`}</span>
           </p>
           {reply.withdrawal && (

@@ -3,6 +3,7 @@ import { attachments, deletions, dissentNotes, entrySections, identifiers, proje
 import { newItemIdentifier, newULID } from '@researchforce/domain/identifiers';
 import { BUILT_IN_VALUE_IDS } from '@researchforce/domain/value-sets';
 import type { ItemKind, Timestamp, ULID } from '@researchforce/domain/types';
+import { announceSubmission } from '../src/activity/flags';
 
 /** Remove every synthetic unit, link, Submission, Project, and External_Party; issued identifiers stay registered. */
 export async function resetRecords(core: D1Database): Promise<void> {
@@ -10,6 +11,7 @@ export async function resetRecords(core: D1Database): Promise<void> {
     'units', 'research_items', 'attachments', 'entry_sections', 'replies', 'dissent_notes', 'submissions', 'cross_links', 'deletions', 'external_parties', 'projects',
     'journal_entries', 'je_members', 'findings', 'sources', 'runs', 'run_counts', 'hypotheses', 'correspondences', 'correspondence_parties', 'archival_requests', 'topics', 'revisions',
     'staging_rows', 'review_requests', 'review_addressees', 'access_grants', 'notification_events',
+    'flags', 'views', 'activity', 'activity_tags', 'notifications',
   ].map((table) => core.prepare(`DELETE FROM ${table}`)));
 }
 
@@ -112,4 +114,17 @@ export async function deleteUnit(core: D1Database, id: ULID, by: ULID, now: Time
     .commit();
   await core.batch(['units WHERE id', 'research_items WHERE unit_id', 'attachments WHERE unit_id', 'entry_sections WHERE unit_id', 'replies WHERE unit_id']
     .map((clause) => core.prepare(`DELETE FROM ${clause} = ?1`).bind(id)));
+}
+
+/**
+ * A completed Submission of `count` Research_Items by `ownerId` at `now`, announced the way the save pipeline does:
+ * New_Flags for the other Members and an Activity_Feed entry (R18.1, R18.8).
+ */
+export async function submitItems(core: D1Database, place: Omit<Place, 'submissionId'>, count: number | readonly ItemKind[] = 1): Promise<{ readonly submissionId: ULID; readonly ids: readonly ULID[] }> {
+  const submissionId = await addSubmissionRow(core, place.ownerId, place.now);
+  const ids: ULID[] = [];
+  const kinds = typeof count === 'number' ? Array.from({ length: count }, () => undefined) : count;
+  for (const kind of kinds) ids.push((await addItem(core, { ...place, submissionId }, kind === undefined ? {} : { kind })).id);
+  await announceSubmission(new GuardedBatch(core, { id: place.ownerId, now: place.now }), submissionId).commit();
+  return { submissionId, ids };
 }

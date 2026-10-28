@@ -7,6 +7,7 @@ import type { RichText } from '@researchforce/domain/richtext';
 import { REVISION_KINDS } from '@researchforce/domain/types';
 import type { RevisionKind, Timestamp, ULID } from '@researchforce/domain/types';
 import { canonicalJson } from '@researchforce/kernel/views';
+import { announceRevisions } from '../activity/flags';
 import type { ApiEnv } from '../api/app';
 import { ApiError } from '../api/errors';
 
@@ -100,7 +101,9 @@ export async function commitSave(c: Context<ApiEnv>, plan: SavePlan): Promise<vo
   const batch = new GuardedBatch(c.env.RF_CORE, { id: c.get('session').member.id, now: c.get('now') })
     .guard('rev', sql`(SELECT rev FROM ${sql.identifier(row.table)} WHERE ${sql.identifier(row.key)} = ${plan.target.id}) = ${plan.startedFrom}`);
   plan.write(batch);
-  for (const revision of revisionsFor(plan.target, plan.change)) batch.revision(revision);
+  const revisions = revisionsFor(plan.target, plan.change);
+  for (const revision of revisions) batch.revision(revision);
+  announceRevisions(batch, plan.target, revisions.map((revision) => revision.kind));
   for (const [topic, scope] of plan.outbox) batch.outbox(topic, scope);
   try {
     await batch.commit(c.get('accountant'));
