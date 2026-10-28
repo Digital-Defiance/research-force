@@ -13,11 +13,13 @@ import type { AiProvenance, REVISION_TARGET_TYPES } from './schema/core';
 
 export const GUARD_CODES = [
   'rev', 'evidence', 'superseding', 'last_admin', 'chain_tip', 'decision_open', 'preview_fresh', 'log_summary_owner', 'dissent_unique', 'frozen',
-  'reply_parent', 'review_eligible', 'reviewer_eligible', 'review_open', 'access_owner',
+  'upload_ready', 'upload_limit', 'reply_parent', 'review_eligible', 'reviewer_eligible', 'review_open', 'access_owner',
 ] as const;
 export type GuardCode = typeof GUARD_CODES[number];
 /** HTTP status and the rule each guard enforces, for the API's refusal (design "Guards"). */
 export const GUARD_RULES: Readonly<Record<GuardCode, { readonly status: 409 | 422 | 503; readonly rule: string }>> = Object.freeze({
+  upload_ready: { status: 422, rule: 'The uploaded file is incomplete, already used, or expired. Retry or remove it.' },
+  upload_limit: { status: 422, rule: 'A Submission can contain at most 100 files.' },
   rev: { status: 409, rule: 'Another save changed this record after you opened it.' },
   evidence: { status: 422, rule: 'This status needs an Evidence_Link (R5.3, R8.2).' },
   superseding: { status: 422, rule: 'A Superseded Finding needs a link to the Finding that supersedes it (R5.4, R5.9).' },

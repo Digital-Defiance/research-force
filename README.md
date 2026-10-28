@@ -93,6 +93,22 @@ The Wrangler configurations have Workers development addresses and preview URLs 
 
 Database UUIDs are deliberate placeholders for local validation. No resources, custom domains, secrets, Access policies, or public site deployment have been created. Task 48 provisions real resources and replaces these IDs. Secrets belong in Wrangler secrets or ignored `.dev.vars` files.
 
+## Files and protected downloads
+
+Task 30 adds direct browser uploads, Attachment submissions and versions, and the `rf-dl` download Worker. New Items and Replies can include a `files` array; `POST /api/v1/attachments` also creates a file-only Submission on an existing Parent or adds a version with `supersedesId`. Metadata edits use `PATCH /api/v1/attachments/{id}` with the opened revision and an edit mark. Files and their flags, identifiers, notifications, activity, and outbox work commit together. Superseded files remain usable. All new files start Not Published; versions start with Rights Status Unknown.
+
+Configure these installation values before using real R2 uploads:
+
+- On `rf-app`: `R2_ACCOUNT_ID`, `PRIVATE_BUCKET_NAME`, and `DOWNLOAD_ORIGIN`; store the bucket-scoped `R2_ACCESS_KEY_ID` and `R2_SECRET_ACCESS_KEY` as secrets.
+- Set the same independent `DOWNLOAD_HMAC_KEY` secret on `rf-app` and `rf-dl`. Set `WORKSPACE_ORIGIN` on both Workers. Production and staging must use separate credentials, buckets, secrets, and origins.
+- Keep the private bucket private. Its CORS policy must allow `PUT` from the Workspace origin, allow `content-length`, `x-amz-checksum-sha256`, and `if-none-match`, and expose `ETag`. Add the public submission origin when task 34 needs it. Abort incomplete multipart uploads after one day with an R2 lifecycle rule.
+
+`POST /uploads` reserves a file in a client-generated upload group and signs its length and SHA-256. Files up to 64 MiB use a write-once PUT; larger files use 16 MiB parts and a persisted SHA-256 per part. Completion checks size and R2's checksum, using S3 HEAD for the multipart composite checksum. File content never enters a Worker request body. The hourly sweep claims abandoned uploads before deleting them, while completed Submissions keep their files. Migration `core/0009_files.sql` preserves pre-existing upload rows and derives their states.
+
+Download links expire after 15 minutes. Each GET or HEAD checks current membership and access to the Research Item; backup volumes additionally require an Administrator. The Worker supports byte ranges, safe download headers, and Workspace-only CORS; all refusals match its unknown-path 404. Previews use Member-bound links and browser memory. PDF.js renders canvases without scripting or annotation actions; PDF.js 6 has removed the earlier eval option and its remaining eval path. Raster previews require magic bytes; text is limited to the first decimal MB and CSV to 1,000 data rows through Papa Parse. Hashing runs incrementally in a Web Worker.
+
+Tests use local D1/R2 for checksum rejection, completion mismatch, atomic saves, 100-file limits, migration preservation, sweeps, and concurrent versions, plus generated Version Chain, Download Link, and preview-boundary cases. S3 signing/control calls are simulated locally; staging still needs a real R2 multipart and CORS rehearsal when task 48 configures hosting.
+
 ## Toolchain compatibility notes
 
 - Cloudflare renamed `@cloudflare/vitest-pool-workers` to `@cloudflare/vitest-plugin`. The requested dependency name is retained as an npm alias to the maintained plugin, with the current `cloudflareTest()` API and a compatible Vitest 4.1 version. This avoids the retired package's outdated dependencies. See [Cloudflare's configuration documentation](https://developers.cloudflare.com/workers/testing/vitest-integration/configuration/).

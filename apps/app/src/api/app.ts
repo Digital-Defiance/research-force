@@ -1,3 +1,5 @@
+import { fileRoutes } from './routes/files';
+import { uploadRoutes } from './routes/uploads';
 import { Hono } from 'hono';
 import type { Context } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
@@ -120,6 +122,8 @@ export function createApi(config: ApiConfig): Hono<ApiEnv> {
   }));
 
   const v1 = new Hono<ApiEnv>();
+  v1.route('/uploads', uploadRoutes);
+  v1.route('/', fileRoutes);
   v1.route('/me', meRoutes);
   v1.post('/session/logout', async (c) => {
     await endSession(c.env.RF_CORE, sessionOf(c), c.get('accountant'), c.get('now'));

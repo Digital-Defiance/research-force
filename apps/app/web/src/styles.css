@@ -145,3 +145,36 @@ body {
   color: inherit;
   font-weight: var(--rf-font-weight-semibold);
 }
+
+.rf-file-image,
+.rf-file-table,
+.rf-file-text {
+  max-inline-size: var(--rf-size-full);
+  max-block-size: var(--rf-width-reading);
+  overflow: auto;
+}
+
+.rf-file-image {
+  touch-action: none;
+  cursor: grab;
+}
+
+.rf-file-image-fit {
+  display: block;
+  max-inline-size: var(--rf-size-full);
+  max-block-size: var(--rf-width-reading);
+  object-fit: contain;
+}
+
+.rf-file-image-zoom {
+  max-inline-size: none;
+}
+
+.rf-file-pdf {
+  max-inline-size: var(--rf-size-full);
+  block-size: auto;
+}
+
+.rf-file-text {
+  white-space: pre-wrap;
+}

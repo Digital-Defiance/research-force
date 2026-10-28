@@ -37,6 +37,8 @@ export const stagingRows = sqliteTable('staging_rows', {
 
 export const uploads = sqliteTable('uploads', {
   id: text('id').primaryKey(),
+  groupId: text('group_id'),
+  state: text('state', { enum: ['uploading', 'complete', 'attached', 'deleting'] }).notNull().default('uploading'),
   ownerType: text('owner_type', { enum: UPLOAD_OWNER_TYPES }).notNull(),
   ownerId: text('owner_id').notNull(),
   r2Key: text('r2_key').notNull(),
@@ -51,6 +53,8 @@ export const uploads = sqliteTable('uploads', {
 }, (t) => [
   uniqueIndex('uploads_r2_key').on(t.r2Key),
   index('uploads_owner').on(t.ownerType, t.ownerId),
+  index('uploads_group').on(t.ownerId, t.groupId),
+  oneOf('uploads_state_values', t.state, ['uploading', 'complete', 'attached', 'deleting']),
   index('uploads_abandoned').on(t.attachedAt, t.createdAt),
   oneOf('uploads_owner_values', t.ownerType, UPLOAD_OWNER_TYPES),
   oneOf('uploads_mode_values', t.mode, UPLOAD_MODES),
@@ -223,3 +227,12 @@ export const guardReviewEligible = guardTable('_g_review_eligible');
 export const guardReviewerEligible = guardTable('_g_reviewer_eligible');
 export const guardReviewOpen = guardTable('_g_review_open');
 export const guardAccessOwner = guardTable('_g_access_owner');
+
+/** Persisted before signing; completion compares the exact ordered SHA-256 part digests. */
+export const uploadParts = sqliteTable('upload_parts', {
+  uploadId: text('upload_id').notNull(), partNumber: integer('part_number').notNull(),
+  sha256: text('sha256').notNull(), sizeBytes: integer('size_bytes').notNull(),
+}, (t) => [primaryKey({ columns: [t.uploadId, t.partNumber] }), check('upload_parts_number', sql`${t.partNumber} > 0`), check('upload_parts_size', sql`${t.sizeBytes} > 0`)]);
+
+export const guardUploadReady = guardTable('_g_upload_ready');
+export const guardUploadLimit = guardTable('_g_upload_limit');

@@ -1,3 +1,4 @@
+import { AttachmentPage, AttachFilesForm } from './files/attachment-page';
 import { useMemo } from 'react';
 import { Link, Navigate, Route, Routes, useParams, useSearchParams } from 'react-router';
 import { ITEM_KIND_NAMES } from '@researchforce/domain/kind-names';
@@ -80,6 +81,9 @@ function NewItemRoute() {
   const [search] = useSearchParams();
   return isKind(kind) ? <NewItemPage key={kind} kind={kind} search={search} /> : <NotFound />;
 }
+function AttachmentRoute() { const { id = '' } = useParams(); return <AttachmentPage key={id} id={id} />; }
+function AttachFilesRoute() { const { id = '' } = useParams(); return <AttachFilesForm key={id} parentId={id} />; }
+function VersionRoute() { const { id = '' } = useParams(); return <AttachFilesForm key={id} supersedesId={id} />; }
 function ItemRoute() {
   const { id = '' } = useParams();
   return <ItemPage key={id} id={id} />;
@@ -131,6 +135,9 @@ export function WorkspaceRoutes() {
     <Routes>
       <Route path="/" element={<StartPage />} />
       <Route path="/items/new/:kind" element={<NewItemRoute />} />
+      <Route path="/attachments/:id" element={<AttachmentRoute />} />
+      <Route path="/attachments/:id/version" element={<VersionRoute />} />
+      <Route path="/items/:id/files" element={<AttachFilesRoute />} />
       <Route path="/items/:id" element={<ItemRoute />} />
       <Route path="/items/:id/edit" element={<EditItemRoute />} />
       <Route path="/items/:id/history" element={<ItemHistoryRoute />} />

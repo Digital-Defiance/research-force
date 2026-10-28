@@ -2,6 +2,13 @@ import type { OpsAccess } from '@researchforce/domain/ops';
 import type { Budget, Jobs, Mailer, Publisher } from './durable-objects';
 
 export interface Env {
+  /** Bucket-scoped S3 credentials and shared download secret, configured per installation. */
+  R2_ACCOUNT_ID?: string;
+  R2_ACCESS_KEY_ID?: string;
+  R2_SECRET_ACCESS_KEY?: string;
+  PRIVATE_BUCKET_NAME?: string;
+  DOWNLOAD_HMAC_KEY?: string;
+  DOWNLOAD_ORIGIN?: string;
   RF_CORE: D1Database;
   RF_SEARCH: D1Database;
   RF_PUBLIC: D1Database;

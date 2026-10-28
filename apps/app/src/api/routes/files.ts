@@ -1,0 +1,12 @@
+import { Hono } from 'hono';
+import { authorizeRead } from '../../auth/authorize';
+import { addFiles, attachmentResponse, editAttachment, listAttachments } from '../../files/attachments';
+import { fileLink } from '../../files/links';
+import type { ApiEnv } from '../app';
+import { readJson } from '../input';
+export const fileRoutes = new Hono<ApiEnv>();
+fileRoutes.post('/attachments', async (c) => c.json({ ids: await addFiles(c, await readJson(c)) }, 201));
+fileRoutes.get('/items/:id/attachments', async (c) => { await authorizeRead(c); return c.json({ attachments: await listAttachments(c, c.req.param('id')) }); });
+fileRoutes.get('/attachments/:id', async (c) => { await authorizeRead(c); return c.json(await attachmentResponse(c, c.req.param('id'))); });
+fileRoutes.patch('/attachments/:id', async (c) => { await editAttachment(c, c.req.param('id'), await readJson(c)); return c.json(await attachmentResponse(c, c.req.param('id'))); });
+fileRoutes.post('/files/:id/link', async (c) => { await authorizeRead(c); return c.json(await fileLink(c, c.req.param('id'))); });

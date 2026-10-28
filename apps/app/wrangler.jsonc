@@ -9,7 +9,8 @@
     "enabled": true
   },
   "vars": {
-    "WORKSPACE_ORIGIN": "https://app.researchforce.org"
+    "WORKSPACE_ORIGIN": "https://app.researchforce.org",
+    "DOWNLOAD_ORIGIN": "https://dl.researchforce.org"
   },
   "d1_databases": [
     {
@@ -101,7 +102,8 @@
       "workers_dev": false,
       "preview_urls": false,
       "vars": {
-        "WORKSPACE_ORIGIN": "https://staging.researchforce.org"
+        "WORKSPACE_ORIGIN": "https://staging.researchforce.org",
+        "DOWNLOAD_ORIGIN": "https://dl-staging.researchforce.org"
       },
       "d1_databases": [
         {

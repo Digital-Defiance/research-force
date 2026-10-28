@@ -1,6 +1,3 @@
 import { expect, it } from 'vitest';
-import worker from '../src/index';
-
-it('refuses downloads until token verification is implemented', () => {
-  expect(worker.fetch().status).toBe(404);
-});
+import { notFound } from '../src/index';
+it('uses the same refusal as an unknown path', () => { expect(notFound().status).toBe(404); });

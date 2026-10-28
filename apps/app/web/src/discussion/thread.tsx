@@ -1,3 +1,5 @@
+import { AttachmentList } from '../files/attachment-page';
+import { UploadFields, useUploads } from '../files/upload';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { buildThread } from '@researchforce/domain/thread';
@@ -26,16 +28,18 @@ const EMPTY: RichText = { text: '', spans: [] };
 export function ReplyComposer({ parentId, label, mentions, onPosted, onCancel }: {
   readonly parentId: string; readonly label: string; readonly mentions: MentionOptions; readonly onPosted: () => void; readonly onCancel?: () => void;
 }) {
+  const uploads = useUploads();
   const client = useApi();
   const form = usePersistentForm<{ text: RichText }>(`reply:${parentId}`, { text: EMPTY });
   const [failure, setFailure] = useState<unknown>(undefined);
   const [busy, setBusy] = useState(false);
   const submit = async (event: FormEvent) => {
     event.preventDefault();
+    if (uploads.reasons.length > 0) return;
     setBusy(true);
     setFailure(undefined);
     try {
-      await client.post('/replies', { parentId, text: form.values.text });
+      await client.post('/replies', { parentId, text: form.values.text, ...(uploads.files.length ? { files: uploads.selected() } : {}) });
       form.discard();
       onPosted();
     } catch (error) {
@@ -52,8 +56,9 @@ export function ReplyComposer({ parentId, label, mentions, onPosted, onCancel }:
       <SaveFailure error={failure} />
       {parentErrors.map((issue) => <Notice key={issue.rule} tone="danger" title={issue.rule} />)}
       <RichTextEditor label={label} value={form.values.text} onChange={(text) => form.set('text', text)} mentions={mentions} errors={textErrors} required hint="1 to 50,000 characters." />
+      <UploadFields uploads={uploads} />
       <div className="rf-actions">
-        <Button type="submit" variant="primary" disabled={busy}>Post reply</Button>
+        <Button type="submit" variant="primary" disabled={busy || uploads.reasons.length > 0}>Post reply</Button>
         {onCancel !== undefined && <Button variant="quiet" onClick={onCancel}>Cancel</Button>}
       </div>
     </form>
@@ -97,6 +102,7 @@ function ReplyView({ node, props, replyingTo, setReplyingTo }: {
             </Notice>
           )}
           <RichTextView value={reply.text} />
+          <AttachmentList parentId={reply.id} />
           {reply.isGroupNote && props.groupNote?.id === reply.id && <DisclosureStatus disclosure={props.groupNote.disclosure} />}
           {props.canReply && replyingTo !== reply.id && <div className="rf-actions"><Button variant="quiet" onClick={() => setReplyingTo(reply.id)}>Reply</Button></div>}
         </article>

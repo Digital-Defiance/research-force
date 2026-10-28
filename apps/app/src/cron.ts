@@ -3,6 +3,7 @@ import type { Env } from './env';
 import type { Logger } from './log';
 import { sweepFollowUps } from './notifications/reminders';
 import { kickAll } from './outbox';
+import { sweepUploads } from './files/uploads';
 import { sweepStages } from './records/stages';
 
 /** The two Cron Triggers in `wrangler.jsonc` (design "Cron Triggers"). */
@@ -17,6 +18,7 @@ export interface Sweep {
 
 /** The hourly sweeps in order; each feature adds its own. */
 export const HOURLY_SWEEPS: readonly Sweep[] = [
+  { name: 'abandoned_uploads', run: sweepUploads },
   { name: 'staging_rows', run: (env, now) => sweepStages(env.RF_CORE, now) },
   { name: 'follow_up_reminders', run: sweepFollowUps },
 ];

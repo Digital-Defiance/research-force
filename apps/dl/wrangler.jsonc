@@ -37,7 +37,13 @@
           "binding": "RF_PRIVATE_BUCKET",
           "bucket_name": "rf-private-staging"
         }
-      ]
+      ],
+      "vars": {
+        "WORKSPACE_ORIGIN": "https://app-staging.researchforce.org"
+      }
     }
+  },
+  "vars": {
+    "WORKSPACE_ORIGIN": "https://app.researchforce.org"
   }
 }

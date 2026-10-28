@@ -1,7 +1,7 @@
+import { prepareAttachments } from '../files/attachments';
 import type { Context } from 'hono';
 import { sql } from 'drizzle-orm';
 import { z } from 'zod';
-import { GuardedBatch } from '@researchforce/db/batch';
 import { replies, units } from '@researchforce/db/schema/core';
 import { newULID } from '@researchforce/domain/identifiers';
 import type { RichText } from '@researchforce/domain/richtext';
@@ -15,12 +15,12 @@ import { parse } from '../api/input';
 import { authorize } from '../auth/authorize';
 import { richText } from '../records/kinds/kind';
 import { validationContext } from '../records/items';
-import { addSubmission, visibleTo } from '../records/submissions';
+import { addSubmission, commitWithIdentifiers, visibleTo } from '../records/submissions';
 import { refuseUnreadable } from '../records/access';
 import { notifyMentions, notifyReply } from '../notifications/fanout';
 import { addedMentions, mentionIssues, mentionRecipients } from './mentions';
 
-const replyBody = z.strictObject({ parentId: z.string(), text: replySchema });
+const replyBody = z.strictObject({ parentId: z.string(), text: replySchema, files: z.array(z.unknown()).max(100).optional() });
 /**
  * The unit position of every Reply but the Group_Note, which `addGroupNote` places at 0. The position outlives a
  * permanent deletion, so the placeholder of a deleted Group_Note stays first in its Thread (R41.10).
@@ -54,19 +54,22 @@ export async function postReply(c: Context<ApiEnv>, body: unknown): Promise<ULID
   const id = newULID(now);
   const submissionId = newULID(now);
   const mentioned = (await mentionRecipients(c, addedMentions(undefined, { text }), actor, { rootId: parent.rootId })).map((recipient) => recipient.memberId);
-  const batch = new GuardedBatch(db, { id: actor, now })
-    .guard('reply_parent', sql`EXISTS (SELECT 1 FROM units p WHERE p.id = ${input.parentId} AND ${sql.raw(LIVE_PARENT)})`);
-  addSubmission(batch, { id: submissionId, memberId: actor, kind: 'member', now, complete: true });
-  batch.insert(units, {
-    id, unitType: 'reply', projectId: parent.projectId, rootId: parent.rootId, parentId: input.parentId, position: ORDINARY_REPLY_POSITION,
-    ownerId: actor, credit: [{ member: actor }], submissionId, createdAt: now,
-  }).insert(replies, { unitId: id, text: text.text, textSpans: [...text.spans], isGroupNote: false })
-    .outbox('publish', `unit:${id}`)
-    .outbox('search', `unit:${id}`);
-  announceSubmission(batch, submissionId);
-  notifyReply(batch, id, submissionId);
-  notifyMentions(batch, mentioned, parent.rootId, submissionId, { replyId: id });
-  await batch.commit(c.get('accountant'));
+  const attached = await prepareAttachments(c, input.files);
+  await commitWithIdentifiers(db, { id: actor, now }, attached.ids, (batch, issued) => {
+    batch
+      .guard('reply_parent', sql`EXISTS (SELECT 1 FROM units p WHERE p.id = ${input.parentId} AND ${sql.raw(LIVE_PARENT)})`);
+    addSubmission(batch, { id: submissionId, memberId: actor, kind: 'member', now, complete: true });
+    batch.insert(units, {
+      id, unitType: 'reply', projectId: parent.projectId, rootId: parent.rootId, parentId: input.parentId, position: ORDINARY_REPLY_POSITION,
+      ownerId: actor, credit: [{ member: actor }], submissionId, createdAt: now,
+    }).insert(replies, { unitId: id, text: text.text, textSpans: [...text.spans], isGroupNote: false })
+      .outbox('publish', `unit:${id}`)
+      .outbox('search', `unit:${id}`);
+    announceSubmission(batch, submissionId);
+    notifyReply(batch, id, submissionId);
+    notifyMentions(batch, mentioned, parent.rootId, submissionId, { replyId: id });
+    attached.write(batch, issued, { id, rootId: parent.rootId, projectId: parent.projectId }, submissionId);
+  }, { accountant: c.get('accountant') });
   return id;
 }
 

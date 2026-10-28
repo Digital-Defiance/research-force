@@ -133,6 +133,7 @@ export async function removeLink(c: Context<ApiEnv>, link: { readonly id: ULID; 
 }
 
 export interface LinkEnd {
+  readonly supersededBy?: { readonly id: string; readonly uploadedAt: string };
   readonly id: ULID;
   /** The Research_Item kind, or the unit type of other ends. */
   readonly kind: string;
@@ -160,6 +161,7 @@ interface LinkRow {
   id: ULID; relationId: ULID | null; relationName: string | null; addedBy: ULID; addedByName: string | null; addedAt: Timestamp;
   removedBy: ULID | null; removedByName: string | null; removedAt: Timestamp | null;
   endId: ULID; rootId: ULID | null; unitType: string | null; itemKind: string | null; title: string | null; identifier: string | null; withdrawnAt: string | null; accessLevel: string | null;
+  successorId: string | null; successorTime: string | null;
   sourceKind: string | null; reliabilityName: string | null; flag: 'new' | 'updated' | null;
   deletedType: string | null; deletedKind: string | null; deletedIdentifier: string | null; deletedAt: Timestamp | null;
 }
@@ -185,12 +187,14 @@ export async function linkEntries(c: Context<ApiEnv>, query: LinkQuery): Promise
         CASE WHEN u.unit_type = 'attachment' THEN a.title ELSE ri.title END AS title,
         CASE WHEN u.unit_type = 'attachment' THEN a.item_identifier ELSE ri.item_identifier END AS identifier,
         coalesce(u.withdrawn_at, root.withdrawn_at) AS withdrawnAt, ri.access_level AS accessLevel, lf.flag,
+        successor.unit_id AS successorId, successor.uploaded_at AS successorTime,
         d.unit_type AS deletedType, d.kind AS deletedKind, d.item_identifier AS deletedIdentifier, d.deleted_at AS deletedAt
       FROM cross_links l
       LEFT JOIN units u ON u.id = l.${far}
       LEFT JOIN units root ON root.id = u.root_id
       LEFT JOIN research_items ri ON ri.unit_id = u.root_id
       LEFT JOIN attachments a ON a.unit_id = u.id
+      LEFT JOIN attachments successor ON successor.supersedes_unit_id = a.unit_id AND EXISTS (SELECT 1 FROM units su WHERE su.id = successor.unit_id AND ${visibleTo('su', '?2')} AND NOT EXISTS (SELECT 1 FROM deletions sd WHERE sd.unit_id = su.id))
       LEFT JOIN sources s ON s.unit_id = u.root_id AND u.unit_type <> 'attachment'
       LEFT JOIN config_values rv ON rv.id = s.reliability_id
       LEFT JOIN deletions d ON d.unit_id = l.${far}
@@ -212,6 +216,7 @@ export async function linkEntries(c: Context<ApiEnv>, query: LinkQuery): Promise
     end: row.deletedType !== null
       ? { id: row.endId, kind: row.deletedKind ?? row.deletedType!, title: null, identifier: row.deletedIdentifier, withdrawn: false, deletedAt: row.deletedAt! }
       : {
+        ...(row.successorId === null ? {} : { supersededBy: { id: row.successorId, uploadedAt: row.successorTime! } }),
         id: row.endId, rootId: row.rootId!, kind: row.unitType === 'research_item' ? row.itemKind! : row.unitType!, title: row.title, identifier: row.identifier,
         ...(row.sourceKind === null ? {} : { source: { sourceKind: row.sourceKind, reliability: row.reliabilityName ?? '' } }), withdrawn: row.withdrawnAt !== null,
         ...(row.accessLevel === 'restricted' ? { restricted: true as const } : {}),

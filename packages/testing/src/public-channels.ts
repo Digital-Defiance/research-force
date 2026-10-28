@@ -1,3 +1,4 @@
+import { DOWNLOAD_NOT_FOUND } from '@researchforce/domain/files';
 import { canonicalJson } from '@researchforce/kernel/views';
 import { project } from '@researchforce/kernel/project';
 import { projectProfile } from '@researchforce/kernel/substitute';
@@ -65,4 +66,4 @@ const notificationEmails: PublicChannel = {
   },
 };
 
-export const PUBLIC_CHANNELS: readonly PublicChannel[] = [kernelViews, kernelProfiles, publicSite, publicSearchIndex, notificationEmails];
+export const PUBLIC_CHANNELS: readonly PublicChannel[] = [kernelViews, kernelProfiles, publicSite, publicSearchIndex, notificationEmails, { name: 'rf-dl refusals to non-Members', *artifacts() { yield { name: 'download refusal', content: DOWNLOAD_NOT_FOUND }; } }];

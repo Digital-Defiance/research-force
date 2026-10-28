@@ -1,3 +1,4 @@
+import { prepareAttachments } from '../files/attachments';
 import type { Context } from 'hono';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
@@ -256,7 +257,7 @@ function validated(kind: ItemKind, context: ValidationContext, options: Paramete
  * A Journal_Entry's Entry_Sections can come from the parts of a staged save instead of the body.
  */
 export async function createItem(c: Context<ApiEnv>, kind: ItemKind, body: unknown, staged?: StagedSections): Promise<ULID> {
-  const { links, evidence, reviews: reviewList, access, ...rest } = objectBody(body);
+  const { links, evidence, reviews: reviewList, access, files, ...rest } = objectBody(body);
   const envelope = parse(createEnvelope, { links, evidence, reviews: reviewList });
   const actor = c.get('session').member.id;
   const now = c.get('now');
@@ -303,7 +304,11 @@ export async function createItem(c: Context<ApiEnv>, kind: ItemKind, body: unkno
   const mentioned = (await mentionRecipients(c, addedMentions(undefined, fields), actor, scope)).map((recipient) => recipient.memberId);
   const groupNote = fields['groupNote'] as RichText | undefined;
   const withdrawn = kind === 'finding' && fields['statusValueId'] === BUILT_IN_VALUE_IDS.findingWithdrawn;
-  await commitWithIdentifiers(c.env.RF_CORE, { id: actor, now }, [id], (batch, issued) => {
+  const attached = await prepareAttachments(c, files, kind === 'source' ? {
+    rightsStatusId: (fields['rightsStatusId'] as ULID | undefined) ?? BUILT_IN_VALUE_IDS.rightsUnknown,
+    rightsHolder: (fields['rightsHolder'] as string | undefined) ?? null, rightsTerms: (fields['rightsTerms'] as string | undefined) ?? null, retired: 0,
+  } : undefined);
+  await commitWithIdentifiers(c.env.RF_CORE, { id: actor, now }, [id, ...attached.ids], (batch, issued) => {
     staged?.guard(batch);
     addSubmission(batch, { id: submissionId, memberId: actor, kind: 'member', now, complete: true, hasGroupNote: present(groupNote) });
     batch.insert(units, {
@@ -314,6 +319,7 @@ export async function createItem(c: Context<ApiEnv>, kind: ItemKind, body: unkno
       unitId: id, kind, itemIdentifier: issued.get(id)!, projectId, title: fields['title'] as string, statusValueId: (fields['statusValueId'] as string | undefined) ?? null,
       ...dateKeys(kind, fields, now), ...logSummaryColumns(fields['logSummary'] as RichText | undefined), accessLevel: chosen.choice.level,
     });
+    attached.write(batch, issued, { id, rootId: id, projectId }, submissionId);
     writeAccessGrants(batch, id, chosen.choice.members, { id: actor, now });
     adapter.insert(batch, { id, projectId, ownerId: actor, credit, submissionId, now }, fields);
     if (staged) {

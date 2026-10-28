@@ -1,3 +1,4 @@
+import { AttachmentList, SupersessionNotice } from '../files/attachment-page';
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router';
@@ -166,10 +167,11 @@ function LinkList({ title, entries, empty }: { readonly title: string; readonly 
             return (
               <li key={entry.id}>
                 {entry.relation !== null && <span className="rf-status">{entry.relation.name}</span>}{' '}
-                {end.deletedAt === undefined ? <Link to={`/items/${end.rootId ?? end.id}`}>{name}</Link> : <span>{name}</span>}
+                {end.deletedAt === undefined ? <Link to={end.kind === 'attachment' ? `/attachments/${end.id}` : `/items/${end.rootId ?? end.id}`}>{name}</Link> : <span>{name}</span>}
                 {end.flag != null && <>{' '}<FlagMark flag={end.flag} /></>}
                 {end.restricted === true && <>{' '}<RestrictedMark /></>}
                 {end.source !== undefined && <span className="rf-meta">{` (${end.source.sourceKind === 'primary' ? 'Primary' : 'Secondary'} source; reliability: ${end.source.reliability})`}</span>}
+                <SupersessionNotice successor={end.supersededBy} />
                 {end.withdrawn && <Notice tone="warning" title="This record has been withdrawn." />}
                 {end.deletedAt !== undefined && <Notice tone="warning" title={`This record was permanently deleted on ${formatDate(end.deletedAt)}.`} />}
               </li>
@@ -260,6 +262,7 @@ export function ItemDetails({ data }: { readonly data: ItemPageData }) {
           ? <><p className="rf-meta">{'By '}<PersonLink person={item.owner} /></p><RichTextView value={item.logSummary} /></>
           : <p className="rf-meta">No Log Summary is recorded.</p>}
       </section>
+      <AttachmentList parentId={item.id} />
       <LinkList title="Cross-links" entries={data.links} empty="No Cross-links from this record." />
       <LinkList title="Backlinks" entries={data.backlinks} empty="No Backlinks to this record." />
       <section className="rf-section" aria-label="Review requests">

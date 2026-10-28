@@ -133,6 +133,7 @@ export interface ThreadEntryView {
 }
 
 export interface LinkEnd {
+  readonly supersededBy?: { readonly id: string; readonly uploadedAt: string };
   readonly id: string; readonly kind: string; readonly title: string | null; readonly identifier: string | null; readonly withdrawn: boolean;
   readonly rootId?: string;
   readonly source?: { readonly sourceKind: string; readonly reliability: string };
