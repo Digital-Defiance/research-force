@@ -18,34 +18,29 @@ Points that the design leaves open are implemented as written and kept in one pl
 | Open point | Implemented as | Single location |
 |---|---|---|
 | Plain-text email part (design open question 1) | Graph JSON `sendMail` with one HTML body and Exchange's conversion for the plain-text part | `apps/app/src/mail/providers/graph.ts`, `BODY_MODE = 'html-with-exchange-conversion'` |
-| Residual Recoverable Items copies (open question 2) | Mailbox settings in the Microsoft 365 setup script; no statement on the Privacy page | `STATE_MAILBOX_RESIDUAL_COPIES = false` in `packages/db/src/seed/policy-sections.ts` |
-| Public search under an exhausted budget (open question 3, R28.11) | `status.json` marks search unavailable and the search page shows the notice | `PUBLIC_SEARCH_FOLLOWS_BUDGET = true` in `apps/app/src/budget/status.ts` |
+| Residual provider copies (resolved) | Verify tenant behavior and disclose residual mailbox and delivery-record retention | `STATE_MAILBOX_RESIDUAL_COPIES = true` and generated policy evidence |
+| Static search under API exhaustion (resolved) | Search stays available; dynamic forms/views follow separate admitted budgets | `PUBLIC_SEARCH_FOLLOWS_BUDGET = false` in `apps/app/src/budget/status.ts` |
 | Journal-unreferenced attachments (open question 4, closed: R26.15) | Reported early by the dry-run; imported under the Project's Unassigned_Attachments_Source | `resolveAttachmentParent()` in `packages/markdown/src/journal/attachments.ts` (an `undefined` result means unassigned) |
 | AI_Drafting_Setting default (open question 7) | Starts On | `SETTINGS.aiDrafting.default` in `packages/domain/src/settings.ts` |
-| Backup write freeze (open question 11) | `frozen` guard while the backup reads `rf-core` | `apps/app/src/jobs/backup.ts`, `FREEZE` constants |
+| Backup freeze (resolved) | Bounded renewable lease, snapshot invalidation on expiry, independent watchdog and recovery | `apps/app/src/recovery/leases.ts` and shared write predicates |
 | Item_Identifier format (open question 12) | 12 random Crockford base-32 characters in groups of four | `ITEM_ID_FORMAT` in `packages/domain/src/identifiers.ts` |
 
 Tests use synthetic data only. No task copies, quotes, or commits content from the existing journal or its attachments. The dry-run and the import read those files from paths the user gives, the dry-run prints only counts, phase identifiers, line ranges, and file names, and the import creates every unit Not_Published and Unclassified.
 
-### Build order after the October 2026 revision
+### Canonical build order after the 27 October review
 
-The October 2026 revision of the requirements (restricted access, Owner consent, Confidentiality_Holds, Dual_Approvals, Research_Questions, Unassigned legacy attachments, Contact_Reviews, emailed Consent_Requests, and the rename of Private to Not_Published) adds tasks 51 to 56 and changes the order in which the remaining tasks are built. Task numbers stay as they are, because tasks refer to each other by number. The remaining work is built in four milestones, so that the first one gives the team a working shared archive as early as possible and the team can learn from using it before the public site is built.
+The JSON graph at the end is the single scheduling source. Checked leaf tasks form an inherited baseline whose evidence is reconciled in 57.1. Remaining waves are serial barriers; every leaf appears exactly once across baseline and waves. A historical parent can remain checked only while all its leaf acceptance is complete; 19 and 30 are reopened for the identified gaps. Task 52's existing implementation is audited before marking acceptance, without rerunning an applied migration.
 
-1. **Team archive** (the smallest useful version: preserve and connect sources, findings, tests, and decisions inside the team):
-   - 51 (rename Not_Published), 52 (restricted access, including the read paths that tasks 17 to 24 built);
-   - 25 (flags and Activity_Feed), 28 (Member search), 29 (checkpoint);
-   - 30 (files), 55.1 to 55.3 and 55.5 (Research_Questions in the Workspace), 53 (Attachment moves, which use 55.2's entry removal);
-   - 36 (journal import), 37 (Bulk_Import; its New_Submission events wait for task 26's fan-out, and its New_Flags are written as specified);
-   - 40 (Project_Log and lists);
-   - 38.3 to 38.7 and 38.10 (Internal_Backup, restore, and package volume streaming; the screens of 38.6 without the export parts);
-   - 45 (security headers), 50 (local development);
-   - from 48: 48.1, 48.4, 48.6, and 48.9 for a Workspace-only deployment and the journal import rehearsal; the `site` scope step of 48.4 and the first `rf-site` deployment wait for milestone 3;
-   - 39 (checkpoint).
-2. **Notifications and email:** 26, 27, 44, and from 48: 48.2, 48.3, 48.7, and 48.8; then 47 (checkpoint).
-3. **Public archive:** 31, 54 (Owner consent, Confidentiality_Holds, Dual_Approvals), 32, 55.4 (public Research_Question pages), 33 (checkpoint), 38.1, 38.2, 38.8, 38.9, 38.11, 38.13, 43, 46, 48.5, and 48.10.
-4. **Outside contributions and the rest:** 34, 56 (emailed Consent_Requests, which need `rf-submit` and the `Budget` gate from task 34; until then consent is recorded by hand), 35 (including Contact_Reviews), 38.12, 41, 42, then 49 (final checkpoint).
+| Milestone | Required scope and order |
+|---|---|
+| Repair and local walkthroughs | Status audit 57.1; local runner 50; Resource_Profile and compatible chunk foundations; reopened 19.1, 30.6–30.8 and 30.11; idempotency/real-channel regressions; reconcile existing access implementation 52 |
+| Team collaboration | Question Workspace; bibliography/decision/release schemas; work and Question lifecycle; precise citations/derivations; decisions; compute reproducibility; durable drafts/proposed edits; navigation |
+| Privacy and public archive implementation | Shared Owner/permission snapshot data before kernel gates and disclosure callers; holds/dual approvals and moves; imports/logs/Dissent; independent publication epochs/containment/admission; Publisher; public Questions/releases/exports and required properties |
+| Complete feature scope | Public submission, moderation and emailed permission flows; AI drafting; full policy and presentation. All remain disabled in production until the appropriate gate passes. |
+| Recovery and operational assurance | Complete table inventory; encrypted format and lease helpers before backup/restore callers; automatic independent copies; fresh restore rehearsal; compatibility/retention/alerts, browser security and measured capacity |
+| Release acceptance | Prepare all infrastructure/staging/gate tooling, then operator setup and real verification; team-archive gate before sole-copy custody; public gate before serving research; outside-service gate before enabling dynamic public endpoints; final 49 |
 
-Where a task in an earlier milestone produces something that a later task delivers (for example Notification_Event rows written before task 26 adds the fan-out and the Notification_Centre), the earlier task writes the rows as its own sub-task specifies and the later task adds the delivery.
+Tasks 26/27 code already exist in the inherited baseline; feature additions still extend their event/preference/recipient rules. The graph linearizes shared helpers before callers: 55.2 before moves, field-version/idempotency before new records, permission coverage before apply, codec/preflight before restore, and publication/permission gates before serving releases. Every authoritative new table is registered for backup/format migrations when added. This is an implementation schedule, not authorization to activate a paid service, publish content, or ingest sole-copy research before its release evidence passes.
 
 ## Tasks
 
@@ -68,7 +63,7 @@ Where a task in an earlier milestone produces something that a later task delive
     - _Requirements: 28.3_
   - [x] 1.4 Create Wrangler configurations for `rf-app`, `rf-submit`, `rf-dl`, and `rf-ops`
     - `apps/app/wrangler.jsonc`: SPA static assets with `run_worker_first` for `/api/*`, D1 bindings `rf-core`, `rf-search`, `rf-public`, R2 bindings `rf-private` and `rf-public`, the `AI` binding, SQLite-backed Durable Object classes `Publisher`, `Mailer`, `Budget`, `Jobs` (`new_sqlite_classes` migration), a service binding to `rf-ops`, and Cron Triggers `* * * * *` and `7 * * * *`
-    - `apps/submit/wrangler.jsonc`, `apps/dl/wrangler.jsonc`, `apps/ops/wrangler.jsonc` with the bindings from the design's component table; `workers_dev: false` and `preview_urls: false` on every Worker; a `staging` environment block in each; only features available on the Workers Free plan
+    - `apps/submit/wrangler.jsonc`, `apps/dl/wrangler.jsonc`, `apps/ops/wrangler.jsonc` with the bindings from the design's component table; `workers_dev: false` and `preview_urls: false` on every Worker; a `staging` environment block in each; features permitted by the explicitly selected Operating_Profile; profile certification is completed in 57.2
     - _Requirements: 1.3, 28.1, 28.4, 28.6_
 
 - [x] 2. Build the domain foundations: types, dates, and rich text
@@ -82,7 +77,7 @@ Where a task in an earlier milestone produces something that a later task delive
     - Item_Date and Log_Date computation; display as "5 May 1943", "May 1943", or "1943" with the approximate mark; ISO 8601 export forms; metadata date forms
     - Recorded times in the viewer's Profile time zone through `Intl`, or in UTC marked "UTC"; inclusive local date ranges converted to UTC instants; "today" in a given time zone
     - _Requirements: 6.7, 18.9, 21.5, 43.2, 45.12, 45.23_
-  - [x]* 2.3 Write property test for dates and times
+  - [x] 2.3 Write property test for dates and times
     - **Property 91: Dates and times follow precision and zone rules**
     - **Validates: Requirements 6.7, 45.12, 45.23**
   - [x] 2.4 Implement the RichText span model in `packages/domain/src/richtext.ts`
@@ -90,10 +85,10 @@ Where a task in an earlier milestone produces something that a later task delive
     - `validateSpans` naming each faulty span and reason (blank or over-long sources, Quote and Paraphrase on one character, languages outside the ISO 639-1 list, two language marks on one character)
     - `applyEdit` that maps spans through a text change, `labelsOnlyChanged` that confirms a label edit leaves the text unchanged, and `mentionsOf` that returns only picker-inserted Mention spans
     - _Requirements: 11.1, 11.2, 11.3, 11.4, 11.7, 11.9, 16.8, 45.6_
-  - [x]* 2.5 Write property test for label edits
+  - [x] 2.5 Write property test for label edits
     - **Property 37: Labels never change text and follow edits**
     - **Validates: Requirements 11.7, 11.9, 45.6**
-  - [x]* 2.6 Write property test for label validity
+  - [x] 2.6 Write property test for label validity
     - **Property 38: Label and language-mark validity**
     - **Validates: Requirements 11.1, 11.2, 11.3, 11.4, 45.6**
 
@@ -102,7 +97,7 @@ Where a task in an earlier milestone produces something that a later task delive
     - Pure operations add, rename, retire, and mark-as-permitting-publication, returning the new set or the rule broken: names of 1 to 50 characters unique ignoring letter case, the last value that is not retired, locked values (Open and Eliminated, Sent and Replied, Unknown), and Unknown never renamed or marked as permitting publication
     - `acceptsNewlySet(value)` refusing retired values; Methods_Term sets require a Public_Description of 1 to 500 characters when a value is added
     - _Requirements: 3.3, 3.8, 4.6, 6.5, 6.8, 7.7, 8.8, 10.5, 33.6, 46.12, 46.13_
-  - [x]* 3.2 Write property test for value sets
+  - [x] 3.2 Write property test for value sets
     - **Property 31: Configurable value sets behave uniformly**
     - **Validates: Requirements 3.3, 3.8, 4.6, 6.5, 6.8, 7.7, 8.8, 10.5, 33.6, 46.12**
   - [x] 3.3 Implement identifier generators in `packages/domain/src/identifiers.ts`
@@ -112,7 +107,7 @@ Where a task in an earlier milestone produces something that a later task delive
   - [x] 3.4 Implement file kinds in `packages/domain/src/file-kinds.ts`
     - Map the lower-cased text after the last dot to PDF, image, archive, spreadsheet, CSV, structured data, text log, video, or other, using the design's extension table
     - _Requirements: 12.3_
-  - [x]* 3.5 Write property test for file kinds
+  - [x] 3.5 Write property test for file kinds
     - **Property 44: File kind is a total function of the extension**
     - **Validates: Requirements 12.3**
   - [x] 3.6 Implement the settings registry in `packages/domain/src/settings.ts`
@@ -122,7 +117,7 @@ Where a task in an earlier milestone produces something that a later task delive
   - [x] 3.7 Implement retention constants and Retention_Table rows in `packages/domain/src/retention.ts`
     - One constant per kind of data listed in Requirement 46.19, read by the sweepers and by `retentionRows()`, which produces the Retention_Table rows for the Privacy page
     - _Requirements: 12.8, 31.8, 32.8, 35.6, 35.11, 36.3, 46.19, 46.20, 46.26_
-  - [x]* 3.8 Write property test for the Retention_Table
+  - [x] 3.8 Write property test for the Retention_Table
     - **Property 97: Retention_Table matches the retention constants**
     - **Validates: Requirements 46.19**
   - [x] 3.9 Implement the Role_Permission_Map in `packages/domain/src/permissions.ts`
@@ -145,7 +140,7 @@ Where a task in an earlier milestone produces something that a later task delive
   - [x] 4.3 Implement zod schemas for discussion, reviews, files, disclosure, edits, and outside submissions in `packages/domain/src/schemas/other.ts`
     - Reply and Group_Note (1 to 50,000; an empty Group_Note means none), Dissent_Note (1 to 2,000), Review_Request (addressees named at most once, note at most 2,000), Attachment metadata (title 1 to 255, caption at most 2,000, Origin 1 to 5,000) and `submissionReadiness(files)` (no file uploading, failed, or invalid), Disclosure_Line (kind 1 to 100, dated to year, month, or day, at most 20 Party labels, note at most 200), edit marks and reasons (1 to 1,000), Outside_Submission fields and the licence agreement, Removal_Request statements (1 to 5,000)
     - _Requirements: 12.2, 12.4, 12.9, 12.11, 17.2, 22.2, 22.9, 23.5, 31.2, 33.1, 41.8, 41.15, 42.17, 46.23, 46.33_
-  - [x]* 4.4 Write property test for the validators
+  - [x] 4.4 Write property test for the validators
     - **Property 27: Validators accept exactly the valid inputs**
     - **Validates: Requirements 3.1, 3.7, 4.7, 5.5, 5.8, 6.6, 7.1, 7.8, 7.9, 8.9, 9.5, 10.6, 10.7, 10.8, 12.2, 12.4, 12.9, 12.11, 16.9, 17.2, 20.14, 20.25, 22.2, 22.9, 28.12, 31.2, 33.1, 34.8, 39.5, 41.8, 41.15, 42.17, 44.15, 46.13, 46.23, 46.28, 46.33**
 
@@ -173,7 +168,7 @@ Where a task in an earlier milestone produces something that a later task delive
     - Builder that places guard statements (`INSERT INTO _g_<code>(x) SELECT NULL WHERE NOT (…)`), the change-counter increment as the second statement, `updated_seq` and `actor_id` stamping, Revision rows, outbox rows, and `json_each` bulk inserts into one `batch()`; refuses batches above 40 statements
     - Maps a NOT NULL failure on a guard table to its rule code for the API; the accountant sums `meta.rows_read` and `meta.rows_written` per request
     - _Requirements: 1.7, 4.1, 4.5, 28.3, 28.13_
-  - [x]* 5.8 Write integration tests for guards, the Revision trigger, and the schema
+  - [x] 5.8 Write integration tests for guards, the Revision trigger, and the schema
     - In the workers pool: a failing guard aborts the whole batch and names its rule; `UPDATE` on `revisions` is refused; a schema scan finds no password, password hash, or PIN column
     - _Requirements: 1.2, 4.1, 22.11_
 
@@ -196,12 +191,12 @@ Where a task in an earlier milestone produces something that a later task delive
     - _Requirements: 23.5, 23.6, 23.14, 23.16, 26.14, 33.4, 34.2, 34.9, 39.13, 46.16, 46.17_
   - [x] 6.5 Write property test for Effective_Disclosure
     - **Property 1: Effective_Disclosure follows the ancestor rule**
-    - **Validates: Requirements 23.1, 23.3, 24.5, 26.5**
+    - **Validates: Requirements 23.1, 23.3, 24.5, 26.5, 47.9**
   - [x] 6.6 Write property test for public output confinement
     - Build `workspaceStateArb` in `packages/testing/src/workspace.ts` with a unique canary token in every field of every unit, Member, Party, and Outside_Submission
     - Build the public-channel registry `packages/testing/src/public-channels.ts`, register the kernel's view output as its first channel, and write the test so it checks every registered channel; later tasks register their channels here
     - **Property 5: Public outputs contain only Public_View content**
-    - **Validates: Requirements 17.7, 20.6, 24.5, 24.6, 24.13, 30.10, 31.7, 31.9, 35.2, 40.6, 41.12, 42.8, 42.15**
+    - **Validates: Requirements 17.7, 20.6, 24.5, 24.6, 24.13, 30.10, 31.7, 31.9, 35.2, 40.6, 41.12, 42.8, 42.15, 51.5**
   - [x] 6.7 Write property test for preview diffs
     - **Property 14: Disclosure previews are exact diffs**
     - **Validates: Requirements 23.6, 23.16, 34.9, 39.13**
@@ -215,7 +210,7 @@ Where a task in an earlier milestone produces something that a later task delive
     - Split text nodes at span boundaries; Quote as `<q>` with a visible "Quote · {source}" label or a same-page footnote for long spans; Paraphrase and Source_Reported as marked spans with visible labels and no quotation marks; `lang` on language-marked spans; one marked segment per block for spans that cross blocks
     - Output is the neutral element tree of `packages/domain/src/tree.ts`, so the Design_System's string renderer and React adapter render the same marks
     - _Requirements: 11.5, 11.6, 45.6_
-  - [x]* 7.3 Write property test for mathematics delimiters
+  - [x] 7.3 Write property test for mathematics delimiters
     - **Property 93: Mathematics delimiters follow the rules**
     - **Validates: Requirements 45.15**
   - [x] 7.4 Implement the Journal_Parser in `packages/markdown/src/journal/parse.ts`
@@ -263,10 +258,10 @@ Where a task in an earlier milestone produces something that a later task delive
   - [x] 8.5 Add the self-hosted typefaces in `packages/design/fonts/` and `packages/design/src/fonts.css`
     - Fraunces, Inter, JetBrains Mono, STIX Two Text, and STIX Two Math under the SIL Open Font License, split by `unicode-range`, with `font-display: swap` and `size-adjust` fallback faces, and the licence notices collected for exports
     - _Requirements: 45.8, 45.13, 45.17, 45.20_
-  - [x]* 8.6 Write unit tests for font coverage and accent contrast
+  - [x] 8.6 Write unit tests for font coverage and accent contrast
     - Read every font file's character map and check that each graphic character of the blocks Requirement 45.13 lists is covered in each stack; check every Project_Accent for at least 4.5:1 text and 3:1 interface contrast in both schemes
     - _Requirements: 45.4, 45.13, 45.22_
-  - [x]* 8.7 Write property test for label rendering
+  - [x] 8.7 Write property test for label rendering
     - **Property 39: Labels render exactly over their characters**
     - **Validates: Requirements 11.5, 11.6**
 
@@ -292,16 +287,16 @@ Where a task in an earlier milestone produces something that a later task delive
     - Static form pages `/submit`, `/p/{slug}/submit`, `/submit/general`, `/submit/correction`, `/submit/removal`, `/submit/removal/general`, and `/respond` with the preselections of Requirements 31.13, 46.18, and 46.21 built in
     - Register every page template of tasks 9.2 to 9.5 in `packages/testing/src/public-channels.ts`
     - _Requirements: 31.1, 31.13, 46.1, 46.5, 46.6, 46.10, 46.11, 46.15, 46.18, 46.21, 46.29, 46.35_
-  - [x]* 9.6 Write property test for complete public pages
+  - [x] 9.6 Write property test for complete public pages
     - **Property 16: Public pages are complete**
     - **Validates: Requirements 24.1, 24.2, 24.3, 24.9, 24.10, 24.14, 24.15, 29.9, 29.10, 29.11, 29.12, 45.2, 46.2, 46.8**
-  - [x]* 9.7 Write property test for public listings
+  - [x] 9.7 Write property test for public listings
     - **Property 18: Public listings are exact, ordered, and paged**
     - **Validates: Requirements 29.1, 29.5, 29.13, 29.14, 40.1, 40.2, 40.4, 40.11**
-  - [x]* 9.8 Write property test for page metadata
+  - [x] 9.8 Write property test for page metadata
     - **Property 20: Page metadata derives from the page**
     - **Validates: Requirements 45.10, 45.11**
-  - [x]* 9.9 Write property test for the Methods page and term links
+  - [x] 9.9 Write property test for the Methods page and term links
     - **Property 96: Methods page and term links**
     - **Validates: Requirements 46.11, 46.14**
 
@@ -319,7 +314,7 @@ Where a task in an earlier milestone produces something that a later task delive
   - [x] 10.4 Implement the public page scripts in `apps/site-shell/src`
     - `search.ts`: the search form running the engine in a Web Worker, limited by default to the Project when opened from its Project_Section; `citation-date.ts`: a script of about 1 KB that fills in the Visitor's local access date, with "accessed [date of access]" as the text without scripts
     - _Requirements: 29.9, 30.6, 30.12_
-  - [x]* 10.5 Write property test for public search
+  - [x] 10.5 Write property test for public search
     - **Property 62: Public search returns exactly the matching Public_Views**
     - **Validates: Requirements 30.1, 30.2, 30.3, 30.4, 30.9, 30.12**
 
@@ -361,11 +356,11 @@ Where a task in an earlier milestone produces something that a later task delive
   - [x] 13.4 Implement CSRF, Origin, and CORS checks in `apps/app/src/api/csrf.ts`
     - State-changing requests need the `X-RF-CSRF` header and an `Origin` of `https://app.researchforce.org`; CORS allows only the Workspace origin; `GET` routes have no side effects
     - _Requirements: 14.6_
-  - [x]* 13.5 Write property test for identity assertions
+  - [x] 13.5 Write property test for identity assertions
     - Use `jwtArb` in `packages/testing/src/jwt.ts` with test signing keys and mutations
     - **Property 21: Identity assertions gate every Workspace request**
     - **Validates: Requirements 1.3, 1.4, 1.5, 1.6, 1.8, 2.9**
-  - [x]* 13.6 Write unit tests for logout and log redaction
+  - [x] 13.6 Write unit tests for logout and log redaction
     - Logout ends the session for that browser; logged lines contain no `Authorization` header, token, email address, or body text
     - _Requirements: 1.9, 20.20_
 
@@ -384,13 +379,13 @@ Where a task in an earlier milestone produces something that a later task delive
   - [x] 14.4 Implement Role changes and revocation in `apps/app/src/api/routes/members.ts`
     - `PATCH /members/{id}/role` and `POST /members/{id}/revoke` with the `last_admin` guard inside the batch; revocation sets Revoked, calls `rf-ops.removeMember` and `revokeSessions`, and leaves every record's attribution unchanged
     - _Requirements: 2.9, 2.10, 2.11_
-  - [x]* 14.5 Write property test for Permission decisions
+  - [x] 14.5 Write property test for Permission decisions
     - **Property 23: Permission decisions match the Role_Permission_Map**
     - **Validates: Requirements 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 3.2, 13.8, 34.10, 41.3, 41.4, 42.5, 42.6, 44.13, 45.22, 46.16, 46.39**
-  - [x]* 14.6 Write property test for the last active Administrator
+  - [x] 14.6 Write property test for the last active Administrator
     - **Property 24: At least one active Administrator remains**
     - **Validates: Requirements 2.11**
-  - [x]* 14.7 Write property test for Member identity
+  - [x] 14.7 Write property test for Member identity
     - **Property 25: Member identity invariants**
     - **Validates: Requirements 2.1, 2.2, 2.13**
 
@@ -402,7 +397,7 @@ Where a task in an earlier milestone produces something that a later task delive
   - [x] 15.2 Implement the incomplete-Profile gate in `apps/app/src/auth/profile-gate.ts`
     - Respond `profile_incomplete` (428) to every Workspace route except the Profile routes while the display name, a Specialty, or the time zone is missing
     - _Requirements: 3.6_
-  - [x]* 15.3 Write property test for the Profile gate
+  - [x] 15.3 Write property test for the Profile gate
     - **Property 26: Incomplete Profiles gate the Workspace**
     - **Validates: Requirements 3.6**
 
@@ -416,10 +411,10 @@ Where a task in an earlier milestone produces something that a later task delive
     - Create (Not_Published, not featured, last in the Project_Order, creator and time recorded), edit with validation, refusal of a whole save that changes a fixed Project_Slug, featured toggle, `move-position` rewriting the positions between the old and new places in one batch, and Project_Accent set or clear from the palette by Administrators only
     - A Revision for every change (Disclosure_Change for level and Disclosure_Line, Minor_Edit otherwise), `GET /projects/{id}/history` with before and after values, and `project:{id}` outbox rows
     - _Requirements: 39.4, 39.5, 39.6, 39.7, 39.8, 39.18, 45.3, 45.4, 45.22_
-  - [x]* 16.3 Write property test for the Project_Order
+  - [x] 16.3 Write property test for the Project_Order
     - **Property 76: Project_Order stays a permutation**
     - **Validates: Requirements 39.7**
-  - [x]* 16.4 Write property test for Project_Accents
+  - [x] 16.4 Write property test for Project_Accents
     - **Property 94: Project_Accents apply only to their Project and only from the palette**
     - **Validates: Requirements 45.3, 45.22**
 
@@ -435,10 +430,10 @@ Where a task in an earlier milestone produces something that a later task delive
   - [x] 17.3 Implement External_Parties in `apps/app/src/records/parties.ts` and `apps/app/src/api/routes/parties.ts`
     - A new External_Party whose case- and diacritic-folded name equals an existing one needs confirmation; one Do_Not_Name flag and one Generic_Label per External_Party; any Member may turn the flag on with a valid Generic_Label; a non-Administrator turning it off is refused; changes write `party:{id}` outbox rows
     - _Requirements: 9.2, 34.4, 34.8, 34.10_
-  - [x]* 17.4 Write property test for Cross_Links and Backlinks
+  - [x] 17.4 Write property test for Cross_Links and Backlinks
     - **Property 42: Cross_Links are unique and Backlinks complete**
     - **Validates: Requirements 15.2, 15.3, 15.4, 15.5, 15.7**
-  - [x]* 17.5 Write property test for External_Party duplicate detection
+  - [x] 17.5 Write property test for External_Party duplicate detection
     - **Property 99: External_Party duplicate detection ignores case and diacritics**
     - **Validates: Requirements 9.2**
 
@@ -469,17 +464,19 @@ Where a task in an earlier milestone produces something that a later task delive
   - [x] 18.8 Implement the Item routes in `apps/app/src/api/routes/items.ts`
     - `POST /items/{kind}`, `GET /items/{id}`, and `PATCH /items/{id}`; the item response carries the Owner's display name and current Specialties, the Credit, the Project name, and each unit's Disclosure_Level and Effective_Disclosure computed with the kernel over the loaded ancestors
     - _Requirements: 3.5, 23.9, 39.15_
-  - [x]* 18.9 Write property test for Journal_Entry edits
+  - [x] 18.9 Write property test for Journal_Entry edits
     - **Property 32: Journal_Entry edits preserve surviving sections and their order**
     - **Validates: Requirements 4.4, 4.8**
-  - [x]* 18.10 Write property test for the acting Member
+  - [x] 18.10 Write property test for the acting Member
     - **Property 22: The acting Member is the session Member**
     - **Validates: Requirements 1.7, 2.10**
 
-- [x] 19. Build staged commits and the value-set and settings APIs
-  - [x] 19.1 Implement staged commits in `apps/app/src/records/stages.ts` and `apps/app/src/api/routes/stages.ts`
-    - Saves above 512 KB send `POST /stages`, `PUT /stages/{token}/parts/{n}`, and `POST /stages/{token}/commit`, which moves the staged rows into place with `INSERT … SELECT` in one batch; non-staged routes answer `too_large` (413) above 512 KB
-    - _Requirements: 4.1, 4.4, 28.3_
+- [ ] 19. Build staged commits and the value-set and settings APIs
+  - [ ] 19.1 Implement staged commits in `apps/app/src/records/stages.ts` and `apps/app/src/api/routes/stages.ts`
+    - Retain the stage routes and add the logical-field fragment protocol from 57.3: split inside a single Entry_Section or its spans, measure the full encoded JSON envelope against 512,000 bytes, and validate complete manifests, offsets, digests, totals and base revisions before commit.
+    - A staged commit atomically installs complete immutable field-version references and old-version Revision references for the whole save; no request, staging row, field row, Revision or aggregate JSON may exceed the physical budget. Failed/lost responses reconcile the original operation key.
+    - Test one 600,000-character ASCII section, one 600,000-emoji section, two million code points, span boundaries, oversized JSON escaping and crash/retry at every part. Existing journal round trips and identities must remain exact.
+    - _Requirements: 4.1, 4.4, 4.10, 4.11, 11.10, 28.3, 28.10, 60.2_
   - [x] 19.2 Implement the value-set API in `apps/app/src/api/routes/value-sets.ts`
     - `GET/POST/PATCH /value-sets` applying the domain rules to every configurable set, Public_Description edits for Methods_Terms, and `value:{set}:{id}` outbox rows
     - _Requirements: 3.3, 3.8, 4.6, 6.5, 6.8, 7.7, 8.8, 10.5, 33.6, 46.12, 46.13_
@@ -497,7 +494,7 @@ Where a task in an earlier milestone produces something that a later task delive
   - [x] 20.3 Implement the sliced job runner in `apps/app/src/do/jobs.ts`
     - A `Jobs` Durable Object that processes one slice of about 5 ms per alarm, stores its cursor and progress in its SQLite storage and the `jobs` table, sets the next alarm while work remains, and pauses on a daily-limit error until after 00:00 UTC
     - _Requirements: 26.13, 28.3, 36.10_
-  - [x]* 20.4 Write integration tests for the outbox and the job runner
+  - [x] 20.4 Write integration tests for the outbox and the job runner
     - A lost kick is picked up by the next cron run; a job stopped by a simulated daily-limit error resumes from its cursor without repeating work
     - _Requirements: 26.13, 36.10_
 
@@ -549,16 +546,16 @@ Where a task in an earlier milestone produces something that a later task delive
   - [x] 23.6 Build the history screens in `apps/app/web/src/history/`
     - History list, state at a point, comparison with marked words, the restore dialog, the withdrawal dialog with its public-reason statement, and the deletion confirmation
     - _Requirements: 22.3, 22.4, 22.5, 22.6, 22.7_
-  - [x]* 23.7 Write property test for status rules
+  - [x] 23.7 Write property test for status rules
     - **Property 30: Status rules hold under all operation sequences**
     - **Validates: Requirements 5.3, 5.4, 5.9, 8.2, 8.4, 8.6, 8.7**
-  - [x]* 23.8 Write property test for history reconstruction
+  - [x] 23.8 Write property test for history reconstruction
     - **Property 33: History reconstructs every past state**
     - **Validates: Requirements 11.8, 22.1, 22.3, 22.6, 39.8, 41.6, 42.7**
-  - [x]* 23.9 Write property test for Restoration
+  - [x] 23.9 Write property test for Restoration
     - **Property 34: Restoration changes only content fields**
     - **Validates: Requirements 22.5, 23.15, 41.14, 42.5**
-  - [x]* 23.10 Write property test for comparisons
+  - [x] 23.10 Write property test for comparisons
     - **Property 35: Comparisons mark exactly the changed words**
     - **Validates: Requirements 22.4, 42.9**
 
@@ -577,7 +574,7 @@ Where a task in an earlier milestone produces something that a later task delive
   - [x] 24.4 Build the discussion and review screens in `apps/app/web/src/discussion/` and `apps/app/web/src/reviews/`
     - Thread tree, reply composer with Mentions, Topic form, review request form, review queue, the item page's request list, and the pending-review marker
     - _Requirements: 16.4, 17.7, 17.8, 17.11_
-  - [x]* 24.5 Write property test for Threads
+  - [x] 24.5 Write property test for Threads
     - **Property 47: Threads are trees in posting order**
     - **Validates: Requirements 16.3, 16.4, 41.7**
 
@@ -603,16 +600,16 @@ Where a task in an earlier milestone produces something that a later task delive
     - Badge counts on every page, new and updated marks in listings, search results, Threads, and Attachment lists as the flags stood when the page opened, and the feed page with filters and "mark all as seen"
     - List entries of Restricted Research_Items show `RestrictedMark` from `apps/app/web/src/access/access.tsx`, and listings offer bulk access changes through its `useSelection` and `BulkAccess` (R47.11, R47.14)
     - _Requirements: 16.4, 18.5, 18.7, 18.8, 18.10_
-  - [x]* 25.7 Write property test for New_Flags
+  - [x] 25.7 Write property test for New_Flags
     - **Property 49: New_Flags mark exactly the unseen Items of others' Submissions**
     - **Validates: Requirements 18.1, 18.3, 18.6, 39.17**
-  - [x]* 25.8 Write property test for Updated_Flags
+  - [x] 25.8 Write property test for Updated_Flags
     - **Property 50: Updated_Flags mark changes after a view**
     - **Validates: Requirements 18.4**
-  - [x]* 25.9 Write property test for Submission visibility
+  - [x] 25.9 Write property test for Submission visibility
     - **Property 51: Submissions become visible all at once**
     - **Validates: Requirements 18.2, 18.11**
-  - [x]* 25.10 Write property test for mark-all-seen
+  - [x] 25.10 Write property test for mark-all-seen
     - **Property 53: Mark-all-seen clears exactly the matching, older flags**
     - **Validates: Requirements 18.5**
 
@@ -632,13 +629,13 @@ Where a task in an earlier milestone produces something that a later task delive
   - [x] 26.4 Build the notification screens in `apps/app/web/src/notifications/`
     - The Notification_Centre, the unread count on every Workspace page, and opening a Notification at its Root_Item, its list of Root_Items, or the Group_Note scrolled into view
     - _Requirements: 19.7, 19.11, 19.12, 41.10_
-  - [x]* 26.5 Write property test for Mentions
+  - [x] 26.5 Write property test for Mentions
     - **Property 40: Mentions are explicit and notify once**
     - **Validates: Requirements 16.6, 16.7, 16.8**
-  - [x]* 26.6 Write property test for counts
+  - [x] 26.6 Write property test for counts
     - **Property 52: Counts match flags and Notifications**
     - **Validates: Requirements 18.7, 19.12**
-  - [x]* 26.7 Write property test for Notification grouping
+  - [x] 26.7 Write property test for Notification grouping
     - **Property 55: One Notification per Submission per recipient**
     - **Validates: Requirements 19.6**
 
@@ -663,22 +660,22 @@ Where a task in an earlier milestone produces something that a later task delive
   - [x] 27.5 Implement the Microsoft Graph provider in `apps/app/src/mail/providers/graph.ts`
     - The `send(message)` Email_Provider interface; client-credentials tokens from `login.microsoftonline.com` with a certificate assertion signed by WebCrypto, held only in the `Mailer` instance's memory; `POST /v1.0/users/{Sending_Address}/sendMail` with one recipient, an HTML body, and `saveToSentItems: false`; `BODY_MODE = 'html-with-exchange-conversion'` as the one place the plain-text strategy is chosen; credentials, tokens, and Graph responses never logged or stored
     - _Requirements: 20.11, 20.19, 20.20, 20.21, 20.22, 20.24, 45.21_
-  - [x]* 27.6 Write property test for companion fields
+  - [x] 27.6 Write property test for companion fields
     - **Property 9: Companion fields are rendered together**
     - **Validates: Requirements 5.6, 5.10, 6.3, 7.4, 8.3, 29.2, 29.3, 29.4, 43.3**
-  - [x]* 27.7 Write property test for email batching
+  - [x] 27.7 Write property test for email batching
     - **Property 56: Email batching partitions events correctly**
     - **Validates: Requirements 20.1, 20.2, 20.3, 20.12**
-  - [x]* 27.8 Write property test for Daily_Digests
+  - [x] 27.8 Write property test for Daily_Digests
     - **Property 57: Daily_Digests list each event once**
     - **Validates: Requirements 20.4, 20.5**
-  - [x]* 27.9 Write property test for the sending queue
+  - [x] 27.9 Write property test for the sending queue
     - **Property 58: The sending queue respects every limit**
     - **Validates: Requirements 20.8, 20.9, 20.10, 20.15, 20.16, 20.17, 20.18, 32.11, 32.12**
-  - [x]* 27.10 Write property test for email branding
+  - [x] 27.10 Write property test for email branding
     - **Property 59: Emails carry the brand and full-address links**
     - **Validates: Requirements 20.7, 45.21**
-  - [x]* 27.11 Write integration tests for the Mailer with a mocked Graph endpoint
+  - [x] 27.11 Write integration tests for the Mailer with a mocked Graph endpoint
     - 429 and 5xx retries, a provider change between attempts, the invitation-failure state, and a request body with `saveToSentItems: false` and one recipient
     - _Requirements: 2.14, 20.9, 20.11, 20.24_
 
@@ -697,10 +694,10 @@ Where a task in an earlier milestone produces something that a later task delive
     - Query form and filters; after 10 seconds without a response, "search is unavailable", with the 00:00 UTC note for daily limits; query and filters kept as entered
     - Restricted results show `RestrictedMark` from `apps/app/web/src/access/access.tsx`, and result lists offer bulk access changes through its `useSelection` and `BulkAccess` (R47.11, R47.14)
     - _Requirements: 21.9, 21.10_
-  - [x]* 28.4 Write property test for Member search
+  - [x] 28.4 Write property test for Member search
     - **Property 60: Member search returns exactly the matching units**
     - **Validates: Requirements 21.1, 21.3, 21.4, 21.5, 21.8, 42.13**
-  - [x]* 28.5 Write property test for search excerpts
+  - [x] 28.5 Write property test for search excerpts
     - **Property 61: Search excerpts are bounded, highlighted, and labelled**
     - **Validates: Requirements 21.7, 30.5, 30.13**
 
@@ -709,46 +706,52 @@ Where a task in an earlier milestone produces something that a later task delive
   - Done 2026-10-28 in the cloud workspace: lint and `tsc -b` clean; 945 of 946 tests pass with `--testTimeout=180000`. `p42-cross-links` takes about 24 s there against its own 200 ms-per-run limit (20 s at 100 runs) and also did on the commit before Task 25, so it is slow on that machine rather than broken.
 
 - [ ] 30. Build files: uploads, Attachments, versions, previews, Download_Links, and `rf-dl`
-  - [ ] 30.1 Implement uploads in `apps/app/src/files/uploads.ts` and `apps/app/src/api/routes/uploads.ts`
+  - Reopened by the 27 October review: the earlier CI/build evidence remains valid for its tested cases, but 30.6–30.8 still need reload persistence, bounded streaming previews, and listing-versus-view flag corrections. Real R2/CORS rehearsal is mandatory in task 48; no completed code is discarded.
+  - [x] 30.1 Implement uploads in `apps/app/src/files/uploads.ts` and `apps/app/src/api/routes/uploads.ts`
     - `POST /uploads` with name, size, and browser-computed SHA-256, refusing files above the Attachment_Size_Limit and the 101st file of a Submission before any transfer, naming the file and the limit
     - SigV4 presigned PUT URLs to `rf-private` signing `content-length` and `x-amz-checksum-sha256` for files up to 64 MiB, and multipart uploads with 16 MiB parts each signing its SHA-256 (`POST /uploads/{id}/parts`); `POST /uploads/{id}/complete` compares the stored size and checksum with the declared values; no file content passes through a Worker request body
     - _Requirements: 12.4, 12.5, 12.9, 12.10_
-  - [ ] 30.2 Implement Attachments in Submissions in `apps/app/src/files/attachments.ts`
+  - [x] 30.2 Implement Attachments in Submissions in `apps/app/src/files/attachments.ts`
     - One Attachment per completed file on a Research_Item or Reply that the Submission adds or that already exists, with title (default the file name), file kind, original file name preserved exactly, size, Credit, caption, Origin, and upload completion time; rights fields with limits, Unknown by default, or copied from a Source Parent with Unknown in place of a retired value
     - Hourly sweep deleting objects of uploads started more than 24 hours earlier that belong to no completed Submission
     - _Requirements: 6.4, 7.3, 12.1, 12.2, 12.8, 16.5, 33.1, 33.2, 33.3_
-  - [ ] 30.3 Implement Attachment versions in `apps/app/src/files/versions.ts`
+  - [x] 30.3 Implement Attachment versions in `apps/app/src/files/versions.ts`
     - A new version is a new Attachment on the same Parent with `supersedes_unit_id`, last in the Version_Chain, Not_Published, with Rights_Status Unknown; the `chain_tip` guard refuses a version of a superseded Attachment and names the last version so the dialog can offer it; adding a version needs edit Permission on the target; the superseded Attachment stays unchanged and usable
     - Chain data for every Attachment (positions from 1, upload time, Owner, viewed and last marks) and supersession notices with the successor's upload time and link
     - _Requirements: 13.1, 13.2, 13.3, 13.4, 13.5, 13.6, 13.7, 13.8_
-  - [ ] 30.4 Implement Download_Link issue in `apps/app/src/files/links.ts` and `POST /files/{id}/link`
+  - [x] 30.4 Implement Download_Link issue in `apps/app/src/files/links.ts` and `POST /files/{id}/link`
     - Tokens `base64url(objectKey, memberId, issuedAt, purpose)` with an HMAC-SHA-256 under a Workers secret, issued only to active Members who Can_Read the file's Research_Item, at `https://dl.researchforce.org/t/{token}` for files and `/x/{token}` for package volumes
     - _Requirements: 14.9, 25.1, 25.5, 47.4_
-  - [ ] 30.5 Implement the `rf-dl` Worker in `apps/dl/src/index.ts`
+  - [x] 30.5 Implement the `rf-dl` Worker in `apps/dl/src/index.ts`
     - Accept a token only with a valid signature, at most 15 minutes after issue, for an Active Member at request time, and for an Administrator when the purpose is an Internal_Backup; support `Range` and `HEAD`; serve with `Content-Disposition: attachment`, `Content-Type: application/octet-stream`, `X-Content-Type-Options: nosniff`, `Content-Security-Policy: sandbox; default-src 'none'`, `Cross-Origin-Resource-Policy: same-site`, and CORS limited to the Workspace origin
     - Every refusal returns the same 404 response as an unknown path; register `rf-dl` responses to non-Members in `packages/testing/src/public-channels.ts`
     - _Requirements: 14.6, 25.1, 25.2, 25.5, 25.6, 35.9, 36.2_
   - [ ] 30.6 Build the upload screen in `apps/app/web/src/files/upload.tsx`
-    - SHA-256 and per-part hashes in a Web Worker; per-file progress as a whole-number percentage refreshed at least once per second; a file fails after 60 seconds without progress, an R2 error, a check mismatch, or sweeper removal, and can be retried any number of times or removed without losing the rest; the Submit button stays disabled with reasons while any file is uploading, failed, or has invalid metadata
-    - _Requirements: 12.6, 12.7, 12.11_
+    - Keep incremental file/per-part SHA-256 in the Web Worker and per-file whole-number XHR progress at least once per second; fail only the affected file on a 60-second stall, storage error, checksum mismatch or sweep removal, with unlimited retry/removal.
+    - Persist title, caption, Origin, rights choices, upload/group IDs and operation key in same-tab storage before transfer and on edit. Reload revalidates completed uploads and restores metadata; an expired/interrupted local File requires name/size/hash-matching reselection while all other fields survive. Explicit server drafts integrate in task 64.
+    - Submit remains blocked with file-specific reasons for uploading/failed/invalid metadata, including form submission by keyboard. Browser tests reload after completion and failure, reselect a file, retry/remove one file while preserving others, and reconcile a lost completion/save response.
+    - _Requirements: 12.6, 12.7, 12.11, 28.10, 57.3, 60.2_
   - [ ] 30.7 Build the inline previews in `apps/app/web/src/files/preview/`
-    - Bytes fetched through a Download_Link; pdf.js with scripting and `eval` off, page n of N, previous, next, and go-to-page; JPEG, PNG, GIF, and WebP from typed `blob:` URLs, fitted, with zoom to 400% and keyboard and pointer panning; the first 1 MB of text logs with "showing X of Y"; CSV through Papa Parse with the header and 1,000 rows, the row count, and whether more rows exist
-    - Magic-byte checks; notices naming the cause for damaged, password-protected, mismatched, or unavailable files while metadata and download stay available; renderings only in the browser's memory; pure `previewText` and `previewCsv` helpers in `truncate.ts`
-    - _Requirements: 14.1, 14.2, 14.3, 14.4, 14.5, 14.7, 14.9_
+    - Fetch bytes only through current Member-bound Download_Links; use a self-hosted PDF.js build without scripting/eval/interactive annotation actions, range transport and bounded caches; retain page n of N, previous/next/go-to controls. Decode only magic-byte-verified supported raster types, with fit, zoom through 400%, and keyboard/pointer panning.
+    - Text logs use Range for the first decimal MB. CSV streams through Papa Parse with 1,000 complete data rows and one-row lookahead, cancels retrieval when sufficient, and enforces 32 MiB scanned/256 KiB record/2 MiB buffering. Distinguish known-more, end-of-file and budget-limited unknown remainder; never buffer the entire CSV or show a truncated quoted cell as a complete row.
+    - Keep pure truncation helpers; name damaged, password-protected, mismatched, unavailable and resource-limited causes while metadata/full download remain. Browser tests assert bounded allocation/transfer, abort/cleanup, range-link refresh, malformed/very long CSV records and malicious/polyglot files. Rendering in the SPA is controlled rendering in the Workspace, not origin isolation by itself.
+    - _Requirements: 14.1, 14.2, 14.3, 14.4, 14.5, 14.7, 14.9, 14.10_
   - [ ] 30.8 Build the Attachment screens in `apps/app/web/src/files/attachment-page.tsx`
-    - Flags (Task 25): show `FlagMark` from `apps/app/web/src/activity/activity.tsx` on entries, read as the page opened them with `useFlagSnapshot`, and call `useRecordViews` with the Items the page opens.
-    - Metadata, Origin, rights with whether the Rights_Status permits publication, download link, preview, Version_Chain list, and supersession notices on the Attachment and wherever a Cross_Link or Backlink shows a superseded Attachment
-    - _Requirements: 13.4, 13.6, 14.5, 33.7_
-  - [ ]* 30.9 Write property test for Version_Chains
+    - Keep metadata, Original_Name, Origin, rights and publication flag, protected full download, preview, Version_Chain positions/Owner/time/viewed/last marks, and supersession notices on Attachment and Cross_Link/Backlink displays.
+    - Show FlagMark from the opening snapshot. Do not call useRecordViews from Attachment metadata lists, chain lists, search or feed entries; record a view only for the actual opened/previewed/downloaded file. A browser regression test loads a Parent listing and proves unread file flags remain until that file is opened.
+    - Extend the screens with citations and derivations in task 62; listing those relationships must not implicitly open their target or broaden access.
+    - _Requirements: 13.4, 13.6, 14.5, 18.13, 33.7_
+  - [x] 30.9 Write property test for Version_Chains
     - **Property 43: Version_Chains stay linear**
     - **Validates: Requirements 13.1, 13.2, 13.3, 13.4, 13.7**
-  - [ ]* 30.10 Write property test for Download_Links
+  - [x] 30.10 Write property test for Download_Links
     - **Property 45: Download_Links authorize one file for 15 minutes**
     - **Validates: Requirements 25.1, 25.5, 35.9, 36.2**
-  - [ ]* 30.11 Write property test for preview truncation
+  - [ ] 30.11 Write property test for preview truncation
+    - Reopened for R14.10: extend the owning property with bounded CSV streaming, oversized quoted records, read cancellation and accurate unscanned/truncation reporting; retain text prefix cases.
     - **Property 46: Previews truncate exactly**
-    - **Validates: Requirements 14.3, 14.4**
-  - [ ]* 30.12 Write integration tests for uploads
+    - **Validates: Requirements 14.3, 14.4, 14.10**
+  - [x] 30.12 Write integration tests for uploads
     - Local R2 refuses a part or object with a wrong checksum; completion with a mismatched size fails the file; the sweep deletes only abandoned uploads
     - _Requirements: 12.7, 12.8, 12.10_
 
@@ -792,26 +795,28 @@ Where a task in an earlier milestone produces something that a later task delive
   - [ ] 31.11 Write property test for rights and consent invariants
     - **Property 13: Rights and consent invariants hold after every save**
     - **Validates: Requirements 9.6, 33.3, 33.5, 33.8, 34.1, 34.3**
-  - [ ]* 31.12 Write property test for public addresses
+  - [ ] 31.12 Write property test for public addresses
     - **Property 19: Public addresses are stable and content-free**
     - **Validates: Requirements 29.6, 29.7, 29.8, 39.6, 40.3, 40.8**
-  - [ ]* 31.13 Write property test for the Review_Request state machine
+  - [ ] 31.13 Write property test for the Review_Request state machine
     - **Property 48: Review_Requests follow their state machine**
     - **Validates: Requirements 17.3, 17.4, 17.5, 17.8, 17.9, 17.10**
-  - [ ]* 31.14 Write property test for item moves
+  - [ ] 31.14 Write property test for item moves
     - **Property 77: Moving a Research_Item changes only its Project**
     - **Validates: Requirements 39.1, 39.12**
-  - [ ]* 31.15 Write property test for Log_Summary rules
+  - [ ] 31.15 Write property test for Log_Summary rules
     - **Property 79: Log_Summary rules**
     - **Validates: Requirements 41.1, 41.2, 41.5, 41.13**
 
 - [ ] 32. Build the Publisher and the public site deployment
   - [ ] 32.1 Implement the `rf-ops` site deployment in `apps/ops/src/deploy.ts`
-    - `deploySite(manifest)`: start a Direct Upload session with the manifest of paths, hashes, and sizes, upload only the files the platform reports missing (resuming across invocations while the upload token is valid), create an assets-only `rf-site` version with `html_handling: auto-trailing-slash` and `not_found_handling: 404-page`, and deploy it to 100%
-    - _Requirements: 24.7, 24.11, 24.12, 28.6, 28.16_
+    - Implement deploySite(manifest, epoch, operationId) with the existing Direct Upload protocol, resumable upload token and assets-only version. rf-ops serializes promotion and requires the expected authoritative publication epoch before and after it; an obsolete operation cannot reopen a contained host.
+    - Record operation identity, exact Worker version/manifest and verified status for ambiguous API responses, reconcile before retry, and maintain precreated independent containment controls from task 59.
+    - _Requirements: 24.7, 24.11, 24.12, 24.16, 24.17, 28.6, 28.16, 60.2_
   - [ ] 32.2 Implement the Publisher projection step in `apps/app/src/do/publisher.ts`
-    - Dirty scopes from the `publish` outbox topic (`unit`, `root`, `project`, `party`, `member`, `emails`, `value`, `policy`, `site`) expanded to root keys; one run at a time; slices of at most about 500 KB of text that compute views, compare hashes with the current versions in `rf-public`, write new versions, and close old ones; Not_Published units get their version closed and no new row; closed versions older than 30 days pruned unless an export in progress started before them
-    - _Requirements: 24.11, 24.12, 34.6, 46.7, 46.34_
+    - Retain dirty-scope expansion and versioned Public_Views, but give runs leases/generations and a publication epoch. Urgent invalidations preempt older addition work at the next bounded slice; every copy/render/deploy transition checks the epoch and may not resurrect suppressed output.
+    - Read logical fields through bounded version readers from task 57; retain versions required by release/citation/backup leases and only prune eligible unreferenced derived history. Restore remains quarantined until the current suppression and public-launch preflight pass.
+    - _Requirements: 24.11, 24.12, 24.16, 24.17, 34.6, 36.16, 46.7, 46.34, 59.3_
   - [ ] 32.3 Implement planning and rendering in `apps/app/src/publisher/plan.ts` and `apps/app/src/publisher/render.ts`
     - Map changed views to every affected output (unit, Parent, and root pages; every page of affected listings, Project_Logs, and Disclosure_Line listings; Project, home, and projects pages; Research_Question pages and the Project page's Research_Question part from task 55.4; People and Policy pages; search index files; file operations), render with `public-render` and `search-public`, include the `site-shell` build, `robots.txt`, `sitemap.xml`, and `_headers`, hash each file as the Direct Upload API specifies, store new content under `rf-private/build/{hash}`, and keep the manifest in `rf-public.site_files`; alert at 16,000 files
     - No file is rendered for a Not_Published Project's addresses or for any address of a Withheld Project other than its page, so those addresses get the same `404.html` as unknown ones; Policy_Pages, metadata, print styles, fonts, scripts, and images ship only as static assets
@@ -820,13 +825,14 @@ Where a task in an earlier milestone produces something that a later task delive
     - Copy an Attachment that becomes Public to `rf-public` at `f/{Item_Identifier}` with a server-side `CopyObject` before any page links to it, with a content type from the file kind (`application/octet-stream` for script-capable types) and `Content-Disposition` naming `{Item_Identifier}.{ext}`; delete copies first for removals and retry failed deletions each slice
     - _Requirements: 24.3, 25.2, 25.3, 25.4, 28.6_
   - [ ] 32.5 Implement urgency, deployment, and verification in `apps/app/src/publisher/deploy.ts`
-    - A run is urgent when any existing view changed or disappeared and deploys as soon as its slices finish; add-only runs wait for 30 seconds without new changes and at most 5 minutes
-    - After an urgent deploy, `HEAD` every removed page and file address and expect the not-found response; a removal not confirmed 5 minutes after its save raises a System_Alert naming the unit within one more minute; a "publication lag" System_Alert at 4 minutes; a System_Alert for kernel invariant breaches; no processing while a restore runs, then a full rebuild
-    - _Requirements: 24.11, 24.12, 25.3, 25.7, 30.7, 30.8, 36.9, 42.8, 46.30, 46.38_
+    - Urgent removals interrupt addition work; addition batching remains 30 seconds quiet/5 minutes maximum. Fence all deploy/file effects against the current epoch, reconcile ambiguous promotion results and retain containment across stale retries.
+    - Verify pages, files, static index generations, public release outputs and controlled caches. At four minutes unconfirmed, initiate independent edge containment and alerting; by five minutes verify removal or containment where provider controls are available. If both fail, report an unconfirmed confidentiality incident and never claim success.
+    - Do not uncontain after a restore until fresh validation, known post-snapshot suppressions and a new authorized generation pass. Tests interleave a hold with a long run, failed deploy, old retry and resource exhaustion.
+    - _Requirements: 24.11, 24.12, 24.16, 24.17, 25.3, 25.7, 30.7, 30.8, 36.9, 36.16, 42.8, 46.30, 46.38, 59.3_
   - [ ] 32.6 Write property test for Publisher convergence
     - **Property 15: Publisher convergence**
     - **Validates: Requirements 24.1, 24.2, 24.4, 24.11, 24.12, 25.2, 25.3, 29.1, 30.7, 30.8, 36.9, 40.4, 46.7, 46.30**
-  - [ ]* 32.7 Write integration tests for publication timing and alerts
+  - [ ] 32.7 Write integration tests for publication timing and alerts
     - A stubbed `HEAD` that keeps answering 200 raises the System_Alert of Requirement 25.7; urgent runs deploy before add-only runs; a restore in progress pauses the Publisher
     - _Requirements: 24.11, 25.7, 36.9_
 
@@ -835,7 +841,7 @@ Where a task in an earlier milestone produces something that a later task delive
 
 - [ ] 34. Build the `Budget` Durable Object and the public submission API in `rf-submit`
   - [ ] 34.1 Implement the `Budget` Durable Object in `apps/app/src/do/budget.ts` and `apps/app/src/budget/status.ts`
-    - Per-UTC-day counters of Public_Traffic requests, rows read, and rows written with `admit()` and `report(rows)`; when a counter reaches the Public_Traffic_Budget minus a 2% margin, refuse further public requests with a fixed "unavailable until 00:00 UTC" response that uses no D1 query, ask `rf-ops` to enable the WAF block rule for `submit.researchforce.org`, and rewrite `files.researchforce.org/status.json`; `PUBLIC_SEARCH_FOLLOWS_BUDGET = true` in `status.ts` is the one place that decides whether search is marked unavailable
+    - Use 59.3's profile-aware reserve/settlement and provider-level accounting helpers for per-UTC-day Public_Traffic requests, rows read, and rows written with `admit()` and `report(rows)`; when a counter reaches the Public_Traffic_Budget minus a 2% margin, refuse further public requests with a fixed "unavailable until 00:00 UTC" response that uses no D1 query, ask `rf-ops` to enable the WAF block rule for `submit.researchforce.org`, and rewrite `files.researchforce.org/status.json`; `PUBLIC_SEARCH_FOLLOWS_BUDGET = false` in `status.ts` keeps static search available; dynamic form and addressed-view status are separate
     - The 00:00 UTC cron resets the counters, disables the WAF rule, and rewrites `status.json`; network-address counters stored only as HMAC-SHA-256 under a daily key with hourly counts, deleted with the key within 24 hours; an AI Neuron ledger of reservations and settlements; Recipient_Cap usage reported by the `Mailer`
     - _Requirements: 28.5, 28.6, 28.7, 28.11, 46.20_
   - [ ] 34.2 Implement the WAF switch in `apps/ops/src/waf.ts`
@@ -852,9 +858,9 @@ Where a task in an earlier milestone produces something that a later task delive
     - _Requirements: 31.2, 31.4, 31.5, 31.6, 31.7, 31.9, 31.12, 31.14, 32.1, 32.3, 32.17, 46.20, 46.22, 46.36_
   - [ ] 34.5 Implement the public form scripts in `apps/site-shell/src/form.ts` and update `apps/site-shell/src/search.ts`
     - Submission_Type choice, the licence agreement checkbox (never preselected, absent for Removal_Request), the Project list of Public Projects in Project_Order plus the General_Choice with the page's preselection, Turnstile in managed mode, uploads with progress, retry, and removal, every field and fully uploaded file kept after a refusal or failure, unsent input in `sessionStorage`, and the confirmation with reference and time
-    - Both scripts read `status.json` and replace the form or search with the "unavailable until 00:00 UTC" notice when it says so
+    - The form script reads its admission status and shows "unavailable until 00:00 UTC" when exhausted; the search script retains static search and treats confidentiality containment separately
     - _Requirements: 28.10, 28.11, 31.1, 31.10, 31.11, 31.13, 45.5, 45.18_
-  - [ ]* 34.6 Write property test for Outside_Submission limits
+  - [ ] 34.6 Write property test for Outside_Submission limits
     - **Property 88: Outside_Submission limits**
     - **Validates: Requirements 31.4, 31.12**
 
@@ -882,16 +888,16 @@ Where a task in an earlier milestone produces something that a later task delive
   - [ ] 35.7 Write property test for not-found responses
     - **Property 7: Not_Published and nonexistent are indistinguishable**
     - **Validates: Requirements 24.7, 25.6, 31.6, 31.14, 40.10**
-  - [ ]* 35.8 Write property test for Project choice
+  - [ ] 35.8 Write property test for Project choice
     - **Property 78: Project choice and preselection**
     - **Validates: Requirements 31.13, 32.18, 39.2, 39.3**
-  - [ ]* 35.9 Write property test for Response_Links
+  - [ ] 35.9 Write property test for Response_Links
     - **Property 89: Response_Link validity**
     - **Validates: Requirements 32.14**
-  - [ ]* 35.10 Write property test for Moderation_Decisions
+  - [ ] 35.10 Write property test for Moderation_Decisions
     - **Property 90: Moderation decisions are final, credited, and append-only**
     - **Validates: Requirements 32.4, 32.13, 32.16, 46.23**
-  - [ ]* 35.11 Write integration tests for moderation flows
+  - [ ] 35.11 Write integration tests for moderation flows
     - Acceptance creates one Submission with flags and New_Submission events; More_Information_Requested emails a Response_Link; decisions apply only after confirmation; rejection schedules file deletion and email erasure
     - _Requirements: 32.5, 32.6, 32.8, 32.9, 32.10_
   - [ ] 35.12 Implement Contact_Reviews and submitter corrections in `apps/app/src/moderation/contact-review.ts`
@@ -917,7 +923,7 @@ Where a task in an earlier milestone produces something that a later task delive
   - [ ] 36.3 Build the journal import screen in `apps/app/web/src/imports/journal.tsx`
     - Select the journal file, the attachment folder, and the metadata JSON; parse, print, and compare in a Web Worker; show the report preview (entries, sections, unassigned spans, attachments with Parents, files that will go to the Unassigned_Attachments_Source); choose the Access_Level for the import, with Restricted preselected and the statement that the importing Administrator, as Owner, and every Administrator can read Restricted items; hash and upload the files; start the job and show progress and the report with the access choice
     - _Requirements: 26.1, 26.3, 26.11, 26.15, 27.7, 27.8, 47.13_
-  - [ ]* 36.4 Write integration tests for the journal import
+  - [ ] 36.4 Write integration tests for the journal import
     - The import sets no flags and creates no events but adds one feed entry; an interrupted import leaves no partial Journal_Entry and resumes; a re-import skips everything; unreferenced files land in one Unassigned_Attachments_Source per Project; every Research_Item gets the chosen Access_Level
     - _Requirements: 26.9, 26.10, 26.13, 26.15, 47.13_
 
@@ -933,7 +939,7 @@ Where a task in an earlier milestone produces something that a later task delive
     - Use `manifestArb` and `csvBytesArb` in `packages/testing/src/manifest.ts` with Unicode values, quotes, commas, line breaks, spaces, empty cells, byte order marks, invalid UTF-8, and unclosed quotes
     - **Property 68: Manifest round trip**
     - **Validates: Requirements 38.4, 38.5**
-  - [ ]* 37.4 Write property test for manifest parsing and validation
+  - [ ] 37.4 Write property test for manifest parsing and validation
     - **Property 69: Manifest parsing is exact and validation is complete**
     - **Validates: Requirements 33.10, 37.1, 37.2, 37.3, 37.8, 37.16, 38.1, 38.2, 38.3, 38.6, 38.7, 38.9**
   - [ ] 37.5 Implement Bulk_Import validation in `apps/app/src/jobs/bulk-validate.ts`
@@ -949,16 +955,16 @@ Where a task in an earlier milestone produces something that a later task delive
   - [ ] 37.7 Build the Bulk_Import screen in `apps/app/web/src/imports/bulk.tsx`
     - Choose the Project and the Access_Level for rows that do not set their own (Restricted preselected, with the statement of who can read Restricted items), select the manifest and folder, show the browser-side validation report, hash and upload the files, start the job, and show progress and the report
     - _Requirements: 37.3, 37.11, 37.17, 47.13_
-  - [ ]* 37.8 Write property test for import idempotency and mapping
+  - [ ] 37.8 Write property test for import idempotency and mapping
     - **Property 70: Imports are idempotent and map rows and files correctly**
-    - **Validates: Requirements 26.2, 26.10, 26.12, 33.9, 37.6, 37.7, 37.12, 37.15, 37.18**
-  - [ ]* 37.9 Write property test for import reports
+    - **Validates: Requirements 26.2, 26.10, 26.12, 26.15, 33.9, 37.6, 37.7, 37.12, 37.15, 37.18, 47.13**
+  - [ ] 37.9 Write property test for import reports
     - **Property 71: Import reports account for every input**
     - **Validates: Requirements 26.11, 37.4, 37.11**
-  - [ ]* 37.10 Write property test for atomic saves
+  - [ ] 37.10 Write property test for atomic saves
     - **Property 28: Saves are all-or-nothing**
     - **Validates: Requirements 4.1, 4.5, 26.13, 28.13, 32.15, 37.13**
-  - [ ]* 37.11 Write property test for budget gates
+  - [ ] 37.11 Write property test for budget gates
     - **Property 81: Budget gates admit only what the budget allows**
     - **Validates: Requirements 28.5, 37.14**
 
@@ -976,36 +982,37 @@ Where a task in an earlier milestone produces something that a later task delive
     - Stream packages as POSIX tar volumes with pax headers for UTF-8 names and at most 900 objects per volume, only through Download_Links
     - _Requirements: 28.8, 35.9, 36.2_
   - [ ] 38.4 Implement the Internal_Backup job in `apps/app/src/jobs/backup.ts` and `POST /backups`
-    - `FREEZE` constants and the `frozen` guard added as the first statement of every write batch in `packages/db/src/batch.ts`; while frozen, saves answer `frozen`; read the backed-up tables in keyset pages of about 1,000 rows into JSON Lines under `rf-private/backups/{id}/`, then lift the freeze and copy the files
-    - Back up Projects with slug, featured flag, position, accent, level, and Research_Question order, units and kind tables with Access_Levels, `access_grants`, Research_Questions with Question_Groups and entries, labels, Revisions, Cross_Links, Review_Requests, Publication_Proposals and Publication_Consents, Confidentiality_Holds with liftings and overrides, Dual_Approvals, Outside_Submissions with decisions, Contact_Reviews, and submitter corrections, External_Parties, Members with Role and status, Profiles, value sets with Public_Descriptions, settings including the Responsible_Person, and Policy_Sections with Revisions; leave out flags, views, Notifications, events, email batches, sessions, outbox, staging, and network-address counters
-    - Mark a backup incomplete when an element is missing, it takes over 24 hours, or a file mismatches, and report this to the requester; deliver only to Administrators; delete every file within 1 hour once 7 days old; Reminders for every Administrator at each 30-day multiple since the latest complete, fully downloaded backup, or since the first Item
-    - _Requirements: 28.8, 36.1, 36.2, 36.3, 36.6, 36.7, 36.11, 47.15, 48.11, 49.7_
+    - Use the renewable freeze/read-retention lease helpers from 58.3 for the consistent bounded snapshot; every API/cron/raw SQL/outbox writer checks the shared live lease. Snapshot expiry/overrun invalidates the package and permits safe writers; never leave a bare frozen counter indefinitely.
+    - Back up the versioned authoritative table inventory and field/file manifests: research, identity, policy, access/holds/approvals/permission evidence, Question/work/decision/citation/derivation/compute/release objects, author-scoped drafts and navigation, and retained idempotency result identities. Exclude derived flags/views, notifications/events, mail queues/sessions, transient staging and network counters; never replay pending external sends.
+    - Seal the authenticated format/schema/version/count/hash manifest defined in 58.1, copy immutable files under read leases or invalidate when deletion supersedes the lease, and report every missing/mismatched element. Independent schedules, encryption/copy verification and retention are task 58.2; requested staging packages expire after seven days, not the independent retained recovery points.
+    - _Requirements: 28.8, 36.1, 36.2, 36.3, 36.6, 36.7, 36.11, 36.12, 36.13, 36.14, 47.15, 48.11, 49.7, 60.1_
   - [ ] 38.5 Implement restore in `apps/app/src/jobs/restore.ts` and `POST /restores`
-    - Accept a backup still in R2 or an uploaded package whose files the browser verified; refuse before any change when the package is not an Internal_Backup, the system is not empty, or a manifest file is missing or mismatched, reporting each reason
-    - Insert rows in dependency order with original ids, Item_Identifiers, levels, classification states, and Revisions using `INSERT OR IGNORE` and per-table cursors, so a stopped restore resumes without duplicates and reports created and remaining counts; copy files to their original keys; replace the seeded Policy_Sections; set no flags and create no events; keep the Publisher paused until completion, then rebuild `rf-search`, `rf-public`, and the site
-    - _Requirements: 36.4, 36.5, 36.8, 36.9, 36.10, 36.11_
+    - Use 58.4 preflight to authenticate/decrypt the manifest and verify schema/format, all bytes, references/counts, destination eligibility and bootstrap identity before inserting research; browser hashes are supplementary. Accept the current and two prior released formats where available through explicit transforms.
+    - Insert with restore-owned key/payload-hash checkpoints, skipping only identical rows already installed by the same restore; any other conflict fails with a report. Reconcile a temporary Administrator sharing an email but not an ID without losing the original Member IDs or attribution; never use unconditional INSERT OR IGNORE.
+    - Resume each bounded stage after crashes without duplicate research or external sends. Remain quarantined with the Publisher paused until counts, hashes, references, current credentials/permissions and independent suppression ledger pass; rebuild derived data and require explicit authorized release of containment.
+    - _Requirements: 36.4, 36.5, 36.8, 36.9, 36.10, 36.11, 36.13, 36.15, 36.16, 60.2, 60.5_
   - [ ] 38.6 Build the export and backup screens in `apps/app/web/src/exports/`
     - Request an export with its scope; list exports with state, staleness labels, missing files, and deletion offers; Download_Links for volumes; backups and restores for Administrators only, with browser-side hashing of uploaded packages
     - _Requirements: 35.7, 35.9, 35.10, 36.2, 36.8_
-  - [ ]* 38.7 Write property test for Item_Identifiers
+  - [ ] 38.7 Write property test for Item_Identifiers
     - **Property 41: Item_Identifiers are well-formed, unique, and never reused**
     - **Validates: Requirements 15.1, 15.6**
-  - [ ]* 38.8 Write property test for the export JSON round trip
+  - [ ] 38.8 Write property test for the export JSON round trip
     - **Property 72: Export JSON round trip**
     - **Validates: Requirements 35.4**
-  - [ ]* 38.9 Write property test for export snapshots
+  - [ ] 38.9 Write property test for export snapshots
     - **Property 73: Exports contain exactly the snapshot and are self-contained**
     - **Validates: Requirements 35.1, 35.2, 35.3, 35.12**
-  - [ ]* 38.10 Write property test for backup and restore
+  - [ ] 38.10 Write property test for backup and restore
     - **Property 74: Backup and restore round trip**
     - **Validates: Requirements 36.1, 36.4, 36.5, 36.8, 36.10, 36.11**
-  - [ ]* 38.11 Write property test for package retention and staleness
+  - [ ] 38.11 Write property test for package retention and staleness
     - **Property 75: Package retention and staleness labels**
-    - **Validates: Requirements 35.6, 35.7, 35.10, 36.6, 46.34**
-  - [ ]* 38.12 Write property test for retention sweeps
+    - **Validates: Requirements 35.6, 35.7, 35.10, 36.6, 46.34, 36.3, 36.12**
+  - [ ] 38.12 Write property test for retention sweeps
     - **Property 86: Retention sweeps act on time**
-    - **Validates: Requirements 12.8, 31.8, 32.8, 35.11, 36.3, 46.20, 46.26**
-  - [ ]* 38.13 Write property test for character preservation
+    - **Validates: Requirements 12.8, 31.8, 32.8, 32.19, 32.20, 32.21, 35.11, 36.3, 46.20, 46.26**
+  - [ ] 38.13 Write property test for character preservation
     - **Property 92: Characters and digit strings survive storage and output**
     - **Validates: Requirements 7.2, 45.13**
 
@@ -1025,10 +1032,10 @@ Where a task in an earlier milestone produces something that a later task delive
     - Flags (Task 25): show `FlagMark` from `apps/app/web/src/activity/activity.tsx` on entries, read as the page opened them with `useFlagSnapshot`, and call `useRecordViews` with the Items the page opens.
     - The Project_Log with Project switcher, order toggle, filters, and page links; after 10 seconds without a page, "the Project_Log is unavailable", with the 00:00 UTC note for daily limits, keeping Project, order, and filters; the list pages and the Projects list
     - _Requirements: 39.16, 43.1, 43.6, 43.8, 43.9_
-  - [ ]* 40.4 Write property test for query and date-range validation
+  - [ ] 40.4 Write property test for query and date-range validation
     - **Property 64: Query and date-range validation**
     - **Validates: Requirements 21.9, 30.11, 43.8**
-  - [ ]* 40.5 Write property test for Workspace lists
+  - [ ] 40.5 Write property test for Workspace lists
     - **Property 65: Workspace lists filter by conjunction and page losslessly**
     - **Validates: Requirements 3.4, 5.7, 7.6, 8.5, 9.7, 10.4, 18.8, 18.9, 23.8, 26.8, 39.14, 39.16, 43.1, 43.2, 43.4, 43.5**
 
@@ -1047,13 +1054,13 @@ Where a task in an earlier milestone produces something that a later task delive
   - [ ] 41.4 Write property test for new Disclosure_Units
     - **Property 3: New Disclosure_Units start Not_Published**
     - **Validates: Requirements 13.5, 23.2, 23.15, 26.4, 32.4, 33.2, 37.5, 39.4, 42.1**
-  - [ ]* 41.5 Write property test for permanent deletion
+  - [ ] 41.5 Write property test for permanent deletion
     - **Property 36: Permanent deletion removes the subtree and leaves only a tombstone**
     - **Validates: Requirements 15.8, 16.10, 22.7, 22.8, 42.11, 42.18, 43.7**
-  - [ ]* 41.6 Write property test for event recipients
+  - [ ] 41.6 Write property test for event recipients
     - **Property 54: Recipients follow the event rules**
     - **Validates: Requirements 17.4, 17.6, 19.1, 19.2, 19.3, 19.4, 19.8, 23.7, 23.13, 32.3, 39.9, 39.10, 42.4, 46.36**
-  - [ ]* 41.7 Write property test for Dissent_Notes
+  - [ ] 41.7 Write property test for Dissent_Notes
     - **Property 80: Dissent_Notes stay attached to the wording they concern**
     - **Validates: Requirements 42.1, 42.2, 42.3, 42.8, 42.9, 42.14**
 
@@ -1071,13 +1078,13 @@ Where a task in an earlier milestone produces something that a later task delive
   - [ ] 42.4 Build the editor draft controls in `apps/app/web/src/editor/ai-draft.tsx`
     - The request control only when the status allows, with the "turned off" or "resumes at 00:00 UTC" notice otherwise; the draft held only in the tab's editor memory and shown apart from the field; accept places the text, asks before replacing, and leaves the field unsaved; discard or a new draft removes the old one; the quotation-mark notice next to the draft and then the field until saved; "no AI_Draft was produced" on errors, empty output, or timeout, with late answers discarded
     - _Requirements: 44.4, 44.5, 44.8, 44.10, 44.11, 44.12, 44.16, 44.17_
-  - [ ]* 42.5 Write property test for the AI allocation
+  - [ ] 42.5 Write property test for the AI allocation
     - **Property 83: AI requests never exceed the allocation**
     - **Validates: Requirements 28.14, 44.10, 44.11, 44.17**
-  - [ ]* 42.6 Write property test for AI input and output
+  - [ ] 42.6 Write property test for AI input and output
     - **Property 84: AI input selection and output shaping**
     - **Validates: Requirements 44.1, 44.2, 44.3, 44.7, 44.8, 44.14, 44.18**
-  - [ ]* 42.7 Write property test for AI provenance
+  - [ ] 42.7 Write property test for AI provenance
     - **Property 85: AI provenance is recorded on save**
     - **Validates: Requirements 44.6**
 
@@ -1100,22 +1107,22 @@ Where a task in an earlier milestone produces something that a later task delive
   - [ ] 43.6 Complete accessibility and layout across `packages/design` and `apps/app/web`
     - Landmarks and a skip link, focus never hidden by sticky headers, button alternatives to every drag action including Entry_Section reordering, consistent help placement, no re-entry of information within a process, labelled errors with suggestions, reduced motion, MathML, and keyboard-operable preview controls; fluid layout from 320 to 2,560 CSS pixels with wide tables, code, mathematics, and previews scrolling inside their own containers
     - _Requirements: 45.5, 45.7_
-  - [ ]* 43.7 Write the Playwright presentation tests in `tests/presentation/`
+  - [ ] 43.7 Write the Playwright presentation tests in `tests/presentation/`
     - axe-core on every page type in both colour schemes; a viewport sweep from 320 to 2,560 pixels with no horizontal page scroll, overlap, or clipping; print to PDF on A4 and US Letter compared with the page text; colour-scheme switching without reload; a privacy crawl recording network requests and cookies or storage; visual regression of every component through both renderers
     - _Requirements: 45.1, 45.5, 45.7, 45.9, 45.16, 45.17, 45.18_
-  - [ ]* 43.8 Configure Lighthouse CI in `lighthouserc.json`
+  - [ ] 43.8 Configure Lighthouse CI in `lighthouserc.json`
     - 20 loads per representative public page under the Reference_Mobile_Profile with an empty cache, asserting the 75th percentiles of Largest Contentful Paint, Cumulative Layout Shift, and Interaction to Next Paint
     - _Requirements: 45.8_
-  - [ ]* 43.9 Write property test for concurrent saves
+  - [ ] 43.9 Write property test for concurrent saves
     - **Property 29: Concurrent saves from one base are serialized**
     - **Validates: Requirements 4.9, 22.10, 32.16, 42.16, 46.28**
-  - [ ]* 43.10 Write property test for reminder and alert schedules
+  - [ ] 43.10 Write property test for reminder and alert schedules
     - **Property 87: Reminder and alert schedules**
     - **Validates: Requirements 10.3, 35.5, 36.7, 46.24, 46.25, 46.40**
-  - [ ]* 43.11 Write property test for the People page and Responsible_Person statement
+  - [ ] 43.11 Write property test for the People page and Responsible_Person statement
     - **Property 95: People page and Responsible_Person statement**
     - **Validates: Requirements 46.5, 46.6, 46.35, 46.38**
-  - [ ]* 43.12 Write property test for last-updated dates
+  - [ ] 43.12 Write property test for last-updated dates
     - **Property 98: Policy_Page last-updated dates**
     - **Validates: Requirements 46.29**
 
@@ -1126,7 +1133,7 @@ Where a task in an earlier milestone produces something that a later task delive
   - [ ] 44.2 Implement usage alerts in `apps/app/src/usage/alerts.ts`
     - Every 15 minutes combine the analytics with the `Budget` figures for the Public_Traffic_Budget, the AI_Allocation, and the Recipient_Cap; a state machine per allowance and period raises one System_Alert for every Administrator, naming the allowance and the percentage, each time usage rises from below 80% to 80% or more
     - _Requirements: 19.10, 28.2_
-  - [ ]* 44.3 Write property test for usage alerts
+  - [ ] 44.3 Write property test for usage alerts
     - **Property 82: Usage alerts fire on upward crossings**
     - **Validates: Requirements 19.10**
 
@@ -1138,10 +1145,11 @@ Where a task in an earlier milestone produces something that a later task delive
     - Generate `_headers` with the public Content-Security-Policy, the additions for form pages only (`submit.researchforce.org`, the R2 S3 endpoint, `challenges.cloudflare.com`), `Referrer-Policy: strict-origin-when-cross-origin`, HSTS, `nosniff`, and `Permissions-Policy`; no header or script sets a cookie
     - Cloudflare Web Analytics stays off at launch through `WEB_ANALYTICS = false` in the same module; turning it on adds only its cookieless beacon to the policy, and the Privacy page must then name the service
     - _Requirements: 45.17, 45.18, 45.19_
-  - [ ]* 45.3 Write security tests in `tests/security/`
-    - HTML, SVG, PDF, and polyglot files with scripts served through `rf-dl` and opened in previews run no script in the Workspace origin and cannot send an accepted request; cross-origin and header-less state-changing requests are refused; Download_Links replayed after 15 minutes, after revocation, or for another file are refused
-    - _Requirements: 14.6, 25.5, 25.6_
-  - [ ]* 45.4 Write the CI smoke checks in `tools/smoke/`
+  - [ ] 45.3 Write security tests in `tests/security/`
+    - Run browser tests against actual rf-dl/public-file delivery and previews with HTML, SVG, PDF and polyglots, checking no script or accepted cross-origin request runs as the Member, including CSP and resource-limit failure paths; test Member-bound link expiry, revocation, current restricted access, wrong object and purpose.
+    - Exercise the real channel adapters with generated canaries; a registered constant refusal alone is not evidence. These tests are mandatory for the team-file and public-release gates.
+    - _Requirements: 14.6, 14.10, 25.5, 25.6, 60.4_
+  - [ ] 45.4 Write the CI smoke checks in `tools/smoke/`
     - No route accepts file bodies and none returns renditions; the AI model allow-list holds only Cloudflare-hosted models and no AI Gateway is configured; no secret appears in the repository; every font and icon has a licence that allows self-hosting and export; the Policy_Section list matches Requirement 46.32
     - _Requirements: 12.5, 14.9, 20.20, 44.9, 45.20, 46.32_
 
@@ -1149,10 +1157,11 @@ Where a task in an earlier milestone produces something that a later task delive
   - [ ] 46.1 Implement metrics and the operations status endpoint in `apps/app/src/metrics.ts` and `GET /api/v1/ops/status`
     - Structured metric events per route (requests, CPU time, D1 rows), Publisher lag from save to deploy and to verified removal, Mailer queue depth, held time, and delays against the time limits, AI Neurons per day, and Public_Traffic_Budget use; an Administrator-only summary endpoint
     - _Requirements: 24.11, 28.2, 28.3_
-  - [ ]* 46.2 Write the performance test harness in `tests/perf/`
-    - Largest allowed inputs (a 2,000,000-character Journal_Entry through staged saves, a 100-file Submission, Member search on a synthetic 50 MB corpus, previews of 1,000 units, Publisher slices) with CPU time read from Workers Logs and an 8 ms 95th-percentile limit; Member and public search latency on 50 MB corpora; Publisher throughput on 20,000 units; an export at the planned size; Neurons per draft; run against staging
-    - _Requirements: 21.2, 24.11, 24.12, 28.3, 28.8, 28.15, 30.6_
-
+  - [ ] 46.2 Write the performance test harness in `tests/perf/`
+    - Certify the selected Resource_Profile against the Reference_Archive and worst-case Unicode/spans/chunks, 100-file submissions, draft/proposal graphs, common-term 50 MB search with large result pages, 1,000-unit previews, publisher epochs/removal, and retained/transient export/backup/release copies.
+    - Measure CPU, binding calls, statements, encoded bytes, peak memory, D1 growth and full transfer size, distinguishing provider limits from chosen safety margins. Reproduce 1/3/5-year growth scenarios and the 30-minute distributed invalid-download/public-API Abuse_Profile with concurrent authorized saves/downloads and a removal.
+    - Record maxima, percentile data, profile/version/assumptions and pass/fail evidence; keep <=24-hour verified independent RPO and <=8-hour reference restore evidence. A profile that fails cannot be advertised or deployed for that scope.
+    - _Requirements: 21.2, 28.1, 28.2, 28.3, 28.4, 28.5, 28.6, 28.7, 28.8, 28.15, 28.17, 30.6, 36.17, 60.7_
 - [ ] 47. Checkpoint - Ensure all tests pass
   - Run `npm test` (`vitest --run`) and `npm run lint`; ensure all tests pass, ask the user if questions arise.
 
@@ -1168,14 +1177,17 @@ Where a task in an earlier milestone produces something that a later task delive
     - SPF `v=spf1 include:spf.protection.outlook.com -all`, the DKIM CNAMEs as DNS-only records, and DMARC `p=none` with reports to an address other than the Sending_Address; the check resolves and validates all three
     - _Requirements: 20.22, 20.23_
   - [ ] 48.4 Write the deployment and bootstrap scripts in `scripts/deploy.ts`, `tools/bootstrap.ts`, and `.github/workflows/ci.yml`
-    - Apply D1 migrations and deploy `rf-app`, `rf-dl`, `rf-submit`, and `rf-ops` per environment, then enqueue a `site` scope so the Publisher creates the first `rf-site` deployment; bootstrap the first Administrator and Responsible_Person from an email given on the command line and the P1030680 Project (Not_Published); CI runs `npm run ci` on every push
-    - Accept validated installation configuration and initial Project inputs; provide ResearchForce.org as an explicit example. Require the instance owner's content-licence name, URL, and export text before enabling research publication or collecting licence agreements, with no default from the software's MIT licence
-    - _Requirements: 2.2, 26.1, 46.37_
-  - [ ]* 48.5 Write the staging verification suites in `tests/staging/` and `infra/m365/Verify-ResearchForceMail.ps1`
-    - Public change timing (removals within 5 minutes, other changes within 15) on pages, search, files, People, and Policy pages; Access redirects; Graph refusals to send as another mailbox or read mail; credential rotation; SPF, DKIM, and DMARC alignment from `Authentication-Results`; the received MIME structure and plain-text part; Sent Items and Recoverable Items statistics; Turnstile in managed mode; a load replay of the usage profiles with a public flood
-    - _Requirements: 1.1, 20.19, 20.21, 20.22, 20.24, 24.11, 24.12, 28.1, 28.2, 28.6, 28.7, 45.21_
+    - Implement the explicit compatible rollout: additive expansion, compatible Worker deployment, bounded backfill/verification, switch read paths, contraction only after old consumers and the recovery window end. Record Worker/schema/backup compatibility and safe rollback or forward-recovery versions; CI runs all mandatory evidence for the selected scope, not npm run ci alone.
+    - Bootstrap validated installation identity, origins, initial Project and Responsible_Person. Require the owner-configured Content_Licence before publication/agreement collection; require an approved Operating_Profile/budget, independent recovery destination/key custody, initial fresh restore and containment capability for the applicable production gates. Provisioning does not infer permission to buy plans, publish research, or select a content licence.
+    - Use task 67 compatibility manifests and task 68 launch-gate checks; this script is built before operator setup and calls the completed gate checker at execution. A Workspace-only deployment must have public dynamic endpoints disabled until their own gate passes.
+    - _Requirements: 2.2, 26.1, 46.37, 28.1, 28.4, 36.12, 36.17, 60.3, 60.4, 60.5_
+  - [ ] 48.5 Write the staging verification suites in `tests/staging/` and `infra/m365/Verify-ResearchForceMail.ps1`
+    - Make real staging verification mandatory for its deployment scope: Access redirects and scoped bearer exceptions; real single/multipart R2 checksum/CORS behavior; Graph least privilege, credential rotation, SPF/DKIM/DMARC, acceptance versus delivery, MIME/plain text and residual provider retention; Turnstile and addressed snapshots.
+    - Certify public change timing and independently verified containment across pages/index/files/People/policy/release assets; inject deploy/quota failures and old-generation retries; run the distributed Abuse_Profile while Members save/download and compare measured resource/spend reserve.
+    - Rehearse independent encrypted backup/key recovery and fresh restore with bootstrap identity conflict, older schema, crash/resume and a later suppression. Keep sanitized evidence; missing operator infrastructure blocks the applicable gate rather than skipping tests.
+    - _Requirements: 1.1, 1.3, 12.10, 20.19, 20.21, 20.22, 20.24, 20.26, 24.11, 24.12, 24.16, 24.17, 28.1, 28.2, 28.6, 28.7, 28.17, 36.17, 45.21, 60.4, 60.9_
   - [ ] 48.6 User setup checklist (needs Cloudflare account access)
-    - The agent prepares the scripts above, then stops and asks the user to: run `provision.ts` for staging and production; set every secret listed in `infra/secrets.ts`; confirm that `workers.dev` and preview URLs are off and Bot Fight Mode is off; and report the results
+    - Prepare and dry-run the scripts first; use account access already authorized, or ask the operator for the missing account action to run `provision.ts` for staging and production; set every secret listed in `infra/secrets.ts`; confirm that `workers.dev` and preview URLs are off and Bot Fight Mode is off; and report the results
     - _Requirements: 1.3, 28.1, 45.18_
   - [ ] 48.7 User setup checklist (needs Microsoft 365 administrator access)
     - The user runs `Setup-ResearchForceMail.ps1`, waits 30 minutes to 2 hours, re-runs `Test-ServicePrincipalAuthorization`, checks the "Tenant Outbound External Recipients" report and sets the Recipient_Cap below the tenant's shared external limit, and stores the Graph tenant, client id, and certificate key as Workers secrets
@@ -1183,17 +1195,26 @@ Where a task in an earlier milestone produces something that a later task delive
   - [ ] 48.8 User setup checklist (needs DNS access for researchforce.org)
     - The user publishes the SPF, DKIM, and DMARC records, enables DKIM signing for researchforce.org in Microsoft 365, and runs `tools/check-email-dns.ts`
     - _Requirements: 20.22, 20.23_
-  - [ ] 48.9 User setup checklist (needs account access for deployment)
-    - The user deploys to staging, runs the staging suites and the performance harness, rehearses the journal import on staging with the real files (checking only the counts in the import report), then deploys production, runs `tools/bootstrap.ts`, and runs the production journal import, which creates everything Not_Published and Unclassified
-    - _Requirements: 26.4, 26.11, 27.7_
+  - [ ] 48.9 Activate only production scopes with passing launch evidence
+    - After 48.12, run the 68.4 checker on the complete version/configuration-bound evidence. Bootstrap production with the explicit installation/profile/budget/recovery inputs and operator-selected content licence; run the production import only after the team-archive gate passes, creating everything Not_Published and Unclassified.
+    - Enable public research only after the public gate and normal content approvals, and enable outside submissions/emailed grants/AI only after their provider/privacy gates and configured settings. Verify production deny controls and independent health/recovery alerts. No setup step infers permission to buy a service or publish particular research.
+    - _Requirements: 26.4, 26.11, 27.7, 28.17, 36.12, 36.17, 60.3, 60.4, 60.5, 60.9_
   - [ ] 48.10 Prepare the reusable source release and independent-installation guide
     - Document installation configuration, migration and upgrade steps, and the separate software/content licensing boundaries; include the MIT licence and required third-party notices in software distributions
     - Verify setup with a synthetic second installation whose domain, identity, policy statements, first Project, and chosen content licence differ from ResearchForce.org; verify missing content-licence configuration refuses publication and agreement collection
     - Check release material for real research, personal data, secrets, backups, and instance state; do not include them or publish a repository as part of this preparation
     - _Requirements: Introduction (product and installation scope), 23.2, 29.10, 33.4, 46.16, 46.17_
+  - [ ] 48.11 Bootstrap an isolated staging installation for provider verification
+    - After operator resource/mail/DNS setup, deploy the completed compatible code to staging with public research and outside features denied by default. Configure synthetic installation/profile/licence inputs, independent recovery destination and custodians, alert routes and containment controls; obtain credentials through secrets, never source or reports.
+    - Establish Access/R2/Graph/edge-control connectivity and record the deployed versions and resource bindings. This is test infrastructure readiness, not approval for production or sole-copy custody; use synthetic data until the protected import rehearsal in 48.12.
+    - _Requirements: 1.1, 1.3, 28.17, 36.12, 60.4, 60.5, 60.6_
+  - [ ] 48.12 Execute and retain complete staging and team acceptance evidence
+    - Run 48.5's real provider suites, 58.5's independently keyed fresh restore, 59.4's distributed abuse/failed-removal scenarios, 46.2's measured profile certification and R60.9's team walkthroughs against the deployed staging versions; record all results and failures in the gate manifest.
+    - Rehearse the journal import using the operator's protected source paths without adding research to Git or output reports; retain counts and authorized sanitized verification only. Verify production configuration equivalence and independent recovery/containment capability. Missing licence, provider inputs or passing evidence leaves the affected launch gate blocked.
+    - _Requirements: 20.24, 24.16, 24.17, 26.4, 26.11, 28.17, 36.17, 60.4, 60.6, 60.7, 60.9_
 
 - [ ] 49. Final checkpoint - Ensure all tests pass
-  - Run `npm run ci` (lint, type check, and `vitest --run`); ensure all tests pass, ask the user if questions arise.
+  - Require the selected R60.4/68.4 gate evidence, compatible upgrade/recovery manifest and current operator inputs in addition to `npm run ci`; no required test is skipped and no public/custodial launch proceeds on unit results alone.
 
 - [ ] 50. Add a local development environment
   - [ ] 50.1 Add the local runner and synthetic seed data in `scripts/dev.ts` and `tools/dev-seed.ts`
@@ -1219,6 +1240,7 @@ Where a task in an earlier milestone produces something that a later task delive
     - _Requirements: 23.1_
 
 - [ ] 52. Build restricted access inside the team
+  - Existing implementation and migration are present; task 57.1 reconciles acceptance evidence and checks these boxes individually. Do not recreate an already applied migration. Later kinds extend these privacy checks in their own tasks.
   - [ ] 52.1 Add the access data and Permissions
     - The next migration adds `research_items.access_level` (`whole_team` or `restricted`, default `whole_team`), `access_grants (root_id, member_id, granted_by, granted_at)` with primary key (`root_id`, `member_id`), the guard table `_g_access_owner`, and the Revision_Kind `access_change`; add `access_owner` to `GUARD_CODES` in `packages/db/src/batch.ts`
     - Adding `access_change` changes the `revisions_kind_values` check, so the migration rebuilds `revisions` as task 51's migration rebuilt `units`, and recreates the `revisions_immutable` trigger from `0001_raw.sql`, which dropping the table removes; extend the migration test pattern of `apps/app/test/migration-not-published.test.ts` to check the rows, the indexes, and that the trigger still refuses updates
@@ -1257,20 +1279,20 @@ Where a task in an earlier milestone produces something that a later task delive
     - A preview endpoint computes the views before and after; a move that widens a Public_View needs `disclosure.set`, a fresh preview token, and the disclosure gates; a move out of a Restricted Research_Item to a Root_Item that more Members can read needs `access.widen` on the source with the `access_owner` guard; Question_Group entries that would cross Projects are removed in the same batch through task 55.2's helper
     - _Requirements: 12.12, 12.13, 12.14, 12.15, 50.7_
   - [ ] 53.2 Build the move dialog in `apps/app/web/src/files/move.tsx`
-    - Choose the new Parent (a Research_Item or Reply the Member can edit), show the preview with changed views and Members who gain read access, and confirm; offered on every Attachment page, including those of the Unassigned_Attachments_Source
+    - Choose the new Parent (a Research_Item or Reply the Member Can_Read; editing the moved Attachment is required, editing the destination is not), show the preview with changed views and Members who gain read access, and confirm; offered on every Attachment page, including those of the Unassigned_Attachments_Source
     - _Requirements: 12.12, 12.14_
-  - [ ]* 53.3 Write property test for Attachment moves
+  - [ ] 53.3 Write property test for Attachment moves
     - **Property 105: Attachment moves keep identity and move whole Version_Chains**
     - **Validates: Requirements 12.12, 12.13, 12.14, 12.15**
 
 - [ ] 54. Build Owner consent, Confidentiality_Holds, and Dual_Approvals
   - [ ] 54.1 Add the consent, hold, and approval data
     - The next migration adds `publication_consents`, `confidentiality_holds` with its partial unique index, and `dual_approvals` as the design defines them, the Review_Request type `proposal` (the existing `review_requests` checks allow an outcome only on Publication_Requests and only Applied or Declined, so the migration rebuilds `review_requests` with a request type column and outcomes Approved and Declined for proposals, mapping existing rows), and the guard tables `_g_consent_valid`, `_g_hold_free`, `_g_dual_open`, and `_g_dual_distinct`; add the codes to `GUARD_CODES`
-    - _Requirements: 23.18, 48.1, 49.2_
+    - _Requirements: 23.18, 48.1, 49.2, 23.23, 23.24, 49.8_
   - [ ] 54.2 Add the widening test and the new gates to the kernel and `loadProjectionInput`
-    - `widens(before, after, unit)` in `packages/kernel`, evaluated with the real ancestors and with every ancestor treated as Public and Full_Content; `checkGates` refuses a widening of a unit whose Consenting_Member is another Member without a covering Publication_Consent (listing the units and Members and offering a Publication_Proposal), and of a unit covered by an active Confidentiality_Hold (listing each hold); a Project level change needs no consent
-    - `loadProjectionInput` loads consents, active holds over each unit's ancestors, and Access_Levels; the apply batch of task 31.2 adds the `consent_valid` and `hold_free` guards and marks used consents
-    - _Requirements: 23.17, 23.20, 48.2, 48.4_
+    - Retain widens with actual and prospective-public ancestors and the hold/Restricted gates. Add canonical approved snapshot/dependency digests for content revisions, exact files, rights, naming, licence and other projection inputs; narrower output is omission of approved material, not a text substitution.
+    - The apply batch rechecks the snapshot dependencies and unused/unwithdrawn consent, current coverage and holds before all writes. Owner approval of A followed by an Administrator edit to B requires new approval, even with identical summary/level. Retain the separate policy for an Owner editing their own already-public work.
+    - _Requirements: 23.17, 23.20, 23.23, 23.24, 48.2, 48.4_
   - [ ] 54.3 Implement Publication_Proposals and consents in `apps/app/src/reviews/proposals.ts`
     - `POST /proposals` creates one Publication_Proposal per Consenting_Member with the proposed values, an optional note, and the resulting Public_Views, and a Review_Requested event; the addressee approves or declines with an optional note, writing one consent row per unit on approval and a Review_Completed event for the proposer; withdrawing an approval before it is used
     - A Publication_Request by the unit's Consenting_Member writes a consent row with source `request` while it is open; applying it with edited values needs a new consent for each value that the consent does not cover
@@ -1280,22 +1302,22 @@ Where a task in an earlier milestone produces something that a later task delive
     - Lifting by the placer or the Owner with an optional note, events for the placer and every Administrator, and no level change; any other lift is refused with an authorization error; holds shown on item pages, previews, Publication_Requests and Publication_Proposals, and the Unclassified list
     - _Requirements: 48.1, 48.2, 48.3, 48.5, 48.6, 48.7, 48.10_
   - [ ] 54.5 Implement Dual_Approvals in `apps/app/src/reviews/dual.ts`
-    - Propose, approve, decline, and withdraw for the actions `hold_override`, `access_widen` (an Owner who is Revoked), and `consent_on_behalf` (a Consenting_Member who is Revoked), with reasons, the `dual_open` and `dual_distinct` guards, and each action's preconditions checked in the approving batch; proposals whose precondition is gone become `lapsed`
-    - Review_Requested events for every other active Administrator, Item_Update events for the placer and Owner on Hold_Override proposals and outcomes, one Activity_Feed entry on approval, the list of open Dual_Approvals, and the disabled approve control with its explanation while fewer than two Administrators are active
-    - Register the event rules for this task and task 54.3 in `fanout.ts`
-    - _Requirements: 23.22, 47.7, 48.8, 48.9, 49.1, 49.2, 49.3, 49.4, 49.5, 49.6, 49.7_
+    - Keep propose/approve/decline/withdraw for hold_override, departed-Owner access_widen and consent_on_behalf with immutable reasons/history. Store target/effect and approved content/dependency digests.
+    - Inside the approving batch recheck both proposer and approver as different currently Active Administrators, the exact effect/snapshot, open state and every action precondition; lapse a changed or ineligible proposal. An active administrator count alone is insufficient.
+    - Keep the existing recipient rules, one Activity_Feed entry on approval, disabled explanation with fewer than two Administrators, and read/commit access checks; no override may rewrite protected personal wording.
+    - _Requirements: 23.22, 23.23, 23.24, 47.7, 48.8, 48.9, 49.1, 49.2, 49.3, 49.4, 49.5, 49.6, 49.7, 49.8_
   - [ ] 54.6 Build the consent, hold, and approval screens in `apps/app/web/src/disclosure/` and `apps/app/web/src/reviews/`
     - The consent failure in the disclosure dialog with the offer to send Publication_Proposals, the Consenting_Member's proposal page with the preview, approve, decline, and withdraw; the hold panel on item pages with place, lift, and the proposal of a Hold_Override; the open Dual_Approvals list with approve, decline, and withdraw; and holds and approvals in item history
     - _Requirements: 23.17, 23.18, 23.19, 48.5, 48.8, 49.2, 49.6, 49.7_
   - [ ] 54.7 Write property test for publication consent
     - **Property 102: Publication follows the Consenting_Member's consent**
-    - **Validates: Requirements 23.17, 23.18, 23.19, 23.20, 23.21, 23.22**
+    - **Validates: Requirements 23.17, 23.18, 23.19, 23.20, 23.21, 23.22, 23.23, 23.24**
   - [ ] 54.8 Write property test for Confidentiality_Holds
     - **Property 103: Confidentiality_Holds block publication until lifted or overridden**
     - **Validates: Requirements 48.1, 48.2, 48.3, 48.4, 48.6, 48.7, 48.10**
   - [ ] 54.9 Write property test for Dual_Approvals
     - **Property 104: Dual_Approvals need two different active Administrators**
-    - **Validates: Requirements 23.22, 47.7, 48.8, 48.9, 49.1, 49.3, 49.4, 49.5, 49.6**
+    - **Validates: Requirements 23.22, 47.7, 48.8, 48.9, 49.1, 49.3, 49.4, 49.5, 49.6, 49.8**
 
 - [ ] 55. Build Research_Questions
   - [ ] 55.1 Add the Research_Question kind
@@ -1311,7 +1333,7 @@ Where a task in an earlier milestone produces something that a later task delive
   - [ ] 55.4 Render Research_Questions on the Public_Site in `packages/public-render` and `apps/app/src/publisher/plan.ts`
     - The question page at `/r/{Item_Identifier}` with each entry rendered like the other end of a Cross_Link and the introduction under Full_Content; the Project page's Research_Question part before the listings in `question_order`, then newest first; a `questions` listing; `PATCH /projects/{id}` accepting `question_order` from Administrators; re-rendering through Cross_Link neighbour expansion
     - _Requirements: 29.1, 50.4, 50.5_
-  - [ ]* 55.5 Write property test for Research_Questions
+  - [ ] 55.5 Write property test for Research_Questions
     - Exercise 55.4's rendering only once it exists; until then the test checks the Workspace invariants and the public assertions are added with 55.4
     - **Property 106: Research_Question entries are valid and follow their targets**
     - **Validates: Requirements 50.1, 50.2, 50.4, 50.5, 50.6, 50.7**
@@ -1335,7 +1357,7 @@ Where a task in an earlier milestone produces something that a later task delive
     - Static shells at `/consent` and `/consent/change` with `noindex` and no caching; the token from the URL fragment; the snapshot for each element with its answer options, a one-answer-for-all control, the optional Generic_Label and comment, Turnstile in managed mode, and the confirmation; the "no longer valid" notice with a link to the Outside_Submission_Form
     - _Requirements: 51.5, 51.6, 51.10, 51.12, 51.14_
   - [ ] 56.5 Limit emailed consent to the content shown
-    - Consent_Statuses and Rights_Statuses set through a Consent_Answer record the answer item; `checkGates` and the records pipeline refuse a change for which `widens(snapshotView, after, unit)` holds with every ancestor treated as Public, naming the element and the answer and offering a new Consent_Request; values set by hand stay unlimited
+    - Consent_Statuses and Rights_Statuses set through a Consent_Answer record the answer item; `checkGates` and the records pipeline refuse a change for which `widens(snapshotView, after, unit)` holds with every ancestor treated as Public, naming the element and the answer and offering a new Consent_Request; manual and emailed grants both use exact Permission_Evidence coverage; a status edit alone grants nothing
     - _Requirements: 51.9_
   - [ ] 56.6 Implement reminders, expiry, and token clean-up in `apps/app/src/consent/sweep.ts`
     - The hourly sweep sends the one reminder at 14 days, marks requests expired at 30 days without changing any status, and deletes Consent_Link and Change_Link token hashes 30 days after expiry; update `retentionRows()` with the Contact_Email and Consent_Request rows; add the consent tables to the Internal_Backup table list of task 38.4, without token hashes
@@ -1349,188 +1371,1247 @@ Where a task in an earlier milestone produces something that a later task delive
   - [ ] 56.9 Write property test for consent coverage
     - **Property 108: Emailed consent covers only what the person was shown**
     - **Validates: Requirements 51.9**
-  - [ ]* 56.10 Write integration tests for Consent_Requests
+  - [ ] 56.10 Write integration tests for Consent_Requests
     - A scanner-style GET of the link changes nothing; an answer sets the statuses and sends the confirmation; a refusal on a Public Correspondence withholds it; an expired, cancelled, or used link gets the fixed notice; a withdrawal through the Change_Link downgrades and keeps Do_Not_Name on
     - _Requirements: 51.5, 51.8, 51.10, 51.12_
 
+- [ ] 57. Repair acceptance gaps and add bounded, retry-safe foundations
+  - Retain existing code; complete the reopened acceptance work rather than recreating historical migrations or discarding tested behavior.
+  - [ ] 57.1 Reconcile task status and acceptance evidence in `tools/check-specs.ts` and `docs/acceptance/`
+    - Inventory every leaf task, requirement criterion, property, source/test path and known correction. Verify existing task 52 code/migration/read-path tests and record evidence before checking its subtasks; a file existing is not acceptance and an applied migration is not rerun.
+    - Implement graph/coverage validators for the canonical dependency graph below and milestone gates; preserve IDs and record why a task is reopened. Identify older tests that must be extended for new fields/kinds.
+    - _Requirements: 60.1, 60.3, 60.4_
+  - [ ] 57.2 Implement the versioned Resource_Profile in `packages/domain/src/resource-profile.ts` and `tools/certify-profile.ts`
+    - Expose and validate Operating_Profile, separate provider versus chosen CPU/call/statement/byte/memory limits, logical text/spans, preview budgets, growth and Abuse_Profile versions; update domain settings and installation examples without enabling a paid service.
+    - Include maximum encoded text/span/Revision payloads and a single large section in acceptance fixtures; publish the certified boundary/transfer limits to browser clients and bounded server validators.
+    - _Requirements: 4.10, 4.11, 11.10, 14.10, 28.1, 28.3, 28.4, 28.17, 60.7_
+  - [ ] 57.3 Add immutable logical field versions and bounded text/span storage
+    - Implement `packages/domain/src/text-fragments.ts`, the next additive DB migration for field_versions/text_fragments/manifests, and shared readers in the records/markdown/kernel adapters. Keep logical IDs, exact text and global offsets; cap fragments and encoded envelopes per Resource_Profile.
+    - Move bulky previous values into immutable version references, migrate existing fields without losing revisions, make FTS/logical phrase matching and excerpts cross chunk boundaries, and support bounded public continuation output, history/compare, printers, citations, drafts and backup/export readers.
+    - Use version/ref/read leases for retention; retain old readers during migration and prove compatibility before contraction. Task 19.1 integrates the reopened inside-section transport and atomic commit after this foundation.
+    - _Requirements: 4.1, 4.4, 4.8, 4.10, 4.11, 11.8, 11.10, 21.1, 21.3, 21.4, 22.1, 22.3, 22.5, 45.13, 60.5_
+  - [ ] 57.4 Implement actor-scoped mutation idempotency and uncertain-result reconciliation
+    - Add `idempotency_results` and logical external-effect operation IDs with request digests and recorded results in the same GuardedBatch as every mutation; replay identical requests, conflict changed bodies, protect status reads from other actors and retain content-free result tombstones.
+    - Extend `ApiClient`, persistence and every mutating API route, including uploads, stages, membership and mail queuing, to store operation keys before sending, reconcile a lost response through `GET /operations/{key}`, and distinguish refused/committed/pending/unknown without duplicating results or external actions.
+    - External API timeouts keep a visible uncertain state and reconcile provider operation IDs/status where available. Never label accepted mail as confirmed delivery or promise exactly-once recipient delivery.
+    - _Requirements: 20.26, 28.10, 28.13, 60.2, 60.8_
+  - [ ] 57.5 Exercise actual public delivery channels in privacy tests
+    - Change the public-channel registry/test adapters to exercise real production projection/delivery responses with generated canaries. Use dependency injection from workerd tests to reach rf-dl rather than certifying a constant refusal; preserve package boundaries.
+    - Initially cover actual implemented current-access/refusal/header behavior; extend emitted public HTML/index/files/email/export/release snapshots and containment responses in their owning feature tasks. The final gate rejects a missing channel adapter or a stub refusal. New fields and kinds extend the same generator and channel matrix.
+    - _Requirements: 14.6, 24.5, 24.6, 24.7, 25.5, 25.6, 60.1, 60.4_
+  - [ ] 57.6 Write property and regression tests for logical field fragments
+    - Use independent models and fault injection in `apps/app/test/properties/p109-text-fragments.test.ts`; cover the concrete scenarios in the design, including current-access and maximum encoded-input cases. This owning property file does not replace browser/staging tests.
+    - **Property 109: Logical text fragments preserve valid fields across storage and history**
+    - **Validates: Requirements 4.10, 4.11, 11.10**
+  - [ ] 57.7 Write property and regression tests for mutation retries and lost responses
+    - Use independent models and fault injection in `apps/app/test/properties/p110-idempotent-mutations.test.ts`; cover the concrete scenarios in the design, including current-access and maximum encoded-input cases. This owning property file does not replace browser/staging tests.
+    - **Property 110: Mutation retries preserve a single logical result**
+    - **Validates: Requirements 28.10, 28.13, 60.2**
+  - [ ] 57.8 Add browser regressions for the reopened file and large-text workflows
+    - After 19.1 and 30.6–30.8, test reload with retained file metadata/upload IDs, expired upload and matching reselection, independent file retry/removal, keyboard blocking, bounded CSV stream cancellation/oversized quoted rows, and listing versus opening/download flags.
+    - Keep the local R2 checksum/multipart cases and make the real R2/CORS rehearsal mandatory in 48.5; run the old item/history/search suites through the new field readers.
+    - _Requirements: 4.10, 4.11, 12.7, 12.11, 14.4, 14.10, 18.13, 28.10, 60.4, 60.9_
+
+- [ ] 58. Establish independent encrypted recovery and fault-safe restore
+  - [ ] 58.1 Define versioned authenticated backup formats and encryption adapters
+    - Implement the bounded codec/manifest interfaces in `packages/manifest/src/backup/`, a schema/table inventory registry and compatibility transforms, with authenticated root manifests, exact field/file hashes/counts and external trust fingerprints.
+    - Select and pin a maintained implementation of a reviewed streaming authenticated-encryption format in an interoperability spike before freezing format v1; run independent decrypt/read vectors, browser/workerd/CLI memory tests and corruption tests. Do not invent a cryptographic protocol.
+    - Define independent recovery custodian/key wrapping, rotation and restoration identifiers; document key custody outside production and forbid secrets in packages/logs. Current and two preceding released schema readers are supported where those releases exist.
+    - _Requirements: 36.1, 36.8, 36.13, 36.16, 60.5_
+  - [ ] 58.2 Implement automatic independent copies, verification and tiered retention
+    - Add scheduled snapshots at least every 12 hours, authenticated encrypted transfer to an operator-configured independent account/destination, and an operator-run offline transfer option; only independent inventory plus decryption/integrity verification counts as an RPO point.
+    - Keep 14 daily/8 weekly/12 monthly complete points with successor verification before expiry. Track the 18-hour warning and 24-hour RPO breach through independent alerts; include copies/transient data in the storage/spend model. Requested staging expiry remains seven days.
+    - Require explicit destination, budget and recovery-key configuration plus an initial fresh restore before sole-copy research custody. Persist minimal authenticated suppression generations independently, with no deleted bodies.
+    - _Requirements: 28.4, 28.8, 36.3, 36.7, 36.12, 36.13, 36.16, 60.6, 60.7_
+  - [ ] 58.3 Implement leased freeze, watchdog and file retention pins
+    - Add job-owned monotonic freeze/read leases and shared write predicates; renew a 30-second lease within 10 seconds and enforce the 120-second certified snapshot window. Inventory and retrofit API, cron, raw SQL, job and outbox writes so none bypass the live lease. Permit only the owning renewal/control/checkpoint exception and prove it cannot alter snapshotted research rows.
+    - Mark a lost/overrun snapshot incomplete, release writers safely, and provide an independently authenticated recovery command with a reason/audit trail. Pin needed immutable files until copied or explicitly invalidate the snapshot for a higher-priority privacy deletion.
+    - Inject crashes, missed heartbeats, quota exhaustion, failed R2 writes and deletion races after every snapshot page; no stale generation can claim completion.
+    - _Requirements: 28.10, 36.6, 36.14, 60.2, 60.6_
+  - [ ] 58.4 Implement restore preflight, bootstrap reconciliation and owned checkpoints
+    - Build the codec/version/reference/hash/count preflight and current/two-prior schema transforms for task 38.5. Match the verified bootstrap Administrator to the intended backed-up Member identity before research insertion; reject conflicting email/ID mappings.
+    - Checkpoint restore-owned canonical row hashes and insert-or-verify rather than insert-or-ignore; report conflicting destinations and unexpected duplicates. Quarantine restored data until validation and independently known suppressions pass, with no notification or external-send replay.
+    - _Requirements: 36.4, 36.5, 36.8, 36.9, 36.10, 36.15, 36.16, 60.5_
+  - [ ] 58.5 Write fresh-environment recovery tooling and rehearse RPO/RTO
+    - Implement `tools/recovery/rehearse.ts` and the operator runbook using independent inventory, keys and replacement infrastructure; exercise loss of the production account, older format, different bootstrap ID with the same email, corruption, every checkpoint interruption, and a post-snapshot withdrawal.
+    - Record sanitized manifests/counts/hashes, independent-copy age, elapsed restore time and failures against <=24-hour RPO/<=8-hour Reference_Archive RTO. Schedule quarterly and pre-breaking-change rehearsals; neither a package download nor an application-only alert is acceptance.
+    - _Requirements: 36.12, 36.13, 36.15, 36.16, 36.17, 60.4, 60.6, 60.9_
+  - [ ] 58.6 Write property and regression tests for independent recovery points
+    - Use independent models and fault injection in `apps/app/test/properties/p111-independent-recovery.test.ts`; cover the concrete scenarios in the design, including current-access and maximum encoded-input cases. This owning property file does not replace browser/staging tests.
+    - **Property 111: Independent recovery points satisfy retention and verification**
+    - **Validates: Requirements 36.3, 36.7, 36.12, 36.13, 36.17**
+  - [ ] 58.7 Write property and regression tests for freeze and restore crash safety
+    - Use independent models and fault injection in `apps/app/test/properties/p112-freeze-restore.test.ts`; cover the concrete scenarios in the design, including current-access and maximum encoded-input cases. This owning property file does not replace browser/staging tests.
+    - **Property 112: Freeze and restore recovery never accepts mixed state**
+    - **Validates: Requirements 36.8, 36.14, 36.15, 36.16, 60.5**
+
+- [ ] 59. Certify publication epochs, containment and bounded public abuse
+  - [ ] 59.1 Implement durable publication epochs and fenced external operations
+    - Increment the public invalidation epoch in the originating transaction; add job/deploy/file operation identities, generation guards, urgent preemption and rf-ops serialized expected-epoch checks used by tasks 32.1–32.5.
+    - A late provider response or old retry cannot restore a suppressed file, promote stale assets unchecked, or reopen containment. Reconcile ambiguous version promotion against actual provider state and keep denial until the latest authorized generation verifies.
+    - _Requirements: 24.11, 24.16, 24.17, 25.3, 30.7, 60.2, 60.6_
+  - [ ] 59.2 Prepare independent edge containment and health/incident handling
+    - Implement narrow rf-ops control methods, precreated public-host deny rules, an independently recoverable operator credential/runbook and out-of-band verification/alert adapters. Confirm actual plan capabilities; inability to provide required denial blocks public launch.
+    - At four minutes unverified removal, initiate denial on public research hosts while leaving app available; verify by five minutes where provider controls are available. If neither removal nor denial is possible, report an unconfirmed confidentiality incident, not success. A reset/retry cannot clear active containment.
+    - _Requirements: 24.16, 24.17, 28.6, 60.4, 60.6_
+  - [ ] 59.3 Implement profile-aware admission, rejected-traffic accounting and shedding
+    - Distinguish admitted public work, charged rejected/invalid-download invocations and provider/account totals; reserve bounded in-flight D1/work capacity before admission and settle actual use. Edge controls and profile headroom must include distributed syntactically valid but invalid-signature download tokens.
+    - Keep static public search independent of optional API-budget status; dynamic forms and addressed views have separate admission. Retain the Member/removal reserve without representing an in-Worker check as preventing the invocation charge; do not auto-upgrade services.
+    - _Requirements: 28.1, 28.3, 28.4, 28.5, 28.6, 28.7, 28.8, 28.11, 28.17, 60.7_
+  - [ ] 59.4 Write mandatory distributed abuse and removal-failure staging scenarios
+    - Certify the initial 100 requests/second, 1,000-source, 30-minute distributed flood with ten Members saving/downloading and a hold during a long addition run. Measure the declared reserve, >=99.9% authorized interactive success and removal/containment under available control paths.
+    - Inject provider outage, exhausted quotas, false HEAD results, stale job and late deploy response; prove fixed denial has no canaries and cannot block the app. A failed Free_Qualified profile disables that scope until an approved stronger profile/isolation passes.
+    - _Requirements: 24.16, 24.17, 28.5, 28.6, 28.7, 28.17, 60.4, 60.7_
+  - [ ] 59.5 Write property and regression tests for publication generations and suppression
+    - Use independent models and fault injection in `apps/app/test/properties/p113-publication-epochs.test.ts`; cover the concrete scenarios in the design, including current-access and maximum encoded-input cases. This owning property file does not replace browser/staging tests.
+    - **Property 113: Publication generations never reintroduce suppressed material**
+    - **Validates: Requirements 24.16, 24.17, 59.3, 60.6**
+  - [ ] 59.6 Write property and regression tests for certified reserve accounting
+    - Use independent models and fault injection in `apps/app/test/properties/p114-certified-admission.test.ts`; cover the concrete scenarios in the design, including current-access and maximum encoded-input cases. This owning property file does not replace browser/staging tests.
+    - **Property 114: Admission and shedding preserve the certified reserve**
+    - **Validates: Requirements 28.1, 28.3, 28.4, 28.5, 28.6, 28.7, 28.8, 28.11, 28.17, 60.7**
+
+- [ ] 60. Build work coordination and the Research_Question lifecycle
+  - [ ] 60.1 Add Work_Item and Question lifecycle schemas, storage and Permissions
+    - Add Work_Item kind throughout domain names/schemas, Research_Item kind checks, identifiers, adapters, kernel input/views, filters and export formats; add work_items/assignees/dependencies/outcomes and Question lead/state/assessment/uncertainty/next-action storage with bounded logical fields.
+    - Add work.assign/edit/progress/accept permissions with own/authorized-editor versus responsible/accepted-assignee versus self scopes. Keep ownership, Log_Summary and access widening separate; assignees and Question leads must currently Can_Read. Migrate built-in and configurable Role behavior deliberately.
+    - Work_Item initial Log_Summary is optional, like a Topic; acceptance of progress never edits another Owner's summary. Bulk_Import v1 rejects interactive Work_Item/Decision_Record kinds with a clear error until a versioned mapper exists.
+    - _Requirements: 2.4, 2.5, 2.15, 41.2, 50.9, 52.1, 52.2, 60.1_
+  - [ ] 60.2 Implement work assignment, dependencies and outcome APIs
+    - Implement the design route/state contracts with idempotency, current-access guards, explicit self acceptance/decline and transactional graph-cycle protection; validate all bounds and names on every edit.
+    - Done requires result versions or a no-result statement; cancel/reopen needs a reason. Record actor-specific history, due dates, blockers and deduplicated assignment/change notifications without leaking inaccessible context.
+    - _Requirements: 52.1, 52.2, 52.3, 52.4, 52.6, 60.2_
+  - [ ] 60.3 Implement versioned Question assessments and investigation state
+    - Extend the Question adapter with lead, Open/Investigating/Answered/Parked transitions, assessment versions, evidence and uncertainty/next-action links. Answered requires evidence and non-blank assessment; reopen/park retains the previous conclusion and reason.
+    - Reuse ordinary edit/consent/history rules, keep assessment under Full_Content publicly, and render only readable context on Workspace pages. Lead/responsibility never changes Owner or ACL.
+    - _Requirements: 50.9, 50.10, 50.11, 60.1_
+  - [ ] 60.4 Build work and Question screens and integrated record/search/export views
+    - Build assignment acceptance/progress, dependency editing, due/blocked/outcome views and Question assessment/evidence screens. Add conjunction-filtered lossless /work lists; listing relationship metadata does not clear target flags.
+    - Integrate new kinds/fields with common renderers, Activity_Feed/Project_Log, notifications, search canaries, backups/restores and permitted public exports; explicitly test hidden endpoints and assignee permission loss.
+    - _Requirements: 50.11, 52.5, 52.6, 60.1, 60.9_
+  - [ ] 60.5 Write property and regression tests for work coordination
+    - Use independent models and fault injection in `apps/app/test/properties/p115-work-coordination.test.ts`; cover the concrete scenarios in the design, including current-access and maximum encoded-input cases. This owning property file does not replace browser/staging tests.
+    - **Property 115: Work transitions retain explicit assignments and outcomes**
+    - **Validates: Requirements 52.1, 52.2, 52.3, 52.4, 52.5, 52.6**
+  - [ ] 60.6 Write property and regression tests for Question assessments
+    - Use independent models and fault injection in `apps/app/test/properties/p116-question-lifecycle.test.ts`; cover the concrete scenarios in the design, including current-access and maximum encoded-input cases. This owning property file does not replace browser/staging tests.
+    - **Property 116: Question assessments retain versioned evidence and access**
+    - **Validates: Requirements 50.9, 50.10, 50.11**
+
+- [ ] 61. Build evidence-backed decisions and personal acknowledgements
+  - [ ] 61.1 Add Decision_Record schemas, storage and actor-specific acknowledgement guards
+    - Add Decision_Record kind, alternatives, selected/deferred outcome, rationale/context, participant and evidence-version rows, personal digest-bound acknowledgements, revisit and supersession fields; enforce all R53 bounds and rebuild enum checks compatibly.
+    - Adoption uses existing authorized editing, personal responses use self-only permission and content digest; changed rationale/outcome makes older acknowledgements earlier-wording, never assumed agreement. Preserve existing summary/dissent/profile protections.
+    - _Requirements: 2.15, 53.1, 53.2, 53.3, 60.1_
+  - [ ] 61.2 Implement decision APIs, revisit reminders and public/private views
+    - Implement propose/adopt/acknowledge/supersede/withdraw with atomic history, current-access checks, exact citations, participant notifications and revisit reminders. A missing response stays explicitly no response.
+    - Build forms and decision pages, link Question/work context, keep superseded rationale and differences visible, and integrate search/log/export/backup/public canaries without publishing hidden participants or acknowledgements.
+    - _Requirements: 53.2, 53.3, 53.4, 53.5, 60.1, 60.2, 60.9_
+  - [ ] 61.3 Write property and regression tests for decision records
+    - Use independent models and fault injection in `apps/app/test/properties/p117-decision-records.test.ts`; cover the concrete scenarios in the design, including current-access and maximum encoded-input cases. This owning property file does not replace browser/staging tests.
+    - **Property 117: Decisions never infer another Member’s agreement**
+    - **Validates: Requirements 53.1, 53.2, 53.3, 53.4, 53.5**
+
+- [ ] 62. Build precise citations and original/derivative provenance
+  - [ ] 62.1 Add source bibliography and version-bound citation models
+    - Add document creators/roles separately from Owner/Credit, date precision, identifiers/archive references/edition/language/URL/access date; implement typed citation/locator schemas and exact field/file version references with bounds and immutable identities.
+    - Validate UTF-16 text boundaries, page/folio/range order, normalized image regions and current access to both ends; source changes preserve the original reference and mark earlier-version citations. Legacy source strings stay unresolved unless explicitly mapped.
+    - _Requirements: 54.1, 54.2, 54.3, 60.1_
+  - [ ] 62.2 Integrate citation editing, labels, navigation and exports
+    - Implement /citations and readable backlink queries with record edit permissions; extend RichText overlays/pickers to citation IDs while preserving legacy strings and exact text. Render locators in excerpts, history/print and record pages without leaking a hidden target or its counts.
+    - Implement JSON and CSL-JSON bibliography interchange and unresolved-reference curation; add preview warnings for uncovered rights without treating a citation as permission, and integrate version retention/backup/restore/release readers.
+    - _Requirements: 54.3, 54.4, 54.5, 54.6, 60.1_
+  - [ ] 62.3 Implement artifact derivation DAGs and uncertainty/review
+    - Add derivation input/output versions, kinds, method/tool, language, uncertainty and personal review rows; implement /derivations with both-end authorization and transactional graph epoch/cycle checks.
+    - Preserve original hashes; corrections create new output versions. Store transcript/translation/OCR text explicitly for authorized search, distinguish record version from derivation relation, and handle moved/deleted targets with historical tombstones instead of repointing.
+    - _Requirements: 55.1, 55.2, 55.3, 55.4_
+  - [ ] 62.4 Build provenance screens and verify preservation/interchange
+    - Show originals, derivative paths, method/uncertainty and independent reviews with per-endpoint access; add manuscript scan/transcription/translation walkthroughs and corrected-text comparisons.
+    - Round-trip graph, exact text, identities, reviews and uncertain passages through backup/public release/export under their existing gates. Automatic OCR remains unprovisioned and outside this scope.
+    - _Requirements: 55.3, 55.4, 55.5, 60.1, 60.9_
+  - [ ] 62.5 Write property and regression tests for evidence citations
+    - Use independent models and fault injection in `apps/app/test/properties/p118-evidence-citations.test.ts`; cover the concrete scenarios in the design, including current-access and maximum encoded-input cases. This owning property file does not replace browser/staging tests.
+    - **Property 118: Evidence citations retain version identity and safe locators**
+    - **Validates: Requirements 54.1, 54.2, 54.3, 54.4, 54.5, 54.6**
+  - [ ] 62.6 Write property and regression tests for artifact derivations
+    - Use independent models and fault injection in `apps/app/test/properties/p119-artifact-derivations.test.ts`; cover the concrete scenarios in the design, including current-access and maximum encoded-input cases. This owning property file does not replace browser/staging tests.
+    - **Property 119: Artifact derivations preserve originals and an authorized DAG**
+    - **Validates: Requirements 55.1, 55.2, 55.3, 55.4, 55.5**
+
+- [ ] 63. Build reproducible compute packages and comparable scope coverage
+  - [ ] 63.1 Implement versioned compute manifests and held/verified artifact identity
+    - Add package versions and bounded artifact/configuration/environment/scope/reproduction tables and /runs/{id}/package. Validate exact code commit/release, commands, input/output/checkpoint hashes, seeds/dependencies and all package bounds without rounding counts.
+    - Distinguish held/hash-verified from unverified external references and Incomplete/Specified/Reproduced/Disputed states; list missing ingredients. Parsing/import never executes code or fetches arbitrary external URLs.
+    - _Requirements: 56.1, 56.2, 56.6, 60.1_
+  - [ ] 63.2 Implement scope schemas, coverage comparison and independent reproduction
+    - Implement versioned project scope schemas with exact integer/set/range semantics, attempted/completed/excluded/unknown states, cycle-free evidence references and conservative overlap/union for compatible verified completed scopes only.
+    - Generic/incompatible scopes remain explicitly incomparable; Partial/Suspended/Stopped work never proves full elimination. Add independent reproduction as a separate attributed Run with environment differences and evidence, preserving the initial package/outcome.
+    - _Requirements: 56.3, 56.4, 56.5_
+  - [ ] 63.3 Build package/coverage screens and interoperability walkthroughs
+    - Build forms, missing-ingredient/status displays, exact manifests and authorized coverage comparisons; integrate linked Questions/Findings, current access/disclosure, search, history, export and backup/release retention.
+    - Reproduce a synthetic run from exported configuration and held inputs in an explicitly operated test harness; application code does not execute uploaded tools. Test secrets rejection and no inferred elimination from unmatched scope formats.
+    - _Requirements: 56.1, 56.2, 56.4, 56.6, 60.1, 60.9_
+  - [ ] 63.4 Write property and regression tests for compute reproducibility and coverage
+    - Use independent models and fault injection in `apps/app/test/properties/p120-compute-packages.test.ts`; cover the concrete scenarios in the design, including current-access and maximum encoded-input cases. This owning property file does not replace browser/staging tests.
+    - **Property 120: Compute coverage is exact only for compatible verified scopes**
+    - **Validates: Requirements 56.1, 56.2, 56.3, 56.4, 56.5, 56.6**
+
+- [ ] 64. Build durable drafts and authorized proposed edits
+  - [ ] 64.1 Implement author-scoped durable draft storage and recovery
+    - Add /drafts with target/base revision, exact field-version manifests, upload/group IDs, operation key, pin/last-save state and local fallback. Distinguish acknowledged durable content from unsaved local changes; normal reads are author-only with current target access.
+    - Implement reasoned audited Administrator recovery, warned 83/90-day inactive expiry and pinned retention, encrypted backup visibility metadata and exclusion from public/search/notification/Submission output. File reselection revalidates identity rather than fabricating File objects.
+    - _Requirements: 2.16, 28.10, 57.1, 57.2, 57.3, 60.1, 60.2, 60.8_
+  - [ ] 64.2 Implement revision-bound proposed diffs and guarded acceptance
+    - Implement edit proposal submit/rebase/withdraw/accept/decline with exact diff, explanation, evidence and immutable author/base identities. Current authorized field editors accept; a stale base requires explicit rebase/review and a forbidden field rejects the entire action.
+    - Do not route disclosure/access/rights/consent/status changes through content proposals. Preserve another Member's Log_Summary/Profile/Dissent protections and personal acknowledgement ownership; record proposer separately from actual editor and deduplicate readable notifications.
+    - _Requirements: 57.4, 57.5, 57.6, 60.1, 60.2_
+  - [ ] 64.3 Build draft resumption and proposal review screens
+    - Add save/resume/discard/pin draft controls and clear saved/local/unknown indicators; test closing/reopening tabs, permission loss and upload expiry while preserving metadata.
+    - Build proposed-diff review, stale/conflict rebase, accept/decline/withdraw and attribution/history screens; a Contributor can suggest another record's edit but does not gain target editing or public disclosure rights.
+    - _Requirements: 57.1, 57.2, 57.3, 57.4, 57.5, 57.6, 60.9_
+  - [ ] 64.4 Write property and regression tests for durable drafts
+    - Use independent models and fault injection in `apps/app/test/properties/p121-durable-drafts.test.ts`; cover the concrete scenarios in the design, including current-access and maximum encoded-input cases. This owning property file does not replace browser/staging tests.
+    - **Property 121: Durable drafts recover acknowledged input with author isolation**
+    - **Validates: Requirements 57.1, 57.2, 57.3**
+  - [ ] 64.5 Write property and regression tests for proposed edits
+    - Use independent models and fault injection in `apps/app/test/properties/p122-edit-proposals.test.ts`; cover the concrete scenarios in the design, including current-access and maximum encoded-input cases. This owning property file does not replace browser/staging tests.
+    - **Property 122: Proposed edits apply only current authorized diffs**
+    - **Validates: Requirements 57.4, 57.5, 57.6**
+
+- [ ] 65. Build personal navigation and team work dashboards
+  - [ ] 65.1 Implement personal bookmarks, saved queries, follows and recipient union
+    - Add author-scoped bookmark/search/follow tables and /me endpoints with validated names/count limits and no stored result snapshots; rerun saved searches through current authorization and show only a neutral unavailable personal entry for a lost target.
+    - Union follows with existing participation recipients before notification/email grouping; apply event preferences and Project muting without defeating existing mandatory policy-alert exceptions. Add migration-defined preferences for new event types; personal records appear only in encrypted backup/personal export.
+    - _Requirements: 2.16, 58.2, 58.3, 58.4, 60.1_
+  - [ ] 65.2 Build My_Work and authorized team dashboards
+    - Provide assignment acceptance/due/blocked work, eligible reviews, archival follow-ups, proposals, followed Questions and durable drafts with lossless paging and Project/responsible/state filters.
+    - Keep outstanding work separate from unseen flags; show no inaccessible context/counts and do not clear flags merely by listing results. Add bookmark/search management and saved-navigation access-loss walkthroughs.
+    - _Requirements: 52.5, 58.1, 58.4, 58.5, 60.9_
+  - [ ] 65.3 Write property and regression tests for navigation and follows
+    - Use independent models and fault injection in `apps/app/test/properties/p123-personal-navigation.test.ts`; cover the concrete scenarios in the design, including current-access and maximum encoded-input cases. This owning property file does not replace browser/staging tests.
+    - **Property 123: Navigation and follows preserve access and event uniqueness**
+    - **Validates: Requirements 58.1, 58.2, 58.3, 58.4, 58.5**
+
+- [ ] 66. Build citable research releases with current public suppression
+  - [ ] 66.1 Define release schema, immutable manifests and exact citations
+    - Add release identity/state/snapshot, scope/rationale/licence version, bounded artifact/citation/package/provenance/work/decision references and immutable authenticated manifest. Draft validation captures exact revisions/hashes and current permission evidence; backup inventory includes release data even before public release UI ships.
+    - Separate internal sealed manifest from the approved public subset. Sealing requires complete validation and current approvals; changed contents produce a successor ID, and version-specific citations include release/revision/hash.
+    - _Requirements: 59.1, 59.2, 59.4, 60.1_
+  - [ ] 66.2 Implement release creation, validation and publication through the kernel
+    - Implement /releases and export/snapshot sealing under operation keys and exact dependency guards; use normal preview/Owner/rights/hold/naming checks, not an independent publication bypass.
+    - Index every public release file/page/citation for current suppression and epoch/containment; keep immutable originals internal when permitted, but remove currently disallowed historic output from static manifests and public copies within the normal SLO.
+    - _Requirements: 24.16, 59.1, 59.2, 59.3, 59.5, 60.2_
+  - [ ] 66.3 Build release and version-citation screens and offline export verification
+    - Build create/preflight/seal/successor views and exact citation copy/export, with current withdrawn/superseded/unavailable behavior that reveals no hidden metadata. Offline HTML/JSON/CSL/package manifests must round-trip without executing code.
+    - Document external repository/DOI deposit as a separate explicit operator action with permanent-copy implications; setup does not publish/deposit research. Exercise removal of an old public release after a later hold or permission withdrawal.
+    - _Requirements: 59.3, 59.4, 59.5, 60.9_
+  - [ ] 66.4 Write property and regression tests for research releases
+    - Use independent models and fault injection in `apps/app/test/properties/p124-research-releases.test.ts`; cover the concrete scenarios in the design, including current-access and maximum encoded-input cases. This owning property file does not replace browser/staging tests.
+    - **Property 124: Research releases preserve manifests and current suppression**
+    - **Validates: Requirements 59.1, 59.2, 59.3, 59.4, 59.5**
+
+- [ ] 67. Implement compatibility, independent operations and retention assurance
+  - [ ] 67.1 Implement compatible release manifests and upgrade/recovery tooling
+    - Add versioned release/schema/backup compatibility declarations, expand/contract scripts, bounded backfill/checkpoints and rollback/forward-recovery checks; reject incompatible Worker/schema rollout combinations and unsupported backup readers.
+    - Test current and two prior released schemas where available, seeded/bootstrap identity, stored field versions and indexes/triggers through upgrades, and restore rehearsal before any destructive contraction. Record the deployed versions and accepted recovery window.
+    - _Requirements: 36.16, 60.3, 60.5_
+  - [ ] 67.2 Implement independent health, recovery-age, removal and spend alerts
+    - Prepare provider-native/independent external checks and operator-controlled notification delivery without rf-core or Graph queue dependence, plus credential-loss, identity outage, freeze/quota/failed-migration and containment runbooks.
+    - Keep payloads free of research text, bearer links and recovery secrets, certify actual endpoint/control availability and document the separate trusted credential custody. Setup remains an explicit operator action.
+    - _Requirements: 28.4, 36.7, 36.17, 60.6_
+  - [ ] 67.3 Implement reference-safe operational retention and growth reporting
+    - Expire reconciled outbox/side-effect payloads and closed checkpoints at 30 days and aggregate failure metadata at 90 days, retaining required immutable research history, exact-version refs/evidence, suppressed identifiers and content-free operation tombstones.
+    - Integrate warned draft expiry and independently retained recovery suppression, report 1/3/5-year measured growth including all current/transient copies, and prove cleanup cannot remove a live citation, release, proposal or backup dependency.
+    - _Requirements: 28.8, 28.17, 57.2, 60.7, 60.8_
+  - [ ] 67.4 Write property and regression tests for release and compatibility gates
+    - Use independent models and fault injection in `tools/test/properties/p125-release-assurance.test.ts`; cover the concrete scenarios in the design, including current-access and maximum encoded-input cases. This owning property file does not replace browser/staging tests.
+    - **Property 125: Release gates and compatibility evidence cannot be bypassed**
+    - **Validates: Requirements 60.1, 60.3, 60.4, 60.5, 60.6, 60.7, 60.8, 60.9**
+
+- [ ] 68. Complete permission-evidence policy and mandatory release gates
+  - [ ] 68.1 Add shared Permission_Evidence and manual/emailed grant coverage
+    - Add immutable grant/evidence/source/document/version/hash/use/naming/authority/expiry/withdrawal rows and common coverage helpers. Legacy hand-set statuses become unverified legacy evidence pending curation; do not invent historical grants or silently publish uncovered material.
+    - Provide exact snapshot coverage helpers for 54's Owner consents and dual eligibility, Withheld neutral-name fallback and existing Do_Not_Name precedence; changing a status does not grant unlimited rights. Extend backup/recovery/release schema readers and suppression indexes.
+    - _Requirements: 23.23, 23.24, 49.8, 51.9, 51.15, 51.16, 51.17, 51.18, 60.1_
+  - [ ] 68.2 Build evidence recording, precise permission requests and policy text
+    - Build a manual evidence editor and curation queue with immutable evidence references, exact file/use/naming identity and expiry; provide shared preview/snapshot components with structured document identity and asserted authority for the later task 56 Consent_Request screens. A separately authorized feature is required to share file bytes externally.
+    - Disclose verified residual Microsoft 365 retention in policy; make the explicit scoped bearer Download_Link exception visible to Members, preserve neutral withheld naming without a grant, and require configured content licence and recovery/provider inputs before their launch gates.
+    - _Requirements: 1.3, 20.24, 51.9, 51.15, 51.16, 51.17, 51.18, 60.1_
+  - [ ] 68.3 Write property and regression tests for permission evidence coverage
+    - Use independent models and fault injection in `apps/app/test/properties/p126-permission-evidence.test.ts`; cover the concrete scenarios in the design, including current-access and maximum encoded-input cases. This owning property file does not replace browser/staging tests.
+    - **Property 126: Permission evidence covers only the exact authorized use**
+    - **Validates: Requirements 51.9, 51.15, 51.16, 51.17, 51.18, 23.23, 23.24, 49.8**
+  - [ ] 68.4 Enforce team-archive and public-launch acceptance evidence
+    - Implement gate manifests and checks for the mandatory R60.4 matrix; a source file, checked box or unit-only result is not substitute evidence. Team archive requires independent encrypted recovery/fresh restore, exact privacy, drafts/files, text, concurrency/lost-response and keyboard/capacity checks.
+    - Public launch additionally requires real rights/consent/holds/dual approvals, public-channel canaries, browser file safety, presentation/accessibility, static index/removal/containment, provider setup and the distributed Abuse_Profile. Missing licence, independent keys/destination, profile approval or failed control paths block that scope.
+    - Run and record the R60.9 local synthetic team walkthroughs, and wire protected real import/staging rehearsals into setup tasks 48.6–48.9; they must supply passing evidence before custodial use/public launch. Retain failure reports and explicit remediation tasks. The final checkpoint cannot skip any required acceptance suite.
+    - _Requirements: 28.17, 36.12, 36.17, 60.1, 60.3, 60.4, 60.5, 60.6, 60.7, 60.9_
+
 ## Notes
 
-- Sub-tasks marked with `*` are optional and can be skipped for a faster MVP. The required test sub-tasks are the privacy-kernel and disclosure properties (Properties 1 to 8, 10 to 15, 17, and 63), the restricted-access, consent, hold, approval, and emailed-consent properties (Properties 100 to 104, 107, and 108), and the parser and printer properties (Properties 66, 67, and 68).
-- Each of the 108 correctness properties has exactly one property-based test sub-task. Each test lives in its own file, `test/properties/pNN-<slug>.test.ts` inside the package or app under test, runs at least 100 fast-check iterations, and starts with the tag comment `// Feature: research-collab-cms, Property N: <title>`.
-- A property that spans several features is placed after the last code it exercises. Property 5 is the exception: its test (task 6.6) checks every channel in `packages/testing/src/public-channels.ts`, and tasks 9.5, 10.1, 27.1, 30.5, 34.4, and 38.1 register their channels there, so the confinement test covers each public channel as soon as it exists.
+- Every specified test sub-task is required for its associated scope; there is no optional-MVP skip marker. Team-archive and public-launch gates require the complete evidence matrix of R60.4, including independent recovery, real public-channel/browser security, accessibility, concurrency, migration and measured provider/performance cases. A pure property test never substitutes for an infrastructure acceptance check.
+- Each of the 126 correctness properties has exactly one property-based test sub-task. Each owning property file may contain multiple independently modeled cases; separate regression/browser/staging tests remain required. Each property test lives in its own file, `test/properties/pNN-<slug>.test.ts` inside the package or app under test, runs at least 100 fast-check iterations, and starts with the tag comment `// Feature: research-collab-cms, Property N: <title>`.
+- A property that spans several features is placed after the last code it exercises in the canonical graph. Cross-feature browser/staging suites run again after all affected modules exist; creating a test harness alone does not satisfy a release gate. Property 5 is the exception: its test (task 6.6) checks every channel in `packages/testing/src/public-channels.ts`, and tasks 9.5, 10.1, 27.1, 30.5, 34.4, and 38.1 register their channels there, so the confinement test covers each public channel as soon as it exists.
 - All tests run in single-run mode with `vitest --run` (`npm test`); no test starts a watcher or a development server. Task 50 adds `npm run dev` for running the Workspace locally by hand.
 - Tests and fixtures use synthetic data. The existing journal and its attachments are never copied into the repository; task 7.10 and checklist 48.9 read them from paths the user gives, and the import creates every unit Not_Published and Unclassified.
-- Tasks 51 to 56 and sub-tasks 35.12 and 35.13 come from the October 2026 revision. The milestone build order in the Overview decides when each remaining task is built. The dependency graph below keeps the original waves and appends the new sub-tasks as its last waves, in the order they must follow each other; their prerequisites among the earlier tasks are only these: tasks 51 and 52 need task 24; 55.1 to 55.3 need 52; 53 needs 30, 52, and 55.2; 54 needs 31 and 52; 55.4 needs 32; 35.12 and 35.13 need 35.6; 56 needs 27, 34, and 54. Tasks 31.6 and 53.1 call 55.2's helper, which the milestone order builds first.
-- Several tasks write the same shared files: `apps/app/src/api/app.ts` (route registration), `apps/app/src/index.ts` (Durable Object exports), `apps/app/src/cron.ts`, `apps/app/src/records/pipeline.ts`, `apps/app/src/notifications/fanout.ts`, `apps/app/web/src/routes.tsx`, `apps/ops/src/index.ts`, and `packages/testing/src/public-channels.ts`. The dependency graph keeps those tasks in separate waves.
-- Sub-tasks 48.6 to 48.9 are setup checklists that need the user's Cloudflare, Microsoft 365, DNS, or deployment access. The agent prepares the scripts in 48.1 to 48.5, then stops and asks the user to run the checklist and report the results.
-- The design's open points stay behind the single locations listed in the Overview, so an answer from the user changes one constant, one function, or one seed text.
+- The canonical graph below replaces the obsolete appended historical waves. It covers each leaf task once, distinguishes the checked baseline from remaining work, and orders the remaining work through explicit predecessor wave barriers. The milestone narrative is checked against these groups; named helper dependencies such as 55.2 before 31.6/53.1 remain mandatory.
+- Several tasks write the same shared files: `apps/app/src/api/app.ts` (route registration), `apps/app/src/index.ts` (Durable Object exports), `apps/app/src/cron.ts`, `apps/app/src/records/pipeline.ts`, `apps/app/src/notifications/fanout.ts`, `apps/app/web/src/routes.tsx`, `apps/ops/src/index.ts`, and `packages/testing/src/public-channels.ts`. The canonical remaining-work waves are serial; helpers and shared-file integrations complete before their callers. This is a safe scheduling order, not an instruction to spawn agents.
+- Sub-tasks 48.6–48.9 and 48.11–48.12 are setup/acceptance checklists that need the user's Cloudflare, Microsoft 365, DNS, or deployment access. The agent completes the scripts, gate tooling and runnable suites first. Obtain only missing account inputs/actions at the scheduled setup phase; reuse access and authorization already supplied. Record actual setup/test results before production activation.
+- Installation inputs and remaining open policy questions are explicit gate dependencies. Resolved review decisions are normative, not hidden provisional constants; a policy change updates requirements, design, tests and task evidence together.
 - Each task references the requirement criteria it implements; checkpoints run the whole suite at the end of each phase.
 
 ## Task Dependency Graph
 
+This is the canonical scheduling and gate manifest. Phase names match the milestone table above. The inherited baseline is audited, and every remaining leaf has an explicit predecessor barrier. Setup is separated from provider verification and production activation to avoid circular dependencies. Public and outside features remain denied until their gates pass.
+
 ```json
 {
+  "schemaVersion": 2,
+  "semantics": {
+    "completedBaseline": "Inherited checked leaf tasks; task 57.1 reconciles evidence. This is not release acceptance.",
+    "waveDependencies": "Every wave requires all predecessor waves. One remaining leaf per wave avoids shared-file races.",
+    "helperEdges": "Additional explicit prerequisite edges [before, after]; serial barriers preserve these too.",
+    "gates": "Runtime evidence gates are evaluated by 68.4 using the completed staging evidence. Code completion alone does not pass a gate."
+  },
+  "completedBaseline": [
+    "1.1",
+    "1.2",
+    "1.3",
+    "1.4",
+    "2.1",
+    "2.2",
+    "2.3",
+    "2.4",
+    "2.5",
+    "2.6",
+    "3.1",
+    "3.2",
+    "3.3",
+    "3.4",
+    "3.5",
+    "3.6",
+    "3.7",
+    "3.8",
+    "3.9",
+    "3.10",
+    "4.1",
+    "4.2",
+    "4.3",
+    "4.4",
+    "5.1",
+    "5.2",
+    "5.3",
+    "5.4",
+    "5.5",
+    "5.6",
+    "5.7",
+    "5.8",
+    "6.1",
+    "6.2",
+    "6.3",
+    "6.4",
+    "6.5",
+    "6.6",
+    "6.7",
+    "7.1",
+    "7.2",
+    "7.3",
+    "7.4",
+    "7.5",
+    "7.6",
+    "7.7",
+    "7.8",
+    "7.9",
+    "7.10",
+    "8.1",
+    "8.2",
+    "8.3",
+    "8.4",
+    "8.5",
+    "8.6",
+    "8.7",
+    "9.1",
+    "9.2",
+    "9.3",
+    "9.4",
+    "9.5",
+    "9.6",
+    "9.7",
+    "9.8",
+    "9.9",
+    "10.1",
+    "10.2",
+    "10.3",
+    "10.4",
+    "10.5",
+    "11.1",
+    "11.2",
+    "11.3",
+    "11.4",
+    "11.5",
+    "11.6",
+    "13.1",
+    "13.2",
+    "13.3",
+    "13.4",
+    "13.5",
+    "13.6",
+    "14.1",
+    "14.2",
+    "14.3",
+    "14.4",
+    "14.5",
+    "14.6",
+    "14.7",
+    "15.1",
+    "15.2",
+    "15.3",
+    "16.1",
+    "16.2",
+    "16.3",
+    "16.4",
+    "17.1",
+    "17.2",
+    "17.3",
+    "17.4",
+    "17.5",
+    "18.1",
+    "18.2",
+    "18.3",
+    "18.4",
+    "18.5",
+    "18.6",
+    "18.7",
+    "18.8",
+    "18.9",
+    "18.10",
+    "19.2",
+    "19.3",
+    "20.1",
+    "20.2",
+    "20.3",
+    "20.4",
+    "21.1",
+    "21.2",
+    "21.3",
+    "21.4",
+    "21.5",
+    "21.6",
+    "21.7",
+    "23.1",
+    "23.2",
+    "23.3",
+    "23.4",
+    "23.5",
+    "23.6",
+    "23.7",
+    "23.8",
+    "23.9",
+    "23.10",
+    "24.1",
+    "24.2",
+    "24.3",
+    "24.4",
+    "24.5",
+    "25.1",
+    "25.2",
+    "25.3",
+    "25.4",
+    "25.5",
+    "25.6",
+    "25.7",
+    "25.8",
+    "25.9",
+    "25.10",
+    "26.1",
+    "26.2",
+    "26.3",
+    "26.4",
+    "26.5",
+    "26.6",
+    "26.7",
+    "27.1",
+    "27.2",
+    "27.3",
+    "27.4",
+    "27.5",
+    "27.6",
+    "27.7",
+    "27.8",
+    "27.9",
+    "27.10",
+    "27.11",
+    "28.1",
+    "28.2",
+    "28.3",
+    "28.4",
+    "28.5",
+    "30.1",
+    "30.2",
+    "30.3",
+    "30.4",
+    "30.5",
+    "30.9",
+    "30.10",
+    "30.12",
+    "51.1",
+    "51.2"
+  ],
+  "phases": {
+    "repair": {
+      "firstWave": 0,
+      "lastWave": 24
+    },
+    "collaboration": {
+      "firstWave": 25,
+      "lastWave": 55
+    },
+    "privacy": {
+      "firstWave": 56,
+      "lastWave": 77
+    },
+    "imports_and_log": {
+      "firstWave": 78,
+      "lastWave": 100
+    },
+    "publication": {
+      "firstWave": 101,
+      "lastWave": 118
+    },
+    "outside_and_ai": {
+      "firstWave": 119,
+      "lastWave": 166
+    },
+    "recovery": {
+      "firstWave": 167,
+      "lastWave": 184
+    },
+    "release_tooling": {
+      "firstWave": 185,
+      "lastWave": 214
+    },
+    "staging_and_acceptance": {
+      "firstWave": 215,
+      "lastWave": 222
+    },
+    "production_activation": {
+      "firstWave": 223,
+      "lastWave": 223
+    }
+  },
   "waves": [
-    { "id": 0, "tasks": ["1.1"] },
-    { "id": 1, "tasks": ["1.2", "1.3", "1.4"] },
-    { "id": 2, "tasks": ["2.1"] },
-    { "id": 3, "tasks": ["2.2", "2.4", "3.1", "3.3", "3.4", "3.6", "3.7", "3.9", "3.10", "5.1", "5.2", "5.3", "5.4", "5.5", "6.1", "7.1", "8.1", "8.2"] },
-    { "id": 4, "tasks": ["2.3", "2.5", "2.6", "3.2", "3.5", "3.8", "4.1", "4.2", "4.3", "5.6", "5.7", "6.2", "6.5", "7.2", "7.4", "8.3", "8.5"] },
-    { "id": 5, "tasks": ["4.4", "5.8", "6.3", "7.3", "7.5", "7.6", "8.4", "9.1"] },
-    { "id": 6, "tasks": ["6.4", "7.7", "7.8", "7.9", "8.6", "8.7", "9.2"] },
-    { "id": 7, "tasks": ["6.6", "6.7", "7.10", "9.3", "9.4"] },
-    { "id": 8, "tasks": ["9.5"] },
-    { "id": 9, "tasks": ["9.6", "9.7", "9.8", "9.9", "10.1"] },
-    { "id": 10, "tasks": ["10.2", "10.3"] },
-    { "id": 11, "tasks": ["10.4", "10.5", "11.1", "11.2", "11.3", "11.4", "11.5", "11.6"] },
-    { "id": 12, "tasks": ["13.1"] },
-    { "id": 13, "tasks": ["13.2"] },
-    { "id": 14, "tasks": ["13.3"] },
-    { "id": 15, "tasks": ["13.4", "14.1"] },
-    { "id": 16, "tasks": ["13.5", "13.6", "14.2"] },
-    { "id": 17, "tasks": ["14.3"] },
-    { "id": 18, "tasks": ["14.4"] },
-    { "id": 19, "tasks": ["14.5", "14.6", "14.7", "15.1"] },
-    { "id": 20, "tasks": ["15.2"] },
-    { "id": 21, "tasks": ["15.3", "16.1"] },
-    { "id": 22, "tasks": ["16.2"] },
-    { "id": 23, "tasks": ["16.3", "16.4", "17.1"] },
-    { "id": 24, "tasks": ["17.2"] },
-    { "id": 25, "tasks": ["17.3"] },
-    { "id": 26, "tasks": ["17.4", "17.5", "18.1", "18.2", "18.3", "18.4", "18.5", "18.6"] },
-    { "id": 27, "tasks": ["18.7"] },
-    { "id": 28, "tasks": ["18.8"] },
-    { "id": 29, "tasks": ["18.9", "18.10", "19.1"] },
-    { "id": 30, "tasks": ["19.2"] },
-    { "id": 31, "tasks": ["19.3"] },
-    { "id": 32, "tasks": ["20.1"] },
-    { "id": 33, "tasks": ["20.2"] },
-    { "id": 34, "tasks": ["20.3"] },
-    { "id": 35, "tasks": ["20.4", "21.1"] },
-    { "id": 36, "tasks": ["21.2", "21.3"] },
-    { "id": 37, "tasks": ["21.4"] },
-    { "id": 38, "tasks": ["21.5"] },
-    { "id": 39, "tasks": ["21.6"] },
-    { "id": 40, "tasks": ["21.7"] },
-    { "id": 41, "tasks": ["23.1"] },
-    { "id": 42, "tasks": ["23.2"] },
-    { "id": 43, "tasks": ["23.3"] },
-    { "id": 44, "tasks": ["23.4"] },
-    { "id": 45, "tasks": ["23.5"] },
-    { "id": 46, "tasks": ["23.6", "23.7", "23.8", "23.9", "23.10"] },
-    { "id": 47, "tasks": ["24.1"] },
-    { "id": 48, "tasks": ["24.2", "24.3"] },
-    { "id": 49, "tasks": ["24.4", "24.5"] },
-    { "id": 50, "tasks": ["25.1"] },
-    { "id": 51, "tasks": ["25.2"] },
-    { "id": 52, "tasks": ["25.3"] },
-    { "id": 53, "tasks": ["25.4"] },
-    { "id": 54, "tasks": ["25.5"] },
-    { "id": 55, "tasks": ["25.6", "25.7", "25.8", "25.9", "25.10"] },
-    { "id": 56, "tasks": ["26.1"] },
-    { "id": 57, "tasks": ["26.2"] },
-    { "id": 58, "tasks": ["26.3"] },
-    { "id": 59, "tasks": ["26.4", "26.5", "26.6", "26.7"] },
-    { "id": 60, "tasks": ["27.1", "27.2"] },
-    { "id": 61, "tasks": ["27.3"] },
-    { "id": 62, "tasks": ["27.5"] },
-    { "id": 63, "tasks": ["27.4"] },
-    { "id": 64, "tasks": ["27.6", "27.7", "27.8", "27.9", "27.10", "27.11"] },
-    { "id": 65, "tasks": ["28.1"] },
-    { "id": 66, "tasks": ["28.2"] },
-    { "id": 67, "tasks": ["28.3", "28.4", "28.5"] },
-    { "id": 68, "tasks": ["30.1"] },
-    { "id": 69, "tasks": ["30.2"] },
-    { "id": 70, "tasks": ["30.3", "30.4"] },
-    { "id": 71, "tasks": ["30.5", "30.6"] },
-    { "id": 72, "tasks": ["30.7", "30.8"] },
-    { "id": 73, "tasks": ["30.9", "30.10", "30.11", "30.12"] },
-    { "id": 74, "tasks": ["31.1"] },
-    { "id": 75, "tasks": ["31.2"] },
-    { "id": 76, "tasks": ["31.3"] },
-    { "id": 77, "tasks": ["31.4"] },
-    { "id": 78, "tasks": ["31.5"] },
-    { "id": 79, "tasks": ["31.6"] },
-    { "id": 80, "tasks": ["31.7"] },
-    { "id": 81, "tasks": ["31.8", "31.9", "31.10", "31.11", "31.12", "31.13", "31.14", "31.15"] },
-    { "id": 82, "tasks": ["32.1", "32.2"] },
-    { "id": 83, "tasks": ["32.3", "32.4"] },
-    { "id": 84, "tasks": ["32.5"] },
-    { "id": 85, "tasks": ["32.6", "32.7"] },
-    { "id": 86, "tasks": ["34.2"] },
-    { "id": 87, "tasks": ["34.1"] },
-    { "id": 88, "tasks": ["34.3"] },
-    { "id": 89, "tasks": ["34.4"] },
-    { "id": 90, "tasks": ["34.5", "34.6"] },
-    { "id": 91, "tasks": ["35.1"] },
-    { "id": 92, "tasks": ["35.2"] },
-    { "id": 93, "tasks": ["35.3", "35.4"] },
-    { "id": 94, "tasks": ["35.5"] },
-    { "id": 95, "tasks": ["35.6"] },
-    { "id": 96, "tasks": ["35.7", "35.8", "35.9", "35.10", "35.11"] },
-    { "id": 97, "tasks": ["36.1", "37.1"] },
-    { "id": 98, "tasks": ["36.2", "37.2"] },
-    { "id": 99, "tasks": ["36.3", "37.3", "37.4"] },
-    { "id": 100, "tasks": ["36.4", "37.5"] },
-    { "id": 101, "tasks": ["37.6"] },
-    { "id": 102, "tasks": ["37.7"] },
-    { "id": 103, "tasks": ["37.8", "37.9", "37.10", "37.11"] },
-    { "id": 104, "tasks": ["38.1"] },
-    { "id": 105, "tasks": ["38.2", "38.3"] },
-    { "id": 106, "tasks": ["38.4"] },
-    { "id": 107, "tasks": ["38.5"] },
-    { "id": 108, "tasks": ["38.6"] },
-    { "id": 109, "tasks": ["38.7", "38.8", "38.9", "38.10", "38.11", "38.12", "38.13"] },
-    { "id": 110, "tasks": ["40.1"] },
-    { "id": 111, "tasks": ["40.2"] },
-    { "id": 112, "tasks": ["40.3"] },
-    { "id": 113, "tasks": ["40.4", "40.5", "41.1"] },
-    { "id": 114, "tasks": ["41.2"] },
-    { "id": 115, "tasks": ["41.3"] },
-    { "id": 116, "tasks": ["41.4", "41.5", "41.6", "41.7", "42.2"] },
-    { "id": 117, "tasks": ["42.1"] },
-    { "id": 118, "tasks": ["42.3"] },
-    { "id": 119, "tasks": ["42.4"] },
-    { "id": 120, "tasks": ["42.5", "42.6", "42.7", "43.1"] },
-    { "id": 121, "tasks": ["43.2", "43.5"] },
-    { "id": 122, "tasks": ["43.3"] },
-    { "id": 123, "tasks": ["43.4"] },
-    { "id": 124, "tasks": ["43.6"] },
-    { "id": 125, "tasks": ["43.7", "43.8", "43.9", "43.10", "43.11", "43.12", "44.1"] },
-    { "id": 126, "tasks": ["44.2"] },
-    { "id": 127, "tasks": ["44.3", "45.1", "45.2"] },
-    { "id": 128, "tasks": ["45.3", "45.4", "46.1"] },
-    { "id": 129, "tasks": ["46.2"] },
-    { "id": 130, "tasks": ["48.1", "48.2", "48.3", "48.4"] },
-    { "id": 131, "tasks": ["48.5", "48.10"] },
-    { "id": 132, "tasks": ["48.6", "48.7", "48.8"] },
-    { "id": 133, "tasks": ["48.9"] },
-    { "id": 134, "tasks": ["50.1", "50.3"] },
-    { "id": 135, "tasks": ["50.2"] },
-    { "id": 136, "tasks": ["51.1"] },
-    { "id": 137, "tasks": ["51.2"] },
-    { "id": 138, "tasks": ["52.1"] },
-    { "id": 139, "tasks": ["52.2"] },
-    { "id": 140, "tasks": ["52.3", "52.5"] },
-    { "id": 141, "tasks": ["52.4"] },
-    { "id": 142, "tasks": ["52.6", "52.7", "52.8"] },
-    { "id": 143, "tasks": ["55.1"] },
-    { "id": 144, "tasks": ["55.2"] },
-    { "id": 145, "tasks": ["53.1", "55.3"] },
-    { "id": 146, "tasks": ["53.2", "53.3"] },
-    { "id": 147, "tasks": ["54.1"] },
-    { "id": 148, "tasks": ["54.2"] },
-    { "id": 149, "tasks": ["54.3", "54.4"] },
-    { "id": 150, "tasks": ["54.5"] },
-    { "id": 151, "tasks": ["54.6", "54.7", "54.8", "54.9"] },
-    { "id": 152, "tasks": ["55.4"] },
-    { "id": 153, "tasks": ["55.5", "35.12"] },
-    { "id": 154, "tasks": ["35.13"] },
-    { "id": 155, "tasks": ["56.1"] },
-    { "id": 156, "tasks": ["56.2"] },
-    { "id": 157, "tasks": ["56.3"] },
-    { "id": 158, "tasks": ["56.4", "56.5", "56.6"] },
-    { "id": 159, "tasks": ["56.7", "56.8", "56.9", "56.10"] }
+    {"id": 0, "phase": "repair", "dependsOn": [], "tasks": ["57.1"]},
+    {"id": 1, "phase": "repair", "dependsOn": [0], "tasks": ["50.1"]},
+    {"id": 2, "phase": "repair", "dependsOn": [1], "tasks": ["50.2"]},
+    {"id": 3, "phase": "repair", "dependsOn": [2], "tasks": ["50.3"]},
+    {"id": 4, "phase": "repair", "dependsOn": [3], "tasks": ["57.2"]},
+    {"id": 5, "phase": "repair", "dependsOn": [4], "tasks": ["67.1"]},
+    {"id": 6, "phase": "repair", "dependsOn": [5], "tasks": ["57.3"]},
+    {"id": 7, "phase": "repair", "dependsOn": [6], "tasks": ["19.1"]},
+    {"id": 8, "phase": "repair", "dependsOn": [7], "tasks": ["57.4"]},
+    {"id": 9, "phase": "repair", "dependsOn": [8], "tasks": ["57.5"]},
+    {"id": 10, "phase": "repair", "dependsOn": [9], "tasks": ["30.6"]},
+    {"id": 11, "phase": "repair", "dependsOn": [10], "tasks": ["30.7"]},
+    {"id": 12, "phase": "repair", "dependsOn": [11], "tasks": ["30.8"]},
+    {"id": 13, "phase": "repair", "dependsOn": [12], "tasks": ["30.11"]},
+    {"id": 14, "phase": "repair", "dependsOn": [13], "tasks": ["57.6"]},
+    {"id": 15, "phase": "repair", "dependsOn": [14], "tasks": ["57.7"]},
+    {"id": 16, "phase": "repair", "dependsOn": [15], "tasks": ["57.8"]},
+    {"id": 17, "phase": "repair", "dependsOn": [16], "tasks": ["52.1"]},
+    {"id": 18, "phase": "repair", "dependsOn": [17], "tasks": ["52.2"]},
+    {"id": 19, "phase": "repair", "dependsOn": [18], "tasks": ["52.3"]},
+    {"id": 20, "phase": "repair", "dependsOn": [19], "tasks": ["52.4"]},
+    {"id": 21, "phase": "repair", "dependsOn": [20], "tasks": ["52.5"]},
+    {"id": 22, "phase": "repair", "dependsOn": [21], "tasks": ["52.6"]},
+    {"id": 23, "phase": "repair", "dependsOn": [22], "tasks": ["52.7"]},
+    {"id": 24, "phase": "repair", "dependsOn": [23], "tasks": ["52.8"]},
+    {"id": 25, "phase": "collaboration", "dependsOn": [24], "tasks": ["55.1"]},
+    {"id": 26, "phase": "collaboration", "dependsOn": [25], "tasks": ["55.2"]},
+    {"id": 27, "phase": "collaboration", "dependsOn": [26], "tasks": ["55.3"]},
+    {"id": 28, "phase": "collaboration", "dependsOn": [27], "tasks": ["62.1"]},
+    {"id": 29, "phase": "collaboration", "dependsOn": [28], "tasks": ["61.1"]},
+    {"id": 30, "phase": "collaboration", "dependsOn": [29], "tasks": ["66.1"]},
+    {"id": 31, "phase": "collaboration", "dependsOn": [30], "tasks": ["60.1"]},
+    {"id": 32, "phase": "collaboration", "dependsOn": [31], "tasks": ["60.2"]},
+    {"id": 33, "phase": "collaboration", "dependsOn": [32], "tasks": ["60.3"]},
+    {"id": 34, "phase": "collaboration", "dependsOn": [33], "tasks": ["60.4"]},
+    {"id": 35, "phase": "collaboration", "dependsOn": [34], "tasks": ["60.5"]},
+    {"id": 36, "phase": "collaboration", "dependsOn": [35], "tasks": ["60.6"]},
+    {"id": 37, "phase": "collaboration", "dependsOn": [36], "tasks": ["62.2"]},
+    {"id": 38, "phase": "collaboration", "dependsOn": [37], "tasks": ["62.3"]},
+    {"id": 39, "phase": "collaboration", "dependsOn": [38], "tasks": ["62.4"]},
+    {"id": 40, "phase": "collaboration", "dependsOn": [39], "tasks": ["62.5"]},
+    {"id": 41, "phase": "collaboration", "dependsOn": [40], "tasks": ["62.6"]},
+    {"id": 42, "phase": "collaboration", "dependsOn": [41], "tasks": ["61.2"]},
+    {"id": 43, "phase": "collaboration", "dependsOn": [42], "tasks": ["61.3"]},
+    {"id": 44, "phase": "collaboration", "dependsOn": [43], "tasks": ["63.1"]},
+    {"id": 45, "phase": "collaboration", "dependsOn": [44], "tasks": ["63.2"]},
+    {"id": 46, "phase": "collaboration", "dependsOn": [45], "tasks": ["63.3"]},
+    {"id": 47, "phase": "collaboration", "dependsOn": [46], "tasks": ["63.4"]},
+    {"id": 48, "phase": "collaboration", "dependsOn": [47], "tasks": ["64.1"]},
+    {"id": 49, "phase": "collaboration", "dependsOn": [48], "tasks": ["64.2"]},
+    {"id": 50, "phase": "collaboration", "dependsOn": [49], "tasks": ["64.3"]},
+    {"id": 51, "phase": "collaboration", "dependsOn": [50], "tasks": ["64.4"]},
+    {"id": 52, "phase": "collaboration", "dependsOn": [51], "tasks": ["64.5"]},
+    {"id": 53, "phase": "collaboration", "dependsOn": [52], "tasks": ["65.1"]},
+    {"id": 54, "phase": "collaboration", "dependsOn": [53], "tasks": ["65.2"]},
+    {"id": 55, "phase": "collaboration", "dependsOn": [54], "tasks": ["65.3"]},
+    {"id": 56, "phase": "privacy", "dependsOn": [55], "tasks": ["54.1"]},
+    {"id": 57, "phase": "privacy", "dependsOn": [56], "tasks": ["68.1"]},
+    {"id": 58, "phase": "privacy", "dependsOn": [57], "tasks": ["31.1"]},
+    {"id": 59, "phase": "privacy", "dependsOn": [58], "tasks": ["54.2"]},
+    {"id": 60, "phase": "privacy", "dependsOn": [59], "tasks": ["31.2"]},
+    {"id": 61, "phase": "privacy", "dependsOn": [60], "tasks": ["31.3"]},
+    {"id": 62, "phase": "privacy", "dependsOn": [61], "tasks": ["54.3"]},
+    {"id": 63, "phase": "privacy", "dependsOn": [62], "tasks": ["54.4"]},
+    {"id": 64, "phase": "privacy", "dependsOn": [63], "tasks": ["54.5"]},
+    {"id": 65, "phase": "privacy", "dependsOn": [64], "tasks": ["54.6"]},
+    {"id": 66, "phase": "privacy", "dependsOn": [65], "tasks": ["54.7"]},
+    {"id": 67, "phase": "privacy", "dependsOn": [66], "tasks": ["54.8"]},
+    {"id": 68, "phase": "privacy", "dependsOn": [67], "tasks": ["54.9"]},
+    {"id": 69, "phase": "privacy", "dependsOn": [68], "tasks": ["31.4"]},
+    {"id": 70, "phase": "privacy", "dependsOn": [69], "tasks": ["31.5"]},
+    {"id": 71, "phase": "privacy", "dependsOn": [70], "tasks": ["31.6"]},
+    {"id": 72, "phase": "privacy", "dependsOn": [71], "tasks": ["31.7"]},
+    {"id": 73, "phase": "privacy", "dependsOn": [72], "tasks": ["68.2"]},
+    {"id": 74, "phase": "privacy", "dependsOn": [73], "tasks": ["68.3"]},
+    {"id": 75, "phase": "privacy", "dependsOn": [74], "tasks": ["53.1"]},
+    {"id": 76, "phase": "privacy", "dependsOn": [75], "tasks": ["53.2"]},
+    {"id": 77, "phase": "privacy", "dependsOn": [76], "tasks": ["53.3"]},
+    {"id": 78, "phase": "imports_and_log", "dependsOn": [77], "tasks": ["36.1"]},
+    {"id": 79, "phase": "imports_and_log", "dependsOn": [78], "tasks": ["36.2"]},
+    {"id": 80, "phase": "imports_and_log", "dependsOn": [79], "tasks": ["36.3"]},
+    {"id": 81, "phase": "imports_and_log", "dependsOn": [80], "tasks": ["36.4"]},
+    {"id": 82, "phase": "imports_and_log", "dependsOn": [81], "tasks": ["37.1"]},
+    {"id": 83, "phase": "imports_and_log", "dependsOn": [82], "tasks": ["37.2"]},
+    {"id": 84, "phase": "imports_and_log", "dependsOn": [83], "tasks": ["37.3"]},
+    {"id": 85, "phase": "imports_and_log", "dependsOn": [84], "tasks": ["37.4"]},
+    {"id": 86, "phase": "imports_and_log", "dependsOn": [85], "tasks": ["37.5"]},
+    {"id": 87, "phase": "imports_and_log", "dependsOn": [86], "tasks": ["37.6"]},
+    {"id": 88, "phase": "imports_and_log", "dependsOn": [87], "tasks": ["37.7"]},
+    {"id": 89, "phase": "imports_and_log", "dependsOn": [88], "tasks": ["37.8"]},
+    {"id": 90, "phase": "imports_and_log", "dependsOn": [89], "tasks": ["37.9"]},
+    {"id": 91, "phase": "imports_and_log", "dependsOn": [90], "tasks": ["37.10"]},
+    {"id": 92, "phase": "imports_and_log", "dependsOn": [91], "tasks": ["37.11"]},
+    {"id": 93, "phase": "imports_and_log", "dependsOn": [92], "tasks": ["40.1"]},
+    {"id": 94, "phase": "imports_and_log", "dependsOn": [93], "tasks": ["40.2"]},
+    {"id": 95, "phase": "imports_and_log", "dependsOn": [94], "tasks": ["40.3"]},
+    {"id": 96, "phase": "imports_and_log", "dependsOn": [95], "tasks": ["40.4"]},
+    {"id": 97, "phase": "imports_and_log", "dependsOn": [96], "tasks": ["40.5"]},
+    {"id": 98, "phase": "imports_and_log", "dependsOn": [97], "tasks": ["41.1"]},
+    {"id": 99, "phase": "imports_and_log", "dependsOn": [98], "tasks": ["41.2"]},
+    {"id": 100, "phase": "imports_and_log", "dependsOn": [99], "tasks": ["41.3"]},
+    {"id": 101, "phase": "publication", "dependsOn": [100], "tasks": ["59.1"]},
+    {"id": 102, "phase": "publication", "dependsOn": [101], "tasks": ["59.2"]},
+    {"id": 103, "phase": "publication", "dependsOn": [102], "tasks": ["59.3"]},
+    {"id": 104, "phase": "publication", "dependsOn": [103], "tasks": ["32.1"]},
+    {"id": 105, "phase": "publication", "dependsOn": [104], "tasks": ["32.2"]},
+    {"id": 106, "phase": "publication", "dependsOn": [105], "tasks": ["32.3"]},
+    {"id": 107, "phase": "publication", "dependsOn": [106], "tasks": ["32.4"]},
+    {"id": 108, "phase": "publication", "dependsOn": [107], "tasks": ["32.5"]},
+    {"id": 109, "phase": "publication", "dependsOn": [108], "tasks": ["32.6"]},
+    {"id": 110, "phase": "publication", "dependsOn": [109], "tasks": ["32.7"]},
+    {"id": 111, "phase": "publication", "dependsOn": [110], "tasks": ["55.4"]},
+    {"id": 112, "phase": "publication", "dependsOn": [111], "tasks": ["55.5"]},
+    {"id": 113, "phase": "publication", "dependsOn": [112], "tasks": ["66.2"]},
+    {"id": 114, "phase": "publication", "dependsOn": [113], "tasks": ["66.3"]},
+    {"id": 115, "phase": "publication", "dependsOn": [114], "tasks": ["66.4"]},
+    {"id": 116, "phase": "publication", "dependsOn": [115], "tasks": ["38.3"]},
+    {"id": 117, "phase": "publication", "dependsOn": [116], "tasks": ["38.1"]},
+    {"id": 118, "phase": "publication", "dependsOn": [117], "tasks": ["38.2"]},
+    {"id": 119, "phase": "outside_and_ai", "dependsOn": [118], "tasks": ["34.1"]},
+    {"id": 120, "phase": "outside_and_ai", "dependsOn": [119], "tasks": ["34.2"]},
+    {"id": 121, "phase": "outside_and_ai", "dependsOn": [120], "tasks": ["34.3"]},
+    {"id": 122, "phase": "outside_and_ai", "dependsOn": [121], "tasks": ["34.4"]},
+    {"id": 123, "phase": "outside_and_ai", "dependsOn": [122], "tasks": ["34.5"]},
+    {"id": 124, "phase": "outside_and_ai", "dependsOn": [123], "tasks": ["34.6"]},
+    {"id": 125, "phase": "outside_and_ai", "dependsOn": [124], "tasks": ["35.1"]},
+    {"id": 126, "phase": "outside_and_ai", "dependsOn": [125], "tasks": ["35.2"]},
+    {"id": 127, "phase": "outside_and_ai", "dependsOn": [126], "tasks": ["35.3"]},
+    {"id": 128, "phase": "outside_and_ai", "dependsOn": [127], "tasks": ["35.4"]},
+    {"id": 129, "phase": "outside_and_ai", "dependsOn": [128], "tasks": ["35.5"]},
+    {"id": 130, "phase": "outside_and_ai", "dependsOn": [129], "tasks": ["35.6"]},
+    {"id": 131, "phase": "outside_and_ai", "dependsOn": [130], "tasks": ["56.1"]},
+    {"id": 132, "phase": "outside_and_ai", "dependsOn": [131], "tasks": ["56.2"]},
+    {"id": 133, "phase": "outside_and_ai", "dependsOn": [132], "tasks": ["56.3"]},
+    {"id": 134, "phase": "outside_and_ai", "dependsOn": [133], "tasks": ["56.4"]},
+    {"id": 135, "phase": "outside_and_ai", "dependsOn": [134], "tasks": ["56.5"]},
+    {"id": 136, "phase": "outside_and_ai", "dependsOn": [135], "tasks": ["56.6"]},
+    {"id": 137, "phase": "outside_and_ai", "dependsOn": [136], "tasks": ["56.7"]},
+    {"id": 138, "phase": "outside_and_ai", "dependsOn": [137], "tasks": ["56.8"]},
+    {"id": 139, "phase": "outside_and_ai", "dependsOn": [138], "tasks": ["56.9"]},
+    {"id": 140, "phase": "outside_and_ai", "dependsOn": [139], "tasks": ["56.10"]},
+    {"id": 141, "phase": "outside_and_ai", "dependsOn": [140], "tasks": ["35.7"]},
+    {"id": 142, "phase": "outside_and_ai", "dependsOn": [141], "tasks": ["35.8"]},
+    {"id": 143, "phase": "outside_and_ai", "dependsOn": [142], "tasks": ["35.9"]},
+    {"id": 144, "phase": "outside_and_ai", "dependsOn": [143], "tasks": ["35.10"]},
+    {"id": 145, "phase": "outside_and_ai", "dependsOn": [144], "tasks": ["35.11"]},
+    {"id": 146, "phase": "outside_and_ai", "dependsOn": [145], "tasks": ["35.12"]},
+    {"id": 147, "phase": "outside_and_ai", "dependsOn": [146], "tasks": ["35.13"]},
+    {"id": 148, "phase": "outside_and_ai", "dependsOn": [147], "tasks": ["42.1"]},
+    {"id": 149, "phase": "outside_and_ai", "dependsOn": [148], "tasks": ["42.2"]},
+    {"id": 150, "phase": "outside_and_ai", "dependsOn": [149], "tasks": ["42.3"]},
+    {"id": 151, "phase": "outside_and_ai", "dependsOn": [150], "tasks": ["42.4"]},
+    {"id": 152, "phase": "outside_and_ai", "dependsOn": [151], "tasks": ["42.5"]},
+    {"id": 153, "phase": "outside_and_ai", "dependsOn": [152], "tasks": ["42.6"]},
+    {"id": 154, "phase": "outside_and_ai", "dependsOn": [153], "tasks": ["42.7"]},
+    {"id": 155, "phase": "outside_and_ai", "dependsOn": [154], "tasks": ["31.8"]},
+    {"id": 156, "phase": "outside_and_ai", "dependsOn": [155], "tasks": ["31.9"]},
+    {"id": 157, "phase": "outside_and_ai", "dependsOn": [156], "tasks": ["31.10"]},
+    {"id": 158, "phase": "outside_and_ai", "dependsOn": [157], "tasks": ["31.11"]},
+    {"id": 159, "phase": "outside_and_ai", "dependsOn": [158], "tasks": ["31.12"]},
+    {"id": 160, "phase": "outside_and_ai", "dependsOn": [159], "tasks": ["31.13"]},
+    {"id": 161, "phase": "outside_and_ai", "dependsOn": [160], "tasks": ["31.14"]},
+    {"id": 162, "phase": "outside_and_ai", "dependsOn": [161], "tasks": ["31.15"]},
+    {"id": 163, "phase": "outside_and_ai", "dependsOn": [162], "tasks": ["41.4"]},
+    {"id": 164, "phase": "outside_and_ai", "dependsOn": [163], "tasks": ["41.5"]},
+    {"id": 165, "phase": "outside_and_ai", "dependsOn": [164], "tasks": ["41.6"]},
+    {"id": 166, "phase": "outside_and_ai", "dependsOn": [165], "tasks": ["41.7"]},
+    {"id": 167, "phase": "recovery", "dependsOn": [166], "tasks": ["58.1"]},
+    {"id": 168, "phase": "recovery", "dependsOn": [167], "tasks": ["58.3"]},
+    {"id": 169, "phase": "recovery", "dependsOn": [168], "tasks": ["38.4"]},
+    {"id": 170, "phase": "recovery", "dependsOn": [169], "tasks": ["58.2"]},
+    {"id": 171, "phase": "recovery", "dependsOn": [170], "tasks": ["58.4"]},
+    {"id": 172, "phase": "recovery", "dependsOn": [171], "tasks": ["38.5"]},
+    {"id": 173, "phase": "recovery", "dependsOn": [172], "tasks": ["38.6"]},
+    {"id": 174, "phase": "recovery", "dependsOn": [173], "tasks": ["38.7"]},
+    {"id": 175, "phase": "recovery", "dependsOn": [174], "tasks": ["38.8"]},
+    {"id": 176, "phase": "recovery", "dependsOn": [175], "tasks": ["38.9"]},
+    {"id": 177, "phase": "recovery", "dependsOn": [176], "tasks": ["38.10"]},
+    {"id": 178, "phase": "recovery", "dependsOn": [177], "tasks": ["38.11"]},
+    {"id": 179, "phase": "recovery", "dependsOn": [178], "tasks": ["38.12"]},
+    {"id": 180, "phase": "recovery", "dependsOn": [179], "tasks": ["38.13"]},
+    {"id": 181, "phase": "recovery", "dependsOn": [180], "tasks": ["58.6"]},
+    {"id": 182, "phase": "recovery", "dependsOn": [181], "tasks": ["58.7"]},
+    {"id": 183, "phase": "recovery", "dependsOn": [182], "tasks": ["67.2"]},
+    {"id": 184, "phase": "recovery", "dependsOn": [183], "tasks": ["67.3"]},
+    {"id": 185, "phase": "release_tooling", "dependsOn": [184], "tasks": ["43.1"]},
+    {"id": 186, "phase": "release_tooling", "dependsOn": [185], "tasks": ["43.2"]},
+    {"id": 187, "phase": "release_tooling", "dependsOn": [186], "tasks": ["43.3"]},
+    {"id": 188, "phase": "release_tooling", "dependsOn": [187], "tasks": ["43.4"]},
+    {"id": 189, "phase": "release_tooling", "dependsOn": [188], "tasks": ["43.5"]},
+    {"id": 190, "phase": "release_tooling", "dependsOn": [189], "tasks": ["43.6"]},
+    {"id": 191, "phase": "release_tooling", "dependsOn": [190], "tasks": ["43.7"]},
+    {"id": 192, "phase": "release_tooling", "dependsOn": [191], "tasks": ["43.8"]},
+    {"id": 193, "phase": "release_tooling", "dependsOn": [192], "tasks": ["43.9"]},
+    {"id": 194, "phase": "release_tooling", "dependsOn": [193], "tasks": ["43.10"]},
+    {"id": 195, "phase": "release_tooling", "dependsOn": [194], "tasks": ["43.11"]},
+    {"id": 196, "phase": "release_tooling", "dependsOn": [195], "tasks": ["43.12"]},
+    {"id": 197, "phase": "release_tooling", "dependsOn": [196], "tasks": ["44.1"]},
+    {"id": 198, "phase": "release_tooling", "dependsOn": [197], "tasks": ["44.2"]},
+    {"id": 199, "phase": "release_tooling", "dependsOn": [198], "tasks": ["44.3"]},
+    {"id": 200, "phase": "release_tooling", "dependsOn": [199], "tasks": ["45.1"]},
+    {"id": 201, "phase": "release_tooling", "dependsOn": [200], "tasks": ["45.2"]},
+    {"id": 202, "phase": "release_tooling", "dependsOn": [201], "tasks": ["45.3"]},
+    {"id": 203, "phase": "release_tooling", "dependsOn": [202], "tasks": ["45.4"]},
+    {"id": 204, "phase": "release_tooling", "dependsOn": [203], "tasks": ["46.1"]},
+    {"id": 205, "phase": "release_tooling", "dependsOn": [204], "tasks": ["59.5"]},
+    {"id": 206, "phase": "release_tooling", "dependsOn": [205], "tasks": ["59.6"]},
+    {"id": 207, "phase": "release_tooling", "dependsOn": [206], "tasks": ["48.1"]},
+    {"id": 208, "phase": "release_tooling", "dependsOn": [207], "tasks": ["48.2"]},
+    {"id": 209, "phase": "release_tooling", "dependsOn": [208], "tasks": ["48.3"]},
+    {"id": 210, "phase": "release_tooling", "dependsOn": [209], "tasks": ["48.5"]},
+    {"id": 211, "phase": "release_tooling", "dependsOn": [210], "tasks": ["48.10"]},
+    {"id": 212, "phase": "release_tooling", "dependsOn": [211], "tasks": ["68.4"]},
+    {"id": 213, "phase": "release_tooling", "dependsOn": [212], "tasks": ["67.4"]},
+    {"id": 214, "phase": "release_tooling", "dependsOn": [213], "tasks": ["48.4"]},
+    {"id": 215, "phase": "staging_and_acceptance", "dependsOn": [214], "tasks": ["48.6"]},
+    {"id": 216, "phase": "staging_and_acceptance", "dependsOn": [215], "tasks": ["48.7"]},
+    {"id": 217, "phase": "staging_and_acceptance", "dependsOn": [216], "tasks": ["48.8"]},
+    {"id": 218, "phase": "staging_and_acceptance", "dependsOn": [217], "tasks": ["48.11"]},
+    {"id": 219, "phase": "staging_and_acceptance", "dependsOn": [218], "tasks": ["58.5"]},
+    {"id": 220, "phase": "staging_and_acceptance", "dependsOn": [219], "tasks": ["59.4"]},
+    {"id": 221, "phase": "staging_and_acceptance", "dependsOn": [220], "tasks": ["46.2"]},
+    {"id": 222, "phase": "staging_and_acceptance", "dependsOn": [221], "tasks": ["48.12"]},
+    {"id": 223, "phase": "production_activation", "dependsOn": [222], "tasks": ["48.9"]}
+  ],
+  "helperEdges": [
+    ["57.2", "57.3"],
+    ["67.1", "57.3"],
+    ["57.3", "19.1"],
+    ["57.4", "64.1"],
+    ["55.2", "31.6"],
+    ["55.2", "53.1"],
+    ["61.1", "60.2"],
+    ["62.1", "61.2"],
+    ["54.1", "68.1"],
+    ["68.1", "54.2"],
+    ["31.1", "54.2"],
+    ["54.2", "31.2"],
+    ["59.1", "32.1"],
+    ["59.2", "32.5"],
+    ["59.3", "34.1"],
+    ["34.1", "56.2"],
+    ["58.1", "38.4"],
+    ["58.3", "38.4"],
+    ["58.4", "38.5"],
+    ["38.5", "58.5"],
+    ["68.4", "48.4"],
+    ["48.5", "48.11"],
+    ["48.11", "58.5"],
+    ["48.11", "59.4"],
+    ["48.11", "46.2"],
+    ["58.5", "48.12"],
+    ["59.4", "48.12"],
+    ["46.2", "48.12"],
+    ["48.12", "48.9"]
+  ],
+  "gates": [
+    {
+      "id": "team_archive",
+      "checkerTask": "68.4",
+      "evidenceTask": "48.12",
+      "requiredTasks": [
+        "57.1",
+        "50.1",
+        "50.2",
+        "50.3",
+        "57.2",
+        "67.1",
+        "57.3",
+        "19.1",
+        "57.4",
+        "57.5",
+        "30.6",
+        "30.7",
+        "30.8",
+        "30.11",
+        "57.6",
+        "57.7",
+        "57.8",
+        "52.1",
+        "52.2",
+        "52.3",
+        "52.4",
+        "52.5",
+        "52.6",
+        "52.7",
+        "52.8",
+        "55.1",
+        "55.2",
+        "55.3",
+        "62.1",
+        "61.1",
+        "60.1",
+        "60.2",
+        "60.3",
+        "60.4",
+        "60.5",
+        "60.6",
+        "62.2",
+        "62.3",
+        "62.4",
+        "62.5",
+        "62.6",
+        "61.2",
+        "61.3",
+        "63.1",
+        "63.2",
+        "63.3",
+        "63.4",
+        "64.1",
+        "64.2",
+        "64.3",
+        "64.4",
+        "64.5",
+        "65.1",
+        "65.2",
+        "65.3",
+        "54.1",
+        "68.1",
+        "31.1",
+        "54.2",
+        "31.2",
+        "31.3",
+        "54.3",
+        "54.4",
+        "54.5",
+        "54.6",
+        "54.7",
+        "54.8",
+        "54.9",
+        "31.4",
+        "31.5",
+        "31.6",
+        "31.7",
+        "68.2",
+        "68.3",
+        "53.1",
+        "53.2",
+        "53.3",
+        "36.1",
+        "36.2",
+        "36.3",
+        "36.4",
+        "37.1",
+        "37.2",
+        "37.3",
+        "37.4",
+        "37.5",
+        "37.6",
+        "37.7",
+        "37.8",
+        "37.9",
+        "37.10",
+        "37.11",
+        "40.1",
+        "40.2",
+        "40.3",
+        "40.4",
+        "40.5",
+        "41.1",
+        "41.2",
+        "41.3",
+        "38.3",
+        "31.8",
+        "31.9",
+        "31.10",
+        "31.11",
+        "31.12",
+        "31.13",
+        "31.14",
+        "31.15",
+        "41.4",
+        "41.5",
+        "41.6",
+        "41.7",
+        "58.1",
+        "58.3",
+        "38.4",
+        "58.2",
+        "58.4",
+        "38.5",
+        "38.6",
+        "38.7",
+        "38.10",
+        "38.12",
+        "38.13",
+        "58.6",
+        "58.7",
+        "67.2",
+        "67.3",
+        "43.1",
+        "43.2",
+        "43.3",
+        "43.4",
+        "43.5",
+        "43.6",
+        "43.7",
+        "43.9",
+        "43.10",
+        "43.11",
+        "43.12",
+        "44.1",
+        "44.2",
+        "44.3",
+        "45.1",
+        "45.2",
+        "45.3",
+        "45.4",
+        "46.1",
+        "48.1",
+        "48.2",
+        "48.3",
+        "48.5",
+        "48.10",
+        "68.4",
+        "67.4",
+        "48.4",
+        "48.6",
+        "48.7",
+        "48.8",
+        "48.11",
+        "58.5",
+        "46.2",
+        "48.12"
+      ],
+      "requiredEvidence": [
+        "R60.4 team-archive matrix",
+        "R60.9 team walkthroughs",
+        "R36 independent encrypted recovery and fresh restore",
+        "R28 certified selected operating profile",
+        "current Worker/schema/configuration compatibility"
+      ],
+      "beforeTasks": [
+        "48.9"
+      ]
+    },
+    {
+      "id": "public_archive",
+      "checkerTask": "68.4",
+      "evidenceTask": "48.12",
+      "requiresGates": [
+        "team_archive"
+      ],
+      "requiredEvidence": [
+        "R60.4 additional public matrix",
+        "current operator-selected content licence",
+        "exact snapshot Owner/external permission coverage",
+        "real channel/browser/security/accessibility/index tests",
+        "R24 removal and independently verified containment",
+        "R28 distributed Abuse_Profile and spend reserve"
+      ],
+      "beforeEnable": [
+        "public research hosts"
+      ]
+    },
+    {
+      "id": "outside_services",
+      "checkerTask": "68.4",
+      "evidenceTask": "48.12",
+      "requiresGates": [
+        "public_archive"
+      ],
+      "requiredEvidence": [
+        "Access/Turnstile/R2/Graph least privilege and delivery/retention verification",
+        "consent snapshot and bearer-link current eligibility",
+        "moderation/contact-review privacy and retention",
+        "AI allow-list/input isolation and configured allocation when AI enabled"
+      ],
+      "beforeEnable": [
+        "outside submission endpoints",
+        "emailed consent endpoints",
+        "AI drafting when enabled"
+      ]
+    },
+    {
+      "id": "final_checkpoint_49",
+      "requiresGates": [
+        "team_archive",
+        "public_archive",
+        "outside_services"
+      ],
+      "requiredTasks": [
+        "57.1",
+        "50.1",
+        "50.2",
+        "50.3",
+        "57.2",
+        "67.1",
+        "57.3",
+        "19.1",
+        "57.4",
+        "57.5",
+        "30.6",
+        "30.7",
+        "30.8",
+        "30.11",
+        "57.6",
+        "57.7",
+        "57.8",
+        "52.1",
+        "52.2",
+        "52.3",
+        "52.4",
+        "52.5",
+        "52.6",
+        "52.7",
+        "52.8",
+        "55.1",
+        "55.2",
+        "55.3",
+        "62.1",
+        "61.1",
+        "66.1",
+        "60.1",
+        "60.2",
+        "60.3",
+        "60.4",
+        "60.5",
+        "60.6",
+        "62.2",
+        "62.3",
+        "62.4",
+        "62.5",
+        "62.6",
+        "61.2",
+        "61.3",
+        "63.1",
+        "63.2",
+        "63.3",
+        "63.4",
+        "64.1",
+        "64.2",
+        "64.3",
+        "64.4",
+        "64.5",
+        "65.1",
+        "65.2",
+        "65.3",
+        "54.1",
+        "68.1",
+        "31.1",
+        "54.2",
+        "31.2",
+        "31.3",
+        "54.3",
+        "54.4",
+        "54.5",
+        "54.6",
+        "54.7",
+        "54.8",
+        "54.9",
+        "31.4",
+        "31.5",
+        "31.6",
+        "31.7",
+        "68.2",
+        "68.3",
+        "53.1",
+        "53.2",
+        "53.3",
+        "36.1",
+        "36.2",
+        "36.3",
+        "36.4",
+        "37.1",
+        "37.2",
+        "37.3",
+        "37.4",
+        "37.5",
+        "37.6",
+        "37.7",
+        "37.8",
+        "37.9",
+        "37.10",
+        "37.11",
+        "40.1",
+        "40.2",
+        "40.3",
+        "40.4",
+        "40.5",
+        "41.1",
+        "41.2",
+        "41.3",
+        "59.1",
+        "59.2",
+        "59.3",
+        "32.1",
+        "32.2",
+        "32.3",
+        "32.4",
+        "32.5",
+        "32.6",
+        "32.7",
+        "55.4",
+        "55.5",
+        "66.2",
+        "66.3",
+        "66.4",
+        "38.3",
+        "38.1",
+        "38.2",
+        "34.1",
+        "34.2",
+        "34.3",
+        "34.4",
+        "34.5",
+        "34.6",
+        "35.1",
+        "35.2",
+        "35.3",
+        "35.4",
+        "35.5",
+        "35.6",
+        "56.1",
+        "56.2",
+        "56.3",
+        "56.4",
+        "56.5",
+        "56.6",
+        "56.7",
+        "56.8",
+        "56.9",
+        "56.10",
+        "35.7",
+        "35.8",
+        "35.9",
+        "35.10",
+        "35.11",
+        "35.12",
+        "35.13",
+        "42.1",
+        "42.2",
+        "42.3",
+        "42.4",
+        "42.5",
+        "42.6",
+        "42.7",
+        "31.8",
+        "31.9",
+        "31.10",
+        "31.11",
+        "31.12",
+        "31.13",
+        "31.14",
+        "31.15",
+        "41.4",
+        "41.5",
+        "41.6",
+        "41.7",
+        "58.1",
+        "58.3",
+        "38.4",
+        "58.2",
+        "58.4",
+        "38.5",
+        "38.6",
+        "38.7",
+        "38.8",
+        "38.9",
+        "38.10",
+        "38.11",
+        "38.12",
+        "38.13",
+        "58.6",
+        "58.7",
+        "67.2",
+        "67.3",
+        "43.1",
+        "43.2",
+        "43.3",
+        "43.4",
+        "43.5",
+        "43.6",
+        "43.7",
+        "43.8",
+        "43.9",
+        "43.10",
+        "43.11",
+        "43.12",
+        "44.1",
+        "44.2",
+        "44.3",
+        "45.1",
+        "45.2",
+        "45.3",
+        "45.4",
+        "46.1",
+        "59.5",
+        "59.6",
+        "48.1",
+        "48.2",
+        "48.3",
+        "48.5",
+        "48.10",
+        "68.4",
+        "67.4",
+        "48.4",
+        "48.6",
+        "48.7",
+        "48.8",
+        "48.11",
+        "58.5",
+        "59.4",
+        "46.2",
+        "48.12",
+        "48.9"
+      ],
+      "requiredEvidence": [
+        "full mandatory suites and traceability/graph validation",
+        "no unresolved acceptance failures for enabled scope"
+      ]
+    }
   ]
 }
 ```

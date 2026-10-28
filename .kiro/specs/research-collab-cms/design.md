@@ -2,7 +2,7 @@
 
 ## Overview
 
-ResearchForce (the Research_CMS in requirements.md) is a private Workspace for an informal research group together with a public research archive at researchforce.org. This document designs the system that Requirements 1 to 51 describe. It runs on Cloudflare free plans and sends email through the campaign owner's existing Microsoft 365 tenant. A reference such as R23.6 means Requirement 23, criterion 6. The section "Requirements Traceability" maps every requirement to the design sections and correctness properties that cover it.
+Research Force is a private collaborative research Workspace and the source of a public archive. This design implements Requirements 1 to 60. The Cloudflare stack stays fixed; a versioned Operating_Profile selects Free_Qualified or Paid_Standard and certifies CPU, memory, storage, recovery, and abuse limits. Paid_Standard is recommended for production and requires explicit operator configuration and budget approval. No provisioning action is authorized merely by this design. A reference such as R23.6 means Requirement 23, criterion 6.
 
 ### Product and installation boundary
 
@@ -18,10 +18,10 @@ The design rests on four ideas.
 
 1. **One privacy kernel.** A single pure module computes each Disclosure_Unit's Effective_Disclosure and Public_View. Every public output is rendered from those Public_View values: pages, listings, page metadata, the public search index, emails, Public_Archive_Exports, and the People page. Code that renders public output cannot import the database layer, so the rule "the public sees nothing beyond the Public_View" is enforced and tested in one place (R24.5, R24.6).
 2. **A static Public_Site.** Public pages and the public search index are prerendered files, deployed as Workers Static Assets on an assets-only Worker. Static asset requests are free and do not invoke a Worker, so Visitors never use the Workers, D1, or Durable Object allowances that Member work depends on (R28). Public Attachment files are copied to a public R2 bucket and downloaded from there.
-3. **Every invocation fits the free plan.** Each Worker invocation stays within 10 ms of CPU time and 50 D1 queries (R28.3). Larger work is split into slices that Durable Object alarms run one after another, expressed as set-based SQL that D1 executes, or done in the Member's browser when the Member supplies the input anyway (journal and manifest parsing, file hashing).
+3. **Every invocation fits its certified profile.** Interactive APIs, background Durable Objects, and the browser have distinct measured budgets (R28.3, R60.7). Set-based SQL, chunked logical fields, resumable jobs, and bounded browser parsers keep work within the chosen envelope without lowering the accepted logical text limits.
 4. **Atomic writes with a transactional outbox.** Each save is one D1 `batch()`, which D1 runs as a single SQL transaction. The batch writes the change together with its Revisions, flags, Notification_Events, Activity_Feed entry, and outbox rows. Background processors (the Publisher, the Mailer, the search indexer) read the outbox, so a change cannot be stored without its follow-up work being recorded (R4.1, R18.2, R22.1).
 
-New Disclosure_Units are Not_Published (R23.2), and the publication path fails closed: when the Publisher cannot confirm that something may be public, it leaves it out, and when it cannot confirm a removal in time, it raises a System_Alert.
+New Disclosure_Units are Not_Published (R23.2), and the publication path fails closed: when the Publisher cannot confirm that something may be public, it leaves it out, and when it cannot confirm a removal by four minutes, it initiates independently operable edge Containment and raises an operational alert; a provider outage that blocks both actions is an explicit incident, never reported as a successful removal (R24.16, R24.17).
 
 Inside the team, a second, independent setting decides who can read a Research_Item: its Access_Level (R47). Whole_Team items are readable by every active Member; Restricted items only by their Owner, their Access_List, and Administrators. Every Workspace read goes through one SQL predicate, `canRead`, so a new read path cannot forget it, and every write that creates per-Member data (flags, Notification_Events, review addressees) selects its recipients through the same predicate. Publication is further gated by the Owner's consent (R23.17 to R23.22) and by Confidentiality_Holds (R48), and the few overrides need two Administrators (R49).
 
@@ -32,9 +32,9 @@ Inside the team, a second, independent setting decides who can read a Research_I
 | Public pages | Prerendered HTML deployed as Workers Static Assets on `researchforce.org` (assets-only Worker `rf-site`), redeployed by the Publisher through the Direct Upload API | Asset requests are free and unlimited; an assets-only Worker serves a Design_System 404 page for unknown and Not_Published addresses without a Worker invocation | R24.7, R28.5, R28.6, R45.1 |
 | Public files | Copies of Public Attachment files in R2 bucket `rf-public` on `files.researchforce.org`; originals stay in private bucket `rf-private` | Files up to 1 GB exceed the 25 MiB asset limit; deleting the copy takes effect at once; downloads cost no Worker requests | R24.3, R25, R28.6 |
 | Workspace | `app.researchforce.org` behind Cloudflare Access; one Worker `rf-app` serves the React SPA as static assets and the Hono API, and verifies the Access JWT on every API request | Access handles login and stores no passwords; the Worker re-checks identity and Member_Status | R1, R2 |
-| Data | Three D1 databases: `rf-core` (all transactional data), `rf-search` (Member search index), `rf-public` (materialized Public_Views and site build state) | 500 MB per database; derived data can be rebuilt; atomic batches need the transactional data in one database | R28.1 |
+| Data | Three D1 databases: `rf-core` (all transactional data), `rf-search` (Member search index), `rf-public` (materialized Public_Views and site build state) | Profile-specific database capacity; derived data can be rebuilt; atomic batches need transactional data in one database | R28.1 |
 | Background work | Transactional outbox in `rf-core` drained by Durable Objects (Publisher, Mailer, Budget, Jobs) with alarms; a one-minute cron sweeps anything missed | Follow-up work commits with the change; Queues' 10,000 operations per day would be tight | R19, R20, R24.11, R24.12 |
-| Member search | D1 FTS5 with the `unicode61 remove_diacritics 2` tokenizer, prefix indexes, and query-side expansion of "ss" to "ß" | Search work runs inside D1, keeping the Worker within 10 ms | R21, R28.3 |
+| Member search | D1 FTS5 with the `unicode61 remove_diacritics 2` tokenizer, prefix indexes, and query-side expansion of "ss" to "ß" | Search work runs inside D1 with logical-document semantics across physical text chunks | R21, R28.3 |
 | Public search | Static, sharded inverted index shipped with the public site and evaluated in the browser; excerpts are cut from the result pages | Public search costs no Worker requests or D1 reads | R30, R28.5 |
 | Email | Microsoft Graph `sendMail` (JSON form, `saveToSentItems: false`) from one Mailer Durable Object that enforces 30 attempts per 60 s and the Recipient_Cap | One serialized sending queue | R20 |
 | Uploads and downloads | Browsers upload straight to R2 through presigned URLs with SHA-256 checksums that R2 verifies; protected files are delivered only through Download_Links on `dl.researchforce.org` | No file passes through a Worker request body; Download_Links can check revocation | R12, R25 |
@@ -43,14 +43,14 @@ Inside the team, a second, independent setting decides who can read a Research_I
 | Restricted access | `access_level` on `research_items` and an `access_grants` table; one `canRead(member)` SQL fragment joined into every Workspace read and every per-Member insert; restricting sets every own level under the item to Not_Published in the same batch | One predicate for every read path; lifting a restriction can never republish anything | R2.8, R47 |
 | Consent, holds, and overrides | `publication_consents`, `confidentiality_holds`, and `dual_approvals` tables; consent, hold, and restriction checks added to the kernel's `checkGates`, so previews and applies share them | The same gate code serves every path that widens a Public_View | R23.17 to R23.22, R48, R49 |
 | Emailed consent | Consent_Requests reuse the Response_Link pattern: a token in the URL fragment, a static page that records nothing until the person submits, and `rf-submit` endpoints behind Turnstile; the page shows a stored snapshot of the proposed Public_View, which also limits what the consent covers | No accounts for outside people; mail scanners cannot answer for them; the archive keeps exactly what each person agreed to | R51 |
-| Parsers | Pure TypeScript Journal_Parser/Printer and Manifest_Parser/Printer that keep source text verbatim; run in the Administrator's browser during imports and in tests | Exact round trips; no parsing of megabytes inside a 10 ms Worker | R27, R38 |
+| Parsers | Pure TypeScript Journal_Parser/Printer and Manifest_Parser/Printer that keep source text verbatim; run in the Administrator's browser during imports and in tests | Exact round trips; bounded parsing outside interactive API requests | R27, R38 |
 
 ### Research findings that shaped the design
 
 The facts below were checked in October 2026 against the cited sources. They are paraphrased. Content was rephrased for compliance with licensing restrictions.
 
 - **Workers Free limits.** 10 ms CPU per HTTP request and per Cron Trigger, 100,000 requests per day, 50 external subrequests per request, 128 MB memory, 5 Cron Triggers per account, 20,000 static asset files per Worker version and 25 MiB per asset file. Waiting on I/O does not count as CPU time, and an isolate tolerates occasional small overruns but not consistent ones ([Workers limits](https://developers.cloudflare.com/workers/platform/limits/)). Calls to Cloudflare services such as R2 and D1 have a separate limit of 1,000 per invocation on the Free plan ([Cloudflare community announcement](https://community.cloudflare.com/t/workers-workers-are-no-longer-limited-to-1000-subrequests/896719)).
-- **Durable Objects on Workers Free.** Only SQLite-backed classes are available, with 100,000 requests per day (alarm invocations count) and 13,000 GB-s of duration per day; their SQLite storage is metered in rows read and rows written with the same free limits as D1, and each `setAlarm()` counts as one row written ([Durable Objects pricing](https://developers.cloudflare.com/durable-objects/platform/pricing/)). The limits page states that Durable Objects share the Workers per-invocation CPU limits of the plan, while also listing a 30-second default; this design assumes the stricter 10 ms on Free and sizes every slice for it ([Durable Objects limits](https://developers.cloudflare.com/durable-objects/platform/limits/)). Alarm handlers may run for up to 15 minutes of wall time.
+- **Durable Objects on Workers Free.** Only SQLite-backed classes are available, with 100,000 requests per day (alarm invocations count) and 13,000 GB-s of duration per day; their SQLite storage is metered in rows read and rows written with the same free limits as D1, and each `setAlarm()` counts as one row written ([Durable Objects pricing](https://developers.cloudflare.com/durable-objects/platform/pricing/)). Durable Objects document a 30-second default per-invocation CPU budget; the Resource_Profile uses a measured 2-second CPU slice target, separately from ordinary Free HTTP Workers' 10 ms limit ([Durable Objects limits](https://developers.cloudflare.com/durable-objects/platform/limits/)). Alarm handlers may run for up to 15 minutes of wall time.
 - **D1.** 50 queries per Worker invocation on Free, 100 bound parameters per query, 100 KB per SQL statement, 2 MB per string, BLOB, or row, 30 seconds per query, 10 databases of 500 MB each ([D1 limits](https://developers.cloudflare.com/d1/platform/limits/)). `batch()` runs its statements sequentially as one SQL transaction and rolls back the whole sequence on any error ([D1 Database API](https://developers.cloudflare.com/d1/worker-api/d1-database/)). D1 supports FTS5 ([D1 SQL statements](https://developers.cloudflare.com/d1/sql-api/sql-statements/)). From 1 September 2026, D1 queries on Workers Free fail once the daily rows-read or rows-written limit is reached, until 00:00 UTC ([D1 changelog](https://developers.cloudflare.com/changelog/product/d1/)).
 - **Workers Static Assets.** Assets can be deployed programmatically: register a manifest of path, hash, and size, upload only the files the platform lacks, then create a Worker version and deployment ([Direct Uploads](https://developers.cloudflare.com/workers/static-assets/direct-upload/)). A `_headers` file sets response headers ([Headers](https://developers.cloudflare.com/workers/static-assets/headers/)). With `not_found_handling = "404-page"` the nearest `404.html` is served ([Static Site Generation](https://developers.cloudflare.com/workers/static-assets/routing/static-site-generation/)). When a Worker script is present, unmatched requests invoke it; only without a script does the not-found handling apply directly ([routing order described in the Angular guide](https://developers.cloudflare.com/workers/frameworks/framework-guides/angular/)). This is why `rf-site` has no script.
 - **Custom error pages** for responses that R2 or another origin returns need a paid zone plan ([Custom Errors GA](https://developers.cloudflare.com/changelog/2025-04-24-custom-errors-ga/)). An R2 custom domain on the Free plan therefore shows Cloudflare's generic "Object not found" page, which rules R2 out as the host of public pages (R45.1).
@@ -66,7 +66,7 @@ Facts measured in the existing material (no content is reproduced here): the jou
 
 ### Scope
 
-All of Requirements 1 to 51 are in scope. The "Not included" list of requirements.md stays out of scope: automatic Run submission by compute rigs, a live public data API, virus scanning of outside files, per-Project membership and Project deletion, AI drafting of other fields, public Policy_Page history, donation features, a manual colour-scheme switch, and profile photographs. The design records the group's chosen policies; it is not legal advice.
+All of Requirements 1 to 60 are in scope, including the 27 October review revision. Work assignments, Question lifecycle, decisions, structured citations and derivations, reproducibility packages, durable drafts/proposals, navigation, research releases, and operational assurance are required features. The remaining exclusions are automatic compute execution/ingestion, a live public data API, automatic OCR and virus scanning, per-Project membership, Project deletion, end-to-end private messaging, AI drafts for other fields, public Policy_Page history, donations, a manual colour switch, and profile photographs. Interactive Work_Item and Decision_Record creation is in scope; Bulk_Import v1 rejects these new kinds explicitly until their versioned mappers are added.
 
 ## Architecture
 
@@ -162,17 +162,28 @@ Reasons for this layout:
 | R2 `rf-public` | Public Attachment copies and `status.json` only |
 | Durable Object storage | Work queues and counters (see Data Models) |
 
-### Execution model within the free plan
+### Execution model and certified resource profiles
 
-Every code path follows these rules. They exist because R28.3 requires each Worker request to finish within 10 ms of CPU time and 50 D1 queries even at the largest input sizes the requirements allow.
+The versioned `packages/domain/src/resource-profile.ts` is the shared definition for validators, transport clients, jobs, previews, and acceptance tests. `tools/certify-profile.ts` records dated provider limits and evidence; it does not silently upgrade plans. On 27 October 2026, D1 documents 2,000,000-byte strings/rows and 100 bindings, with a batch counting as one invocation query, while individual statement limits still apply ([D1 limits](https://developers.cloudflare.com/d1/platform/limits/)). Durable Objects document a default 30-second CPU budget ([DO limits](https://developers.cloudflare.com/durable-objects/platform/limits/)); the old blanket 10 ms job assumption is retired.
 
-1. **Bounded request handlers.** A request handler issues at most 40 D1 statements, counting each statement inside a `batch()` separately to stay clear of the 50-query limit however D1 counts batches, and at most 40 external subrequests. Lists of rows to insert are passed to D1 as one JSON parameter and expanded with `json_each`, so inserting 5,000 Entry_Sections is a handful of statements whose work happens inside D1.
-2. **Staged commits for large payloads.** A save whose JSON exceeds 512 KB, such as a Journal_Entry near the 2,000,000-character limit (R4.4), is sent as several "stage" requests that write rows into a staging table under a save token, followed by one "commit" request whose batch moves the staged rows into place with `INSERT … SELECT` and deletes the staging rows. The commit is still one transaction, so R4.1 and R4.5 hold.
-3. **Jobs run in slices.** Work that touches many records (publishing, imports, exports, backups, restores, large previews) runs in a Durable Object. Each alarm invocation processes one slice sized for about 5 ms of CPU (for example 20 page renders or 500 rows), stores a cursor, and sets the next alarm immediately. Slice sizes are configuration values tuned from measured `cpuTime` in Workers Logs.
-4. **Set-based SQL.** Fan-out writes such as New_Flags for every other Member, Notification_Events for every recipient, and email batch upserts are single `INSERT … SELECT` statements over Members and preferences.
-5. **Browser-side heavy lifting.** The Administrator's browser parses the journal Markdown and Import_Manifests, hashes files, and runs the Journal_Printer comparison, using the same TypeScript modules the tests exercise. The server re-validates every value it receives, because those checks are cheap per row.
-6. **Outbox, kick, sweep.** Each write batch inserts outbox rows. After the batch commits, the handler sends a best-effort "kick" RPC to the Durable Object that owns the topic (`ctx.waitUntil`). The one-minute cron also kicks every owner, so a lost kick delays work by at most a minute.
-7. **Measured budgets.** Every D1 result carries `meta.rows_read` and `meta.rows_written`. A per-request accountant adds them up, logs them with the route, and reports Public_Traffic usage to the `Budget` object. CI performance tests run the largest allowed inputs on the Free plan and fail when `cpuTime` exceeds 8 ms at the 95th percentile.
+| Budget | Free_Qualified | Paid_Standard / shared chosen limits |
+|---|---|---|
+| Interactive CPU | 8 ms target, below 10 ms ceiling | 50 ms target, configured ceiling at least 100 ms |
+| Durable Object CPU | At most 2 seconds per slice, certified against current plan | Same chosen slice budget; runtime ceiling configured above it |
+| D1 binding calls / statements | Count separately; at most 40 statements per ordinary save as an internal guard | Same default guard; raised only by explicit measured profile revision |
+| Staging request JSON | At most 512,000 encoded UTF-8 bytes, including envelope | Same |
+| Physical text/metadata fragment | At most 128,000 UTF-8 bytes per text or span piece; row/envelope below 512,000 bytes | Same |
+| Logical rich text | Existing field code-point limits; at most 50,000 spans | Same, independent of physical chunks |
+| CSV preview | 32 MiB scanned, 256 KiB per record, 2 MiB parser buffering | Same; at most 1,000 complete data rows |
+| Backup freeze | 120 seconds certified maximum snapshot window | Same; 30-second renewable lease, heartbeat at most every 10 seconds |
+
+1. **Bounded handlers.** Validate byte, binding, query, statement, CPU, and memory budgets independently; `RequestAccountant` tracks actual D1 calls as well as statements and rows. A conservative 40-statement save budget is chosen policy, not the platform's batch-query accounting rule.
+2. **Logical text and atomic staging.** `packages/domain/src/text-fragments.ts` describes immutable `field_versions` and `text_fragments` keyed by logical owner/field/version and fragment ordinal. Text and spans retain global logical offsets and exact characters. Staging can split a single Entry_Section and its metadata across transport parts. Parts name their fragment kind, range, digest, base revision, and logical field manifest; the server validates each bounded piece and the complete manifest/totals. A guarded commit swaps complete field-version references for the entire save, creates Revisions referencing immutable old versions, and publishes no partial logical field. No fragment, staging row, Revision JSON, or aggregate value may exceed the physical budget. Reference counts and deletion jobs retain versions needed by history, citations, proposals, drafts, releases, and backup leases.
+3. **Chunk-aware readers.** Editor, kernel projection loading, comparisons, printers, history, backup, and export consume field-version readers. FTS stores bounded physical rows and a logical document map; term intersection and phrase positions operate over the logical document, including chunk boundaries, so splitting storage never changes matching, ranking, excerpts, or access. Public rendering can emit bounded continuation pages with a canonical root URL and fixed field/fragment addresses before exceeding 20 MiB, with full navigation and no omitted text; inline serialized views likewise use bounded parts. Chunking does not manufacture new Disclosure_Units or alter section/citation identity.
+4. **Resumable jobs.** Each job slice stores an owner lease, monotonic generation, cursor, and per-effect identity. Alarms resume work; a lost kick is repaired by the one-minute cron. A crash cannot advance a cursor before its effects are durably recorded or cause an effect under an older generation. Freeze expiry invalidates a backup snapshot rather than declaring it complete.
+5. **Browser work.** Hash files incrementally; parse journals/manifests in a Web Worker; stream bounded previews. The server validates all authoritative inputs in bounded pieces. Revisions and backups never trust a browser checksum or completion assertion alone.
+6. **Atomic saves and uncertain outcomes.** Every mutation has `(actor_id, operation_key, request_hash)` in `idempotency_results`, committed with the domain result IDs and outbox operation IDs. A same-key replay returns the recorded result; a changed payload conflicts. `GET /operations/{key}` is actor-scoped and returns pending/committed/refused/unknown without exposing another actor's operation. The client stores the key before transfer and reconciles a lost response before resubmitting. Notification grouping is logically once; ambiguous external provider sends remain uncertain and are reconciled or retried with visible duplicate risk.
+7. **Measurements.** CI tests bounds locally and staging certifies provider CPU/memory, database growth, search, recovery, and Abuse_Profile behavior. Samples and maxima are recorded beside percentile statistics; averages are not substitutes for largest valid inputs.
 
 ```mermaid
 flowchart LR
@@ -190,24 +201,15 @@ Cron Triggers (2 of the 5 allowed per account):
 | `* * * * *` | Kick every Durable Object; close due email batch windows; run due quarter-hour checks (usage alerts R19.10, Daily_Digest hours R20.4, the Responsible_Person alert R46.40); at 00:00 UTC reset daily budgets, lift the WAF block, and rewrite `status.json` |
 | `7 * * * *` | Hourly sweeps: abandoned uploads (R12.8, R31.8), Follow_Up_Due reminders (R10.3), Response_Target reminders (R46.25), backup reminders (R36.7), retention erasures (R32.8, R46.26), package expiry (R35.11, R36.3), network-address counter expiry (R46.20); on the first day of a month at 00:07 UTC, start the scheduled Public_Archive_Export (R35.5) |
 
-### Capacity and budgets
+### Capacity, cost, and public abuse budgets
 
-Daily figures unless stated. "Planned" uses the Expected_Usage_Profile and Public_Usage_Profile.
+The previous free-allowance table is a baseline, not an availability proof. `infra/profiles/{profile}.json` declares current plan quotas, internal statement margins, spend target, reserved interactive/removal capacity, Reference_Archive version, and a repeatable Abuse_Profile. Free_Qualified starts with the existing 50% Member and 25% optional-public baseline fractions. Paid_Standard uses explicit monthly row/request allowances and CPU limits. Neither profile treats a subscription as a hard bill cap. New services require operator configuration/approval; no runtime path upgrades a plan.
 
-| Resource | Free allowance | Member_Operations ceiling (R28.2) | Public_Traffic ceiling (R28.5, initial 25%) | Planned use |
-|---|---|---|---|---|
-| Worker requests | 100,000 | 50,000 | 25,000 | About 16,000 Member API calls (5,000 page views at 2 to 3 calls each, uploads, previews), 1,464 cron runs, under 1,000 public API calls |
-| D1 rows read | 5,000,000 | 2,500,000 | 1,250,000 | About 1,000,000 (page views about 100 rows each, Member search, Publisher projection, mail composition) |
-| D1 rows written | 100,000 | 50,000 | 25,000 | About 5,000 (100 Items at roughly 40 rows including flags and events, views, sessions) |
-| Durable Object requests | 100,000 | not split | not split | About 5,000 (kicks, alarms, budget checks) |
-| R2 Class A | 1,000,000 per month | not split | not split | Uploads, public copies, package writes: well under 50,000 |
-| R2 Class B | 10,000,000 per month | not split | not split | About 60,000 public downloads plus Member downloads and `status.json` reads |
-| Workers AI | 10,000 Neurons | all | none (R44.13) | 50 drafts at about 45 Neurons: about 2,300 |
-| Email recipients | Recipient_Cap, initially 2,000 per 24 hours | shared | shared | About 160 |
+The first Abuse_Profile must exercise 30 minutes at 100 distributed invalid public requests per second across at least 1,000 synthetic source identities, including invalid `/t` and `/x` tokens and rejected submit/consent requests, while 10 Members perform the Expected_Usage_Profile and an urgent removal is processed. The edge configuration must shed the rejected flood before invocation sufficiently to pass R28.7 and retain a measured reserve. A deployment that cannot pass this profile cannot claim production isolation: disable the affected public endpoint, use an operator-approved stronger profile/edge plan, or isolate its provider-account quota. Valid Member downloads are also exercised under flood; a rule that simply blocks them does not pass. A quota reserve inside `Budget` cannot prevent the request charge for reaching that object or Worker.
 
-Static asset requests (all public pages and the public search index) are not on this table because they are free and unlimited.
+`Budget` reserves each optional public operation's maximum admitted work, settles actual D1 usage, includes all rejected/invalid-download invocation counts reported by provider analytics, and asks `rf-ops` to switch precreated edge shed rules before its certified reserve is threatened. `status.json` reports separate form, consent-view, and search availability plus current public generation. Ordinary budget shedding disables dynamic forms and admits addressed views only within their view budget; static public search, pages, and permitted file downloads remain available. Containment is a separate confidentiality action and can deny all public research hosts while leaving `app` available. Reset is idempotent and does not reopen a host still under containment.
 
-**Public_Traffic_Budget enforcement (R28.5, R28.6, R28.11).** `rf-submit` is the only Worker that serves Public_Traffic on purpose. For each request it asks `Budget` to admit the request, then reports the D1 rows the request used. `Budget` keeps per-UTC-day counters for requests, rows read, and rows written. When any counter reaches the budget minus a safety margin (2% of the budget, to absorb requests in flight), `Budget` does three things: it refuses further public requests with a fixed "unavailable until 00:00 UTC" response that uses no D1 query; it asks `rf-ops` to enable a pre-created WAF custom rule that blocks `submit.researchforce.org` at the edge, so further requests never reach a Worker; and it rewrites `files.researchforce.org/status.json` with `{"forms":"unavailable","search":"unavailable","until":"…"}`. The form, Response_Link, and search pages read `status.json` and replace those features with the notice. Public pages and file downloads continue, because they never touch a Worker. At 00:00 UTC the cron resets the counters, disables the WAF rule, and rewrites `status.json`. Requests to `dl.researchforce.org` with invalid tokens also count as Public_Traffic and are rate limited at the edge, but they are not blocked by the budget switch, because blocking that host would block Members' downloads (R28.7).
+The growth model in `tests/perf/growth.ts` includes actual initial import volume and at least 1-, 3-, and 5-year scenarios: text fragments, FTS/logical maps, revisions, citations, derivatives, manifests, flags/views, notifications, reconciled outbox, permission snapshots, originals, public copies, release/export copies, independent backup retention, and transient job copies. Assumptions and measured bytes/rows replace the earlier unsupported claim of fitting below 500 MB for years. Alerts at 80% remain; normal spend targets, independent backup costs, and projected overrun actions are visible to the operator.
 
 ### Request flows
 
@@ -348,7 +350,15 @@ The Role_Permission_Map is stored in `rf-core` (`roles`, `role_permissions`). Th
 | `attachment.move` | own Attachments | any Attachment | widening a Public_View needs an Administrator and the gates; leaving a Restricted item follows `access.widen` (R12.14, R12.15) |
 | `consent.request` (send, remind, cancel Consent_Requests), `party.contact` (record or erase a Contact_Email) | no | yes | the Owner-consent, Restricted, and hold checks of R51.3 apply |
 
-Read access is not a map Permission. Every active Member, in every Role, reads every Project, Profile, and the Moderation_Queue, and reads every Item, Entry_Section, Dissent_Note, Revision, Attachment file, Cross_Link, and Review_Request of a Research_Item that the Member Can_Read (R2.8, R47); see "Restricted access" below. A request that needs several Permissions is checked for all of them before any statement runs, so a refusal changes nothing (R2.7). The "at least one active Administrator" rule is a guard statement inside the batch that changes a Role or Member_Status (R2.11), which also covers two Administrators demoting each other at the same moment.
+| `work.assign`, `work.edit` | own / existing authorized editor | any readable work | objective, assignment and due dates; no implicit ownership/access change |
+| `work.progress` | responsible Member or accepted assignee | authorized editor | bounded progress/status/outcome fields, while Can_Read and Active |
+| `work.accept`, `decision.acknowledge` | self only | self only | never acknowledge for another person |
+| `citation.edit`, `derivation.edit`, `compute.edit` | existing item editor | existing item editor | both ends readable; history and rights gates apply |
+| `draft.manage`, `proposal.create`, `navigation.manage` | own / propose on readable records | same; reasoned audited draft recovery | a proposal grants no target edit Permission |
+| `proposal.accept` | existing field editor | existing field editor | preserve Log_Summary/Profile/Dissent restrictions |
+| `release.manage`, `recovery.operate` | no | yes | release publication still uses normal consent and disclosure gates |
+
+Saved_Drafts and personal navigation also apply their author-specific rules (R57, R58); administrative recovery is explicit and audited. Read access is not a map Permission. Every active Member, in every Role, reads every Project, Profile, and the Moderation_Queue, and reads every Item, Entry_Section, Dissent_Note, Revision, Attachment file, Cross_Link, and Review_Request of a Research_Item that the Member Can_Read (R2.8, R47); see "Restricted access" below. A request that needs several Permissions is checked for all of them before any statement runs, so a refusal changes nothing (R2.7). The "at least one active Administrator" rule is a guard statement inside the batch that changes a Role or Member_Status (R2.11), which also covers two Administrators demoting each other at the same moment.
 
 **Invitations (R2.1, R2.13, R2.14).** The validator checks the Role, the length limit of 254 characters, the single `@`, the dotted domain, and that no Active Member holds the address, ignoring letter case. The batch upserts the Member as Pending with the selected Role. The API then asks `rf-ops` to add the address to the Access list and queues the invitation email in the Mailer, which sends it within 2 minutes of queue entry. If the Email_Provider refuses it after retries, the Member list shows "invitation email not sent" next to the status until a later invitation succeeds.
 
@@ -412,7 +422,9 @@ All Research_Items, Entry_Sections, Attachments, Replies, and Dissent_Notes are 
 | Research_Question | Title 1 to 200; question 1 to 500; introduction at most 20,000; at most 20 Question_Groups, each with a heading of 1 to 200 and at most 200 entries (R50.1, R50.6) | Entries are Cross_Links with the fixed label Addresses, unique per target within the Research_Question, ordered by `question_entries.position` within their group; targets must be live Research_Items or Attachments of the same Project; a target's move or deletion removes its entry in the same batch (R50.2, R50.7); not a Bulk_Import kind (R50.8) |
 | Reply, Group_Note | Text 1 to 50,000 (R16.9, R41.8) | An empty Group_Note field at submission means no Group_Note (R41.8) |
 | Attachment | Title 1 to 255 (default: file name); caption at most 2,000; Origin 1 to 5,000 (R12.2) | Rights_Status, rights holder at most 200, rights terms at most 2,000 (R33.1) |
-| Log_Summary | 1 to 2,000; required at submission for every kind except Journal_Entry, Topic, and Research_Question (R41.1, R41.2) | Can be changed but not removed (R41.5) |
+| Work_Item | Title 1 to 200; objective 1 to 10,000; 1 responsible Member, at most 20 assignees, 100 predecessor dependencies, priority/state and optional due date (R52) | Progress is available only to current responsible/accepted actors; optional initial Log_Summary; completion requires result references or explicit no-result statement |
+| Decision_Record | Title 1 to 200; question 1 to 2,000; context/rationale at most 20,000 each; 1–20 alternatives, at most 50 participants (R53) | Adoption requires rationale/outcome; personal exact-wording acknowledgements do not transfer ownership or imply consensus |
+| Log_Summary | 1 to 2,000; required at submission for every kind except Journal_Entry, Topic, Research_Question, and Work_Item (R41.1, R41.2) | Can be changed but not removed (R41.5) |
 
 Whitespace-only text counts as empty everywhere. Item_Date and Log_Date are computed on save and stored as sort keys (R43.2): a partial date sorts at the start of its period, and a range sorts by its start.
 
@@ -461,6 +473,7 @@ Offsets are UTF-16 code units, half-open, and must fall on code point boundaries
 - `POST /api/v1/uploads` carries name, size, and the SHA-256 that the browser computed in a Web Worker. The API refuses files above the Attachment_Size_Limit and the 101st file of a Submission before any transfer, naming the file and the limit (R12.4, R12.9).
 - Files up to 64 MiB use one presigned PUT that signs `content-length` and `x-amz-checksum-sha256`. Larger files use multipart upload with 16 MiB parts, each part's URL signing that part's SHA-256. R2 refuses any part or object whose bytes do not match.
 - `POST /api/v1/uploads/{id}/complete` makes the API compare the stored size and the R2-reported checksum with the values the browser sent (R12.10). For multipart files the compared value is the composite checksum.
+- The SPA persists draft metadata, upload/group IDs and operation keys across reload; explicit Saved_Drafts also survive tab closure. It revalidates uploaded objects, requests hash-matching File reselection when needed, and retains every other input. Attachment metadata lists never record file views (R18.13, R28.10, R57).
 - The SPA shows each file's percentage at least once per second from XHR progress events. A file is marked failed when no bytes move for 60 seconds, R2 reports an error, the check fails, or the sweeper removed it, and the Member can retry or remove that file without losing the rest of the Submission (R12.6, R12.7).
 - The Submit button stays disabled, with reasons, while any file is uploading, has failed, or has invalid metadata (R12.11).
 - The hourly sweep deletes objects of uploads that started more than 24 hours ago and are not part of a completed Submission, which keeps deletion within 24 to 48 hours of the start (R12.8). An R2 lifecycle rule also aborts incomplete multipart uploads after one day.
@@ -483,12 +496,12 @@ Offsets are UTF-16 code units, half-open, and must fall on code point boundaries
 
 **Moves (R12.12 to R12.15).** `POST /attachments/{id}/move` with the new Parent moves the whole Version_Chain (`chain_id`) in one batch by updating `parent_id`, `root_id`, and `project_id` of each Attachment and everything under it; identifiers, files, rights, levels, Classification_States, holds, and Cross_Links stay as they are. Each moved Attachment gets a Revision holding the previous Parent, and the move is one Activity_Feed entry. The preview endpoint computes the views before and after with the kernel: a move that widens any Public_View needs `disclosure.set`, a fresh preview token, and the gates of "Disclosure changes and previews" (Owner consent, holds, rights, consent, Licence_Agreements); a move out of a Restricted Research_Item to a Root_Item that more Members can read needs `access.widen` on the source item, with the `access_owner` guard. Question_Group entries that point at a moved Attachment and would cross Projects are removed in the same batch (R50.7). Moving files out of the Unassigned_Attachments_Source uses the same endpoint.
 
-**Previews (R14).** All previews run in the SPA from bytes fetched through a Download_Link, so no rendering of a file ever happens in the Workspace origin:
+**Previews (R14).** All previews run in the SPA from bytes fetched through a Download_Link, and renders controlled canvases, typed raster images, and escaped text in the Workspace. Isolation depends on the non-executable rendering path and parser sandboxing, not a claim that SPA rendering occurs on another origin:
 
-- PDF: pdf.js with scripting and `eval` disabled, showing page n of N, previous and next controls, and a go-to-page field (R14.1).
+- PDF: self-hosted PDF.js without scripting, eval, interactive annotations or external resource loading, range transport through renewable Member-bound Download_Links, bounded page caches and decoded allocations, page n of N, previous/next and go-to controls. The current PDF.js version has removed the former eval path; pin and security-test the chosen build (R14.1, R14.10).
 - JPEG, PNG, GIF, WebP: displayed from a `blob:` URL created with the explicit image type, fitted to the viewport, with zoom up to 400% of actual size and keyboard and pointer panning (R14.2).
 - Text log: a `Range` request for the first 1 MB, decoded and shown as preformatted text, with "showing X of Y" (R14.3).
-- CSV: streamed into Papa Parse until the header and 1,000 rows are read, shown as a table, with the row count and whether more rows exist (R14.4).
+- CSV: stream into Papa Parse incrementally; retain only header plus 1,000 complete data rows and one-row lookahead, cancel the reader when sufficient, and enforce 32 MiB scanned/256 KiB record/2 MiB parser-buffer budgets. Record known-more/end-of-file/unknown-remainder distinctly. A cut quoted row is not a complete record; reaching a resource budget gives a named notice with full download retained (R14.4, R14.7, R14.10).
 - Every Attachment page shows its metadata and a download link (R14.5).
 - If the file is damaged, password-protected, does not match its kind (checked against magic bytes), or cannot be fetched, the preview area names the cause, and metadata and download stay available (R14.7).
 - Moderation_Queue files use the same previews (R14.8). Renderings exist only in the requesting Member's browser memory (R14.9).
@@ -675,17 +688,21 @@ The kernel also has defensive rules for states that the save path makes impossib
 
 **Widening test.** The kernel gains `widens(before, after, unit)`: true when the unit's own values after the change would present material its view did not present before, evaluated both with the real ancestors and with every ancestor treated as Public and Full_Content. The second evaluation stops a level from being set quietly under a Not_Published Project and exposed later by a Project change, which itself needs no consent (R23.17). Narrowing values never widen.
 
-**Consents.** `publication_consents (id, unit_id, member_id, values_json, source, source_id, given_at, withdrawn_at, used_at)`. A Publication_Request by the unit's Consenting_Member writes a consent row with source `request` while it is open (R23.21). A Publication_Proposal is a Review_Request of type `proposal`, addressed by name to one Consenting_Member, with one entry per unit (R23.18); approving it writes one consent row per unit with source `proposal`, and declining writes none (R23.19). A consent covers a change when the applied level is the consented one or narrower, the presentation is the consented one or Summary_Only, and any Public_Summary or Disclosure_Line equals the consented text exactly (R23.20). Applying marks the consent `used_at`; a used or withdrawn consent covers nothing more. The `consent_valid` guard re-checks, inside the apply batch, that each needed consent row is still unused and not withdrawn. While a Consenting_Member is Revoked, only a Dual_Approval writes new consent rows for that Member's units, with source `dual` (R23.22). A unit whose Consenting_Member is the acting Administrator needs no consent row.
+**Consents.** `publication_consents` holds `id, unit_id, member_id, values_json, approved_view_hash, approved_snapshot_version, dependency_manifest_hash, source, source_id, given_at, withdrawn_at, used_at`. `approval_snapshots` and bounded dependency rows store the exact canonical proposed view and content revisions, file IDs/hashes, relevant rights/naming/licence records, and projection inputs, including the prospective-public ancestor evaluation. Approving a Request, Proposal, or consent-on-behalf action signs off that snapshot, not just level/summary values (R23.23, R23.24). `consent_valid` rechecks dependency revisions and hashes inside the apply transaction, rejects stale or withdrawn/used consent, and compares a narrower output as omission of approved fields without substituting new text/files. On application it records the actual material digest and `used_at`. A changed dependency requires re-preview and renewed Owner approval. The Owner's subsequent own edits to already-public work retain the stated policy but external grant scope, holds, and rights still gate them. Self-publication by the acting Consenting_Member needs no separate proposal; imported/accepted ownership rules remain unchanged.
 
 **Holds.** `confidentiality_holds (id, unit_id, member_id, note, placed_at, lifted_by, lifted_at, lift_note, override_id)` with a partial unique index on (`unit_id`, `member_id`) where neither lifted nor overridden (R48.1). A hold covers its Item's subtree, found through `units.root_id` and `parent_id` (R48.2). Placing a hold uses the same preview as restricting: it lists the Public or Withheld units whose own levels the hold resets to Not_Published, and the batch writes them with Disclosure_Changes, Item_Update events for every Administrator and the Owner, and a `publish` outbox row (R48.3). The `hold_free` guard in every apply batch refuses a widening of any covered unit (R48.4). Lifting needs the placer or the Owner (R48.6, R48.10); neither lifting nor overriding changes any level (R48.7). Each placement, lift, and override writes an `access_change` Revision.
 
-**Dual_Approvals.** `dual_approvals (id, action, target_json, effect_json, proposed_by, proposed_at, proposal_reason, state, decided_by, decided_at, decision_reason)` with `action` one of `hold_override`, `access_widen`, `consent_on_behalf` (R49.1) and `state` one of `open`, `approved`, `declined`, `withdrawn`, `lapsed`. Proposing creates Review_Requested events for every other active Administrator and, for a Hold_Override, Item_Update events for the placer and the Owner (R48.8, R49.2). Approving runs the action's own batch with the `dual_open` guard (still open) and the `dual_distinct` guard (approver differs from proposer), plus the action's preconditions: the hold is still active, or the Owner or Consenting_Member is still Revoked (R49.3, R49.4). A proposal whose precondition has gone is set to `lapsed` when it is next read or decided. Rows are never deleted while their element exists and are included in Internal_Backups (R49.7). With fewer than two active Administrators the approve button is disabled with the explanation (R49.6).
+**Dual_Approvals.** `dual_approvals` retains action, target/effect canonical digests, content/dependency manifest, proposer/time/reason, state, and decider/time/reason. The guarded approval checks the exact effect and current preconditions, two different currently Active Administrators including the proposer, snapshot-bound consent where relevant, and an unused open proposal. A changed effect, lifted hold, restored Owner, or ineligible proposer lapses it; another action needs another proposal. Both reasons and personal identities remain immutable history. An account count alone does not prove proposer eligibility (R49.8).
 
-### Consent_Requests (R51)
+### Permission evidence and addressed Consent_Requests (R51)
+
+`permission_evidence` stores grantor Party/claimed authority, source method (emailed/letter/call/email/other), immutable evidence reference, covered unit/version/file hashes and snapshot, permitted uses/licence/naming and optional expiry, recorder, time, withdrawal, and superseding evidence. Coverage is computed from these fields for manual and emailed grants alike; setting a status alone never produces unlimited permission. A denial is not overridden without new evidence and a recorded reason. Withheld names require a current element-scoped naming grant and Do_Not_Name off; otherwise the projection uses a neutral role label without leaking the withheld name. Evidence participates in preview dependencies, consent guards, release preflight, backup and post-restore suppression.
+
+
 
 People outside the team answer by email, with no account. The design reuses the Response_Link pattern: a random token in the URL fragment, only its SHA-256 stored, a static page on the Public_Site, and `rf-submit` endpoints behind the `Budget` gate and Turnstile.
 
-**Sending (R51.2 to R51.4).** `POST /consent-requests/preview` takes the External_Party, the kind (`publication` or `rights`), 1 to 50 units with their proposed values, and the message. It runs the checks of R51.3 (Restricted roots through `canRead`'s data, active holds, Owner consent through `publication_consents` as in "Publication consent", the Contact_Email, and at most 5 requests per Party in 30 days), then renders, with `public-render` and the kernel, each unit's Public_View under the proposed values and every other value as it stands. That rendering is the Consent_Page snapshot: plain HTML from the public templates plus, for publication requests, the Party's name as it would appear. For rights requests the snapshot holds the Attachment's or Source's public fields and file name, never the file. The preview returns the email text, the snapshots, and a preview token over their hashes. `POST /consent-requests` with that token stores the request, one `consent_request_items` row per unit with the snapshot and its SHA-256, the token hash, and `expires_at` (sending plus 30 days); sets Consent_Status Requested on each named Correspondence for that Party unless Granted; and queues the email through the `Mailer` as a non-Member email, counted against the Recipient_Cap.
+**Sending (R51.2 to R51.4).** `POST /consent-requests/preview` takes the External_Party, the kind (`publication` or `rights`), 1 to 50 units with their proposed values, and the message. It runs the checks of R51.3 (Restricted roots through `canRead`'s data, active holds, Owner consent through `publication_consents` as in "Publication consent", the Contact_Email, and at most 5 requests per Party in 30 days), then renders, with `public-render` and the kernel, each unit's Public_View under the proposed values and every other value as it stands. That rendering is the Consent_Page snapshot: plain HTML from the public templates plus, for publication requests, the Party's name as it would appear. For rights requests the snapshot holds public fields plus stable document/record/version identity, archive reference when known, exact file size/SHA-256, proposed use/licence and asserted rights-holder authority, never the file bytes. This addressed capability does not grant generic file access. The preview returns the email text, the snapshots, and a preview token over their hashes. `POST /consent-requests` with that token stores the request, one `consent_request_items` row per unit with the snapshot and its SHA-256, the token hash, and `expires_at` (sending plus 30 days); sets Consent_Status Requested on each named Correspondence for that Party unless Granted; and queues the email through the `Mailer` as a non-Member email, counted against the Recipient_Cap.
 
 **Answering (R51.5 to R51.8, R51.12).** The `/consent` page reads the token from the fragment and calls `POST /v1/consent/view`, which returns the stored snapshots and answer options only for an open, unexpired, unanswered request, and otherwise the one fixed "no longer valid" response; viewing writes nothing, because mail scanners open links. `POST /v1/consent/answer` needs a Turnstile token, the answers for every item, an optional comment, and optional Generic_Label. Its batch, built by `packages/db/src/consent/answer.ts`, starts with the `consent_link_open` guard and then writes the `consent_answers` rows; the Consent_Status, Do_Not_Name, Generic_Label, and Rights_Status changes, each with a Revision attributed to the requesting Administrator and naming the Consent_Answer; the downgrades of R33.5 and R34.3 when a Public unit loses its consent or permission; Item_Update events for the requesting Administrator and each Owner; a `publish` outbox row when a Public_View changes; and the confirmation email with a Change_Link valid for 12 months. The snapshot stays the evidence of what the person saw.
 
@@ -709,7 +726,7 @@ The `Publisher` Durable Object turns outbox rows into a deployed site. Outbox ro
 | `value:{set}:{id}` | Value renames and retirements, Public_Description changes | Roots holding the value, the Methods page |
 | `policy:{page}`, `site` | Policy_Section and setting changes, Design_System releases | That page, or every page |
 
-Each run goes through these steps, one slice per alarm:
+Each run has a durable generation/lease and an observed publication epoch. Any confidentiality-affecting save increments that epoch in the same transaction as its outbox row. An urgent invalidation interrupts older addition work at the next bounded slice; epoch checks fence every file copy, render manifest, and deploy/verify transition. Each valid run goes through these steps:
 
 1. **Project.** Expand scope keys into root keys, load projection input for at most about 500 KB of text per slice, compute views, compare their hashes with the current versions in `rf-public`, and write new versions while closing old ones.
 2. **Plan.** Map changed views to outputs: the unit's page, its Parent's and root's pages, every page of the affected kind listings, public Project_Log, and Disclosure_Line listing (inserting an entry shifts all later pages), the Project page, the home page, the projects listing, the People and Policy pages, the public search index files, and public file operations.
@@ -717,9 +734,9 @@ Each run goes through these steps, one slice per alarm:
 4. **Files.** Delete public copies first for removals, and copy new public files before the deploy that links them.
 5. **Render.** The string renderer produces the HTML, `_headers`, `robots.txt`, `sitemap.xml` (only Public and Withheld addresses, R24.5), and index files. Each file's hash is computed as the Direct Upload API specifies, and new content is stored in `rf-private/build/{hash}`.
 6. **Deploy.** The manifest of every path, hash, and size lives in `rf-public.site_files`. `rf-ops.deploySite()` streams the manifest to the upload-session endpoint, uploads only the files the platform reports missing, creates an assets-only version (`html_handling: auto-trailing-slash`, `not_found_handling: 404-page`), and deploys it to 100%. Uploads can span invocations because the upload token is valid for an hour.
-7. **Verify.** After an urgent deploy, HEAD each removed page and file address and expect the not-found response. A removal that is not confirmed 5 minutes after its save raises a System_Alert naming the unit; for Attachments this is R25.7.
+7. **Verify.** After an urgent deploy, HEAD each removed page and file address and expect the not-found response. A removal unverified at four minutes initiates precreated edge Containment and independent alerting; by five minutes removal or containment is verified where provider control paths are available. If both control paths fail, an incident records unconfirmed exposure rather than asserting success; for Attachments this is R25.7.
 
-Only one run is active at a time; changes that arrive during a run go into the next run. While an Internal_Backup restore runs, the Publisher processes no `rf-core` changes, so the deployed site shows nothing of the restored data until the restore completes and a full rebuild runs (R36.9). An alert fires when the site reaches 16,000 of the 20,000 files a version may hold. Growth beyond that moves Attachment pages to a second assets-only Worker on the route `researchforce.org/a/*`.
+Only one generation may commit a deploy at a time. Additions may queue, but urgent removals invalidate an older generation immediately and preempt it at its next bounded yield. A retry of an old generation must not copy back or redeploy removed material. `rf-ops` serializes epoch-labelled deployment operations, rechecks the authoritative expected epoch immediately before and after promotion, and keeps containment in force while a stale promotion or provider race is unresolved. While an Internal_Backup restore runs, the Publisher processes no `rf-core` changes, so the deployed site shows nothing of the restored data until the restore completes and a full rebuild runs (R36.9). An alert fires when the site reaches 16,000 of the 20,000 files a version may hold. Growth beyond that requires a tested multi-assets-worker layout or smaller continuation outputs before the certified file-count ceiling is crossed; no silent routing change is permitted.
 
 ### Public_Site structure (R24, R29, R40, R45, R46)
 
@@ -894,21 +911,21 @@ MANIFEST.json, SHA256SUMS          Export_Manifest: every file with size and SHA
 - **Staleness (R35.10, R46.34).** Each package stores an index of its units with their exported levels, the External_Parties it names, and the email-like strings it contains. The export list compares these with the current state and labels a package that contains material that is no longer public, a Party now marked Do_Not_Name, or a registered Member's email address, naming the affected units and offering deletion.
 - **Deletions.** When an Item or Dissent_Note is permanently deleted, the same indexes find the packages that contain it (R22.8, R42.18).
 
-**Internal_Backup (R36.1 to R36.3, R36.6, R36.7, R36.11).** The backup must reflect the state at the time of the request. D1 has no snapshot reads across many queries, so the job sets a short write freeze: every write batch starts with the `frozen` guard, and the API answers saves with "saving is paused for a backup (about a minute); your input is kept" (R28.10). With the freeze on, the job reads the backed-up tables in keyset pages of about 1,000 rows and writes them as JSON Lines files to `rf-private/backups/{id}/`, then lifts the freeze.
+**Internal_Backup and independent recovery (R36).** `apps/app/src/jobs/backup.ts` produces a snapshot sequence under `write_freeze_leases(job_id, generation, acquired_at, expires_at, snapshot_seq)`. A 30-second lease is renewed at most every 10 seconds and has a certified maximum total snapshot window of 120 seconds; every mutating API, raw SQL helper, cron and outbox consumer uses the same live-lease predicate. Only the owning lease renewal and bounded job-control/checkpoint writes have an audited exception; that exception cannot write snapshotted research rows. Losing the lease makes the snapshot incomplete. A separate watchdog and authenticated recovery command release expired leases with an incident record; normal saves then resume, never treating mixed-time data as a valid snapshot.
 
-- The backed-up tables are Projects (slug, featured flag, position, accent, level), units and kind tables, labels, Revisions, Cross_Links, Review_Requests, Outside_Submissions and Moderation_Decisions, External_Parties, Members with Role and Member_Status, Profiles, value sets with Public_Descriptions, settings (including the Responsible_Person), and Policy_Sections with their Revisions (R36.1, R36.11).
-- Flags, views, Notifications, events, email batches, sessions, outbox, staging, and network-address counters are not backed up.
-- Files are copied after the freeze; they are immutable, so the copies match the request time. A file deleted in between makes the backup incomplete.
-- The manifest lists every file with size and SHA-256. A backup that misses an element, takes longer than 24 hours, or has a mismatched file is marked incomplete and reported to the requester (R36.6).
-- Files are delivered only to Administrators (R36.2) and deleted 7 days after production (R36.3).
-- A Reminder goes to every Administrator at each 30-day multiple since the most recent backup that was complete and fully downloaded by an Administrator (R36.7).
+Under the lease, the job reads all authoritative tables in bounded pages and writes immutable JSONL fragments; after sealing row counts/digests it releases the lease and copies hash-identified immutable files. A per-file retention/read lease prevents a concurrent deletion job from destroying the required source before copy; if privacy policy requires immediate destruction instead, the backup is invalidated and excluded from recovery coverage. A manifest is signed/authenticated with `format_version`, `schema_version`, source installation, snapshot sequence/time, table/row counts, logical-field manifests and file IDs/sizes/SHA-256. Do not embed plaintext recovery/data keys, credentials or arbitrary SQL; the selected encryption format may carry wrapped data-key envelopes.
 
-**Restore (R36.4, R36.5, R36.8 to R36.10).**
+`packages/manifest/src/backup/` defines the parser and migration interfaces. `apps/app/src/recovery/destinations.ts` uses a configured independent account/storage endpoint or an operator-run offline transfer command. A maintained authenticated-encryption library seals packages; use per-backup random data keys wrapped for configured independent recovery custodians, not hand-written cryptography. The signer/fingerprint trust root and recovery key material are recoverable outside production. Provisioning and the first successfully decrypted fresh restore are prerequisites for sole-copy research custody. Manual exports remain available but a successful download alone never verifies the RPO.
 
-- The source is a backup still in R2, or a package the Administrator uploads; the browser verifies each file's SHA-256 against the manifest before upload.
-- The job refuses before creating anything when the package is not an Internal_Backup, the system is not empty (no Project, Item, Entry_Section, Dissent_Note, Revision, Cross_Link, Review_Request, or Outside_Submission, and no Member other than the restoring Administrator), or a manifest file is missing or mismatched (R36.8).
-- Rows are inserted in dependency order with their original ids, Item_Identifiers, levels, classification states, and Revisions, using `INSERT OR IGNORE`, with a cursor per table. A restore stopped by a daily limit can therefore resume without creating anything twice, and the job reports created and remaining counts (R36.10). Files are copied to their original keys. Policy_Sections replace the seeded defaults (R36.11).
-- No flags or Notification_Events are written (R36.4). The Publisher stays paused until the restore completes (R36.9), then rebuilds `rf-search`, `rf-public`, and the site, which yields the same Public_Views and Public_URLs as before (R36.5).
+Schedule snapshots at least every 12 hours so a completed independently verified point stays within 24 hours. The scheduler certifies completion time/volume against the Reference_Archive; it warns at 18 hours and declares an RPO breach at 24 hours. Independent retention keeps 14 daily, 8 weekly and 12 monthly complete points; shared points count toward multiple tiers. Remove older points only after validating successor coverage. Requested staging artifacts and incomplete packages expire after seven days. Keys, immutable destination controls where supported, and an independently verified inventory prevent production-account loss from deleting every recovery point. Record actual costs and operator consent for any storage purchase.
+
+Back up every authoritative research/identity/policy table, permissions/holds/approvals/evidence, draft and personal-navigation visibility, field versions, citations/derivations, work/decision states, compute packages, and release manifests. Rebuildable flags, views, notifications/events, mail batches, sessions, raw outbox, transient stages, and network counters stay out. Preserve actor-scoped idempotency result identities for retained research, never pending external email sends that could replay after restore. Export a minimal authenticated deletion/revocation/suppression ledger independently with the same 24-hour recovery envelope; it contains opaque IDs, invalidation generations and time, not deleted bodies.
+
+**Restore (R36.4–R36.17).** `POST /restores` is an idempotent audited Administrator operation. Preflight authenticates/decrypts the manifest, validates all bytes, format/schema versions, chunk bounds, row digests and references, supported transforms, and destination eligibility before inserting research. Accept the current and two prior released schemas; older packages use an explicit maintained migration tool. Reconcile a temporary bootstrap Administrator by verified identity and expected source Member ID in one bootstrap transaction, retaining backed-up IDs and all attribution; conflicting identities fail preflight.
+
+A quarantined restore owns `(restore_id, table, key, payload_hash)` checkpoints. It inserts a new intended row, or skips only an identical row owned by the same restore; any other conflict is reported, never hidden by unconditional `INSERT OR IGNORE`. Cursors advance only with durable row effects. Seeded configuration is explicitly replaced in the documented transform, and every expected count/reference/hash is checked at completion. A crash resumes without duplicate records, flags, notifications or external sends.
+
+Keep restored research unavailable to public projection until validation, current credentials/active administrator recovery, independent post-snapshot suppression reconciliation, and a fresh disclosure/consent preflight succeed. If the latest suppression state cannot be established, public research remains denied until an authorized review revalidates the restored material. Rebuild derived search/public data while public hosts remain under containment; an Administrator explicitly releases the validated generation. Do not automatically republish a revoked permission from an older snapshot. The old package's manifest is evidence of historic state, not authorization to override a known later withdrawal. Quarterly and pre-breaking-change isolated rehearsals must demonstrate the 24-hour RPO and 8-hour RTO with independent keys/materials; record failures and corrective work.
 
 ### AI drafting (R44, R28.14, R28.15)
 
@@ -1004,6 +1021,26 @@ MANIFEST.json, SHA256SUMS          Export_Manifest: every file with size and SHA
 
 Every state-changing route requires the `X-RF-CSRF` header and an `Origin` of `https://app.researchforce.org`. Every route returns errors in one shape: `{ "error": code, "fields"?: [{ field, rule }], "details"?: … }`.
 
+### Research collaboration components (R50.9–R50.11, R52–R59)
+
+All components use the existing records pipeline, Can_Read predicate, privacy kernel, immutable history, outbox, and item identifiers; none introduces a parallel publication or authorization system. Work_Item and Decision_Record are new Research_Item kinds in domain schemas, adapters, filters, search, templates, history, exports and migration checks. Research_Question and Run remain their existing kinds. Bulk_Import v1 explicitly rejects the two new interactive kinds until a versioned mapper exists. Forms and manifests expose limits rather than letting a D1 JSON row become the effective limit.
+
+| Component | Authoritative tables / immutable identities | API and behavior |
+|---|---|---|
+| Work coordination | `work_items(unit_id, objective_version, responsible_id, due_date, priority, state)`, `work_assignees` with pending/accepted/declined state, `work_dependencies`, `work_outcomes` | Existing `/items/work-item` create/edit; `POST /work/{id}/assignments`, `/accept`, `/progress`, `/dependencies`; `/work` list. At most 20 assignees and 100 dependencies. `work.progress` permits the current responsible Member or accepted assignee to change only progress/status/outcome while readable; objectives, assignments and due dates use normal editing. Cycle checks and a graph revision guard run in the save transaction. Completion needs exact result references or a no-result statement; reopen/cancel has a reason. |
+| Question lifecycle | Add `lead_id, investigation_state, assessment_version` and ordered uncertainty/next-action rows to `research_questions` | Extend normal Question create/edit; `/questions/{id}/assessment` records evidence versions and a reason. Answered requires assessment and supporting evidence. Workspace links work/decisions and omits unreadable context. Public state is part of the Question view; assessment/introduction are Full_Content fields, never implicitly exposed by a dashboard. |
+| Decisions | `decisions` and versioned `decision_alternatives`, `decision_evidence`, `decision_participants`, `decision_acknowledgements` | `/items/decision-record`, `/decisions/{id}/adopt`, `/acknowledgements`, `/supersede`. Bounds: question 2,000, context/rationale 20,000 each, up to 20 alternatives and 50 participants. Acknowledgements bind the content digest and are personal; changed wording makes them earlier-wording evidence, not current agreement. Team status never invents consensus. |
+| Citations | `source_bibliography` with ordered creators/identifiers; `evidence_citations` and typed locator rows referencing immutable field/file versions | `/citations` create/edit on an authorized citing record; `/citations/{id}` and target backlink queries use Can_Read on both ends. At most 1,000 citations per record, locator text 1,000 characters, image coordinates in [0,1], numeric pages/folios bounded and validated. RichText spans optionally name a citation ID while preserving legacy source strings. A changed target marks the exact older version; unresolved imports stay unresolved. JSON and CSL-JSON export use source creators separately from Member Credit. |
+| Derivations | `artifact_derivations(input_version, output_version, kind, method_version, language, uncertainty, creator, created_at, review_state)` plus personal reviews | `/derivations` validates both ends and a graph epoch in the batch, rejects cycles and records method/uncertainty. At most 100 input edges per output and 2,000-character uncertainty notes. File originals stay immutable; transcript/OCR/translation text is an explicitly stored version under its own root permissions. No automatic OCR service is provisioned. |
+| Compute packages | `compute_packages(run_id, package_version, manifest_hash, reproducibility_state)`, bounded `compute_artifacts`, `compute_configuration`, `compute_scopes`, `reproduction_attempts` | `/runs/{id}/package`, `/runs/{id}/reproductions`, `/projects/{id}/coverage`. At most 1,000 artifact references and 256 KiB canonical configuration per package, stored as bounded rows/fragments. Code commit, environment, inputs, seeds and outputs are exact typed values. Never execute code or fetch arbitrary URLs; unheld external references stay unverified. Compatible project scope schemas define exact integer/range semantics; generic scopes remain explicitly incomparable. |
+| Drafts/proposals | `saved_drafts(author_id, target_id, base_rev, field_manifest, upload_group, pinned, updated_at)`, `edit_proposals` with immutable diff/dependencies/state | `/drafts` is author-scoped, explicit durable save with local fallback and idempotent status; `/proposals/edits` supports submit/rebase/accept/decline/withdraw. Accept requires every resulting field's current Permission and unchanged base. Status/disclosure/access/rights changes use their own gated workflows. Normal APIs never list another person's drafts; `/ops/drafts/{id}/recover` requires Administrator, reason and audit. Drafts expire after 90 inactive days with an 83-day warning unless pinned, using a separately recorded author lifecycle event. |
+| Navigation | `bookmarks`, `saved_searches`, `follows` keyed by Member; no materialized private result cache | `/me/work`, `/me/bookmarks`, `/me/searches`, `/me/follows`, `/projects/{id}/work`. Bounds: 100 bookmarks, 50 searches, 1–100-character labels. Follows intersect current access, per-event preferences and muting; mandatory policy alerts retain existing exceptions. Recipients union before grouping, so participation plus a follow produces one event/group. |
+| Research releases | `research_releases(id, snapshot_seq, state, manifest_hash, licence_version)`, exact `release_artifacts`, public delivery generation and suppression index | `/releases` create/validate/seal; Administrator publication uses the normal preview/consent gate. A sealed manifest and revision/hash citations are immutable; changes create a successor release. Public release assets live only in the current allowed static manifest and public bucket, and are indexed for urgent suppression. Internal snapshot manifests never enter public output. Offline JSON/HTML/CSL and reproducibility manifests round-trip without executing content. DOI deposits are an explicit external action. |
+
+**Cross-feature invariants.** Every relationship validates the actor and both endpoints before display/write and guards their relevant revisions at commit. New public fields must first enter kernel input/view types and canary generators, never be rendered from raw rows. Citation/derivation/work graph reachability does not grant access; counts and projected edges include only readable/public ends. Deletion leaves permitted tombstones, invalidates referring previews and releases, and retains only permitted opaque suppression evidence. Moves preserve identity and re-evaluate all new relationships and public dependencies atomically. All authoritative new rows and exact versions are in backup/export schemas and upgrade tests. Personal navigation is included only in encrypted backup/personal export; drafts never count as completed research or enter public releases.
+
+**Proposed edits and authorship.** Contributors can improve another Member's work by an attributed proposal, while acceptance still requires the existing field editor. An Administrator cannot use acceptance to change another Member's Log_Summary, Profile, or Dissent_Note. Proposal authorship, personal decision acknowledgements and actual accepting editor remain separate in history. New notification types (`work_assigned`, `work_changed`, `decision_requested`, `decision_changed`, `edit_proposed`, `edit_resolved`, `follow_update`) have migration-defined preference defaults and deduplicate with related review/participation events. Assigned Members may accept/decline only as themselves. Responsibility, lead and acknowledgement do not transfer Ownership.
+
 ## Data Models
 
 ### Conventions
@@ -1012,7 +1049,7 @@ Every state-changing route requires the `X-RF-CSRF` header and an `Origin` of `h
 - Timestamps are ISO 8601 UTC strings with milliseconds, which sort correctly as text.
 - A partial date is stored as text of the form `1943-05-05`, `1943-05`, or `1943`, with an `approx` flag. A range has a start and an end. Sort keys pad a partial date to the start of its period.
 - Booleans are integers 0 and 1.
-- A RichText field is two columns: `{field}` (text) and `{field}_spans` (JSON array of spans).
+- A RichText field is a logical text/spans value backed by an immutable `field_version_id`, bounded text fragments and span manifests. Small legacy `{field}` / `{field}_spans` columns remain readable during expand/contract migration; they do not define the storage format for large accepted fields.
 - Every mutable row has `rev` (optimistic concurrency) and `updated_seq` (the change sequence of its last write).
 - Character limits count Unicode code points; stored text is never normalized.
 
@@ -1046,9 +1083,9 @@ Every state-changing route requires the `X-RF-CSRF` header and an `Origin` of `h
 | | `consent_requests`, `consent_request_items`, `consent_answers`, `consent_withdrawals` | Requests with kind, party, Administrator, message, Contact_Email sent to, times, state, and token hashes; one item per named unit with the proposed values, the Consent_Page snapshot, and its SHA-256; answers per item (immutable rows); withdrawals per item | R51 |
 | Links and reviews | `cross_links` | `id`, `origin_id`, `target_id`, `relation_value_id`, `added_by`, `added_at`, `removed_by`, `removed_at`; partial unique index on (origin, target, label) where not removed; index on `target_id` | R15 |
 | | `review_requests`, `review_addressees` | State, requester, note, reviewer, review note, type (review, publication request, Publication_Proposal), proposal entries, outcome, applied values; addressees by type and id | R17, R23.10 to R23.12, R23.18 |
-| Consent and holds | `publication_consents` | `unit_id`, `member_id`, `values_json`, `source` (request, proposal, dual), `source_id`, `given_at`, `withdrawn_at`, `used_at` | R23.17 to R23.22 |
+| Consent and holds | `publication_consents` | `id`, `unit_id`, `member_id`, `values_json`, `approved_view_hash`, `approved_snapshot_version`, `dependency_manifest_hash`, `source` (request, proposal, dual), `source_id`, `given_at`, `withdrawn_at`, `used_at`; bounded `approval_snapshots` and dependency rows | R23.17 to R23.24 |
 | | `confidentiality_holds` | `unit_id`, `member_id`, `note`, `placed_at`, `lifted_by`, `lifted_at`, `lift_note`, `override_id`; partial unique (`unit_id`, `member_id`) while active | R48 |
-| | `dual_approvals` | `action`, `target_json`, `effect_json`, `proposed_by`, `proposed_at`, `proposal_reason`, `state`, `decided_by`, `decided_at`, `decision_reason`; never deleted while the element exists | R49 |
+| | `dual_approvals` | `action`, `target_json`, `effect_json`, `effect_hash`, `dependency_manifest_hash`, `proposed_by`, `proposed_at`, `proposal_reason`, `state`, `decided_by`, `decided_at`, `decision_reason`; current distinct Active Administrator checks at execution; never deleted while the element exists | R49 |
 | History | `revisions` | See Drizzle excerpt; an `UPDATE` trigger refuses all changes | R22, R39.8, R42.7, R46.27 |
 | | `policy_pages`, `policy_sections` | `page_key`, `section_key`, `text` and spans, `rev`; last change dates | R46 |
 | Activity | `submissions` | `id`, `member_id`, `kind` (member, outside acceptance, bulk import, journal import), `started_at`, `completed_at`, per-kind counts | R18.2, R18.11 |
@@ -1067,9 +1104,20 @@ Every state-changing route requires the `X-RF-CSRF` header and an `Origin` of `h
 | | `outside_submissions` | `id`, `reference` (unique), `type`, `project_id` or `general`, `message`, `name`, `email`, `affiliation`, `page_ref`, `licence_agreed`, `received_at`, `state`, `email_erase_after`, `email_erased_at`, `files_deleted_at`, `contact_review_due_at` | R31, R32, R46.24 |
 | | `contact_reviews`, `submitter_corrections` | Append-only Contact_Reviews (choice, reason, Administrator, time) and corrections (previous name and affiliation, whether the email was erased, reason, Administrator, time) | R32.19 to R32.22 |
 | | `outside_files`, `outside_responses`, `moderation_decisions`, `response_links` | Files per submission or response; responses; decisions (immutable rows); Response_Link token hashes with expiry and use | R32.7, R32.13, R32.14 |
+| Logical fields | `field_versions`, `text_fragments`, `span_manifest_parts`, `field_read_leases` | Immutable text/spans with logical global offsets, bounded physical parts, content hashes and retention references | R4.10, R4.11, R11.10 |
+| Collaboration | `work_items`, `work_assignees`, `work_dependencies`, `work_outcomes`, `question_assessments` | Work and Question lifecycle, current actor/access checks, attributed transitions | R50.9–R50.11, R52 |
+| | `decisions`, `decision_alternatives`, `decision_evidence`, `decision_participants`, `decision_acknowledgements` | Exact-wording acknowledgements, individual responses and supersession | R53 |
+| Evidence | `source_bibliography`, `evidence_citations`, `artifact_derivations`, `compute_packages`, `compute_artifacts`, `compute_configuration`, `compute_scopes`, `reproduction_attempts` | Version/file hashes, locator and scope validation; bounded immutable manifests | R54–R56 |
+| Drafts and proposals | `saved_drafts`, `edit_proposals`, `edit_proposal_events` | Author-private draft retention; revision-bound proposals with atomic authorized acceptance | R57 |
+| Navigation | `bookmarks`, `saved_searches`, `follows` | Personal records, current-access query evaluation and deduplicated recipient union | R58 |
+| Research releases | `research_releases`, `release_artifacts`, `release_artifact_index` | Immutable internal manifest and currently authorized public subset; suppression dependencies | R59 |
+| Permission evidence | `permission_evidence`, `permission_evidence_scope` | Immutable exact scope/use/naming grants and withdrawals, manual or emailed, linked to approved snapshots | R51.9, R51.15–R51.18 |
+| Retry and recovery | `idempotency_results`, `external_operations`, `write_freeze_leases`, `file_read_leases`, `backup_points`, `restore_checkpoints`, `suppression_events` | Actor/digest-bound result identity, uncertain provider effects, leased freeze and authenticated independent recovery inventory | R36.12–R36.17, R60.2, R60.6, R60.8 |
 | Guards | `_g_rev`, `_g_evidence`, `_g_superseding`, `_g_last_admin`, `_g_chain_tip`, `_g_decision_open`, `_g_preview_fresh`, `_g_log_summary_owner`, `_g_dissent_unique`, `_g_frozen`, `_g_access_owner`, `_g_consent_valid`, `_g_hold_free`, `_g_dual_open`, `_g_dual_distinct`, `_g_consent_link_open`, and the other codes in `GUARD_CODES` | One column `x INTEGER NOT NULL` each; never hold rows | |
 
-Central tables in Drizzle:
+The following Drizzle excerpt illustrates the original central row and guard conventions; it is not a complete schema. The table inventory and component contracts above govern the additive field-version, collaboration, approval and recovery migrations. Large text and Revision payloads use immutable version references rather than the excerpt's legacy inline JSON. A schema task must update domain unions, projection types, migration checks and the backup registry together.
+
+Central table conventions in Drizzle:
 
 ```ts
 import { sqliteTable, text, integer, index, uniqueIndex, primaryKey } from 'drizzle-orm/sqlite-core';
@@ -1305,16 +1353,18 @@ type PublicView =
 | External_Party Contact_Emails | Until an Administrator erases the address or the External_Party is deleted (R51.1) |
 | Consent_Requests, Consent_Answers, and withdrawals | As long as the External_Party exists; Consent_Link and Change_Link token hashes deleted 30 days after the link expires (R51.13) |
 | Public_Archive_Exports | Requested: 7 days; scheduled: the 3 most recent complete ones |
-| Internal_Backups | 7 days |
-| D1 Time Travel | 7 days |
+| Internal_Backups | Independent complete points: 14 daily, 8 weekly, 12 monthly; requested staging/incomplete artifacts: 7 days |
+| D1 Time Travel | Provider/profile-specific (dated baseline: Free 7 days, Paid 30); supplementary to independent recovery |
 | Files of permanently deleted Items | Deleted within 24 hours |
 | Member accounts and Profiles | No time limit; Revoked Members stay for attribution |
+| Operational payloads/checkpoints | Reconciled/closed + 30 days; aggregate incident metadata 90 days; scholarly/evidence retention remains separate |
+| Saved_Drafts | Warn at 83 inactive days, expire at 90 unless pinned; includes author recovery metadata |
 | External_Parties named in records | No time limit while records name them |
 
 ### Size and row estimates
 
 - **Text.** The existing journal is about 415 KB, and the requirements plan for at most 50 MB of indexed text. Revisions store previous values of changed fields only, so they grow with edits rather than with content.
-- **D1 sizes.** `rf-core` should stay well under 500 MB for years. The FTS5 index in `rf-search` is roughly 1 to 1.5 times the indexed text. `rf-public` holds about one current version per public unit plus 30 days of history.
+- **D1 sizes.** Capacity is certified against measured 1-, 3- and 5-year growth scenarios, including chunk maps, indexes, revision and approval history, new workflow objects and cleanup; the former unsupported assertion of years below 500 MB is retired.
 - **Rows written per Submission.** A one-Item Submission with a Group_Note writes about 40 rows: units and kind rows, identifier, labels, flags for up to 9 other Members, Notification_Events, Notifications, email batches, activity, outbox, and search documents. At the Expected_Usage_Profile of 100 Items a day, that is about 4,000 rows, under a tenth of the Member write budget.
 - **Monitoring.** D1 storage per database is watched by the 80% alerts (R19.10).
 
@@ -1322,7 +1372,7 @@ type PublicView =
 
 *A property is a characteristic or behavior that should hold true across all valid executions of a system-essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
 
-The prework analysis classified every acceptance criterion. Criteria about Cloudflare, Microsoft 365, timing, layout, and performance are integration, smoke, or example tests (see Testing Strategy). The properties below cover the rest. Overlapping criteria were merged: one validator property covers every field rule, one output-confinement property covers every public channel, one list property covers every Workspace list, and so on. Each property is implemented by one property-based test.
+The original prework classified the earlier acceptance criteria. The review revision adds explicit operational and cross-feature acceptance cases and Properties 109 to 126; current task traceability and release gates, rather than the old prework alone, define their evidence. Criteria about Cloudflare, Microsoft 365, timing, layout, and performance are integration, smoke, or example tests (see Testing Strategy). The properties below cover the rest. Overlapping criteria were merged: one validator property covers every field rule, one output-confinement property covers every public channel, one list property covers every Workspace list, and so on. Each property is implemented by one property-based test.
 
 ### Property 1: Effective_Disclosure follows the ancestor rule
 
@@ -1596,9 +1646,9 @@ For any token, object key, Member status history, purpose, and request time, `rf
 
 ### Property 46: Previews truncate exactly
 
-For any text file, the preview shows exactly the first min(size, 1 MB) bytes with a correct statement of shown and total size, and for any CSV file, the table shows the first row as headers and the next min(rows, 1,000) rows with a correct statement of whether more rows exist.
+For any text file, the preview shows exactly the first min(size, 1 MB) bytes with a correct statement of shown and total size, and for a CSV file, an incremental decoder/parser shows the header and at most 1,000 data rows within the 32 MiB scan, 256 KiB record and 2 MiB parser-buffer limits. It cancels reads at a limit and reports the precise truncation/resource cause without claiming the unscanned row count or buffering the whole file.
 
-**Validates: Requirements 14.3, 14.4**
+**Validates: Requirements 14.3, 14.4, 14.10**
 
 ### Property 47: Threads are trees in posting order
 
@@ -1770,9 +1820,9 @@ For any workspace state, restoring its Internal_Backup into an empty Research_CM
 
 ### Property 75: Package retention and staleness labels
 
-For any set of exports and backups with times and states and any later workspace state, an export or backup is complete exactly when every manifest file is present with its size and checksum, the retained set is the 3 most recent complete scheduled exports plus requested exports younger than 7 days, and an export is labelled as containing material that is no longer public exactly when it holds a unit whose current Effective_Disclosure is lower than exported, the name of a Party now marked Do_Not_Name, or a registered Member's email address.
+For any set of exports and backups with times and states and any later workspace state, an export or backup is complete exactly when every manifest file is present with its size and checksum, public export retention is the 3 most recent complete scheduled exports plus requested exports younger than 7 days, independently verified backups follow the 14 daily/8 weekly/12 monthly tiers with safe successor expiry, staging/incomplete backups expire at 7 days unless incident-quarantined, and an export is labelled as containing material that is no longer public exactly when it holds a unit whose current Effective_Disclosure is lower than exported, the name of a Party now marked Do_Not_Name, or a registered Member's email address.
 
-**Validates: Requirements 35.6, 35.7, 35.10, 36.6, 46.34**
+**Validates: Requirements 35.6, 35.7, 35.10, 36.6, 46.34, 36.3, 36.12**
 
 ### Property 76: Project_Order stays a permutation
 
@@ -1836,13 +1886,13 @@ For any save of a field into which an AI_Draft was placed since its last save, t
 
 ### Property 86: Retention sweeps act on time
 
-For any records with timestamps and states, the sweepers select exactly: uploads started more than 24 hours earlier that belong to no completed Submission or complete Outside_Submission; files of rejected Outside_Submissions and accepted Removal_Requests; Submitter email addresses 90 days after such decisions and within 24 hours of an Erase Contact_Review; network-address counters older than 24 hours; requested exports older than 7 days; and backups older than 7 days; each selected item is removed before its deadline when the hourly sweep runs; and an accepted Outside_Submission is due for Contact_Review exactly when 12 months have passed since its acceptance or its last Keep review while its email is held, with a repeat Reminder for each further 30 days without a review.
+For any records with timestamps and states, the sweepers select exactly: uploads started more than 24 hours earlier that belong to no completed Submission or complete Outside_Submission; files of rejected Outside_Submissions and accepted Removal_Requests; Submitter email addresses 90 days after such decisions and within 24 hours of an Erase Contact_Review; network-address counters older than 24 hours; requested exports older than 7 days; expired staging/incomplete backups and automatic independent points outside their required retention tiers only after successor verification; each selected item is removed before its deadline when the hourly sweep runs; and an accepted Outside_Submission is due for Contact_Review exactly when 12 months have passed since its acceptance or its last Keep review while its email is held, with a repeat Reminder for each further 30 days without a review.
 
 **Validates: Requirements 12.8, 31.8, 32.8, 32.19, 32.20, 32.21, 35.11, 36.3, 46.20, 46.26**
 
 ### Property 87: Reminder and alert schedules
 
-For any timelines, the scheduler creates: Follow_Up_Due Reminders within 24 hours after an Archival_Request becomes due and after each further Follow_Up_Interval, in the Owner's time zone; backup Reminders at each 30-day multiple; Response_Target Reminders at 10, 14, 21, 28, and every further 7 days while no decision exists, with the overdue mark after 14 days; Responsible_Person alerts within 15 minutes of revocation and every 7 days; and the monthly export between 00:00 and 01:00 UTC on the first day of each month.
+For any timelines, the scheduler creates: Follow_Up_Due Reminders within 24 hours after an Archival_Request becomes due and after each further Follow_Up_Interval, in the Owner's time zone; independent recovery-age warnings at 18 hours, RPO breach at 24 hours and daily repeats until resolved; Response_Target Reminders at 10, 14, 21, 28, and every further 7 days while no decision exists, with the overdue mark after 14 days; Responsible_Person alerts within 15 minutes of revocation and every 7 days; and the monthly export between 00:00 and 01:00 UTC on the first day of each month.
 
 **Validates: Requirements 10.3, 35.5, 36.7, 46.24, 46.25, 46.40**
 
@@ -1932,9 +1982,9 @@ For any sequence of access changes by Owners, Administrators, and other Members,
 
 ### Property 102: Publication follows the Consenting_Member's consent
 
-For any Disclosure_Units with Consenting_Members, Publication_Requests, Publication_Proposals with approvals, declines, and withdrawals, and any requested disclosure change, the change is applied exactly when every unit whose own values it widens (at once or with every ancestor treated as Public) either has the acting Administrator as its Consenting_Member or has an unused, unwithdrawn Publication_Consent whose values cover the applied values under the narrowing rule of R23.20; a covered change uses its consent, so the same consent never covers a second change; and a Project's level change never needs consent.
+For any Disclosure_Units with Consenting_Members, Publication_Requests, Publication_Proposals with approvals, declines, and withdrawals, and any requested disclosure change, the change is applied exactly when every unit whose own values it widens (at once or with every ancestor treated as Public) either has the acting Administrator as its Consenting_Member or has an unused, unwithdrawn Publication_Consent whose values and immutable content/dependency snapshot cover the applied output under R23.20, R23.23 and R23.24; a covered change uses its consent, so the same consent never covers a second change; and a Project's level change never needs consent.
 
-**Validates: Requirements 23.17, 23.18, 23.19, 23.20, 23.21, 23.22**
+**Validates: Requirements 23.17, 23.18, 23.19, 23.20, 23.21, 23.22, 23.23, 23.24**
 
 ### Property 103: Confidentiality_Holds block publication until lifted or overridden
 
@@ -1944,9 +1994,9 @@ For any Items with Confidentiality_Holds placed, lifted, and overridden in any o
 
 ### Property 104: Dual_Approvals need two different active Administrators
 
-For any sequence of proposals, approvals, declines, withdrawals, revocations, and Role changes, a Dual_Approval's action takes effect exactly once, only when an active Administrator other than the proposer approves it while it is open and its precondition still holds; a proposal whose precondition has gone lapses without effect; and no action that R49.1 lists takes effect by any other path.
+For any sequence of proposals, approvals, declines, withdrawals, revocations, and Role changes, a Dual_Approval's action takes effect exactly once, only when proposer and approver are both currently Active Administrators, are distinct, and the open proposal's effect digest, dependency snapshot and precondition still match at execution; a proposal whose precondition has gone lapses without effect; and no action that R49.1 lists takes effect by any other path.
 
-**Validates: Requirements 23.22, 47.7, 48.8, 48.9, 49.1, 49.3, 49.4, 49.5, 49.6**
+**Validates: Requirements 23.22, 47.7, 48.8, 48.9, 49.1, 49.3, 49.4, 49.5, 49.6, 49.8**
 
 ### Property 105: Attachment moves keep identity and move whole Version_Chains
 
@@ -1972,13 +2022,121 @@ For any Correspondence, Source, or Attachment whose consent or permission was gr
 
 **Validates: Requirements 51.9**
 
+### Property 109: Logical text fragments preserve valid fields across storage and history
+
+**Validates: Requirements 4.10, 4.11, 11.10**
+
+For any allowed logical text and spans, transport/physical chunk boundaries including one oversized section and multi-byte Unicode do not change text, offsets, identities, rendering, parsing/printing, search phrase positions, historical state, citations, or atomic visibility; encoded pieces and manifests stay inside their budgets.
+
+### Property 110: Mutation retries preserve a single logical result
+
+**Validates: Requirements 28.10, 28.13, 60.2**
+
+For any concurrent retry/lost-response/crash sequence, one actor/key/body commits at most one domain result and logical external-effect identity; same-key replay returns it, a changed body conflicts, other actors cannot inspect it, and uncertain status is never reported as a definite non-save.
+
+### Property 111: Independent recovery points satisfy retention and verification
+
+**Validates: Requirements 36.3, 36.7, 36.12, 36.13, 36.17**
+
+For any snapshot, copy, key availability, verification, failure and retention sequence, only authenticated/decryptable independent complete points count toward RPO, expiry retains the required daily/weekly/monthly coverage, 18/24-hour alarms reflect independent age, and downloaded bytes alone never certify recovery.
+
+### Property 112: Freeze and restore recovery never accepts mixed state
+
+**Validates: Requirements 36.8, 36.14, 36.15, 36.16, 60.5**
+
+For interruptions at every lease, snapshot, preflight and restore checkpoint, a valid snapshot has one sequence and live lease; expiry invalidates it and permits safe writers. Restore skips only owned identical rows, reconciles bootstrap identity, rejects conflicts/unsupported formats, preserves reference/hash/count invariants, and never publishes before suppression reconciliation.
+
+### Property 113: Publication generations never reintroduce suppressed material
+
+**Validates: Requirements 24.16, 24.17, 59.3, 60.6**
+
+For any interleaving of additions, revocations, holds, older job retries, deployment failures and epoch changes, stale generations cannot commit permitted output or reopen containment; removals preempt old work and a missed confirmation enters containment or an explicit unconfirmed incident, including static release artifacts and index generations.
+
+### Property 114: Admission and shedding preserve the certified reserve
+
+**Validates: Requirements 28.1, 28.3, 28.4, 28.5, 28.6, 28.7, 28.8, 28.11, 28.17, 60.7**
+
+For bounded work/admission and accounting sequences, reservations include outstanding work and rejected invocations, optional public work is shed before the certified reserve is spent, budgets reset without reopening contained hosts, static search is not disabled for API exhaustion, and chosen margins are not represented as provider guarantees.
+
+### Property 115: Work transitions retain explicit assignments and outcomes
+
+**Validates: Requirements 52.1, 52.2, 52.3, 52.4, 52.5, 52.6**
+
+For assignment, access, dependency and progress sequences, only current eligible actors change their permitted fields or accept as themselves; dependencies are acyclic, hidden context contributes no output/count, and Done/Cancelled/reopened states keep the required attributed outcomes/reasons.
+
+### Property 116: Question assessments retain versioned evidence and access
+
+**Validates: Requirements 50.9, 50.10, 50.11**
+
+For any Question lifecycle sequence, Answered has a non-blank assessment with versioned supporting evidence, older conclusions persist, reassignment never transfers ownership or read access, and workspace/public context contains only each endpoint allowed to that viewer.
+
+### Property 117: Decisions never infer another Member’s agreement
+
+**Validates: Requirements 53.1, 53.2, 53.3, 53.4, 53.5**
+
+For decision edits, acknowledgements, adoption and supersession, only a participant records their own response; no missing response implies agreement, changed content makes prior acknowledgements earlier-wording evidence, and supersession preserves rationales, dissent and versioned evidence under current access.
+
+### Property 118: Evidence citations retain version identity and safe locators
+
+**Validates: Requirements 54.1, 54.2, 54.3, 54.4, 54.5, 54.6**
+
+For source changes, locator edits, moves, permissions and export/restore, typed locators validate and remain attached to the exact immutable version; legacy source text stays unresolved when no mapping exists, and all displays/counts/metadata contain only permitted endpoints and locator content.
+
+### Property 119: Artifact derivations preserve originals and an authorized DAG
+
+**Validates: Requirements 55.1, 55.2, 55.3, 55.4, 55.5**
+
+For artifact creation, transformation, review, replacement and deletion, original bytes and input/output hashes stay fixed, derivations remain acyclic, corrections create new versions, review and uncertainty remain attributed, and graph traversal never broadens access or substitutes a newer endpoint.
+
+### Property 120: Compute coverage is exact only for compatible verified scopes
+
+**Validates: Requirements 56.1, 56.2, 56.3, 56.4, 56.5, 56.6**
+
+For package versions, outcome changes, scope unions and independent reproductions, exact identifiers/configurations do not round, only compatible completed/verified scopes contribute coverage, incomplete or generic scope never proves full elimination, and manifests preserve inputs/results without executing code or exposing secrets.
+
+### Property 121: Durable drafts recover acknowledged input with author isolation
+
+**Validates: Requirements 57.1, 57.2, 57.3**
+
+For draft writes, lost responses, tab closure, upload expiry, reselection, pinning, inactivity and permission loss, acknowledged server input remains recoverable only to its author or audited authorized recovery, incomplete file handles are not fabricated, and expiry warns before deleting only eligible working drafts.
+
+### Property 122: Proposed edits apply only current authorized diffs
+
+**Validates: Requirements 57.4, 57.5, 57.6**
+
+For proposal submit/rebase/accept/decline/withdraw sequences and concurrent target changes, only an actor currently authorized for every resulting field accepts an unchanged/reviewed base; stale or forbidden changes apply nothing, protected personal wording stays protected, and authorship and the accepting editor remain distinct.
+
+### Property 123: Navigation and follows preserve access and event uniqueness
+
+**Validates: Requirements 58.1, 58.2, 58.3, 58.4, 58.5**
+
+For saved searches, bookmarks, dashboard states, follows, muting and changing access, personal data stays author-scoped, queries recheck access, hidden results/counts are omitted, unavailable saved targets reveal no metadata, and unioned follow/participation recipients get one logical event group.
+
+### Property 124: Research releases preserve manifests and current suppression
+
+**Validates: Requirements 59.1, 59.2, 59.3, 59.4, 59.5**
+
+For release preflight/sealing, content edits and later privacy/rights/hold/naming changes, sealed manifests and version/hash citations stay immutable, changed releases have new IDs, private manifests stay private, and current suppression governs every public historical artifact and offline public export.
+
+### Property 125: Release gates and compatibility evidence cannot be bypassed
+
+**Validates: Requirements 60.1, 60.3, 60.4, 60.5, 60.6, 60.7, 60.8, 60.9**
+
+For release plans, supported schema/format sets, task status changes and maintenance, all leaf dependencies and mandatory evidence are required for the chosen gate, rollout never runs incompatible consumers, known scholarly/evidence references prevent premature cleanup, and unavailable independent recovery or containment prevents the applicable launch.
+
+### Property 126: Permission evidence covers only the exact authorized use
+
+**Validates: Requirements 51.9, 51.15, 51.16, 51.17, 51.18, 23.23, 23.24, 49.8**
+
+For emailed/manual grants, naming, content/file replacement, expiry, withdrawal and approval-principal changes, coverage requires the current exact content/use/evidence and current eligible actors; stale or withdrawn coverage applies no widening, Withheld names without scoped permission become neutral labels, and restore/release preserves these gates.
+
 ## Error Handling
 
 **Principles.**
 
 1. Validate everything before writing, then re-check preconditions inside the batch with guards, so a refusal never leaves a partial write (R4.1, R28.13).
-2. The client always keeps unsaved input: editors and forms mirror their fields into `sessionStorage` for the tab until the input is sent or discarded (R28.10, R31.11).
-3. Public outputs fail closed: when the Publisher is unsure, it leaves material out, and when a removal is late, it raises a System_Alert.
+2. The client always keeps unsaved input: editors and forms mirror metadata/operation keys into `sessionStorage` across reload; explicit Saved_Drafts also persist on the server across tab closure (R28.10, R31.11).
+3. Public outputs fail closed: when the Publisher is unsure, it leaves material out, and when removal cannot be verified by four minutes, it initiates edge Containment and independent alerting.
 4. Every error response has one shape, `{ error, fields?, details? }`, and names the user's own fields, limits, and rules, never internal data.
 
 | Error code | HTTP | Raised when | Client behaviour |
@@ -1993,7 +2151,7 @@ For any Correspondence, Source, or Attachment whose consent or permission was gr
 | `preview_stale` | 409 | A Public_View in the preview changed before confirmation (R23.14) | Recompute the preview |
 | `too_large` | 413 | Payload above 512 KB on a non-staged route | Retry as a staged save |
 | `daily_limit` | 503 | D1 daily rows-read or rows-written limit reached (R28.9) | Show "saving is unavailable until 00:00 UTC" on every page; keep input |
-| `frozen` | 503 | A backup's write freeze is active | Show "saving is paused for a backup"; retry automatically |
+| `frozen` | 503 | A backup's write freeze is active | Show "saving is paused for a backup"; keep the draft, obey the bounded lease Retry-After, and reconcile/retry under the same operation key |
 | `unavailable` | 503 | `rf-submit` budget exhausted (R28.11) | Public pages show the notice from `status.json` |
 | `rate_limited` | 429 | Outside_Submission_Limits reached (R31.4) | State the limit reached |
 | `not_found` | 404 | Unknown or Not_Published unit, invalid Download_Link | Identical body for every case (R24.7, R25.6) |
@@ -2002,12 +2160,12 @@ For any Correspondence, Source, or Attachment whose consent or permission was gr
 
 - When the Workers daily request limit is reached, no Worker answers, so the SPA, which is static and still loads, recognizes the platform's error response and shows the 00:00 UTC notice.
 - `Jobs` objects that hit a daily limit store their cursor, report progress, and resume after 00:00 UTC. This covers imports, Bulk_Imports, exports, backups, and restores (R26.13, R37.13, R36.10).
-- If a daily D1 limit blocks the Publisher while a removal is pending, the Publisher retries every minute and raises a System_Alert. Saves are blocked by the same limit, so no new public material can be added meanwhile. The Member and public budgets (50% and 25%) leave the Publisher a quarter of each allowance, so this should not happen within the usage profiles.
+- If a quota or provider failure blocks a removal, urgent capacity is used first, then Containment is initiated at four minutes and verified within the removal SLO where provider controls are available. An independent alert reports actual verified/unconfirmed status. Reserved fractions alone are not treated as isolation proof; certified distributed-abuse tests cover rejected downloads and operational work.
 
 **Publication.**
 
 - Cloudflare API errors during a deploy are retried with exponential backoff.
-- A pending urgent run raises a "publication lag" System_Alert when its triggering save is 4 minutes old, before the 5-minute limit of R24.11 is missed.
+- A pending urgent run unverified at four minutes initiates Containment and an independent publication-lag alert. Epoch-fenced retries cannot remove containment until the fresh deployment and suppression checks pass.
 - A failed deletion of a public file copy is retried every slice, and R25.7's System_Alert fires if the file is still reachable 5 minutes after the change.
 - A kernel invariant breach (a Public Correspondence without consent, a Public Attachment without permitting rights) is projected as Withheld and raises a System_Alert, because it points to a bug in the save path.
 
@@ -2046,7 +2204,7 @@ PBT applies to this feature: the privacy kernel, the parsers and printers, the s
 
 **Property tests.**
 
-- Each correctness property is implemented by exactly one property-based test that runs at least 100 iterations (`fc.assert(prop, { numRuns: 100 })`). The kernel, parser, and batching properties also run 1,000 iterations nightly. Failing seeds are logged and kept as regression examples.
+- Each numbered property has one owning property-test task/file, with as many independently modeled scenarios and failure cases as needed; this organizational rule does not restrict integration or regression tests. Each property-based test that runs at least 100 iterations (`fc.assert(prop, { numRuns: 100 })`). The kernel, parser, and batching properties also run 1,000 iterations nightly. Failing seeds are logged and kept as regression examples.
 - Each test carries a tag comment in the format `// Feature: research-collab-cms, Property 5: Public outputs contain only Public_View content`.
 - Shared arbitraries in `packages/testing`:
   - `workspaceStateArb`: Project and unit trees with random levels, presentations, Classification_States, Parties with Do_Not_Name flags, Credits, labels, Member emails embedded in text, and a unique canary token in every field;
@@ -2057,7 +2215,7 @@ PBT applies to this feature: the privacy kernel, the parsers and printers, the s
   - `jwtArb`: tokens signed with test keys, plus mutations;
   - `queryArb`: terms with diacritics, "ß" and "ss", phrases, filters;
   - `richTextEditArb`, `partialDateArb`, `fileNameArb`, `usageSeriesArb`.
-- Properties that depend on D1 semantics (28 atomicity, 29 concurrency, 30 status rules with guards, 60 FTS5 matching) run in the workers pool against local D1. The rest run as pure functions.
+- Properties that depend on D1 semantics (28 atomicity, 29 concurrency, 30 status rules with guards, 60 FTS5 matching) run in the workers pool against local D1. Other properties run as pure models where possible and against local workerd when their guarantees depend on D1, R2, leases or a production channel adapter; mandatory staging suites separately certify infrastructure behavior.
 - Reference models are deliberately simple and slow: a naive substring-on-tokens matcher for searches, a character-level model for spans, a brute-force partition for batching, a direct reading of R2.4 and R2.5 for permissions.
 
 **Unit and example tests.** Focus on specific behaviour the properties do not express: state transitions (invitation to activation, logout), component rendering (item page layout, notification opening, chain view), fixed texts (About, Licence, Corrections, Privacy structure), UI flows (upload retry, AI accept and replace, public profile preview), and error mappings. Example tests stay few; properties cover the input space.
@@ -2160,7 +2318,21 @@ PBT applies to this feature: the privacy kernel, the parsers and printers, the s
 5. **Seed data.** Built-in Roles, value sets with Public_Descriptions, Policy_Sections with initial text, the campaign owner as first Administrator and Responsible_Person, and the P1030680 Project.
 6. **Migration.** Rehearse in staging, import in production, classify, and publish.
 
-**Releases.** CI runs lint, type checks, unit and property tests, workers-pool integration tests, and Playwright against staging, then deploys `rf-app`, `rf-dl`, `rf-submit`, and `rf-ops` with Wrangler and applies D1 migrations. A release that changes public templates or Design_System assets enqueues a `site` scope, and the Publisher rebuilds the public site in slices. `rf-site` is never deployed by hand after launch.
+**Releases.** CI runs lint, type checks, unit and property tests, workers-pool integration tests, and Playwright against staging, then follows the expansion/consumer/backfill/switch/contraction protocol below; it does not deploy incompatible Workers before or after an uncoordinated schema migration. A release that changes public templates or Design_System assets enqueues a `site` scope, and the Publisher rebuilds the public site in slices. `rf-site` is never deployed by hand after launch.
+
+### Release assurance, maintenance, and independent operations (R60)
+
+`spec-status.json` (generated by `tools/check-specs.ts` when implemented) maps each leaf task to prerequisites, requirement criteria, property/test paths, acceptance evidence, and gate. The JSON dependency graph in tasks.md is the single scheduling source; milestones refer to its groups and are validated against it. Done means implementation plus recorded acceptance, not existence of a source file. A checked historical task can be reopened with its unmet acceptance cases.
+
+The local environment (Task 50) precedes new workflow development and exposes deterministic identity, mail and AI stubs plus seeded graphs of readable/restricted records and large fields. Walkthroughs exercise team work, archival ingestion/citations, Run reproduction, decisions/disagreement, proposals, draft reload/closure, publication withdrawal under load, and fresh recovery. They use synthetic data until the protected real import rehearsal.
+
+`infra/recovery/` documents independent encrypted destination and key custody; `infra/ops/` configures provider-native or independent external health/backup-age/removal/spend checks whose delivery does not need `rf-core` or the Graph queue. A precreated public-containment edge rule, narrow recovery credential, and operator procedure are stored independently of production application secrets. WAF plan capability/propagation is verified during provisioning; a Free deployment unable to support the required control is not certified for public launch. Containment can return a generic fixed denial during an incident; it need not meet ordinary branded-page presentation, and it never exposes research or blocks the Workspace. If the provider cannot apply either removal or denial, raise an out-of-band incident and retain unconfirmed status; no component claims impossible control of unavailable infrastructure.
+
+The dependency order for a release is: validate compatible schema/readers and evidence, apply additive expansion, deploy compatible consumers, verify and migrate/backfill bounded data, switch feature/read paths, then contract only after the recovery window and old consumers end. A deployment manifest records Worker versions, schema/backup compatibility, Operating_Profile, tests, and prior safe versions. Never roll back a Worker to a schema it cannot read; use the documented compatible rollback or forward recovery.
+
+Maintenance expires reconciled outbox/side-effect payloads after 30 days, closed checkpoints after 30 days, aggregate incident metadata after 90 days, and inactive unpinned drafts after their warned 90-day window. Immutable scholarly revisions, used approval evidence, retained releases, exact-version citations, and deletion/revocation suppression markers are not removed by generic operational cleanup. Idempotency tombstones keep only actor/key/request/result identity for the retained record's life. Every erasure is reflected in recovery suppression; retained encrypted historical backups do not authorize restoration of erased public data.
+
+Team-archive and public-launch gates run the mandatory suites of R60.4 and include operator evidence of independent recovery. Tests of external safety/capacity are required even when a pure property passes. `PUBLIC_CHANNELS` must call real delivery/projection adapters with generated canaries, including actual refusal responses; a constant stand-in alone cannot certify `rf-dl`. Provider tests assert acceptance versus delivery and uncertain outcomes honestly. A failed gate prevents deployment of its scope; the configured provider, backup destination and content licence remain operator inputs rather than implied implementation permission.
 
 ## Requirements Traceability
 
@@ -2201,7 +2373,7 @@ PBT applies to this feature: the privacy kernel, the parsers and printers, the s
 | R33 Rights | Attachment_Service, Disclosure changes | 3, 12, 13, 27, 31, 69, 70 |
 | R34 Consent and naming | Records_Service, Disclosure kernel, Consent_Requests | 10, 12, 13, 14, 23, 27, 107 |
 | R35 Public export | Export_Service | 45, 72, 73, 75, 86, 87 |
-| R36 Backup and restore | Export_Service | 15, 45, 74, 75, 86, 87 |
+| R36 Backup and restore | Independent recovery, bounded leases, versioned restore | 15, 45, 74, 75, 86, 87, 111, 112 |
 | R37 Bulk_Import | Bulk import | 3, 28, 69, 70, 71, 81 |
 | R38 Manifest parser and printer | Bulk import | 68, 69 |
 | R39 Projects | Projects | 2, 14, 19, 23, 33, 49, 54, 65, 76 to 78 |
@@ -2215,8 +2387,17 @@ PBT applies to this feature: the privacy kernel, the parsers and printers, the s
 | R47 Restricted access | Restricted access, Access_Control_Service, Migration_Service, Bulk import | 1, 70, 100, 101, 104 |
 | R48 Confidentiality_Holds | Publication consent, Confidentiality_Holds, and Dual_Approvals | 103, 104 |
 | R49 Dual_Approvals | same | 104 |
-| R50 Research_Questions | Records_Service, Public_Site structure | 106 |
-| R51 Consent_Requests | Consent_Requests, Mailer, `rf-submit` | 5, 107, 108 |
+| R50 Research_Questions | Records_Service, Public_Site structure, collaboration lifecycle | 106, 116 |
+| R51 Consent_Requests | Permission evidence, addressed Consent_Requests, Mailer, `rf-submit` | 5, 107, 108, 126 |
+| R52 Work assignments | Research collaboration components, role map, chunk-aware records | 100, 110, 115 |
+| R53 Decisions | Research collaboration components, history and consent snapshots | 100, 110, 117 |
+| R54 Evidence citations | Research collaboration components, logical text versions and public kernel | 5, 100, 109, 118 |
+| R55 Artifact derivations | Research collaboration components, file identities and graph guards | 5, 100, 119 |
+| R56 Reproducible compute | Research collaboration components, versioned packages and scopes | 100, 109, 120 |
+| R57 Drafts/proposed edits | Research collaboration components, idempotency and role map | 100, 110, 121, 122 |
+| R58 Navigation | Research collaboration components, recipient union and current access | 100, 110, 123 |
+| R59 Research releases | Research collaboration components, Publisher epoch/containment and recovery | 5, 113, 124 |
+| R60 Operational assurance | Certified resource profiles, independent recovery, release assurance | 109 to 114, 125, 126 |
 
 Criteria classified as integration, smoke, or example tests in the prework are covered by the tests listed under Testing Strategy.
 
@@ -2225,30 +2406,30 @@ Criteria classified as integration, smoke, or example tests in the prework are c
 ### Points that the requirements deferred to design
 
 1. **Role_Permission_Map editing (assumption 9).** Stored in D1 with a settings screen for added Roles; the two built-in Roles are fixed.
-2. **Public traffic (assumption 20).** Static assets for every public page and the public search index; a public R2 bucket for files; a WAF block rule and a budget gate for the one public API.
+2. **Public traffic.** Static assets/R2 remain; optional API admission, provider-level accounting, tested edge shedding and a certified bounded Abuse_Profile replace an unlimited-traffic guarantee. Static search stays available on budget exhaustion (R28.5–R28.7, R28.11).
 3. **Export assembly (assumption 19).** `Jobs` objects build packages in R2 in slices and `rf-dl` streams them as tar volumes; no browser assembly is needed. Restore is automated and resumable.
 4. **AI model (assumption 28).** `@cf/google/gemma-4-26b-a4b-it`, with `@cf/meta/llama-3.1-8b-instruct-fp8-fast` as fallback, through the AI binding only.
 5. **Visual identity (assumption 42).** An editorial identity led by Fraunces, with Inter for the interface, JetBrains Mono for code and ciphertext, STIX Two for coverage and mathematics, light and dark token sets, and eight contrast-checked Project_Accents.
 6. **Old journal site (assumption 18).** helut.org is offline, so there is no coexistence period, no withdrawal step, and no redirect map.
 7. **Public search matching.** Words of two or more characters match whole words or word starts, as in Member search; one-character words match whole words only, to keep the static index small.
-8. **Consistent backups.** A write freeze of about a minute while the backup reads `rf-core`.
+8. **Consistent backups.** A bounded leased snapshot, authenticated versioned packages, independent encrypted copies, tiered retention and quarterly fresh restores (R36.12–R36.17).
 9. **Character counting.** Every character limit counts Unicode code points.
 
 ### Open questions
 
 1. **Plain-text email part (R45.21).** The Graph JSON request that allows `saveToSentItems: false` (R20.24) carries a single HTML body, so the plain-text version relies on Exchange Online's conversion for external recipients. Emails are written so that this conversion shows every link as its full address, but the Research_CMS does not write the plain-text part itself, and recipients inside the tenant may get HTML only. MIME submission would let the Research_CMS write both parts but always saves a copy to Sent Items. Is the conversion acceptable?
-2. **Residual copies in the sending mailbox (R20.24).** With `saveToSentItems: false`, Exchange can still keep a copy in the hidden Recoverable Items folder until the Managed Folder Assistant purges it. The design turns single item recovery off and sets the shortest retention. Should the Privacy page state this residual retention, or is a different provider preferred?
-3. **Public search under an exhausted budget (R28.11).** Public search in this design uses no Worker request and no D1 read, so switching it off when the Public_Traffic_Budget is used up protects nothing. The design follows R28.11 as written. Should R28.11 drop public search from the features that are switched off?
+2. **Resolved in the review revision.** Residual sending-mailbox retention is disclosed and staging-verified; saveToSentItems is not represented as erasing all provider records (R20.24).
+3. **Resolved in the review revision.** Static public search stays available when optional API budgets are exhausted (R28.11).
 4. **Attachments the journal does not reference (closed, October 2026).** The six metadata files that the journal does not reference are imported under the Project's Unassigned_Attachments_Source with their provenance recorded as unknown, and Members move them later (R26.15, R12.12). The journal file that the metadata does not describe is still reported by the dry-run.
 5. **Content on helut.org (closed).** helut.org is offline, so no journal content is public there and nothing needs withdrawing.
-6. **Download_Links and R1.3.** `dl.researchforce.org` authorizes requests by the Download_Link token that R25.5 describes, not by an Access assertion, so links work without login as R25.5 requires. Is this the intended reading of R1.3 for file delivery?
+6. **Resolved in the review revision.** Download_Links are scoped bearer capabilities, an explicit exception to assertion-based Workspace authentication; they grant neither API nor search access (R1.3, R25.5).
 7. **AI drafting default.** Workers AI had a cross-tenant exposure in one model in August and September 2026; the chosen model was not affected. Should the AI_Drafting_Setting still start On?
-8. **Not-found page on the file host (R45.1).** A stale link to a file that is no longer public shows R2's generic not-found page on `files.researchforce.org`, because Custom Error Rules need a paid zone plan, which would exceed R28.4's budget. Is this exception acceptable?
-9. **Durable Object CPU on the Free plan.** The documentation is ambiguous between 10 ms and 30 seconds per invocation. The design assumes 10 ms; staging will measure it, and larger slices would only make jobs faster.
-10. **Bulk_Import pace.** With 100,000 D1 rows written per day for the whole account and an import allowance of 30,000, a Bulk_Import of several thousand Items with Attachments takes several days. Is that acceptable, or should large imports use a temporary Workers Paid month?
-11. **Write freeze for backups.** Saving pauses for about a minute while an Internal_Backup is taken. Is that acceptable?
+8. **Resolved in the review revision.** Ordinary public pages retain the Design_System; the R2 file host may use its generic unknown-file response, and incident containment may use a fixed edge denial. Neither exception may reveal private data.
+9. **Resolved in the review revision.** Resolved against dated provider documentation: ordinary Free Workers and Durable Objects have different CPU budgets; D1 invocation batch accounting is separate from internal statement budgets. Certify the selected Resource_Profile.
+10. **Resolved in the review revision.** Import pace follows the selected certified Operating_Profile. Paid_Standard is recommended for production but is enabled only by explicit operator budget/configuration; queues pause safely within a Free_Qualified envelope.
+11. **Resolved in the review revision.** The bounded renewable lease, 120-second snapshot budget, invalidation on expiry, and break-glass recovery replace an indefinite/about-a-minute freeze (R36.14).
 12. **Item_Identifier format.** Twelve random characters in groups of four, such as `K7QM-3XRW-9DPA`. Is this format acceptable for citations?
-13. **Open questions carried over from requirements.md.** The Content_Licence (question 1), naming of outside parties in Withheld lines (question 2), and the size of the curator's material (question 4) remain open; the curator expects a lot of material, brought in stages (research notes and source lists first, then correspondence they may share, then the larger scans). Retention of accepted Submitters' data (question 3) is closed by the yearly Contact_Review. The design treats the licence as configuration, so an answer needs no redesign.
+13. **Resolved in the review revision.** Content_Licence, actual import volume, recovery destination/key custody and operator spending approval remain installation inputs. Withheld external names now require element-scoped permission; accepted submitter contact retention remains the yearly review.
 14. **Restricted access and Administrators.** Administrators can read every Restricted Research_Item (R47), so a Restricted Topic keeps a discussion from the other Contributors but not from Administrators. If the team later wants discussions that Administrators cannot read, that is a requirements change, and the backup and moderation duties of Administrators would need rethinking.
 
-If any of these answers changes a requirement, the requirements document can be revised before the task plan is written.
+The revised requirements are normative. Remaining installation decisions block only their applicable launch gates; they do not authorize an agent to invent a licence, purchase services, publish research, or weaken a privacy rule.
