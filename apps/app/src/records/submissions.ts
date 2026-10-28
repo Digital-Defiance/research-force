@@ -41,7 +41,7 @@ export function addSubmission(batch: GuardedBatch, start: SubmissionStart): Guar
  * other Members (R18.1, R18.2, R18.8). Imports that must not flag use their own entry (R26.9).
  */
 export function completeSubmission(batch: GuardedBatch, id: ULID, now: Timestamp): GuardedBatch {
-  return announceSubmission(batch.update(submissions, { completedAt: now }, eq(submissions.id, id)), id);
+  return announceSubmission(batch.update(submissions, { completedAt: now }, eq(submissions.id, id)), id).outbox('search', `submission:${id}`);
 }
 
 export interface IdentifierSource { (): { readonly identifier: string; readonly registryKey: string } }

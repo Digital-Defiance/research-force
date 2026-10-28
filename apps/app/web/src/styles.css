@@ -139,3 +139,9 @@ body {
 .rf-picker [aria-selected='true'] {
   background: var(--rf-colour-surface-raised);
 }
+
+.rf-main mark {
+  background: var(--rf-colour-surface-raised);
+  color: inherit;
+  font-weight: var(--rf-font-weight-semibold);
+}

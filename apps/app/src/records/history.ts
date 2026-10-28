@@ -197,7 +197,7 @@ export async function withdrawItem(c: Context<ApiEnv>, item: LoadedItem, body: u
           .update(findings, { supersededById: null }, eq(findings.unitId, base.id));
       }
     },
-    outbox: [['publish', `unit:${base.id}`]],
+    outbox: [['publish', `unit:${base.id}`], ['search', `unit:${base.id}`]],
   });
   return { saved: true, reasonPublic };
 }

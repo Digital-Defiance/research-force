@@ -683,23 +683,24 @@ Where a task in an earlier milestone produces something that a later task delive
     - _Requirements: 2.14, 20.9, 20.11, 20.24_
 
 - [ ] 28. Build Member search
-  - [ ] 28.1 Implement the search indexer in `apps/app/src/search/indexer.ts`
+  - [x] 28.1 Implement the search indexer in `apps/app/src/search/indexer.ts`
     - A permanent `Jobs` instance named `indexer` draining the `search` outbox topic within seconds; one document per Item and Entry_Section, with Research_Item free-text and name fields, Attachment title, Item_Identifier, caption, Origin, and file name (never file contents), Dissent_Note documents pointing at their Research_Item with author and withdrawal marker, withdrawn and superseded markers, incomplete Submissions flagged, deleted Items removed, and creation sort keys
+    - Done as `search/read.ts` (documents of a Research_Item read from rf-core), `search/indexer.ts` (rf-search writes, keyed by creation time), and the `indexer` role of `Jobs`. Outbox rows are `unit:`, `root:`, or `submission:` scopes and re-index the whole Research_Item, so saves, replies, access resets, and `completeSubmission` add a `search` row beside their `publish` row. Tasks 30, 37, and 42 add rows where they write units. The Credit filter covers Members; outside and imported Credit names are searchable text only.
     - _Requirements: 21.1, 21.5, 21.6, 42.13_
-  - [ ] 28.2 Implement queries in `apps/app/src/search/query.ts` and `GET /search`
+  - [x] 28.2 Implement queries in `apps/app/src/search/query.ts` and `GET /search`
     - Shared validation; FTS5 expressions with `"word"*` terms, quoted phrases, and "ß"/"ss" expansion capped at 16 alternatives; own-title matches first, then the rest, newest first, in pages of 20; filters by root kind, Credit person, current Specialty holders, own Disclosure_Level, Projects, and an inclusive creation date range in the viewer's zone
     - Results with kind, title (the Root_Item's for sections and Replies), Credit, creation date, markers, Disclosure_Level and Effective_Disclosure, Project name, and excerpts of at most 300 characters located in the stored text with their labels and highlighted terms; Dissent_Note matches marked with the author; "no result matched" when empty
     - Matches are filtered with the `canRead` fragment on each document's Research_Item before ranking and paging, so no result, count, or excerpt reveals a Restricted Research_Item to a Member outside its Access_List; Restricted results show the Restricted mark
     - _Requirements: 21.2, 21.3, 21.4, 21.5, 21.7, 21.8, 21.9, 23.9, 39.14, 39.15, 42.13, 47.4, 47.11_
-  - [ ] 28.3 Build the search screen in `apps/app/web/src/search/`
-    - Flags (Task 25): show `FlagMark` from `apps/app/web/src/activity/activity.tsx` on entries, read as the page opened them with `useFlagSnapshot`, and call `useRecordViews` with the Items the page opens.
+  - [x] 28.3 Build the search screen in `apps/app/web/src/search/`
+    - Done with one change: results carry the viewer's flag (read from `flags` for the Item), so `useRecordViews` is not called on the search page; opening a result records its view. Flags: show `FlagMark` from `apps/app/web/src/activity/activity.tsx` on entries, read as the page opened them with `useFlagSnapshot`, and call `useRecordViews` with the Items the page opens.
     - Query form and filters; after 10 seconds without a response, "search is unavailable", with the 00:00 UTC note for daily limits; query and filters kept as entered
     - Restricted results show `RestrictedMark` from `apps/app/web/src/access/access.tsx`, and result lists offer bulk access changes through its `useSelection` and `BulkAccess` (R47.11, R47.14)
     - _Requirements: 21.9, 21.10_
-  - [ ]* 28.4 Write property test for Member search
+  - [x]* 28.4 Write property test for Member search
     - **Property 60: Member search returns exactly the matching units**
     - **Validates: Requirements 21.1, 21.3, 21.4, 21.5, 21.8, 42.13**
-  - [ ]* 28.5 Write property test for search excerpts
+  - [x]* 28.5 Write property test for search excerpts
     - **Property 61: Search excerpts are bounded, highlighted, and labelled**
     - **Validates: Requirements 21.7, 30.5, 30.13**
 

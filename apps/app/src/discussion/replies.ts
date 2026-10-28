@@ -61,7 +61,8 @@ export async function postReply(c: Context<ApiEnv>, body: unknown): Promise<ULID
     id, unitType: 'reply', projectId: parent.projectId, rootId: parent.rootId, parentId: input.parentId, position: ORDINARY_REPLY_POSITION,
     ownerId: actor, credit: [{ member: actor }], submissionId, createdAt: now,
   }).insert(replies, { unitId: id, text: text.text, textSpans: [...text.spans], isGroupNote: false })
-    .outbox('publish', `unit:${id}`);
+    .outbox('publish', `unit:${id}`)
+    .outbox('search', `unit:${id}`);
   announceSubmission(batch, submissionId);
   notifyReply(batch, id, submissionId);
   notifyMentions(batch, mentioned, parent.rootId, submissionId, { replyId: id });

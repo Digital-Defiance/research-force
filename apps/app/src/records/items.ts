@@ -326,7 +326,7 @@ export async function createItem(c: Context<ApiEnv>, kind: ItemKind, body: unkno
     rules.write?.(batch);
     announceSubmission(batch, submissionId);
     notifyMentions(batch, mentioned, id, submissionId);
-    batch.outbox('publish', `unit:${id}`);
+    batch.outbox('publish', `unit:${id}`).outbox('search', `root:${id}`);
   }, { accountant: c.get('accountant') });
   return id;
 }
@@ -435,7 +435,7 @@ export async function editItem(c: Context<ApiEnv>, current: LoadedItem, body: un
       rules.write?.(batch);
       notifyMentions(batch, mentioned, base.id, null);
     },
-    outbox: [['publish', `unit:${base.id}`]],
+    outbox: [['publish', `unit:${base.id}`], ['search', `unit:${base.id}`]],
   });
   return true;
 }

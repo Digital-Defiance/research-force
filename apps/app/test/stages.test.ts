@@ -159,7 +159,7 @@ describe('staged edits of Journal_Entries', () => {
     expect(await rows(parted.id)).toEqual(await rows(whole.id));
     expect(await world.core().prepare('SELECT count(*) AS n FROM units WHERE id = ?1').bind(p1).first('n')).toBe(0);
     expect(await world.core().prepare('SELECT count(*) AS n FROM entry_sections WHERE unit_id = ?1').bind(p1).first('n')).toBe(0);
-    const published = async (id: string) => world.core().prepare("SELECT count(*) AS n FROM outbox WHERE scope = 'unit:' || ?1").bind(id).first('n');
+    const published = async (id: string) => world.core().prepare("SELECT count(*) AS n FROM outbox WHERE topic = 'publish' AND scope = 'unit:' || ?1").bind(id).first('n');
     expect(await published(parted.id)).toBe(2);
     expect(await published(parted.id)).toBe(await published(whole.id));
     expect(await staged()).toBe(0);

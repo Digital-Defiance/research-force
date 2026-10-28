@@ -265,6 +265,7 @@ async function commit(c: Context<ApiEnv>, result: Plan, confirmation: string | u
   ]);
   notifyAdministrators(batch, restricting.map((item) => item.id), { change: 'access', level: 'restricted' });
   batch.outboxMany('publish', changed.filter((item) => item.restricting || item.resets.length > 0).map((item) => `unit:${item.id}`));
+  batch.outboxMany('search', changed.filter((item) => item.resets.length > 0).map((item) => `root:${item.id}`));
   await batch.commit(c.get('accountant'));
   return preview;
 }

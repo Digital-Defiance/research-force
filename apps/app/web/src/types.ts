@@ -200,3 +200,19 @@ export interface NotificationEntry {
   readonly alert: { readonly key: string; readonly detail: unknown } | null;
 }
 export interface NotificationPage { readonly notifications: readonly NotificationEntry[]; readonly next: string | null }
+
+/** The filters and cursor of a Member search (R21.5). */
+export interface SearchFilters {
+  readonly q: string;
+  readonly kind?: string | undefined; readonly person?: string | undefined; readonly specialty?: string | undefined; readonly level?: string | undefined;
+  readonly project?: string | undefined; readonly from?: string | undefined; readonly to?: string | undefined;
+}
+export interface ExcerptLabelView { readonly kind: 'quote' | 'paraphrase' | 'source_reported'; readonly caption: string }
+export interface ExcerptPieceView { readonly text: string; readonly highlight?: true; readonly label?: ExcerptLabelView }
+export interface SearchResultView {
+  readonly id: string; readonly rootId: string; readonly unitType: string; readonly kind: ItemKind; readonly title: string; readonly credit: readonly string[];
+  readonly createdAt: string; readonly withdrawn: boolean; readonly superseded: boolean; readonly level: string; readonly effective: string; readonly restricted: boolean;
+  readonly flag: FlagKind | null; readonly project: { readonly id: string; readonly name: string }; readonly dissent?: { readonly author: string };
+  readonly excerpt: { readonly pieces: readonly ExcerptPieceView[]; readonly cutBefore: boolean; readonly cutAfter: boolean };
+}
+export interface SearchPageView { readonly results: readonly SearchResultView[]; readonly next: string | null }

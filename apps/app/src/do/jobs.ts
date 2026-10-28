@@ -7,6 +7,7 @@ import { isDailyLimitError } from '../api/errors';
 import type { Env } from '../env';
 import { createLogger } from '../log';
 import { drainOutbox } from '../outbox';
+import { drainSearch } from '../search/indexer';
 
 export type JobType = typeof JOB_TYPES[number];
 type JobState = typeof JOB_STATES[number];
@@ -47,7 +48,7 @@ export function resumeAfterDailyLimit(nowMs: number): number {
 const jobIdOf = (scope: string): string | undefined => /^job:(.+)$/u.exec(scope)?.[1];
 
 interface StoredJob {
-  readonly role: 'dispatcher' | 'job';
+  readonly role: 'dispatcher' | 'indexer' | 'job';
   readonly id: string;
   readonly type: JobType | null;
   readonly params: JsonValue;
@@ -84,10 +85,11 @@ export class Jobs extends DurableObject<Env> {
       state TEXT NOT NULL, cursor TEXT, progress TEXT, paused_until INTEGER, mirrored INTEGER NOT NULL DEFAULT 1)`);
   }
 
-  /** The topic owner's kick: drain the `jobs` topic. The search indexer's rows stay pending until Task 28.1. */
+  /** The topic owner's kick: the `dispatcher` instance drains the `jobs` topic and the `indexer` instance the `search` topic. */
   async kick(topic: OutboxTopic): Promise<void> {
-    if (topic !== 'jobs') return;
-    this.ctx.storage.sql.exec("INSERT OR IGNORE INTO job_state (only, role, id, state) VALUES (1, 'dispatcher', 'dispatcher', 'running')");
+    if (topic !== 'jobs' && topic !== 'search') return;
+    const role = topic === 'jobs' ? 'dispatcher' : 'indexer';
+    this.ctx.storage.sql.exec("INSERT OR IGNORE INTO job_state (only, role, id, state) VALUES (1, ?, ?, 'running')", role, role);
     await this.#wake(Date.now());
   }
 
@@ -118,6 +120,7 @@ export class Jobs extends DurableObject<Env> {
     const stored = this.#load();
     if (!stored) return;
     if (stored.role === 'dispatcher') await this.#dispatch();
+    else if (stored.role === 'indexer') await this.#index();
     else await this.#runSlice(stored);
   }
 
@@ -133,6 +136,16 @@ export class Jobs extends DurableObject<Env> {
       if (more) await this.ctx.storage.setAlarm(Date.now());
     } catch (error) {
       // At a daily limit the next one-minute cron kick tries again; anything else lets the platform retry the alarm.
+      if (!isDailyLimitError(error)) throw error;
+    }
+  }
+
+  /** Apply a slice of the `search` topic; more rows, or a failure that is not a daily limit, run again at once or after the cron kick. */
+  async #index(): Promise<void> {
+    try {
+      const { more } = await drainSearch({ core: this.env.RF_CORE, search: this.env.RF_SEARCH }, new Date().toISOString() as Timestamp);
+      if (more) await this.ctx.storage.setAlarm(Date.now());
+    } catch (error) {
       if (!isDailyLimitError(error)) throw error;
     }
   }
