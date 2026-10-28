@@ -2,7 +2,7 @@
 
 ## Overview
 
-ResearchForce (the Research_CMS in requirements.md) is a private Workspace for an informal research group together with a public research archive at researchforce.org. This document designs the system that Requirements 1 to 50 describe. It runs on Cloudflare free plans and sends email through the campaign owner's existing Microsoft 365 tenant. A reference such as R23.6 means Requirement 23, criterion 6. The section "Requirements Traceability" maps every requirement to the design sections and correctness properties that cover it.
+ResearchForce (the Research_CMS in requirements.md) is a private Workspace for an informal research group together with a public research archive at researchforce.org. This document designs the system that Requirements 1 to 51 describe. It runs on Cloudflare free plans and sends email through the campaign owner's existing Microsoft 365 tenant. A reference such as R23.6 means Requirement 23, criterion 6. The section "Requirements Traceability" maps every requirement to the design sections and correctness properties that cover it.
 
 ### Product and installation boundary
 
@@ -42,6 +42,7 @@ Inside the team, a second, independent setting decides who can read a Research_I
 | Design_System | One token set and one markup definition (view functions that build a neutral element tree), rendered to strings for static outputs and to React elements in the Workspace; Fraunces with fallback faces for full character coverage; Temml for MathML | Same components everywhere; CPU-cheap static rendering | R45 |
 | Restricted access | `access_level` on `research_items` and an `access_grants` table; one `canRead(member)` SQL fragment joined into every Workspace read and every per-Member insert; restricting sets every own level under the item to Not_Published in the same batch | One predicate for every read path; lifting a restriction can never republish anything | R2.8, R47 |
 | Consent, holds, and overrides | `publication_consents`, `confidentiality_holds`, and `dual_approvals` tables; consent, hold, and restriction checks added to the kernel's `checkGates`, so previews and applies share them | The same gate code serves every path that widens a Public_View | R23.17 to R23.22, R48, R49 |
+| Emailed consent | Consent_Requests reuse the Response_Link pattern: a token in the URL fragment, a static page that records nothing until the person submits, and `rf-submit` endpoints behind Turnstile; the page shows a stored snapshot of the proposed Public_View, which also limits what the consent covers | No accounts for outside people; mail scanners cannot answer for them; the archive keeps exactly what each person agreed to | R51 |
 | Parsers | Pure TypeScript Journal_Parser/Printer and Manifest_Parser/Printer that keep source text verbatim; run in the Administrator's browser during imports and in tests | Exact round trips; no parsing of megabytes inside a 10 ms Worker | R27, R38 |
 
 ### Research findings that shaped the design
@@ -65,7 +66,7 @@ Facts measured in the existing material (no content is reproduced here): the jou
 
 ### Scope
 
-All of Requirements 1 to 50 are in scope. The "Not included" list of requirements.md stays out of scope: automatic Run submission by compute rigs, a live public data API, virus scanning of outside files, per-Project membership and Project deletion, AI drafting of other fields, public Policy_Page history, donation features, a manual colour-scheme switch, and profile photographs. The design records the group's chosen policies; it is not legal advice.
+All of Requirements 1 to 51 are in scope. The "Not included" list of requirements.md stays out of scope: automatic Run submission by compute rigs, a live public data API, virus scanning of outside files, per-Project membership and Project deletion, AI drafting of other fields, public Policy_Page history, donation features, a manual colour-scheme switch, and profile photographs. The design records the group's chosen policies; it is not legal advice.
 
 ## Architecture
 
@@ -345,6 +346,7 @@ The Role_Permission_Map is stored in `rf-core` (`roles`, `role_permissions`). Th
 | `consent.propose` (send a Publication_Proposal) | no | yes | (R23.18) |
 | `dual.propose`, `dual.approve`, `dual.decline` | no | yes | the approver differs from the proposer (R49.3, R49.4) |
 | `attachment.move` | own Attachments | any Attachment | widening a Public_View needs an Administrator and the gates; leaving a Restricted item follows `access.widen` (R12.14, R12.15) |
+| `consent.request` (send, remind, cancel Consent_Requests), `party.contact` (record or erase a Contact_Email) | no | yes | the Owner-consent, Restricted, and hold checks of R51.3 apply |
 
 Read access is not a map Permission. Every active Member, in every Role, reads every Project, Profile, and the Moderation_Queue, and reads every Item, Entry_Section, Dissent_Note, Revision, Attachment file, Cross_Link, and Review_Request of a Research_Item that the Member Can_Read (R2.8, R47); see "Restricted access" below. A request that needs several Permissions is checked for all of them before any statement runs, so a refusal changes nothing (R2.7). The "at least one active Administrator" rule is a guard statement inside the batch that changes a Role or Member_Status (R2.11), which also covers two Administrators demoting each other at the same moment.
 
@@ -382,7 +384,7 @@ All Research_Items, Entry_Sections, Attachments, Replies, and Dissent_Notes are 
 3. **Build the batch:** guard statements, the change-counter increment, the writes, one Revision per Revision_Kind involved, automatic consequences (below), Mention and other Notification_Events, flags, the Activity_Feed entry, and outbox rows for the Publisher and the search indexer.
 4. **Commit** with `batch()`. A guard failure aborts the whole batch, and the API maps it to 409 (conflict) or 422 (rule).
 
-**Guards.** D1 runs a batch as one transaction but has no interactive transactions, so each precondition is re-checked inside the batch. A guard is `INSERT INTO _g_<code>(x) SELECT NULL WHERE NOT (<condition>)` into a one-column table declared `x INTEGER NOT NULL`. When the condition holds, nothing is inserted; when it fails, the NOT NULL violation aborts the batch, and the error names the table, which tells the API which rule failed. Guard codes include `rev` (optimistic concurrency), `evidence` (R5.3, R8.2), `superseding` (R5.4, R5.9), `last_admin` (R2.11), `chain_tip` (R13.7), `decision_open` (R32.16), `preview_fresh` (R23.14), `log_summary_owner` (R41.4), `dissent_unique` (R42.2), `access_owner` (R47.7), `consent_valid` and `hold_free` (R23.17, R48.4), and `dual_open` and `dual_distinct` (R49.3, R49.4).
+**Guards.** D1 runs a batch as one transaction but has no interactive transactions, so each precondition is re-checked inside the batch. A guard is `INSERT INTO _g_<code>(x) SELECT NULL WHERE NOT (<condition>)` into a one-column table declared `x INTEGER NOT NULL`. When the condition holds, nothing is inserted; when it fails, the NOT NULL violation aborts the batch, and the error names the table, which tells the API which rule failed. Guard codes include `rev` (optimistic concurrency), `evidence` (R5.3, R8.2), `superseding` (R5.4, R5.9), `last_admin` (R2.11), `chain_tip` (R13.7), `decision_open` (R32.16), `preview_fresh` (R23.14), `log_summary_owner` (R41.4), `dissent_unique` (R42.2), `access_owner` (R47.7), `consent_valid` and `hold_free` (R23.17, R48.4), `dual_open` and `dual_distinct` (R49.3, R49.4), and `consent_link_open` (R51.6, R51.12).
 
 **Optimistic concurrency.** Units, Projects, Policy_Pages, Profiles, and Moderation_Decision state carry a `rev` integer. An edit sends the `rev` it started from, and the `rev` guard rejects it when another save came first. The 409 response lists the Revisions saved since, with the editing Member and time, and the editor keeps the unsaved input (R4.9, R22.10, R42.16, R46.28).
 
@@ -679,6 +681,20 @@ The kernel also has defensive rules for states that the save path makes impossib
 
 **Dual_Approvals.** `dual_approvals (id, action, target_json, effect_json, proposed_by, proposed_at, proposal_reason, state, decided_by, decided_at, decision_reason)` with `action` one of `hold_override`, `access_widen`, `consent_on_behalf` (R49.1) and `state` one of `open`, `approved`, `declined`, `withdrawn`, `lapsed`. Proposing creates Review_Requested events for every other active Administrator and, for a Hold_Override, Item_Update events for the placer and the Owner (R48.8, R49.2). Approving runs the action's own batch with the `dual_open` guard (still open) and the `dual_distinct` guard (approver differs from proposer), plus the action's preconditions: the hold is still active, or the Owner or Consenting_Member is still Revoked (R49.3, R49.4). A proposal whose precondition has gone is set to `lapsed` when it is next read or decided. Rows are never deleted while their element exists and are included in Internal_Backups (R49.7). With fewer than two active Administrators the approve button is disabled with the explanation (R49.6).
 
+### Consent_Requests (R51)
+
+People outside the team answer by email, with no account. The design reuses the Response_Link pattern: a random token in the URL fragment, only its SHA-256 stored, a static page on the Public_Site, and `rf-submit` endpoints behind the `Budget` gate and Turnstile.
+
+**Sending (R51.2 to R51.4).** `POST /consent-requests/preview` takes the External_Party, the kind (`publication` or `rights`), 1 to 50 units with their proposed values, and the message. It runs the checks of R51.3 (Restricted roots through `canRead`'s data, active holds, Owner consent through `publication_consents` as in "Publication consent", the Contact_Email, and at most 5 requests per Party in 30 days), then renders, with `public-render` and the kernel, each unit's Public_View under the proposed values and every other value as it stands. That rendering is the Consent_Page snapshot: plain HTML from the public templates plus, for publication requests, the Party's name as it would appear. For rights requests the snapshot holds the Attachment's or Source's public fields and file name, never the file. The preview returns the email text, the snapshots, and a preview token over their hashes. `POST /consent-requests` with that token stores the request, one `consent_request_items` row per unit with the snapshot and its SHA-256, the token hash, and `expires_at` (sending plus 30 days); sets Consent_Status Requested on each named Correspondence for that Party unless Granted; and queues the email through the `Mailer` as a non-Member email, counted against the Recipient_Cap.
+
+**Answering (R51.5 to R51.8, R51.12).** The `/consent` page reads the token from the fragment and calls `POST /v1/consent/view`, which returns the stored snapshots and answer options only for an open, unexpired, unanswered request, and otherwise the one fixed "no longer valid" response; viewing writes nothing, because mail scanners open links. `POST /v1/consent/answer` needs a Turnstile token, the answers for every item, an optional comment, and optional Generic_Label. Its batch, built by `packages/db/src/consent/answer.ts`, starts with the `consent_link_open` guard and then writes the `consent_answers` rows; the Consent_Status, Do_Not_Name, Generic_Label, and Rights_Status changes, each with a Revision attributed to the requesting Administrator and naming the Consent_Answer; the downgrades of R33.5 and R34.3 when a Public unit loses its consent or permission; Item_Update events for the requesting Administrator and each Owner; a `publish` outbox row when a Public_View changes; and the confirmation email with a Change_Link valid for 12 months. The snapshot stays the evidence of what the person saw.
+
+**What a consent covers (R51.9).** A Consent_Status set to Granted or a Rights_Status set to Permission_Granted through a Consent_Answer records the answer's item id. The disclosure gates treat such a consent as covering a change only when `widens(snapshotView, after, unit)` is false, using the kernel's widening test with every ancestor treated as Public; otherwise the change is refused with the element, the answer, and an offer of a new request. Values set by hand carry no answer id and are not limited.
+
+**Withdrawal, reminders, expiry (R51.10, R51.11).** `/consent/change` and `POST /v1/consent/change` work the same way with the Change_Link token, writing `consent_withdrawals` rows and the same status changes and downgrades; Do_Not_Name stays on. The hourly sweep sends the one reminder at 14 days, marks requests expired at 30 days, and deletes token hashes 30 days after their links expire. Administrators cancel open requests with `POST /consent-requests/{id}/cancel`.
+
+**Confinement.** The Consent_Page is the only public channel that shows a proposed rather than a current Public_View, and it shows it only to the holder of an addressed token. `packages/testing/src/public-channels.ts` registers it as an addressed channel: Property 5 checks it against the snapshot of its own request instead of the current Public_Views, and Property 107 checks that no other content appears.
+
 ### Publisher and Public_Site generation (R24, R25.3, R25.7, R29, R30.7, R30.8, R34.6, R40, R45.3, R45.4, R46.7, R46.30, R46.34, R46.38)
 
 The `Publisher` Durable Object turns outbox rows into a deployed site. Outbox rows carry scope keys:
@@ -720,6 +736,7 @@ Only one run is active at a time; changes that arrive during a run go into the n
 | `/a/{Item_Identifier}` | Attachment page with download link to `files.researchforce.org/f/{Item_Identifier}` | R24.3, R24.9, R24.14, R29.11, R29.12 |
 | `/submit`, `/p/{slug}/submit`, `/submit/general`, `/submit/correction`, `/submit/removal`, `/submit/removal/general` | Outside_Submission_Form with the preselections of R31.13, R46.18, R46.21 baked into each static variant | R31.1, R31.13 |
 | `/respond` | Response_Link form; the token is in the URL fragment so it never reaches a server log | R32.7 |
+| `/consent`, `/consent/change` | Consent_Page and Change_Link page; static shells that fetch their content from `rf-submit` with the token from the URL fragment | R51.5, R51.10 |
 | `/about`, `/people`, `/methods`, `/licence`, `/privacy`, `/corrections` | Policy_Pages | R46 |
 | `/404.html` | Design_System not-found page | R24.7, R45.1 |
 
@@ -761,6 +778,8 @@ Only one run is active at a time; changes that arrive during a run go into the n
 | `POST /v1/sessions/{id}/submit` | Validates fields (R31.2); checks the Project or General_Choice (R31.14); checks 5 complete Outside_Submissions per hour per network address, 3 per day per email address, 20 per day in total (R31.4, R31.12); requires every added file to be complete; stores everything in one batch; returns the Submission_Reference and time |
 | `POST /v1/respond/check` | Says only whether a Response_Link token is usable |
 | `POST /v1/respond/sessions`, `…/files`, `POST /v1/respond/submit` | Same pattern for answers through Response_Links (R32.7, R32.14) |
+| `POST /v1/consent/view`, `POST /v1/consent/answer` | Return the stored Consent_Page snapshot for a usable Consent_Link token, and record a Consent_Answer after the Turnstile check (R51.5 to R51.8, R51.12) |
+| `POST /v1/consent/change/view`, `POST /v1/consent/change` | The same for Change_Links and withdrawals (R51.10, R51.12) |
 
 - **Responses.** Every response and email to a Visitor or Submitter is assembled only from fixed text, the Submission_Reference, the submission time, the Visitor's own validation errors and limits, the Moderation_Decision, the Response_Link, and Administrator text that was confirmed (R31.7). Page references are stored as text and never looked up, so the response does not depend on whether they name existing Items (R31.6). A nonexistent Project and a non-Public Project get the same refusal (R31.14). The submit response arrives well within 5 seconds (R31.5), and the acknowledgement email is queued at once, stating the Response_Target for Corrections and Removal_Requests (R46.22).
 - **Submission_Reference.** `RS-` followed by ten random Crockford characters in two groups, for example `RS-7K2MQ-X9DAB`, from which nothing about other Outside_Submissions can be inferred (R31.5).
@@ -1023,7 +1042,8 @@ Every state-changing route requires the `X-RF-CSRF` header and an `Origin` of `h
 | | `dissent_notes` | `unit_id`, `author_id`, `text` and spans, `attached_at`, `last_saved_at`, `concerned_summary` and spans | R42 |
 | | `identifiers` | `identifier_lc` (PK), `identifier`, `unit_id`, `issued_at`; never deleted | R15.6, R29.7 |
 | | `deletions` | `unit_id` (PK), `unit_type`, `kind`, `item_identifier`, `root_id`, `project_id`, `deleted_by`, `deleted_at`, `reason` | R15.8, R16.10, R22.7, R43.7 |
-| Parties | `external_parties` | `id`, `name`, `name_fold` (case- and diacritic-folded, indexed), `do_not_name`, `generic_label`, `rev`, `updated_seq` | R9.2, R34.4 |
+| Parties | `external_parties` | `id`, `name`, `name_fold` (case- and diacritic-folded, indexed), `do_not_name`, `generic_label`, `contact_email`, `rev`, `updated_seq` | R9.2, R34.4, R51.1 |
+| | `consent_requests`, `consent_request_items`, `consent_answers`, `consent_withdrawals` | Requests with kind, party, Administrator, message, Contact_Email sent to, times, state, and token hashes; one item per named unit with the proposed values, the Consent_Page snapshot, and its SHA-256; answers per item (immutable rows); withdrawals per item | R51 |
 | Links and reviews | `cross_links` | `id`, `origin_id`, `target_id`, `relation_value_id`, `added_by`, `added_at`, `removed_by`, `removed_at`; partial unique index on (origin, target, label) where not removed; index on `target_id` | R15 |
 | | `review_requests`, `review_addressees` | State, requester, note, reviewer, review note, type (review, publication request, Publication_Proposal), proposal entries, outcome, applied values; addressees by type and id | R17, R23.10 to R23.12, R23.18 |
 | Consent and holds | `publication_consents` | `unit_id`, `member_id`, `values_json`, `source` (request, proposal, dual), `source_id`, `given_at`, `withdrawn_at`, `used_at` | R23.17 to R23.22 |
@@ -1047,7 +1067,7 @@ Every state-changing route requires the `X-RF-CSRF` header and an `Origin` of `h
 | | `outside_submissions` | `id`, `reference` (unique), `type`, `project_id` or `general`, `message`, `name`, `email`, `affiliation`, `page_ref`, `licence_agreed`, `received_at`, `state`, `email_erase_after`, `email_erased_at`, `files_deleted_at`, `contact_review_due_at` | R31, R32, R46.24 |
 | | `contact_reviews`, `submitter_corrections` | Append-only Contact_Reviews (choice, reason, Administrator, time) and corrections (previous name and affiliation, whether the email was erased, reason, Administrator, time) | R32.19 to R32.22 |
 | | `outside_files`, `outside_responses`, `moderation_decisions`, `response_links` | Files per submission or response; responses; decisions (immutable rows); Response_Link token hashes with expiry and use | R32.7, R32.13, R32.14 |
-| Guards | `_g_rev`, `_g_evidence`, `_g_superseding`, `_g_last_admin`, `_g_chain_tip`, `_g_decision_open`, `_g_preview_fresh`, `_g_log_summary_owner`, `_g_dissent_unique`, `_g_frozen`, `_g_access_owner`, `_g_consent_valid`, `_g_hold_free`, `_g_dual_open`, `_g_dual_distinct`, and the other codes in `GUARD_CODES` | One column `x INTEGER NOT NULL` each; never hold rows | |
+| Guards | `_g_rev`, `_g_evidence`, `_g_superseding`, `_g_last_admin`, `_g_chain_tip`, `_g_decision_open`, `_g_preview_fresh`, `_g_log_summary_owner`, `_g_dissent_unique`, `_g_frozen`, `_g_access_owner`, `_g_consent_valid`, `_g_hold_free`, `_g_dual_open`, `_g_dual_distinct`, `_g_consent_link_open`, and the other codes in `GUARD_CODES` | One column `x INTEGER NOT NULL` each; never hold rows | |
 
 Central tables in Drizzle:
 
@@ -1282,6 +1302,8 @@ type PublicView =
 | Accepted Outside_Submission of another type: text, name, affiliation | While the Outside_Submission or a credited Item exists, as the Submitter_Attribution |
 | Accepted Outside_Submission of another type: email address | Reviewed 12 months after acceptance and every 12 months after that; kept with a reason or erased (R32.19) |
 | Response_Links | Valid 30 days; token hashes deleted 30 days after expiry |
+| External_Party Contact_Emails | Until an Administrator erases the address or the External_Party is deleted (R51.1) |
+| Consent_Requests, Consent_Answers, and withdrawals | As long as the External_Party exists; Consent_Link and Change_Link token hashes deleted 30 days after the link expires (R51.13) |
 | Public_Archive_Exports | Requested: 7 days; scheduled: the 3 most recent complete ones |
 | Internal_Backups | 7 days |
 | D1 Time Travel | 7 days |
@@ -1328,9 +1350,9 @@ For any sequence of disclosure actions on any mix of Classified and Unclassified
 
 ### Property 5: Public outputs contain only Public_View content
 
-For any workspace state in which every field of every unit, Member, Party, and Outside_Submission holds a unique canary token, every artifact of every public channel (public pages, listings, Project_Logs, home and projects pages, People and Policy pages, page metadata, public search index files, `status.json`, Public_Archive_Export HTML, JSON, and CSV, emails to Members and Submitters, and every `rf-submit` and `rf-dl` response to a non-Member) contains a canary only when that canary's field is part of the Public_View of a Public unit or of the Disclosure_Line of a Withheld unit.
+For any workspace state in which every field of every unit, Member, Party, and Outside_Submission holds a unique canary token, every artifact of every public channel (public pages, listings, Project_Logs, home and projects pages, People and Policy pages, page metadata, public search index files, `status.json`, Public_Archive_Export HTML, JSON, and CSV, emails to Members and Submitters, and every `rf-submit` and `rf-dl` response to a non-Member) contains a canary only when that canary's field is part of the Public_View of a Public unit or of the Disclosure_Line of a Withheld unit; the one exception is a Consent_Page, which may also contain the canaries of its own Consent_Request's stored snapshot and of no other request.
 
-**Validates: Requirements 17.7, 20.6, 24.5, 24.6, 24.13, 30.10, 31.7, 31.9, 35.2, 40.6, 41.12, 42.8, 42.15**
+**Validates: Requirements 17.7, 20.6, 24.5, 24.6, 24.13, 30.10, 31.7, 31.9, 35.2, 40.6, 41.12, 42.8, 42.15, 51.5**
 
 ### Property 6: Withheld units appear only as their Disclosure_Line
 
@@ -1938,6 +1960,18 @@ For any Research_Questions and sequences of edits, moves, and permanent deletion
 
 **Validates: Requirements 50.1, 50.2, 50.4, 50.5, 50.6, 50.7**
 
+### Property 107: Consent links record only explicit answers and change exactly what was asked
+
+For any Consent_Requests, link openings, answers, withdrawals, cancellations, and times, opening a Consent_Link or Change_Link changes nothing; an answer is recorded exactly when it is submitted with a passed Bot_Check through an open, unexpired, unanswered Consent_Link; the recorded answer changes exactly the Consent_Statuses, Do_Not_Name flag and Generic_Label, and Rights_Statuses of the units the request names, with the downgrades of Requirements 33.5 and 34.3 where a Public unit loses its consent or permission; every unusable link gets the same response; and the Consent_Page shows nothing beyond its request's stored snapshot.
+
+**Validates: Requirements 51.3, 51.4, 51.5, 51.6, 51.7, 51.8, 51.10, 51.11, 51.12**
+
+### Property 108: Emailed consent covers only what the person was shown
+
+For any Correspondence, Source, or Attachment whose consent or permission was granted through a Consent_Answer, and any later change to its values or its ancestors, the change is accepted exactly when the resulting Public_View, evaluated with every ancestor treated as Public, presents no material that the answered snapshot did not show; a consent or permission set by hand is not limited in this way.
+
+**Validates: Requirements 51.9**
+
 ## Error Handling
 
 **Principles.**
@@ -2165,7 +2199,7 @@ PBT applies to this feature: the privacy kernel, the parsers and printers, the s
 | R31 Outside_Submission_Form | Moderation_Service and public API | 5, 7, 27, 78, 86, 88 |
 | R32 Moderation | Moderation_Service and public API (Contact_Reviews) | 28, 29, 54, 58, 78, 86, 89, 90 |
 | R33 Rights | Attachment_Service, Disclosure changes | 3, 12, 13, 27, 31, 69, 70 |
-| R34 Consent and naming | Records_Service, Disclosure kernel | 10, 12, 13, 14, 23, 27 |
+| R34 Consent and naming | Records_Service, Disclosure kernel, Consent_Requests | 10, 12, 13, 14, 23, 27, 107 |
 | R35 Public export | Export_Service | 45, 72, 73, 75, 86, 87 |
 | R36 Backup and restore | Export_Service | 15, 45, 74, 75, 86, 87 |
 | R37 Bulk_Import | Bulk import | 3, 28, 69, 70, 71, 81 |
@@ -2182,6 +2216,7 @@ PBT applies to this feature: the privacy kernel, the parsers and printers, the s
 | R48 Confidentiality_Holds | Publication consent, Confidentiality_Holds, and Dual_Approvals | 103, 104 |
 | R49 Dual_Approvals | same | 104 |
 | R50 Research_Questions | Records_Service, Public_Site structure | 106 |
+| R51 Consent_Requests | Consent_Requests, Mailer, `rf-submit` | 5, 107, 108 |
 
 Criteria classified as integration, smoke, or example tests in the prework are covered by the tests listed under Testing Strategy.
 

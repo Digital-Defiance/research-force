@@ -29,7 +29,7 @@ Tests use synthetic data only. No task copies, quotes, or commits content from t
 
 ### Build order after the October 2026 revision
 
-The October 2026 revision of the requirements (restricted access, Owner consent, Confidentiality_Holds, Dual_Approvals, Research_Questions, Unassigned legacy attachments, Contact_Reviews, and the rename of Private to Not_Published) adds tasks 51 to 55 and changes the order in which the remaining tasks are built. Task numbers stay as they are, because tasks refer to each other by number. The remaining work is built in four milestones, so that the first one gives the team a working shared archive as early as possible and the team can learn from using it before the public site is built.
+The October 2026 revision of the requirements (restricted access, Owner consent, Confidentiality_Holds, Dual_Approvals, Research_Questions, Unassigned legacy attachments, Contact_Reviews, emailed Consent_Requests, and the rename of Private to Not_Published) adds tasks 51 to 56 and changes the order in which the remaining tasks are built. Task numbers stay as they are, because tasks refer to each other by number. The remaining work is built in four milestones, so that the first one gives the team a working shared archive as early as possible and the team can learn from using it before the public site is built.
 
 1. **Team archive** (the smallest useful version: preserve and connect sources, findings, tests, and decisions inside the team):
    - 51 (rename Not_Published), 52 (restricted access, including the read paths that tasks 17 to 24 built);
@@ -43,7 +43,7 @@ The October 2026 revision of the requirements (restricted access, Owner consent,
    - 39 (checkpoint).
 2. **Notifications and email:** 26, 27, 44, and from 48: 48.2, 48.3, 48.7, and 48.8; then 47 (checkpoint).
 3. **Public archive:** 31, 54 (Owner consent, Confidentiality_Holds, Dual_Approvals), 32, 55.4 (public Research_Question pages), 33 (checkpoint), 38.1, 38.2, 38.8, 38.9, 38.11, 38.13, 43, 46, 48.5, and 48.10.
-4. **Outside contributions and the rest:** 34, 35 (including Contact_Reviews), 38.12, 41, 42, then 49 (final checkpoint).
+4. **Outside contributions and the rest:** 34, 56 (emailed Consent_Requests, which need `rf-submit` and the `Budget` gate from task 34; until then consent is recorded by hand), 35 (including Contact_Reviews), 38.12, 41, 42, then 49 (final checkpoint).
 
 Where a task in an earlier milestone produces something that a later task delivers (for example Notification_Event rows written before task 26 adds the fan-out and the Notification_Centre), the earlier task writes the rows as its own sub-task specifies and the later task adds the delivery.
 
@@ -1302,14 +1302,51 @@ Where a task in an earlier milestone produces something that a later task delive
     - **Property 106: Research_Question entries are valid and follow their targets**
     - **Validates: Requirements 50.1, 50.2, 50.4, 50.5, 50.6, 50.7**
 
+- [ ] 56. Build emailed Consent_Requests
+  - [ ] 56.1 Add the consent request data
+    - The next migration adds `external_parties.contact_email`, `consent_requests`, `consent_request_items`, `consent_answers`, `consent_withdrawals`, and the guard table `_g_consent_link_open`; add the code to `GUARD_CODES`; add the Permissions `consent.request` and `party.contact` for Administrators
+    - Contact_Email on the External_Party form and API (at most 254 characters, local-part@domain), shown only to Members, with erasure that records the Administrator and time but not the value
+    - _Requirements: 2.5, 51.1_
+  - [ ] 56.2 Implement sending in `apps/app/src/consent/requests.ts`
+    - `POST /consent-requests/preview` runs the checks of R51.3 and renders each unit's Consent_Page snapshot with `public-render` and the kernel under the proposed values (the Party's name as it would appear for publication requests; public fields and file name but never the file for rights requests), returning the email text, the snapshots, and a preview token
+    - `POST /consent-requests` stores the request, the items with snapshots and SHA-256 digests, the token hash, and the expiry; sets Consent_Status Requested unless Granted; and queues the email through the `Mailer` against the Recipient_Cap; `GET /consent-requests` and `POST /consent-requests/{id}/cancel`
+    - The email template in `packages/public-render/src/email/consent.ts` with the subject "ResearchForce: request for permission to publish", registered in `packages/testing/src/public-channels.ts`
+    - _Requirements: 51.2, 51.3, 51.4, 51.11_
+  - [ ] 56.3 Implement answering and withdrawal in `apps/submit/src/consent.ts` and `packages/db/src/consent/answer.ts`
+    - `POST /v1/consent/view` and `POST /v1/consent/change/view` return the stored snapshot and options for a usable token and the one fixed "no longer valid" response otherwise, writing nothing; `POST /v1/consent/answer` and `POST /v1/consent/change` need a Turnstile token and pass the `Budget` gate
+    - The shared batch builder: `consent_link_open` guard, answer or withdrawal rows, Consent_Status, Do_Not_Name and Generic_Label, and Rights_Status changes with Revisions attributed to the requesting Administrator and naming the answer, the downgrades of R33.5 and R34.3, Item_Update events, a `publish` outbox row, and the confirmation email with a Change_Link valid for 12 months
+    - Register the `rf-submit` consent responses in `packages/testing/src/public-channels.ts` as an addressed channel
+    - _Requirements: 51.5, 51.6, 51.7, 51.8, 51.10, 51.12, 51.14_
+  - [ ] 56.4 Build the Consent_Page and Change_Link page in `apps/site-shell/src/consent.ts`
+    - Static shells at `/consent` and `/consent/change` with `noindex` and no caching; the token from the URL fragment; the snapshot for each element with its answer options, a one-answer-for-all control, the optional Generic_Label and comment, Turnstile in managed mode, and the confirmation; the "no longer valid" notice with a link to the Outside_Submission_Form
+    - _Requirements: 51.5, 51.6, 51.10, 51.12, 51.14_
+  - [ ] 56.5 Limit emailed consent to the content shown
+    - Consent_Statuses and Rights_Statuses set through a Consent_Answer record the answer item; `checkGates` and the records pipeline refuse a change for which `widens(snapshotView, after, unit)` holds with every ancestor treated as Public, naming the element and the answer and offering a new Consent_Request; values set by hand stay unlimited
+    - _Requirements: 51.9_
+  - [ ] 56.6 Implement reminders, expiry, and token clean-up in `apps/app/src/consent/sweep.ts`
+    - The hourly sweep sends the one reminder at 14 days, marks requests expired at 30 days without changing any status, and deletes Consent_Link and Change_Link token hashes 30 days after expiry; update `retentionRows()` with the Contact_Email and Consent_Request rows; add the consent tables to the Internal_Backup table list of task 38.4, without token hashes
+    - _Requirements: 46.19, 51.11, 51.13_
+  - [ ] 56.7 Build the Consent_Request screens in `apps/app/web/src/consent/`
+    - The request dialog from a Correspondence, Source, Attachment, or External_Party page (Party, kind, elements, proposed values, message) with the email and Consent_Page preview and confirmation; the request list with states; and requests, answers, comments, and withdrawals on the External_Party's page and each element's page
+    - _Requirements: 51.2, 51.13_
+  - [ ] 56.8 Write property test for consent links
+    - **Property 107: Consent links record only explicit answers and change exactly what was asked**
+    - **Validates: Requirements 51.3, 51.4, 51.5, 51.6, 51.7, 51.8, 51.10, 51.11, 51.12**
+  - [ ] 56.9 Write property test for consent coverage
+    - **Property 108: Emailed consent covers only what the person was shown**
+    - **Validates: Requirements 51.9**
+  - [ ]* 56.10 Write integration tests for Consent_Requests
+    - A scanner-style GET of the link changes nothing; an answer sets the statuses and sends the confirmation; a refusal on a Public Correspondence withholds it; an expired, cancelled, or used link gets the fixed notice; a withdrawal through the Change_Link downgrades and keeps Do_Not_Name on
+    - _Requirements: 51.5, 51.8, 51.10, 51.12_
+
 ## Notes
 
-- Sub-tasks marked with `*` are optional and can be skipped for a faster MVP. The required test sub-tasks are the privacy-kernel and disclosure properties (Properties 1 to 8, 10 to 15, 17, and 63), the restricted-access, consent, hold, and approval properties (Properties 100 to 104), and the parser and printer properties (Properties 66, 67, and 68).
-- Each of the 106 correctness properties has exactly one property-based test sub-task. Each test lives in its own file, `test/properties/pNN-<slug>.test.ts` inside the package or app under test, runs at least 100 fast-check iterations, and starts with the tag comment `// Feature: research-collab-cms, Property N: <title>`.
+- Sub-tasks marked with `*` are optional and can be skipped for a faster MVP. The required test sub-tasks are the privacy-kernel and disclosure properties (Properties 1 to 8, 10 to 15, 17, and 63), the restricted-access, consent, hold, approval, and emailed-consent properties (Properties 100 to 104, 107, and 108), and the parser and printer properties (Properties 66, 67, and 68).
+- Each of the 108 correctness properties has exactly one property-based test sub-task. Each test lives in its own file, `test/properties/pNN-<slug>.test.ts` inside the package or app under test, runs at least 100 fast-check iterations, and starts with the tag comment `// Feature: research-collab-cms, Property N: <title>`.
 - A property that spans several features is placed after the last code it exercises. Property 5 is the exception: its test (task 6.6) checks every channel in `packages/testing/src/public-channels.ts`, and tasks 9.5, 10.1, 27.1, 30.5, 34.4, and 38.1 register their channels there, so the confinement test covers each public channel as soon as it exists.
 - All tests run in single-run mode with `vitest --run` (`npm test`); no test starts a watcher or a development server. Task 50 adds `npm run dev` for running the Workspace locally by hand.
 - Tests and fixtures use synthetic data. The existing journal and its attachments are never copied into the repository; task 7.10 and checklist 48.9 read them from paths the user gives, and the import creates every unit Not_Published and Unclassified.
-- Tasks 51 to 55 and sub-tasks 35.12 and 35.13 come from the October 2026 revision. The milestone build order in the Overview decides when each remaining task is built. The dependency graph below keeps the original waves and appends the new sub-tasks as its last waves, in the order they must follow each other; their prerequisites among the earlier tasks are only these: tasks 51 and 52 need task 24; 55.1 to 55.3 need 52; 53 needs 30, 52, and 55.2; 54 needs 31 and 52; 55.4 needs 32; 35.12 and 35.13 need 35.6. Tasks 31.6 and 53.1 call 55.2's helper, which the milestone order builds first.
+- Tasks 51 to 56 and sub-tasks 35.12 and 35.13 come from the October 2026 revision. The milestone build order in the Overview decides when each remaining task is built. The dependency graph below keeps the original waves and appends the new sub-tasks as its last waves, in the order they must follow each other; their prerequisites among the earlier tasks are only these: tasks 51 and 52 need task 24; 55.1 to 55.3 need 52; 53 needs 30, 52, and 55.2; 54 needs 31 and 52; 55.4 needs 32; 35.12 and 35.13 need 35.6; 56 needs 27, 34, and 54. Tasks 31.6 and 53.1 call 55.2's helper, which the milestone order builds first.
 - Several tasks write the same shared files: `apps/app/src/api/app.ts` (route registration), `apps/app/src/index.ts` (Durable Object exports), `apps/app/src/cron.ts`, `apps/app/src/records/pipeline.ts`, `apps/app/src/notifications/fanout.ts`, `apps/app/web/src/routes.tsx`, `apps/ops/src/index.ts`, and `packages/testing/src/public-channels.ts`. The dependency graph keeps those tasks in separate waves.
 - Sub-tasks 48.6 to 48.9 are setup checklists that need the user's Cloudflare, Microsoft 365, DNS, or deployment access. The agent prepares the scripts in 48.1 to 48.5, then stops and asks the user to run the checklist and report the results.
 - The design's open points stay behind the single locations listed in the Overview, so an answer from the user changes one constant, one function, or one seed text.
@@ -1474,7 +1511,12 @@ Where a task in an earlier milestone produces something that a later task delive
     { "id": 151, "tasks": ["54.6", "54.7", "54.8", "54.9"] },
     { "id": 152, "tasks": ["55.4"] },
     { "id": 153, "tasks": ["55.5", "35.12"] },
-    { "id": 154, "tasks": ["35.13"] }
+    { "id": 154, "tasks": ["35.13"] },
+    { "id": 155, "tasks": ["56.1"] },
+    { "id": 156, "tasks": ["56.2"] },
+    { "id": 157, "tasks": ["56.3"] },
+    { "id": 158, "tasks": ["56.4", "56.5", "56.6"] },
+    { "id": 159, "tasks": ["56.7", "56.8", "56.9", "56.10"] }
   ]
 }
 ```
