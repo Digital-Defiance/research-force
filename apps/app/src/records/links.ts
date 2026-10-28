@@ -40,7 +40,8 @@ export async function linkIssues(
   const ends = links.flatMap((link) => [link.originId, link.targetId]);
   const labels = links.flatMap((link) => (link.relationValueId ? [link.relationValueId] : []));
   const [unitRows, labelRows, activeRows] = await c.get('accountant').track(db.batch([
-    db.prepare(`SELECT u.id, u.unit_type AS unitType FROM units u WHERE u.id IN (SELECT value FROM json_each(?1)) AND ${visibleTo('u', '?2')}`).bind(ids(ends), c.get('session').member.id),
+    db.prepare(`SELECT u.id, u.unit_type AS unitType FROM units u WHERE u.id IN (SELECT value FROM json_each(?1)) AND ${visibleTo('u', '?2')}
+      AND NOT EXISTS (SELECT 1 FROM deletions d WHERE d.unit_id = u.id)`).bind(ids(ends), c.get('session').member.id),
     db.prepare("SELECT id, retired FROM config_values WHERE set_key = 'relation' AND id IN (SELECT value FROM json_each(?1))").bind(ids(labels)),
     db.prepare(`SELECT origin_id AS originId, target_id AS targetId, ifnull(relation_value_id, '') AS label FROM cross_links
       WHERE removed_at IS NULL AND origin_id IN (SELECT value FROM json_each(?1))`).bind(ids(links.map((link) => link.originId))),
@@ -83,7 +84,8 @@ export function writeLinks(batch: GuardedBatch, links: readonly LinkInput[], act
     id: newULID(actor.now), originId: link.originId, targetId: link.targetId, relationValueId: link.relationValueId ?? null, addedBy: actor.id, addedAt: actor.now,
   }));
   const ends = ids(links.flatMap((link) => [link.originId, link.targetId]));
-  batch.guard('rev', sql`NOT EXISTS (SELECT 1 FROM json_each(${ends}) j WHERE NOT EXISTS (SELECT 1 FROM units u WHERE u.id = j.value))`)
+  batch.guard('rev', sql`NOT EXISTS (SELECT 1 FROM json_each(${ends}) j
+      WHERE NOT EXISTS (SELECT 1 FROM units u WHERE u.id = j.value) OR EXISTS (SELECT 1 FROM deletions d WHERE d.unit_id = j.value))`)
     .bulkInsert(crossLinks, rows)
     .outboxMany('publish', (JSON.parse(ends) as string[]).map((end) => `unit:${end}`));
   return rows.map((row) => row.id);
@@ -193,7 +195,7 @@ export async function linkEntries(c: Context<ApiEnv>, query: LinkQuery): Promise
       LEFT JOIN profiles rp ON rp.member_id = l.removed_by
       WHERE l.${near} = ?1 AND (?3 = 1 OR l.removed_at IS NULL) AND l.id > ?4
         AND (?5 IS NULL OR l.id IN (SELECT value FROM json_each(?5)))
-        AND ((u.id IS NULL AND d.unit_id IS NOT NULL) OR ${visibleTo('u', '?2')})
+        AND (d.unit_id IS NOT NULL OR ${visibleTo('u', '?2')})
       ORDER BY l.id LIMIT ?6`).bind(anchor, viewer, query.removed ? 1 : 0, query.after ?? '', query.ids ? JSON.stringify(query.ids) : null, LINKS_PER_PAGE + 1),
   ]));
   if ((anchorRows as D1Result).results.length === 0) throw new ApiError('not_found');
@@ -202,10 +204,10 @@ export async function linkEntries(c: Context<ApiEnv>, query: LinkQuery): Promise
     id: row.id, relation: row.relationId === null ? null : { id: row.relationId, name: row.relationName ?? '' },
     addedBy: { id: row.addedBy, displayName: row.addedByName }, addedAt: row.addedAt,
     ...(row.removedBy === null ? {} : { removedBy: { id: row.removedBy, displayName: row.removedByName }, removedAt: row.removedAt! }),
-    end: row.unitType === null
+    end: row.deletedType !== null
       ? { id: row.endId, kind: row.deletedKind ?? row.deletedType!, title: null, identifier: row.deletedIdentifier, withdrawn: false, deletedAt: row.deletedAt! }
       : {
-        id: row.endId, rootId: row.rootId!, kind: row.unitType === 'research_item' ? row.itemKind! : row.unitType, title: row.title, identifier: row.identifier,
+        id: row.endId, rootId: row.rootId!, kind: row.unitType === 'research_item' ? row.itemKind! : row.unitType!, title: row.title, identifier: row.identifier,
         ...(row.sourceKind === null ? {} : { source: { sourceKind: row.sourceKind, reliability: row.reliabilityName ?? '' } }), withdrawn: row.withdrawnAt !== null,
       },
   }));

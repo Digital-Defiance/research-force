@@ -504,41 +504,41 @@ Tests use synthetic data only. No task copies, quotes, or commits content from t
     - Create and edit with the reserved slug names shown, the slug-fixed indicator, the featured toggle, order moves with buttons as well as dragging, the accent picker limited to the palette, and the Project history
     - _Requirements: 39.4, 39.5, 39.7, 39.18, 45.4, 45.5_
 
-- [ ] 22. Checkpoint - Ensure all tests pass
+- [x] 22. Checkpoint - Ensure all tests pass
   - Run `npm test` (`vitest --run`) and `npm run lint`; ensure all tests pass, ask the user if questions arise.
 
-- [ ] 23. Build the History_Service
-  - [ ] 23.1 Implement history reconstruction and the history API in `packages/domain/src/history.ts` and `apps/app/src/api/routes/history.ts`
+- [x] 23. Build the History_Service
+  - [x] 23.1 Implement history reconstruction and the history API in `packages/domain/src/history.ts` and `apps/app/src/api/routes/history.ts`
     - Pure `stateAt(current, revisions, point)` that undoes later Revisions from the current state
     - `GET /items/{id}/history` listing the creation and every Revision of the Item and its Entry_Sections, newest first, with Member, time, Revision_Kind, and reason, and the state immediately after a selected point
     - _Requirements: 22.1, 22.3, 22.11_
-  - [ ] 23.2 Implement comparisons in `packages/domain/src/compare.ts` and `GET /items/{id}/compare`
+  - [x] 23.2 Implement comparisons in `packages/domain/src/compare.ts` and `GET /items/{id}/compare`
     - Field-by-field comparison of two points with both values, and word diffs (`diffWordsWithSpace`) that mark added and removed words, including label differences
     - _Requirements: 22.4_
-  - [ ] 23.3 Implement Restoration in `packages/domain/src/restore.ts` and `POST /items/{id}/restore`
+  - [x] 23.3 Implement Restoration in `packages/domain/src/restore.ts` and `POST /items/{id}/restore`
     - Pure `restoreFields` returning content and fields at the chosen point, except the fields that Status_Changes, Withdrawals, and Disclosure_Changes set, and except the Log_Summary when the restorer is not the Owner or the point had none
     - The Owner or an Administrator restores; Entry_Sections added back get Private; the Restoration Revision names the point and intermediate Revisions stay
     - _Requirements: 2.4, 22.5, 23.15, 41.14_
-  - [ ] 23.4 Implement Withdrawal in `POST /items/{id}/withdraw`
+  - [x] 23.4 Implement Withdrawal in `POST /items/{id}/withdraw`
     - Reason of 1 to 1,000 characters; the Item, its history, and its Disclosure_Level stay; withdrawn date and reason shown to Members; a Finding becomes Withdrawn with a Withdrawal Revision; a preview response states whether the Public_Site will show the reason (Effective_Disclosure Public)
     - _Requirements: 5.5, 22.6, 22.9, 24.10_
-  - [ ] 23.5 Implement permanent deletion in `apps/app/src/jobs/deletion.ts` and `DELETE /items/{id}`
+  - [x] 23.5 Implement permanent deletion in `apps/app/src/jobs/deletion.ts` and `DELETE /items/{id}`
     - Administrators confirm by typing the Item_Identifier and give a reason of 1 to 1,000 characters; a `Jobs` object removes the content, fields, and Revisions of the Item and every element under it, deletes their R2 objects within 24 hours, keeps the `identifiers` rows, and writes the Deletion record with kind, Item_Identifier, Administrator, time, and reason
     - A deleted Reply leaves a placeholder at its position with the deletion date and its children in place; Cross_Links on remaining ends show the deleted end's kind, Item_Identifier, and deletion date from the Deletion record
     - _Requirements: 15.8, 16.10, 22.7, 22.9_
-  - [ ] 23.6 Build the history screens in `apps/app/web/src/history/`
+  - [x] 23.6 Build the history screens in `apps/app/web/src/history/`
     - History list, state at a point, comparison with marked words, the restore dialog, the withdrawal dialog with its public-reason statement, and the deletion confirmation
     - _Requirements: 22.3, 22.4, 22.5, 22.6, 22.7_
-  - [ ]* 23.7 Write property test for status rules
+  - [x]* 23.7 Write property test for status rules
     - **Property 30: Status rules hold under all operation sequences**
     - **Validates: Requirements 5.3, 5.4, 5.9, 8.2, 8.4, 8.6, 8.7**
-  - [ ]* 23.8 Write property test for history reconstruction
+  - [x]* 23.8 Write property test for history reconstruction
     - **Property 33: History reconstructs every past state**
     - **Validates: Requirements 11.8, 22.1, 22.3, 22.6, 39.8, 41.6, 42.7**
-  - [ ]* 23.9 Write property test for Restoration
+  - [x]* 23.9 Write property test for Restoration
     - **Property 34: Restoration changes only content fields**
     - **Validates: Requirements 22.5, 23.15, 41.14, 42.5**
-  - [ ]* 23.10 Write property test for comparisons
+  - [x]* 23.10 Write property test for comparisons
     - **Property 35: Comparisons mark exactly the changed words**
     - **Validates: Requirements 22.4, 42.9**
 
@@ -1148,12 +1148,25 @@ Tests use synthetic data only. No task copies, quotes, or commits content from t
 - [ ] 49. Final checkpoint - Ensure all tests pass
   - Run `npm run ci` (lint, type check, and `vitest --run`); ensure all tests pass, ask the user if questions arise.
 
+- [ ] 50. Add a local development environment
+  - [ ] 50.1 Add the local runner and synthetic seed data in `scripts/dev.ts` and `tools/dev-seed.ts`
+    - `npm run dev` applies the D1 migrations to local databases (`wrangler d1 migrations apply --local`), starts `rf-app` with `wrangler dev` in local mode (Miniflare, no remote bindings, storage under `.wrangler/`), and starts the Vite dev server for the Workspace with `/api` proxied to the Worker
+    - `tools/dev-seed.ts` fills the local databases and R2 buckets with synthetic Members, Profiles, Projects, and Research_Items of every kind; `npm run dev:reset` deletes the local state and seeds again
+    - _Requirements: none (developer tooling)_
+  - [ ] 50.2 Add a development-only sign-in in `apps/app/src/auth/dev.ts`
+    - A local signer, like the test key server in `packages/testing/src/jwt.ts`, issues Access-shaped assertions for a chosen seeded Member; a small page lists the seeded Members to sign in as, and signing out clears the local session
+    - It is enabled only by a variable in `.dev.vars`, which is ignored by git; `rf-app` refuses to start when that variable is set with non-local bindings, and `scripts/deploy.ts` refuses any configuration that sets it; tests check both refusals and that the sign-in routes answer 404 without the variable
+    - _Requirements: none (developer tooling)_
+  - [ ] 50.3 Add local stand-ins for remote services
+    - Stub the `OPS` service binding and Workers AI with deterministic responses; capture outgoing email in a local outbox page instead of calling Microsoft Graph; document in `README.md` what runs locally and what does not (Cloudflare Access, Workers AI, Microsoft 365)
+    - _Requirements: none (developer tooling)_
+
 ## Notes
 
 - Sub-tasks marked with `*` are optional and can be skipped for a faster MVP. The required test sub-tasks are the privacy-kernel and disclosure properties (Properties 1 to 8, 10 to 15, 17, and 63) and the parser and printer properties (Properties 66, 67, and 68).
 - Each of the 99 correctness properties has exactly one property-based test sub-task. Each test lives in its own file, `test/properties/pNN-<slug>.test.ts` inside the package or app under test, runs at least 100 fast-check iterations, and starts with the tag comment `// Feature: research-collab-cms, Property N: <title>`.
 - A property that spans several features is placed after the last code it exercises. Property 5 is the exception: its test (task 6.6) checks every channel in `packages/testing/src/public-channels.ts`, and tasks 9.5, 10.1, 27.1, 30.5, 34.4, and 38.1 register their channels there, so the confinement test covers each public channel as soon as it exists.
-- All tests run in single-run mode with `vitest --run` (`npm test`); no task starts a watcher or a development server.
+- All tests run in single-run mode with `vitest --run` (`npm test`); no test starts a watcher or a development server. Task 50 adds `npm run dev` for running the Workspace locally by hand.
 - Tests and fixtures use synthetic data. The existing journal and its attachments are never copied into the repository; task 7.10 and checklist 48.9 read them from paths the user gives, and the import creates every unit Private and Unclassified.
 - Several tasks write the same shared files: `apps/app/src/api/app.ts` (route registration), `apps/app/src/index.ts` (Durable Object exports), `apps/app/src/cron.ts`, `apps/app/src/records/pipeline.ts`, `apps/app/src/notifications/fanout.ts`, `apps/app/web/src/routes.tsx`, `apps/ops/src/index.ts`, and `packages/testing/src/public-channels.ts`. The dependency graph keeps those tasks in separate waves.
 - Sub-tasks 48.6 to 48.9 are setup checklists that need the user's Cloudflare, Microsoft 365, DNS, or deployment access. The agent prepares the scripts in 48.1 to 48.5, then stops and asks the user to run the checklist and report the results.
@@ -1298,7 +1311,9 @@ Tests use synthetic data only. No task copies, quotes, or commits content from t
     { "id": 130, "tasks": ["48.1", "48.2", "48.3", "48.4"] },
     { "id": 131, "tasks": ["48.5", "48.10"] },
     { "id": 132, "tasks": ["48.6", "48.7", "48.8"] },
-    { "id": 133, "tasks": ["48.9"] }
+    { "id": 133, "tasks": ["48.9"] },
+    { "id": 134, "tasks": ["50.1", "50.3"] },
+    { "id": 135, "tasks": ["50.2"] }
   ]
 }
 ```

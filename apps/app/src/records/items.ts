@@ -11,7 +11,7 @@ import { researchItemSchema } from '@researchforce/domain/schemas/items';
 import { editMarkSchema, reasonSchema } from '@researchforce/domain/schemas/other';
 import { cpLength } from '@researchforce/domain/text';
 import { isULID } from '@researchforce/domain/types';
-import type { CreditEntry, ItemKind, Level, MemberStatus, ULID } from '@researchforce/domain/types';
+import type { CreditEntry, ItemKind, Level, MemberStatus, Timestamp, ULID } from '@researchforce/domain/types';
 import type { ConfigValue, ValueSetKind } from '@researchforce/domain/value-sets';
 import { BUILT_IN_VALUE_IDS } from '@researchforce/domain/value-sets';
 import { effective } from '@researchforce/kernel/effective';
@@ -37,6 +37,8 @@ import { addSubmission, commitWithIdentifiers, requireProject, visibleTo } from 
 
 /** Links and Evidence_Links one save can record with its Item. */
 export const LINKS_PER_SAVE = 50;
+/** The point a Restoration returns to, and the removed Entry_Sections it adds back. */
+export interface Restoration { readonly point: string; readonly readd: ReadonlySet<string> }
 /** Fields every kind shares, outside the kind adapters. */
 const COMMON_CLASSES: Readonly<Record<string, FieldClass>> = { title: 'content', logSummary: 'content' };
 /** Value-set fields whose stored value stays acceptable after the value is retired (R4.6, R6.8, R7.7). */
@@ -95,6 +97,19 @@ interface BaseQueryRow extends Omit<BaseRow, 'credit' | 'disclosureLine' | 'logS
   credit: string; disclosureLine: string | null; logSummary: string | null; logSummarySpans: string; projectName: string; projectLevel: Level;
 }
 
+/** The 404 for an Item that cannot be loaded; a permanently deleted one shows its Deletion record in its place (R22.7). */
+async function missingItem(c: Context<ApiEnv>, id: string): Promise<ApiError> {
+  const deletion = await c.get('accountant').track(c.env.RF_CORE.prepare(
+    `SELECT d.kind, d.item_identifier AS identifier, d.deleted_by AS deletedBy, p.display_name AS displayName, d.deleted_at AS deletedAt, d.reason
+      FROM deletions d LEFT JOIN profiles p ON p.member_id = d.deleted_by WHERE d.unit_id = ?1 AND d.unit_type = 'research_item'`,
+  ).bind(id).all<{ kind: ItemKind; identifier: string; deletedBy: ULID; displayName: string | null; deletedAt: Timestamp; reason: string }>());
+  const row = deletion.results[0];
+  if (!row) return new ApiError('not_found');
+  return new ApiError('not_found', {
+    details: { deletion: { kind: row.kind, identifier: row.identifier, deletedBy: { id: row.deletedBy, displayName: row.displayName }, deletedAt: row.deletedAt, reason: row.reason } },
+  });
+}
+
 /** A Research_Item the Member can see, with its kind fields, Entry_Sections, Group_Note, Project, and the names it shows (R3.5). */
 export async function loadItem(c: Context<ApiEnv>, id: string): Promise<LoadedItem> {
   if (!isULID(id)) throw new ApiError('not_found');
@@ -111,7 +126,7 @@ export async function loadItem(c: Context<ApiEnv>, id: string): Promise<LoadedIt
       FROM units u JOIN replies r ON r.unit_id = u.id WHERE u.parent_id = ?1 AND u.unit_type = 'reply' AND r.is_group_note = 1 ORDER BY u.id LIMIT 1`).bind(id),
   ]));
   const row = rowsOf<BaseQueryRow>(baseRows)[0];
-  if (!row) throw new ApiError('not_found');
+  if (!row) throw await missingItem(c, id);
   const { credit: creditJson, disclosureLine, logSummary, logSummarySpans, projectName, projectLevel, ...rest } = row;
   const base: BaseRow = {
     ...rest, credit: JSON.parse(creditJson) as CreditEntry[], disclosureLine: disclosureLine === null ? null : JSON.parse(disclosureLine) as BaseRow['disclosureLine'],
@@ -271,11 +286,13 @@ export async function createItem(c: Context<ApiEnv>, kind: ItemKind, body: unkno
 /**
  * Save an edit of a Research_Item as one guarded batch (R4.5, R22.1). A field set to null is removed. The Group_Note
  * is edited in the Thread, the Project by moving the Item, and the Log_Summary only by the Owner (R41.4).
- * A Journal_Entry's new Entry_Sections can come from the parts of a staged save. Resolves to whether anything was saved.
+ * A Journal_Entry's new Entry_Sections can come from the parts of a staged save. A Restoration needs no mark, and the
+ * Entry_Sections it adds back keep their ids (R22.5). Resolves to whether anything was saved.
  */
-export async function editItem(c: Context<ApiEnv>, current: LoadedItem, body: unknown, staged?: StagedSections): Promise<boolean> {
+export async function editItem(c: Context<ApiEnv>, current: LoadedItem, body: unknown, staged?: StagedSections, restoration?: Restoration): Promise<boolean> {
   const { rev, mark, statusReason, links, evidence, ...patch } = objectBody(body);
   const envelope = parse(editEnvelope, { rev, mark, statusReason, links, evidence });
+  if (restoration && (envelope.mark || envelope.statusReason !== undefined)) throw new Error('A Restoration carries no mark or status reason.');
   const { base } = current;
   const adapter = KIND_ADAPTERS[base.kind];
   const actor = c.get('session').member.id;
@@ -314,7 +331,7 @@ export async function editItem(c: Context<ApiEnv>, current: LoadedItem, body: un
   issues.push(...result.issues);
   let input: ItemFields = result.fields ?? {};
   if (base.kind === 'journal_entry' && result.fields && !staged) {
-    const prepared = prepareSections(input, before, now);
+    const prepared = prepareSections(input, before, now, restoration?.readd);
     input = { ...input, sections: prepared.sections };
     issues.push(...prepared.issues);
   }
@@ -349,6 +366,7 @@ export async function editItem(c: Context<ApiEnv>, current: LoadedItem, body: un
       fields: [...changes, ...(sectionsChange ? [sectionsChange] : []), ...(rules.changes ?? [])],
       ...(envelope.mark ? { mark: { mark: envelope.mark.mark, ...(envelope.mark.reason === undefined ? {} : { reason: envelope.mark.reason }) } } : {}),
       ...(envelope.statusReason === undefined ? {} : { reasons: { status: envelope.statusReason } }),
+      ...(restoration ? { restoredPoint: restoration.point } : {}),
     },
     write: (batch) => {
       staged?.guard(batch);

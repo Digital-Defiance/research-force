@@ -106,6 +106,21 @@ body {
   border: var(--rf-border-width) solid var(--rf-colour-border);
 }
 
+.rf-diff {
+  white-space: pre-wrap;
+}
+
+.rf-diff__added {
+  color: var(--rf-colour-success);
+  text-decoration: underline;
+  text-decoration-thickness: var(--rf-border-width-strong);
+}
+
+.rf-diff__removed {
+  color: var(--rf-colour-danger);
+  text-decoration: line-through;
+}
+
 .rf-picker [aria-selected='true'] {
   background: var(--rf-colour-surface-raised);
 }

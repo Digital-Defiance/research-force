@@ -17,15 +17,15 @@ interface SectionRow { id: ULID; position: number; rev: number; level: Level; cl
 const sectionsOf = (fields: ItemFields) => (fields['sections'] ?? []) as readonly Section[];
 
 /**
- * Give each new Entry_Section an id and check that every named one belongs to this Journal_Entry (R4.5).
- * Returns the sections with ids, in the submitted order.
+ * Give each new Entry_Section an id and check that every named one belongs to this Journal_Entry (R4.5), or is one a
+ * Restoration adds back under its old id (R22.5). Returns the sections with ids, in the submitted order.
  */
-export function prepareSections(after: ItemFields, before: ItemFields | undefined, now: Timestamp): { sections: Section[]; issues: FieldIssue[] } {
+export function prepareSections(after: ItemFields, before: ItemFields | undefined, now: Timestamp, readd: ReadonlySet<string> = new Set()): { sections: Section[]; issues: FieldIssue[] } {
   const known = new Set(sectionsOf(before ?? {}).map((section) => section.id));
   const issues: FieldIssue[] = [];
   const sections = sectionsOf(after).map((section, index) => {
     if (section.id === undefined) return { id: newULID(now), content: section.content };
-    if (!known.has(section.id)) issues.push({ field: `sections.${index}.id`, rule: 'This Entry Section does not belong to this Journal Entry.' });
+    if (!known.has(section.id) && !readd.has(section.id)) issues.push({ field: `sections.${index}.id`, rule: 'This Entry Section does not belong to this Journal Entry.' });
     return section;
   });
   return { sections, issues };

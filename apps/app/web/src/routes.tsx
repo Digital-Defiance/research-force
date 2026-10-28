@@ -4,6 +4,9 @@ import { ITEM_KIND_NAMES } from '@researchforce/domain/kind-names';
 import { ITEM_KINDS } from '@researchforce/domain/types';
 import type { ItemKind } from '@researchforce/domain/types';
 import { useApiStatus } from './api';
+import { DeletePage } from './history/delete';
+import { ItemHistoryPage } from './history/history';
+import { WithdrawPage } from './history/withdraw';
 import { EditItemPage, NewItemPage } from './items/forms/ItemForm';
 import { ItemPage } from './items/page';
 import { MembersPage } from './people/members';
@@ -78,6 +81,18 @@ function EditItemRoute() {
   const { id = '' } = useParams();
   return <EditItemPage key={id} id={id} />;
 }
+function ItemHistoryRoute() {
+  const { id = '' } = useParams();
+  return <ItemHistoryPage key={id} id={id} />;
+}
+function WithdrawRoute() {
+  const { id = '' } = useParams();
+  return <WithdrawPage key={id} id={id} />;
+}
+function DeleteRoute() {
+  const { id = '' } = useParams();
+  return <DeletePage key={id} id={id} />;
+}
 function ProfileRoute() {
   const { id = '' } = useParams();
   return <ProfilePage key={id} id={id} />;
@@ -101,6 +116,9 @@ export function WorkspaceRoutes() {
       <Route path="/items/new/:kind" element={<NewItemRoute />} />
       <Route path="/items/:id" element={<ItemRoute />} />
       <Route path="/items/:id/edit" element={<EditItemRoute />} />
+      <Route path="/items/:id/history" element={<ItemHistoryRoute />} />
+      <Route path="/items/:id/withdraw" element={<WithdrawRoute />} />
+      <Route path="/items/:id/delete" element={<DeleteRoute />} />
       <Route path="/members" element={<MembersPage />} />
       <Route path="/members/:id" element={<ProfileRoute />} />
       <Route path="/me/profile" element={<OwnProfilePage />} />

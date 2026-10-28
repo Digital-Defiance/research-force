@@ -97,5 +97,23 @@ export interface LinkEntry {
   readonly end: LinkEnd;
 }
 
+export interface HistoryEntry {
+  /** A Revision id, or `creation`. */
+  readonly id: string; readonly kind: string; readonly memberId: string; readonly displayName: string | null; readonly at: string;
+  readonly reason: string | null; readonly restoredPoint: string | null; readonly sectionId: string | null; readonly fields: readonly string[];
+}
+export interface HistoryStateView {
+  readonly item: Readonly<Record<string, unknown>>;
+  readonly sections: Readonly<Record<string, Readonly<Record<string, unknown>>>>;
+}
+export interface ItemHistoryView { readonly entries: readonly HistoryEntry[]; readonly point?: string; readonly state?: HistoryStateView }
+export interface WordPart { readonly value: string; readonly added?: true; readonly removed?: true }
+export interface FieldDifference {
+  readonly field: string; readonly before: unknown; readonly after: unknown; readonly words?: readonly WordPart[];
+  readonly labels?: { readonly removed: readonly unknown[]; readonly added: readonly unknown[] };
+}
+/** What stands in a permanently deleted Item's place (R22.7). */
+export interface DeletionRecord { readonly kind: ItemKind; readonly identifier: string; readonly deletedBy: PersonRef; readonly deletedAt: string; readonly reason: string }
+
 export interface RevisionSummary { readonly kind: string; readonly memberId: string; readonly displayName: string | null; readonly at: string }
 export interface ConflictDetails { readonly rev: number; readonly revisions?: readonly RevisionSummary[] }

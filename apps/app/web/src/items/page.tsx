@@ -8,8 +8,10 @@ import type { ItemKind } from '@researchforce/domain/types';
 import { BUILT_IN_VALUE_IDS, RESUMABLE_RUN_OUTCOME_IDS } from '@researchforce/domain/value-sets';
 import type { ValueSetKind } from '@researchforce/domain/value-sets';
 import { RichTextView } from '../editor/RichTextView';
+import { DeletedItem, deletionOf } from '../history/delete';
 import type { CreditView, ItemView, LinkEntry, MemberRow, PartyRecord, ValueSets } from '../types';
 import { useApi } from '../api';
+import { useSession } from '../session';
 import { DisclosureStatus, formatDate, LoadState, Notice, PersonLink, useLoad } from '../ui';
 import { partyName } from './forms/inputs';
 import { KIND_FIELDS } from './forms/model';
@@ -172,6 +174,7 @@ function LinkList({ title, entries, empty }: { readonly title: string; readonly 
 /** A Research_Item's page (R3.5, R15.3, R23.9, R39.15, R41.9). */
 export function ItemDetails({ data }: { readonly data: ItemPageData }) {
   const { item } = data;
+  const session = useSession();
   const companions = new Set(COMPANION_FIELDS[item.kind] ?? []);
   const fields = KIND_FIELDS[item.kind].filter((spec) => !HIDDEN_FIELDS.has(spec.name) && !companions.has(spec.name) && item[spec.name] !== undefined && item[spec.name] !== null);
   return (
@@ -184,6 +187,9 @@ export function ItemDetails({ data }: { readonly data: ItemPageData }) {
         {item.disclosure.line !== undefined && <p className="rf-disclosure-line">{item.disclosure.line}</p>}
         <div className="rf-actions">
           <Link className="rf-button" to={`/items/${item.id}/edit`}>Edit</Link>
+          <Link className="rf-button" to={`/items/${item.id}/history`}>History</Link>
+          {item.withdrawal === null && <Link className="rf-button" to={`/items/${item.id}/withdraw`}>Withdraw</Link>}
+          {session.can('item.delete') && <Link className="rf-button rf-button--danger" to={`/items/${item.id}/delete`}>Delete permanently</Link>}
         </div>
       </header>
       {item.withdrawal !== null && (
@@ -280,6 +286,8 @@ export function ItemPage({ id }: { readonly id: string }) {
   const members = useLoad<{ members: MemberRow[] }>('/members');
   const links = useAllLinks(`origin=${id}`);
   const backlinks = useAllLinks(`target=${id}`);
+  const deletion = deletionOf(item.error);
+  if (deletion !== undefined) return <DeletedItem deletion={deletion} />;
   if (!item.data || !valueSets.data || !parties.data || !members.data || !links.entries || !backlinks.entries) {
     return <LoadState error={item.error ?? valueSets.error ?? parties.error ?? members.error ?? links.error ?? backlinks.error} />;
   }
