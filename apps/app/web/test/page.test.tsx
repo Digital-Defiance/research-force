@@ -7,7 +7,7 @@ import type { ItemView, LinkEntry } from '../src/types';
 import { fakeApi, MEMBER_ID, OTHER_ID, renderScreen } from './helpers';
 import { MEMBERS, makeItem, PARTY, RELIABILITY_HIGH, rich, RUN_COMPLETE, RUN_PARTIAL, VALUE_SETS } from './fixtures';
 
-const data = (item: ItemView, extra: Partial<ItemPageData> = {}): ItemPageData => ({ item, valueSets: VALUE_SETS, parties: [PARTY], members: MEMBERS, links: [], backlinks: [], ...extra });
+const data = (item: ItemView, extra: Partial<ItemPageData> = {}): ItemPageData => ({ item, valueSets: VALUE_SETS, parties: [PARTY], members: MEMBERS, links: [], backlinks: [], thread: [], ...extra });
 const show = (item: ItemView, extra: Partial<ItemPageData> = {}) => renderScreen(<ItemDetails data={data(item, extra)} />, { client: fakeApi({}).client });
 const terms = (section: HTMLElement) => [...section.querySelectorAll('dt')].map((term) => [term.textContent, term.nextElementSibling?.textContent]);
 
@@ -72,16 +72,22 @@ describe('the item page', () => {
   });
 
   it('shows the Log_Summary with its author, or that none is recorded, and the Group_Note labelled first in the Thread (R41.9)', () => {
+    const owner = { id: OTHER_ID, displayName: 'Ben Sample' };
     const view = show(makeItem({
       kind: 'finding', logSummary: rich('What this adds.'),
-      groupNote: { id: 'G', rev: 1, text: rich('Please check the caveat.'), owner: { id: OTHER_ID, displayName: 'Ben Sample' }, withdrawn: false, disclosure: { level: 'private', effective: 'private' } },
-    }));
+      groupNote: { id: 'G', rev: 1, text: rich('Please check the caveat.'), owner, withdrawn: false, disclosure: { level: 'withheld', effective: 'withheld' } },
+    }), { thread: [
+      { id: 'R', parentId: 'IT', postedAt: '2026-10-20T09:00:00.000Z', isGroupNote: false, rev: 1, owner, text: rich('An earlier reply.'), withdrawal: null },
+      { id: 'G', parentId: 'IT', postedAt: '2026-10-20T10:00:00.000Z', isGroupNote: true, rev: 1, owner, text: rich('Please check the caveat.'), withdrawal: null },
+    ] });
     const summary = screen.getByRole('region', { name: 'Log Summary' });
     expect(summary.textContent).toBe('Log SummaryBy Ada ExampleWhat this adds.');
     const thread = screen.getByRole('region', { name: 'Thread' });
     expect(thread.querySelector('.rf-status')?.textContent).toBe('Group Note');
     expect(thread.textContent).toContain('Please check the caveat.');
-    expect(within(thread).getByRole('link', { name: 'Ben Sample' })).toBeTruthy();
+    expect(within(thread).getAllByRole('article').map((article) => article.getAttribute('aria-label'))).toEqual(['Group Note by Ben Sample', 'Reply by Ben Sample']);
+    expect(within(thread).getAllByRole('link', { name: 'Ben Sample' })).toHaveLength(2);
+    expect(thread.textContent).toContain('Disclosure level: Withheld');
     view.unmount();
     show(makeItem({ kind: 'journal_entry', logSummary: rich('  ') }));
     expect(screen.getByRole('region', { name: 'Log Summary' }).textContent).toBe('Log SummaryNo Log Summary is recorded.');
@@ -127,7 +133,7 @@ describe('the item page', () => {
     const api = fakeApi({
       [`GET /items/${item.id}`]: { item }, 'GET /value-sets': { valueSets: VALUE_SETS }, 'GET /parties': { parties: [] }, 'GET /members': { members: MEMBERS },
       [`GET /links?origin=${item.id}`]: { entries: [link(1)], next: 'L1' }, [`GET /links?origin=${item.id}&after=L1`]: { entries: [link(2)], next: null },
-      [`GET /links?target=${item.id}`]: { entries: [], next: null },
+      [`GET /links?target=${item.id}`]: { entries: [], next: null }, [`GET /items/${item.id}/thread`]: { replies: [] },
     });
     renderScreen(<ItemPage id={item.id} />, { client: api.client });
     const links = await screen.findByRole('region', { name: 'Cross-links' });

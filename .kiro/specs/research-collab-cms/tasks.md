@@ -542,22 +542,22 @@ Tests use synthetic data only. No task copies, quotes, or commits content from t
     - **Property 35: Comparisons mark exactly the changed words**
     - **Validates: Requirements 22.4, 42.9**
 
-- [ ] 24. Build discussion and Review_Requests
-  - [ ] 24.1 Implement Topics, Replies, and Threads in `apps/app/src/discussion/replies.ts`, `apps/app/src/api/routes/discussion.ts`, and `packages/domain/src/thread.ts`
+- [x] 24. Build discussion and Review_Requests
+  - [x] 24.1 Implement Topics, Replies, and Threads in `apps/app/src/discussion/replies.ts`, `apps/app/src/api/routes/discussion.ts`, and `packages/domain/src/thread.ts`
     - `POST /topics` and `POST /replies` with a Parent that is a Research_Item, an Attachment, or a Reply at any depth, withdrawn or not
     - Pure `buildThread(replies)`: each Reply under its Parent, siblings oldest first by posting time, the Group_Note first, and placeholders for deleted Replies
     - _Requirements: 16.1, 16.2, 16.3, 16.4, 16.9, 16.10, 41.7_
-  - [ ] 24.2 Implement Mention detection in `apps/app/src/discussion/mentions.ts`
+  - [x] 24.2 Implement Mention detection in `apps/app/src/discussion/mentions.ts`
     - Compare the Mention spans of the previously saved and the newly saved text of Research_Item fields, Entry_Sections, and Replies; return newly mentioned active Members, plus active holders of newly mentioned Specialties not already included, without the author
     - _Requirements: 16.6, 16.7, 16.8_
-  - [ ] 24.3 Implement Review_Requests in `apps/app/src/reviews/reviews.ts` and `apps/app/src/api/routes/reviews.ts`
+  - [x] 24.3 Implement Review_Requests in `apps/app/src/reviews/reviews.ts` and `apps/app/src/api/routes/reviews.ts`
     - `POST /reviews` within a Submission or later, with addressees (active Members, non-retired Specialties, Roles, each once) and an optional note; refusal without an Eligible_Reviewer keeps the Submission unsubmitted
     - `POST /reviews/{id}/complete` by an Eligible_Reviewer on a Needs_Review request with an optional note; refusals state the reason; Publication_Requests cannot be completed this way; `GET /reviews/queue` oldest first; item responses list every request of the Item and its Entry_Sections and carry the pending-review marker, which no public view has
     - _Requirements: 3.8, 17.1, 17.2, 17.3, 17.5, 17.7, 17.8, 17.9, 17.10, 17.11_
-  - [ ] 24.4 Build the discussion and review screens in `apps/app/web/src/discussion/` and `apps/app/web/src/reviews/`
+  - [x] 24.4 Build the discussion and review screens in `apps/app/web/src/discussion/` and `apps/app/web/src/reviews/`
     - Thread tree, reply composer with Mentions, Topic form, review request form, review queue, the item page's request list, and the pending-review marker
     - _Requirements: 16.4, 17.7, 17.8, 17.11_
-  - [ ]* 24.5 Write property test for Threads
+  - [x]* 24.5 Write property test for Threads
     - **Property 47: Threads are trees in posting order**
     - **Validates: Requirements 16.3, 16.4, 41.7**
 

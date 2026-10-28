@@ -122,14 +122,15 @@ export class ApiClient {
   }
 
   /**
-   * Save a Research_Item: `POST /items/{kind}` for a new one or `PATCH /items/{id}` for an edit. A Journal_Entry whose
+   * Save a Research_Item: `POST /items/{kind}` (`POST /topics` for a Topic) for a new one or `PATCH /items/{id}` for an edit. A Journal_Entry whose
    * JSON exceeds 512 KB is sent as a staged save, with its Entry_Sections in parts and the rest in the commit (R4.4).
    */
   async saveItem<T>(target: { readonly kindPath: string } | { readonly id: string }, body: Record<string, unknown>): Promise<T> {
     const encoded = JSON.stringify(body);
     const sections = body['sections'];
     if (byteLength(encoded) <= STAGED_SAVE_THRESHOLD_BYTES || !Array.isArray(sections)) {
-      return 'id' in target ? this.request<T>('PATCH', `/items/${target.id}`, undefined, encoded) : this.request<T>('POST', `/items/${target.kindPath}`, undefined, encoded);
+      if ('id' in target) return this.request<T>('PATCH', `/items/${target.id}`, undefined, encoded);
+      return this.request<T>('POST', target.kindPath === 'topic' ? '/topics' : `/items/${target.kindPath}`, undefined, encoded);
     }
     const stage = await this.post<Stage>('/stages', 'id' in target ? { itemId: target.id } : {});
     const parts = stagedParts(sections, stage.partBytes);

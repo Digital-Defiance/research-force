@@ -5,8 +5,10 @@ import { ITEM_KIND_NAMES } from '@researchforce/domain/kind-names';
 import type { ItemKind } from '@researchforce/domain/types';
 import { ApiFailure, useApi } from '../../api';
 import type { FieldIssue } from '../../api';
-import type { MentionOptions } from '../../editor/RichTextEditor';
+import { mentionOptions } from '../../discussion/thread';
 import { usePersistentForm } from '../../persist';
+import { draftsToApi, ReviewDrafts, reviewOptions } from '../../reviews/reviews';
+import type { ReviewDraft } from '../../reviews/reviews';
 import { useSession } from '../../session';
 import type { ConflictDetails, ItemView, MemberRow, PartyRecord, ProjectChoice, ValueSets } from '../../types';
 import { Button, formatDate, LoadState, Notice, RestoredNotice, SaveFailure, SelectField, TextField, useLoad } from '../../ui';
@@ -28,16 +30,13 @@ export function useFormData(): { data: FormData | undefined; error: unknown } {
   const members = useLoad<{ members: MemberRow[] }>('/members');
   const data = useMemo<FormData | undefined>(() => {
     if (!valueSets.data || !parties.data || !members.data) return undefined;
-    const mentions: MentionOptions = {
-      members: members.data.members.flatMap((member) => (member.status === 'active' && member.displayName !== null ? [{ id: member.id, displayName: member.displayName }] : [])),
-      specialties: me.specialtyOptions.filter((specialty) => specialty.retired !== true),
-    };
+    const mentions = mentionOptions(members.data.members, me.specialtyOptions);
     return { valueSets: valueSets.data.valueSets, parties: parties.data.parties, members: members.data.members, mentions };
   }, [valueSets.data, parties.data, members.data, me.specialtyOptions]);
   return { data, error: valueSets.error ?? parties.error ?? members.error };
 }
 
-interface CreateState { readonly values: FormValues; readonly projectId: string }
+interface CreateState { readonly values: FormValues; readonly projectId: string; readonly reviews: readonly ReviewDraft[] }
 interface EditState { readonly values: FormValues; readonly before: FormValues; readonly rev: number; readonly mark: EditMarkValue; readonly statusReason: string }
 
 /** Field issues that no field of the form shows, such as an issue with the whole body. */
@@ -109,16 +108,19 @@ function IssueSummary({ issues }: { readonly issues: readonly FieldIssue[] }) {
 export function CreateItemForm({ kind, choice, data }: { readonly kind: ItemKind; readonly choice: ProjectChoice; readonly data: FormData }) {
   const client = useApi();
   const navigate = useNavigate();
-  const form = usePersistentForm<CreateState>(`item:new:${kind}`, () => ({ values: initialValues(kind), projectId: choice.preselected ?? '' }));
+  const session = useSession();
+  const form = usePersistentForm<CreateState>(`item:new:${kind}`, () => ({ values: initialValues(kind), projectId: choice.preselected ?? '', reviews: [] }));
   const [failure, setFailure] = useState<unknown>(undefined);
   const [busy, setBusy] = useState(false);
-  const shown = ['projectId', ...fieldsFor(kind, 'create').map((field) => field.name)];
+  const shown = ['projectId', 'reviews', ...fieldsFor(kind, 'create').map((field) => field.name)];
+  const sections = Array.isArray(form.values.values['sections']) ? form.values.values['sections'].length : 0;
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     setBusy(true);
     setFailure(undefined);
     try {
-      const response = await client.saveItem<{ item: ItemView }>({ kindPath: kind.replaceAll('_', '-') }, createBody(kind, form.values.projectId, form.values.values));
+      const reviews = form.values.reviews.length === 0 ? {} : { reviews: draftsToApi(form.values.reviews) };
+      const response = await client.saveItem<{ item: ItemView }>({ kindPath: kind.replaceAll('_', '-') }, { ...createBody(kind, form.values.projectId, form.values.values), ...reviews });
       form.sent();
       void navigate(`/items/${response.item.id}`);
     } catch (error) {
@@ -139,6 +141,8 @@ export function CreateItemForm({ kind, choice, data }: { readonly kind: ItemKind
         : <SelectField label="Project" required value={form.values.projectId} placeholder="Choose a Project" errors={projectErrors}
             options={choice.projects.map((project) => ({ value: project.id, label: project.name }))} onChange={(projectId) => form.set('projectId', projectId)} />}
       <Fields kind={kind} mode="create" values={form.values.values} set={(field, value) => form.set('values', { ...form.values.values, [field]: value })} failure={failure} data={data} />
+      {session.can('review.request') && <ReviewDrafts value={form.values.reviews} onChange={(reviews) => form.set('reviews', reviews)} options={reviewOptions(session, data.members)}
+        sections={sections} errors={failure instanceof ApiFailure ? failure.fields : []} />}
       <div className="rf-actions">
         <Button type="submit" variant="primary" disabled={busy}>Submit</Button>
         <Button variant="quiet" onClick={form.discard}>Discard</Button>

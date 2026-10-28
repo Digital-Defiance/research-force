@@ -50,7 +50,7 @@ export function makeItem(overrides: Partial<ItemView> & Pick<ItemView, 'kind'>):
     owner: { id: MEMBER_ID, displayName: 'Ada Example', specialties: [{ id: 'S1', name: 'Historian' }] },
     credit: [{ member: { id: MEMBER_ID, displayName: 'Ada Example' } }],
     disclosure: { level: 'private', effective: 'private' },
-    withdrawal: null, groupNote: null,
+    withdrawal: null, groupNote: null, reviews: [], pendingReview: false,
     ...overrides,
   };
 }

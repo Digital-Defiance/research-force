@@ -3,19 +3,38 @@ import { z } from 'zod';
 import { reasonSchema } from '@researchforce/domain/schemas/other';
 import { isULID } from '@researchforce/domain/types';
 import type { ULID } from '@researchforce/domain/types';
-import { authorize } from '../../auth/authorize';
+import { authorize, authorizeRead } from '../../auth/authorize';
+import { loadThread, postReply } from '../../discussion/replies';
 import { requestDeletion } from '../../jobs/deletion';
+import { createItem, itemResponse, loadItem } from '../../records/items';
 import { visibleTo } from '../../records/submissions';
 import type { ApiEnv } from '../app';
 import { ApiError } from '../errors';
 import { parse, readJson } from '../input';
 
-export const repliesRoutes = new Hono<ApiEnv>();
+export const discussionRoutes = new Hono<ApiEnv>();
+
+/** A Topic is a Research_Item of its own kind, submitted like any other (R16.1). */
+discussionRoutes.post('/topics', async (c) => {
+  const id = await createItem(c, 'topic', await readJson(c));
+  return c.json({ item: itemResponse(await loadItem(c, id)) }, 201);
+});
+
+discussionRoutes.post('/replies', async (c) => {
+  const id = await postReply(c, await readJson(c));
+  return c.json({ reply: { id } }, 201);
+});
+
+/** The Thread rooted at a Research_Item or Attachment, as a flat list in posting order for `buildThread` (R16.4). */
+discussionRoutes.get('/items/:id/thread', async (c) => {
+  await authorizeRead(c);
+  return c.json({ replies: await loadThread(c, c.req.param('id')) });
+});
 
 const deleteSchema = z.strictObject({ reason: reasonSchema });
 
 /** An Administrator permanently deletes a Reply with a reason; its child Replies stay under its placeholder (R16.10, R22.7). */
-repliesRoutes.delete('/:id', async (c) => {
+discussionRoutes.delete('/replies/:id', async (c) => {
   const id = c.req.param('id');
   const rows = isULID(id) ? await c.get('accountant').track(c.env.RF_CORE.prepare(
     `SELECT u.root_id AS rootId, u.project_id AS projectId, u.owner_id AS ownerId, ri.item_identifier AS identifier

@@ -8,8 +8,10 @@ import type { ItemKind } from '@researchforce/domain/types';
 import { BUILT_IN_VALUE_IDS, RESUMABLE_RUN_OUTCOME_IDS } from '@researchforce/domain/value-sets';
 import type { ValueSetKind } from '@researchforce/domain/value-sets';
 import { RichTextView } from '../editor/RichTextView';
+import { Thread, mentionOptions } from '../discussion/thread';
 import { DeletedItem, deletionOf } from '../history/delete';
-import type { CreditView, ItemView, LinkEntry, MemberRow, PartyRecord, ValueSets } from '../types';
+import { PendingReview, ReviewList, ReviewRequestForm, reviewOptions } from '../reviews/reviews';
+import type { CreditView, ItemView, LinkEntry, MemberRow, PartyRecord, ThreadEntryView, ValueSets } from '../types';
 import { useApi } from '../api';
 import { useSession } from '../session';
 import { DisclosureStatus, formatDate, LoadState, Notice, PersonLink, useLoad } from '../ui';
@@ -24,6 +26,10 @@ export interface ItemPageData {
   readonly members: readonly MemberRow[];
   readonly links: readonly LinkEntry[];
   readonly backlinks: readonly LinkEntry[];
+  /** The Thread's Replies in any order, with placeholders of deleted Replies. */
+  readonly thread: readonly ThreadEntryView[];
+  /** Load the item and its Thread again after a Reply or a review change. */
+  readonly onChanged?: () => void;
 }
 
 const valueName = (sets: ValueSets, set: ValueSetKind | undefined, id: unknown): string => {
@@ -171,10 +177,16 @@ function LinkList({ title, entries, empty }: { readonly title: string; readonly 
   );
 }
 
-/** A Research_Item's page (R3.5, R15.3, R23.9, R39.15, R41.9). */
+/** A Research_Item's page (R3.5, R15.3, R16.4, R17.7, R17.11, R23.9, R39.15, R41.9). */
 export function ItemDetails({ data }: { readonly data: ItemPageData }) {
   const { item } = data;
   const session = useSession();
+  const onChanged = data.onChanged ?? (() => undefined);
+  const sectionNumber = (id: string) => {
+    const index = item.sections?.findIndex((section) => section.id === id) ?? -1;
+    return index < 0 ? undefined : index + 1;
+  };
+  const reviewTargets = [{ value: item.id, label: 'The whole record' }, ...(item.sections ?? []).map((section, index) => ({ value: section.id, label: `Entry Section ${index + 1}` }))];
   const companions = new Set(COMPANION_FIELDS[item.kind] ?? []);
   const fields = KIND_FIELDS[item.kind].filter((spec) => !HIDDEN_FIELDS.has(spec.name) && !companions.has(spec.name) && item[spec.name] !== undefined && item[spec.name] !== null);
   return (
@@ -182,6 +194,7 @@ export function ItemDetails({ data }: { readonly data: ItemPageData }) {
       <header>
         <p className="rf-meta">{`${ITEM_KIND_NAMES[item.kind]} ${item.identifier}`}</p>
         <h1>{item.title}</h1>
+        {item.pendingReview && <p><PendingReview /></p>}
         <p>{'Project: '}<strong>{item.project.name}</strong></p>
         <DisclosureStatus disclosure={item.disclosure} />
         {item.disclosure.line !== undefined && <p className="rf-disclosure-line">{item.disclosure.line}</p>}
@@ -218,7 +231,8 @@ export function ItemDetails({ data }: { readonly data: ItemPageData }) {
         <section className="rf-section" aria-label="Entry Sections">
           <h2>Entry Sections</h2>
           {item.sections.map((section, index) => (
-            <section key={section.id} aria-label={`Entry Section ${index + 1}`}>
+            <section key={section.id} id={`section-${section.id}`} aria-label={`Entry Section ${index + 1}`}>
+              {section.pendingReview === true && <p><PendingReview /></p>}
               <RichTextView value={section.content} />
               <DisclosureStatus disclosure={section.disclosure} />
             </section>
@@ -233,16 +247,15 @@ export function ItemDetails({ data }: { readonly data: ItemPageData }) {
       </section>
       <LinkList title="Cross-links" entries={data.links} empty="No Cross-links from this record." />
       <LinkList title="Backlinks" entries={data.backlinks} empty="No Backlinks to this record." />
+      <section className="rf-section" aria-label="Review requests">
+        <h2>Review requests</h2>
+        <ReviewList reviews={item.reviews} sectionNumber={sectionNumber} onChanged={onChanged} />
+        {session.can('review.request') && <ReviewRequestForm targets={reviewTargets} options={reviewOptions(session, data.members)} onRequested={onChanged} />}
+      </section>
       <section className="rf-section" aria-label="Thread">
         <h2>Thread</h2>
-        {item.groupNote === null ? <p className="rf-meta">No Replies yet.</p> : (
-          <article className="rf-companion">
-            <p><span className="rf-status">Group Note</span>{' by '}<PersonLink person={item.groupNote.owner} /></p>
-            {item.groupNote.withdrawn && <Notice tone="warning" title="This Group Note has been withdrawn." />}
-            <RichTextView value={item.groupNote.text} />
-            <DisclosureStatus disclosure={item.groupNote.disclosure} />
-          </article>
-        )}
+        <Thread rootId={item.id} entries={data.thread} mentions={mentionOptions(data.members, session.me.specialtyOptions)} canReply={session.can('reply.post')}
+          onChanged={onChanged} groupNote={item.groupNote} />
       </section>
       <section className="rf-section" aria-label="Submit from here">
         <h2>Submit a new record in this Project</h2>
@@ -284,17 +297,18 @@ export function ItemPage({ id }: { readonly id: string }) {
   const valueSets = useLoad<{ valueSets: ValueSets }>('/value-sets');
   const parties = useLoad<{ parties: PartyRecord[] }>('/parties');
   const members = useLoad<{ members: MemberRow[] }>('/members');
+  const thread = useLoad<{ replies: ThreadEntryView[] }>(`/items/${id}/thread`);
   const links = useAllLinks(`origin=${id}`);
   const backlinks = useAllLinks(`target=${id}`);
   const deletion = deletionOf(item.error);
   if (deletion !== undefined) return <DeletedItem deletion={deletion} />;
-  if (!item.data || !valueSets.data || !parties.data || !members.data || !links.entries || !backlinks.entries) {
-    return <LoadState error={item.error ?? valueSets.error ?? parties.error ?? members.error ?? links.error ?? backlinks.error} />;
+  if (!item.data || !valueSets.data || !parties.data || !members.data || !thread.data || !links.entries || !backlinks.entries) {
+    return <LoadState error={item.error ?? valueSets.error ?? parties.error ?? members.error ?? thread.error ?? links.error ?? backlinks.error} />;
   }
   return (
     <ItemDetails data={{
       item: item.data.item, valueSets: valueSets.data.valueSets, parties: parties.data.parties, members: members.data.members,
-      links: links.entries, backlinks: backlinks.entries,
+      links: links.entries, backlinks: backlinks.entries, thread: thread.data.replies, onChanged: () => { item.reload(); thread.reload(); },
     }} />
   );
 }

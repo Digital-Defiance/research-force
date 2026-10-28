@@ -23,6 +23,7 @@ import type { FieldIssue } from '../api/errors';
 import { parse } from '../api/input';
 import { authorize } from '../auth/authorize';
 import type { PermissionCheck } from '../auth/authorize';
+import { mentionIssues } from '../discussion/mentions';
 import { KIND_ADAPTERS } from './kinds';
 import { insertStagedSections, prepareSections, stagedSectionChange, stagedSectionIssues, writeStagedSections } from './kinds/journal';
 import type { Section, StagedSections } from './kinds/journal';
@@ -31,6 +32,8 @@ import type { BaseRow, ChildUnit, ItemFields, KindRules } from './kinds/kind';
 import { evidenceLink, linkIssues, writeLinks } from './links';
 import type { LinkInput } from './links';
 import { addGroupNote, guardLogSummaryOwner, logSummaryColumns, present } from './log-summary';
+import { hasEligibleReviewer, itemReviewStatements, NO_ELIGIBLE_REVIEWER, readItemReviews, reviewIssues, writeReview } from '../reviews/reviews';
+import type { NewReview, ReviewView } from '../reviews/reviews';
 import { commitSave, diffFields } from './pipeline';
 import type { FieldChange, FieldClass } from './pipeline';
 import { addSubmission, commitWithIdentifiers, requireProject, visibleTo } from './submissions';
@@ -46,7 +49,9 @@ const SELECTION_FIELDS = ['statusValueId', 'reliabilityId', 'rightsStatusId', 'o
 
 const linksSchema = z.array(z.strictObject({ targetId: z.string(), relationValueId: z.string().nullable().optional() })).max(LINKS_PER_SAVE).optional();
 const evidenceSchema = z.array(z.string()).max(LINKS_PER_SAVE).optional();
-const createEnvelope = z.object({ links: linksSchema, evidence: evidenceSchema });
+/** Review_Requests made within the Submission, of the new Item or, by index, one of its Entry_Sections (R17.1). */
+const reviewsSchema = z.array(z.record(z.string(), z.unknown())).max(10).optional();
+const createEnvelope = z.object({ links: linksSchema, evidence: evidenceSchema, reviews: reviewsSchema });
 const editEnvelope = z.object({ rev: z.int().min(1), mark: editMarkSchema.optional(), statusReason: reasonSchema.optional(), links: linksSchema, evidence: evidenceSchema });
 
 function objectBody(body: unknown): Record<string, unknown> {
@@ -92,6 +97,8 @@ export interface LoadedItem {
   readonly project: { readonly id: ULID; readonly name: string; readonly level: Level };
   readonly names: ReadonlyMap<ULID, string>;
   readonly specialties: readonly { readonly id: ULID; readonly name: string }[];
+  /** Every Review_Request of the Item and its Entry_Sections (R17.11). */
+  readonly reviews: readonly ReviewView[];
 }
 interface BaseQueryRow extends Omit<BaseRow, 'credit' | 'disclosureLine' | 'logSummary'> {
   credit: string; disclosureLine: string | null; logSummary: string | null; logSummarySpans: string; projectName: string; projectLevel: Level;
@@ -115,7 +122,7 @@ export async function loadItem(c: Context<ApiEnv>, id: string): Promise<LoadedIt
   if (!isULID(id)) throw new ApiError('not_found');
   const db = c.env.RF_CORE;
   const viewer = c.get('session').member.id;
-  const [baseRows, noteRows] = await c.get('accountant').track(db.batch([
+  const [baseRows, noteRows, reviewRows, addresseeRows] = await c.get('accountant').track(db.batch([
     db.prepare(`SELECT u.id, ri.kind, ri.item_identifier AS identifier, u.project_id AS projectId, u.owner_id AS ownerId, u.credit, u.submission_id AS submissionId,
         u.created_at AS createdAt, u.rev, u.disclosure_level AS disclosureLevel, u.classification_state AS classificationState, u.disclosure_line AS disclosureLine,
         ri.public_presentation AS publicPresentation, u.withdrawn_at AS withdrawnAt, u.withdrawn_by AS withdrawnBy, u.withdrawal_reason AS withdrawalReason,
@@ -124,6 +131,7 @@ export async function loadItem(c: Context<ApiEnv>, id: string): Promise<LoadedIt
       WHERE u.id = ?1 AND u.unit_type = 'research_item' AND ${visibleTo('u', '?2')}`).bind(id, viewer),
     db.prepare(`SELECT u.id, u.rev, u.disclosure_level AS level, u.classification_state AS classification, u.owner_id AS ownerId, u.withdrawn_at AS withdrawnAt, r.text, r.text_spans AS spans
       FROM units u JOIN replies r ON r.unit_id = u.id WHERE u.parent_id = ?1 AND u.unit_type = 'reply' AND r.is_group_note = 1 ORDER BY u.id LIMIT 1`).bind(id),
+    ...itemReviewStatements(db, id),
   ]));
   const row = rowsOf<BaseQueryRow>(baseRows)[0];
   if (!row) throw await missingItem(c, id);
@@ -148,6 +156,7 @@ export async function loadItem(c: Context<ApiEnv>, id: string): Promise<LoadedIt
     project: { id: base.projectId, name: projectName, level: projectLevel },
     names: new Map(rowsOf<{ id: ULID; displayName: string }>(results.at(-2)).map((person) => [person.id, person.displayName])),
     specialties: rowsOf<{ id: ULID; name: string }>(results.at(-1)),
+    reviews: readItemReviews(reviewRows, addresseeRows),
   };
 }
 
@@ -165,6 +174,8 @@ export function itemResponse(item: LoadedItem) {
   const children = new Map(item.children.map((child) => [child.id, child]));
   const person = (id: ULID) => ({ id, displayName: item.names.get(id) ?? null });
   const sections = item.fields['sections'] as readonly { id: ULID; content: RichText }[] | undefined;
+  // Members see the pending-review marker; no public view has a field for it (R17.7).
+  const pending = new Set(item.reviews.filter((review) => review.state === 'needs_review').map((review) => review.target.id));
   return {
     id: base.id, kind: base.kind, identifier: base.identifier, rev: base.rev, createdAt: base.createdAt,
     project: { id: item.project.id, name: item.project.name },
@@ -173,7 +184,7 @@ export function itemResponse(item: LoadedItem) {
     ...(sections === undefined ? {} : {
       sections: sections.map((section) => {
         const child = children.get(section.id)!;
-        return { id: section.id, content: section.content, rev: child.rev, disclosure: disclosure(childNode(child, 'entry_section')) };
+        return { id: section.id, content: section.content, rev: child.rev, disclosure: disclosure(childNode(child, 'entry_section')), pendingReview: pending.has(section.id) };
       }),
     }),
     owner: { ...person(base.ownerId), specialties: item.specialties },
@@ -184,6 +195,8 @@ export function itemResponse(item: LoadedItem) {
       id: item.groupNote.id, rev: item.groupNote.rev, text: item.groupNote.text, owner: person(item.groupNote.ownerId), withdrawn: item.groupNote.withdrawn,
       disclosure: disclosure(childNode(item.groupNote, 'reply')),
     },
+    reviews: item.reviews,
+    pendingReview: pending.has(base.id),
   };
 }
 
@@ -223,17 +236,18 @@ function validated(kind: ItemKind, context: ValidationContext, options: Paramete
  * A Journal_Entry's Entry_Sections can come from the parts of a staged save instead of the body.
  */
 export async function createItem(c: Context<ApiEnv>, kind: ItemKind, body: unknown, staged?: StagedSections): Promise<ULID> {
-  const { links, evidence, ...rest } = objectBody(body);
-  const envelope = parse(createEnvelope, { links, evidence });
+  const { links, evidence, reviews: reviewList, ...rest } = objectBody(body);
+  const envelope = parse(createEnvelope, { links, evidence, reviews: reviewList });
   const actor = c.get('session').member.id;
   const now = c.get('now');
   await authorize(c, [
     { permission: kind === 'topic' ? 'topic.create' : 'item.create' },
     ...((envelope.links?.length ?? 0) + (envelope.evidence?.length ?? 0) > 0 ? [{ permission: 'link.add' as const }] : []),
+    ...((envelope.reviews?.length ?? 0) > 0 ? [{ permission: 'review.request' as const }] : []),
   ]);
   const context = await validationContext(c);
   const result = validated(kind, context, { mode: 'submit', ...stagedTotals(staged) }, { ...rest, kind });
-  const issues = result.issues.filter((issue) => issue.field !== 'projectId');
+  const issues = [...result.issues.filter((issue) => issue.field !== 'projectId'), ...(result.fields ? mentionIssues(context, undefined, result.fields) : [])];
   try {
     requireProject(context.projects, rest['projectId']);
   } catch (error) {
@@ -249,6 +263,8 @@ export async function createItem(c: Context<ApiEnv>, kind: ItemKind, body: unkno
   }
   const linked = await saveLinks(c, id, envelope, true);
   issues.push(...linked.issues);
+  const reviews = await submissionReviews(c, context, { id, actor, now, fields, staged: staged !== undefined }, envelope.reviews ?? []);
+  issues.push(...reviews.issues);
   refuse(issues);
   const adapter = KIND_ADAPTERS[kind];
   const rules: KindRules = (await adapter.rules?.(c, { id, after: fields, links: linked.links })) ?? { issues: [] };
@@ -277,6 +293,7 @@ export async function createItem(c: Context<ApiEnv>, kind: ItemKind, body: unkno
     }
     if (present(groupNote)) addGroupNote(batch, { id: newULID(now), itemId: id, projectId, memberId: actor, submissionId, now, text: groupNote });
     if (linked.links.length > 0) writeLinks(batch, linked.links, { id: actor, now });
+    for (const review of reviews.reviews) writeReview(batch, review, now);
     rules.write?.(batch);
     batch.outbox('publish', `unit:${id}`);
   }, { accountant: c.get('accountant') });
@@ -328,7 +345,7 @@ export async function editItem(c: Context<ApiEnv>, current: LoadedItem, body: un
     },
     ...stagedTotals(staged),
   }, merged);
-  issues.push(...result.issues);
+  issues.push(...result.issues, ...(result.fields ? mentionIssues(context, before, result.fields) : []));
   let input: ItemFields = result.fields ?? {};
   if (base.kind === 'journal_entry' && result.fields && !staged) {
     const prepared = prepareSections(input, before, now, restoration?.readd);
@@ -387,6 +404,34 @@ export async function editItem(c: Context<ApiEnv>, current: LoadedItem, body: un
     outbox: [['publish', `unit:${base.id}`]],
   });
   return true;
+}
+
+/**
+ * The Review_Requests of a Submission, each of the new Item or of one of the Entry_Sections it submits in the body;
+ * a request without an Eligible_Reviewer keeps the whole Submission unsubmitted (R17.1, R17.9).
+ */
+async function submissionReviews(
+  c: Context<ApiEnv>, context: ValidationContext, item: { readonly id: ULID; readonly actor: ULID; readonly now: Timestamp; readonly fields: ItemFields; readonly staged: boolean },
+  requests: readonly Record<string, unknown>[],
+): Promise<{ reviews: NewReview[]; issues: FieldIssue[] }> {
+  const reviews: NewReview[] = [];
+  const issues: FieldIssue[] = [];
+  const sections = (item.fields['sections'] ?? []) as readonly Section[];
+  for (const [index, request] of requests.entries()) {
+    const { section, ...rest } = request;
+    let targetId = item.id;
+    if (section !== undefined) {
+      const chosen = !item.staged && typeof section === 'number' ? sections[section] : undefined;
+      if (chosen?.id !== undefined) targetId = chosen.id as ULID;
+      else issues.push({ field: `reviews.${index}.section`, rule: 'Choose one of the Entry Sections in this Submission.' });
+    }
+    const checked = reviewIssues(context, targetId, rest, `reviews.${index}.`);
+    issues.push(...checked.issues);
+    if (!checked.input) continue;
+    if (await hasEligibleReviewer(c, item.actor, checked.input)) reviews.push({ ...checked.input, id: newULID(item.now), targetId, rootId: item.id, requesterId: item.actor });
+    else issues.push({ field: `reviews.${index}`, rule: NO_ELIGIBLE_REVIEWER });
+  }
+  return { reviews, issues };
 }
 
 function stagedTotals(staged: StagedSections | undefined): { staged?: { count: number; characters: number } } {

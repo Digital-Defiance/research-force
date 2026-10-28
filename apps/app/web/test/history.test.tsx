@@ -256,7 +256,7 @@ describe('the item page actions', () => {
     const api = fakeApi({
       [`GET /items/${ITEM.id}`]: { item: { ...ITEM, kind: 'finding', statusValueId: BUILT_IN_VALUE_IDS.findingOpen } },
       'GET /value-sets': { valueSets: {} }, 'GET /parties': { parties: [] }, 'GET /members': { members: [] },
-      'GET /links': { entries: [], next: null },
+      'GET /links': { entries: [], next: null }, [`GET /items/${ITEM.id}/thread`]: { replies: [] },
     });
     const member = renderScreen(<ItemPage id={ITEM.id} />, { client: api.client });
     await screen.findByRole('link', { name: 'History' });

@@ -46,6 +46,21 @@ body {
   margin-block-start: var(--rf-space-sm);
 }
 
+.rf-thread {
+  padding-inline-start: 0;
+  list-style: none;
+}
+
+.rf-thread .rf-thread {
+  border-inline-start: var(--rf-border-width) solid var(--rf-colour-border);
+  padding-inline-start: var(--rf-space-md);
+}
+
+.rf-thread > li + li,
+.rf-thread > li > * + * {
+  margin-block-start: var(--rf-space-sm);
+}
+
 .rf-order-item {
   display: flex;
   gap: var(--rf-space-xs);

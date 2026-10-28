@@ -6,7 +6,7 @@ import { SETTINGS } from '@researchforce/domain/settings';
 import { asTimestamp } from '@researchforce/domain/types';
 import type { ULID } from '@researchforce/domain/types';
 import { RequestAccountant } from '@researchforce/db/accountant';
-import { BatchTooLarge, CHANGE_SEQ, GuardedBatch, GuardViolation } from '@researchforce/db/batch';
+import { BatchTooLarge, CHANGE_SEQ, GUARD_CODES, GuardedBatch, GuardViolation } from '@researchforce/db/batch';
 import { crossLinks, entrySections, identifiers, members, moderationDecisions, revisions, units } from '@researchforce/db/schema/core';
 import { SEED_VALUES } from '@researchforce/db/seed/value-sets';
 import { SEED_POLICY_SECTIONS } from '@researchforce/db/seed/policy-sections';
@@ -141,6 +141,14 @@ describe('guarded batch helper', () => {
     expect(await core.prepare('SELECT position, rev FROM units WHERE id = ?').bind(unitId).first()).toEqual({ position: 0, rev: 1 });
     expect(await core.prepare('SELECT count(*) AS n FROM outbox WHERE scope = ?').bind(`root:${unitId}`).first('n')).toBe(0);
     expect(await changeSeq()).toBe(before);
+  });
+
+  it('has an empty guard table for every guard code, and each failing guard names its code', async () => {
+    for (const code of GUARD_CODES) {
+      expect(await core.prepare(`SELECT count(*) AS n FROM _g_${code}`).first('n')).toBe(0);
+      const error = await refusal(new GuardedBatch(core, { id: null, now }).guard(code, sql`0`).commit());
+      expect(error).toMatchObject({ code });
+    }
   });
 
   it('treats a guard condition that is NULL, such as a rev check on a missing row, as failed', async () => {

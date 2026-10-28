@@ -16,6 +16,7 @@ import { ProfilePage } from './people/view';
 import { EditProjectPage, ProjectForm } from './projects/form';
 import { ProjectHistoryPage } from './projects/history';
 import { ProjectsPage } from './projects/list';
+import { ReviewQueuePage } from './reviews/reviews';
 import { SessionContext, sessionFor } from './session';
 import type { Me, Role } from './types';
 import { LoadState, Notice, useLoad } from './ui';
@@ -43,6 +44,7 @@ export function Header() {
           <ul className="rf-nav__list">
             <li><Link className="rf-nav__link" to="/projects">Projects</Link></li>
             <li><Link className="rf-nav__link" to="/members">Members</Link></li>
+            <li><Link className="rf-nav__link" to="/reviews">Review queue</Link></li>
             <li><Link className="rf-nav__link" to="/me/profile">Your Profile</Link></li>
             <li><Link className="rf-nav__link" to="/me/preferences">Notification settings</Link></li>
           </ul>
@@ -127,6 +129,7 @@ export function WorkspaceRoutes() {
       <Route path="/projects/new" element={<ProjectForm />} />
       <Route path="/projects/:id/edit" element={<EditProjectRoute />} />
       <Route path="/projects/:id/history" element={<ProjectHistoryRoute />} />
+      <Route path="/reviews" element={<ReviewQueuePage />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

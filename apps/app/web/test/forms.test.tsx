@@ -94,7 +94,7 @@ describe('submitting a Research_Item', () => {
   const choice = { projects: [{ id: 'P0', name: 'Earlier project' }, PROJECT], preselected: PROJECT.id };
 
   it('preselects the Project of the starting page, offers Projects in order, and opens the new item (R39.2, R41.7)', async () => {
-    const api = fakeApi({ 'POST /items/topic': json({ item: { id: 'NEW' } }, 201) });
+    const api = fakeApi({ 'POST /topics': json({ item: { id: 'NEW' } }, 201) });
     renderScreen(<CreateItemForm kind="topic" choice={choice} data={FORM_DATA} />, { client: api.client });
     const project = field(/^Project/u) as unknown as HTMLSelectElement;
     expect(project.value).toBe(PROJECT.id);
@@ -105,7 +105,8 @@ describe('submitting a Research_Item', () => {
     expect(sessionStorage.getItem(`${UNSENT_PREFIX}item:new:topic`)).toContain('A topic');
     fireEvent.click(screen.getByRole('button', { name: 'Submit' }));
     await waitFor(() => expect(screen.getByTestId('location').textContent).toBe('/items/NEW'));
-    expect(api.writes()[0]!.body).toEqual({ projectId: PROJECT.id, title: 'A topic', body: rich('What we know.'), groupNote: rich('A note for the group.') });
+    expect(api.writes()[0]).toMatchObject({ path: '/topics', body: { projectId: PROJECT.id, title: 'A topic', body: rich('What we know.'), groupNote: rich('A note for the group.') } });
+    expect(api.writes()[0]!.body).not.toHaveProperty('reviews');
     expect(sessionStorage.getItem(`${UNSENT_PREFIX}item:new:topic`)).toBeNull();
   });
 

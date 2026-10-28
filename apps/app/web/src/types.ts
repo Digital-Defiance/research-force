@@ -67,7 +67,7 @@ export interface PartyRecord { readonly id: string; readonly name: string; reado
 export interface PersonRef { readonly id: string; readonly displayName: string | null }
 export interface DisclosureView { readonly level: string; readonly effective: string; readonly line?: string }
 export type CreditView = { readonly member: PersonRef } | { readonly outside: unknown } | { readonly imported: unknown };
-export interface SectionView { readonly id: string; readonly content: RichText; readonly rev: number; readonly disclosure: DisclosureView }
+export interface SectionView { readonly id: string; readonly content: RichText; readonly rev: number; readonly disclosure: DisclosureView; readonly pendingReview?: boolean }
 export interface GroupNoteView {
   readonly id: string; readonly rev: number; readonly text: RichText; readonly owner: PersonRef; readonly withdrawn: boolean; readonly disclosure: DisclosureView;
 }
@@ -82,7 +82,33 @@ export interface ItemView {
   readonly disclosure: DisclosureView;
   readonly withdrawal: { readonly at: string; readonly by: PersonRef; readonly reason: string | null } | null;
   readonly groupNote: GroupNoteView | null;
+  /** Every Review_Request on the Item and its Entry_Sections, oldest first (R17.11). */
+  readonly reviews: readonly ReviewView[];
+  /** Whether the Item itself has a Needs_Review request (R17.7). */
+  readonly pendingReview: boolean;
   readonly [field: string]: unknown;
+}
+
+export type AddresseeType = 'member' | 'specialty' | 'role';
+export interface ReviewView {
+  readonly id: string;
+  readonly target: { readonly id: string; readonly type: string | null; readonly rootId: string | null; readonly identifier: string | null; readonly title: string | null };
+  readonly state: 'needs_review' | 'reviewed';
+  readonly requester: PersonRef;
+  readonly addressees: readonly { readonly type: AddresseeType; readonly id: string; readonly name: string | null }[];
+  readonly note: string | null;
+  readonly createdAt: string;
+  readonly isPublicationRequest: boolean;
+  readonly reviewer?: PersonRef;
+  readonly reviewedAt?: string;
+  readonly reviewNote?: string | null;
+  readonly outcome?: string | null;
+}
+
+/** One Reply of a Thread; a permanently deleted Reply's placeholder has only the common fields and `deletedAt` (R16.10). */
+export interface ThreadEntryView {
+  readonly id: string; readonly parentId: string; readonly postedAt: string; readonly isGroupNote: boolean; readonly rev: number;
+  readonly owner?: PersonRef; readonly text?: RichText; readonly withdrawal?: { readonly at: string; readonly reason: string | null } | null; readonly deletedAt?: string;
 }
 
 export interface LinkEnd {
