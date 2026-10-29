@@ -330,6 +330,7 @@ class Projector {
         rich('requestText', item.requestText); date('dateSent', item.dateSent); date('replyDate', item.replyDate); rich('replyContent', item.replyContent);
         break;
       case 'topic': rich('body', item.body); break;
+      case 'research_question': text('question', item.question); rich('introduction', item.introduction); break;
     }
     return fields;
   }

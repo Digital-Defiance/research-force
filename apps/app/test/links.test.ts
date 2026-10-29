@@ -97,6 +97,7 @@ describe('adding Cross_Links', () => {
       [{ originId: note.id, targetId: finding.id }, [{ field: 'originId', rule: 'Only Items and Entry Sections can be linked.' }]],
       [{ originId: finding.id, targetId: source.id, relationValueId: newULID(at) }, [{ field: 'relationValueId', rule: 'Choose a relation label from the relation label set.' }]],
       [{ originId: finding.id, targetId: source.id, relationValueId: BUILT_IN_VALUE_IDS.findingOpen }, [{ field: 'relationValueId', rule: 'Choose a relation label from the relation label set.' }]],
+      [{ originId: finding.id, targetId: source.id, relationValueId: BUILT_IN_VALUE_IDS.relationAddresses }, [{ field: 'relationValueId', rule: 'The Addresses label is reserved for the entries of a Research Question.' }]],
       [{ originId: finding.id, targetId: source.id, relationValueId: RETIRED }, [{ field: 'relationValueId', rule: 'This relation label has been retired.' }]],
       [{ originId: source.id, targetId: finding.id, relationValueId: RELATED }, [{ field: 'targetId', rule: 'These two ends are already linked with this relation label.' }]],
       [{ originId: source.id, targetId: finding.id, relationValueId: null }, [{ field: 'targetId', rule: 'These two ends are already linked with this relation label.' }]],

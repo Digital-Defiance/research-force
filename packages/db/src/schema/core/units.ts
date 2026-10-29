@@ -261,6 +261,35 @@ export const topics = sqliteTable('topics', {
   bodySpans: spans('body_spans'),
 });
 
+/** R50.1: the question (1 to 500 characters) and the optional introduction with its labels; the groups and their entries are rows of their own. */
+export const researchQuestions = sqliteTable('research_questions', {
+  unitId: text('unit_id').primaryKey(),
+  question: text('question').notNull(),
+  introduction: text('introduction'),
+  introductionSpans: spans('introduction_spans'),
+});
+
+export const questionGroups = sqliteTable('question_groups', {
+  id: text('id').primaryKey(),
+  questionId: text('question_id').notNull(),
+  position: integer('position').notNull(),
+  heading: text('heading').notNull(),
+}, (t) => [uniqueIndex('question_groups_position').on(t.questionId, t.position), check('question_groups_position_range', sql`${t.position} >= 0 AND ${t.position} < 20`)]);
+
+/** One entry is an Addresses Cross_Link from the Research_Question to its target; a target appears once per question (R50.1, R50.2). */
+export const questionEntries = sqliteTable('question_entries', {
+  groupId: text('group_id').notNull(),
+  questionId: text('question_id').notNull(),
+  position: integer('position').notNull(),
+  targetId: text('target_id').notNull(),
+  crossLinkId: text('cross_link_id').notNull(),
+}, (t) => [
+  primaryKey({ columns: [t.groupId, t.position] }),
+  uniqueIndex('question_entries_target').on(t.questionId, t.targetId),
+  index('question_entries_target_question').on(t.targetId),
+  check('question_entries_position_range', sql`${t.position} >= 0 AND ${t.position} < 200`),
+]);
+
 export const replies = sqliteTable('replies', {
   unitId: text('unit_id').primaryKey(),
   text: text('text').notNull(),

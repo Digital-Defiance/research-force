@@ -213,6 +213,7 @@ function buildState(plan: StatePlan): WorkspaceState {
         dateSent: opt(2, () => partialDate('1943-07-01')), replyDate: opt(3, () => partialDate('1943-07-09')), replyContent: opt(4, () => b.rich(owner, 'replyContent', seed + 2)),
       });
       case 'topic': return { kind, body: b.rich(owner, 'body', seed) };
+      case 'research_question': return strip({ kind, question: b.text(owner, 'question', seed), introduction: opt(0, () => b.rich(owner, 'introduction', seed + 1)) });
     }
   };
 
@@ -238,7 +239,7 @@ function buildState(plan: StatePlan): WorkspaceState {
     };
     if (type === 'research_item') {
       const kind = u.kind;
-      const summaryOptional = kind === 'journal_entry' || kind === 'topic';
+      const summaryOptional = kind === 'journal_entry' || kind === 'topic' || kind === 'research_question';
       const item = {
         ...kindRecord(kind, owner, u), projectId: pickOf(projects, pick)!.id, identifier: b.token(owner, 'identifier'), title: b.text(owner, 'title', u.seed + 1),
         presentation: u.presentation, ...((u.flags >> 5) & 1 ? { publicSummary: b.rich(owner, 'publicSummary', u.seed + 2) } : {}),
@@ -410,6 +411,7 @@ export function allowedCanaries(state: WorkspaceState): Set<string> {
       case 'correspondence': add(item.channel); addRich(item.content); for (const party of item.parties) addParty(party); break;
       case 'archival_request': addParty(item.archiveOrDesk); addParty(item.contact); add(item.channel); addRich(item.requestText); addRich(item.replyContent); break;
       case 'topic': addRich(item.body); break;
+      case 'research_question': add(item.question); addRich(item.introduction); break;
     }
   };
 

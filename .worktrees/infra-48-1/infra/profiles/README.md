@@ -1,0 +1,22 @@
+# Resource profiles
+
+`Free_Qualified.example.json` and `Paid_Standard.example.json` are installation templates, not deployed configuration. Both leave `productionApproved`, `budgetApproved` and `curatorCorpusMeasured` false. Copy one outside this directory, replace every illustrative growth/quota/budget input, and obtain the operator's approval. Paid_Standard is recommended for production; selecting a template or running the tool buys nothing, deploys nothing and sets no provider billing cap.
+
+Run:
+
+```sh
+npm run profile:certify -- infra/profiles/Free_Qualified.example.json --output /tmp/resource-free.json
+npm run profile:certify -- infra/profiles/Paid_Standard.example.json --output /tmp/resource-paid.json
+```
+
+The tool writes a new immutable local report, with profile/provider dates, source hashes, maximum encoded single-field and inline-revision fixture sizes, 1/3/5-year storage and recovery transfer forecasts. Existing output files are refused. Reports contain synthetic data and installation inputs only. Check the input file for sensitive information before sharing it.
+
+The growth inputs are byte estimates for originals, derivatives, metadata, history, public copies, releases and exports. At each forecast year, backup estimates conservatively add 14 daily + 8 weekly + 12 monthly full points with no deduplication/compression, multiplied by independent destinations. Transient copies are additional full recovery packages. Recovery bytes include private originals, derivatives, metadata and history; public projections are rebuildable. Forecasts do not assume permission to erase retained data. Quarterly restore measurements and a measured curator corpus must replace these estimates before production custody. Alert amounts include separate platform, R2 and independent-backup amounts; quotas are operator ceilings, not included paid allowances or a promise of a USD 5 total bill.
+
+The shared contract is `packages/domain/src/resource-profile.ts`. Its `provider` data is a dated documentation baseline. Its `chosen` budgets are application policy. The authenticated `GET /api/v1/resource-profile` returns the selected contract and an explicit pending certification status; `ApiClient.resourceProfile()` validates it before use. `RESOURCE_PROFILE=Free_Qualified|Paid_Standard` selects the descriptor only. Missing selection currently preserves the Free_Qualified development baseline; production provisioning must require an explicit selection and release evidence. The installation choice is absent from editable Workspace settings.
+
+Provider sources checked 28 October 2026: [Workers limits](https://developers.cloudflare.com/workers/platform/limits/), [D1 limits](https://developers.cloudflare.com/d1/platform/limits/), [Durable Objects limits](https://developers.cloudflare.com/durable-objects/platform/limits/). Provider D1 invocation calls, per-statement parameters and chosen statement limits are distinct. A batch is one invocation call, even when it contains many statements. Isolate memory is shared across concurrent requests; the 96 MiB chosen working ceiling is not a separate allowance for each request. Ordinary Free HTTP and DO CPU ceilings are different. The required CPU ceilings are minimum deployment requirements, not measurements of current configuration. Check HTTP and DO settings separately: lowering a shared Worker CPU setting to 100 ms would not meet the DO requirement of 30,000 ms. No Wrangler plan/configuration is changed here.
+
+`local_bounds_verified` measures encoded geometry and checks boundary helpers. It **never** certifies provider CPU, memory, database size, full transfer paths, browser previews, recovery, spend or distributed abuse. Task 48.3 provides those measured production gates. Task 57.3 adds immutable field fragments; task 19.1 integrates inside-section transport; 30.6–30.8/30.11 repair preview/upload paths. Large logical fields remain schema-valid while the fixture explicitly rejects their oversized physical representation. A passed local report does not claim those later tasks are complete.
+
+The versioned abuse rehearsal declares 100 requests/second for 30 minutes from 1,000 identities, with 10 concurrent Members, valid downloads/saves and urgent removal. Invalid download tokens and rejected public requests count toward invocation usage. At least 99.9% of authorized interactive operations must succeed within that declared envelope. Launch requires measured edge shedding and reserve, rather than relying on application admission counters alone.

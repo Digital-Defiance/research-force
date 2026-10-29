@@ -35,6 +35,7 @@ export function itemFixture(kind: ItemKind): Record<string, unknown> {
     case 'correspondence': return { ...common, date: { value: '2026-03-07', approx: false }, direction: 'received', parties: [{ kind: 'member', id: SCHEMA_IDS.member }, { kind: 'external', id: SCHEMA_IDS.external }], content: schemaText(), channel: 'Letter' };
     case 'archival_request': return { ...common, archiveOrDesk: { kind: 'external', id: SCHEMA_IDS.external }, requestText: schemaText(), statusValueId: SCHEMA_IDS.planned };
     case 'topic': return { ...common, body: schemaText() };
+    case 'research_question': return { ...common, question: 'What did the team learn from the synthetic tiles?', groups: [] };
   }
 }
 export function outsideFixture(type = 'material'): Record<string, unknown> {

@@ -203,7 +203,7 @@ export type ItemDateInput = { readonly createdAt: Timestamp } & (
   | { readonly kind: 'run'; readonly startTime?: string }
   | { readonly kind: 'correspondence'; readonly date?: PartialDate }
   | { readonly kind: 'archival_request'; readonly dateSent?: PartialDate }
-  | { readonly kind: Extract<ItemKind, 'finding' | 'hypothesis' | 'topic'> }
+  | { readonly kind: Extract<ItemKind, 'finding' | 'hypothesis' | 'topic' | 'research_question'> }
 );
 
 export function itemDate(item: ItemDateInput, zone = 'UTC'): DocumentDate {

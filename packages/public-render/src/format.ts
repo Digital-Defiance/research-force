@@ -9,7 +9,7 @@ import type { FieldKey, UTCDate } from '@researchforce/kernel/views';
 export const KIND_NAMES: Readonly<Record<ItemKind, string>> = ITEM_KIND_NAMES;
 export const KIND_LISTING_TITLES: Readonly<Record<ItemKind, string>> = {
   journal_entry: 'Journal', finding: 'Findings', source: 'Sources', run: 'Runs', hypothesis: 'Hypotheses',
-  correspondence: 'Correspondence', archival_request: 'Archival requests', topic: 'Topics',
+  correspondence: 'Correspondence', archival_request: 'Archival requests', topic: 'Topics', research_question: 'Research Questions',
 };
 export const FILE_KIND_NAMES: Readonly<Record<FileKind, string>> = {
   pdf: 'PDF', image: 'Image', archive: 'Archive', spreadsheet: 'Spreadsheet', csv: 'CSV', structured_data: 'Structured data', text_log: 'Text log', video: 'Video', other: 'File',
@@ -24,7 +24,7 @@ export const FIELD_LABELS: Readonly<Record<FieldKey, string>> = {
   statement: 'Statement',
   date: 'Date', channel: 'Channel', direction: 'Direction', content: 'Content', parties: 'Parties',
   archiveOrDesk: 'Archive or desk', contact: 'Contact', requestText: 'Request', dateSent: 'Date sent', replyDate: 'Reply date', replyContent: 'Reply',
-  body: 'Text',
+  body: 'Text', question: 'Question', introduction: 'Introduction',
 };
 
 /** A UTC calendar date the system recorded, written as on every page (R45.12). */

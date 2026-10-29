@@ -1,0 +1,22 @@
+{
+  "name": "@researchforce/app",
+  "version": "0.0.0",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@researchforce/db": "*",
+    "@researchforce/design": "*",
+    "@researchforce/domain": "*",
+    "@researchforce/kernel": "*",
+    "@researchforce/manifest": "*",
+    "@researchforce/markdown": "*",
+    "@researchforce/public-render": "*",
+    "@researchforce/search-public": "*",
+    "@researchforce/testing": "*",
+    "jose": "6.2.13"
+  },
+  "scripts": {
+    "build": "vite build --config web/vite.config.ts"
+  }
+}

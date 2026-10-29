@@ -37,6 +37,7 @@ export function itemBody(kind: ItemKind, projectId: ULID, overrides: Record<stri
     correspondence: { date: { value: '2026-10-01', approx: false }, direction: 'sent', parties: [] },
     archival_request: { archiveOrDesk: { kind: 'member', id: '' }, requestText: rich('A synthetic request.'), statusValueId: asULID('0000000000000000000000A001') },
     topic: { body: rich('A synthetic topic body.') },
+    research_question: { question: 'What did the synthetic tiles show?', groups: [] },
   };
   return { ...common, ...fields[kind], ...overrides };
 }

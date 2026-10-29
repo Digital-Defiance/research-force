@@ -1,0 +1,71 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "rf-submit",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-26",
+  "workers_dev": false,
+  "preview_urls": false,
+  "d1_databases": [
+    {
+      "binding": "RF_CORE",
+      "database_name": "rf-core",
+      "database_id": "00000000-0000-4000-8000-000000000001",
+      "migrations_dir": "../../packages/db/migrations/core"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "RF_PRIVATE_BUCKET",
+      "bucket_name": "rf-private"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "BUDGET",
+        "class_name": "Budget",
+        "script_name": "rf-app"
+      },
+      {
+        "name": "MAILER",
+        "class_name": "Mailer",
+        "script_name": "rf-app"
+      }
+    ]
+  },
+  "env": {
+    "staging": {
+      "name": "rf-submit-staging",
+      "workers_dev": false,
+      "preview_urls": false,
+      "d1_databases": [
+        {
+          "binding": "RF_CORE",
+          "database_name": "rf-core-staging",
+          "database_id": "00000000-0000-4000-8000-000000000001",
+          "migrations_dir": "../../packages/db/migrations/core"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "RF_PRIVATE_BUCKET",
+          "bucket_name": "rf-private-staging"
+        }
+      ],
+      "durable_objects": {
+        "bindings": [
+          {
+            "name": "BUDGET",
+            "class_name": "Budget",
+            "script_name": "rf-app-staging"
+          },
+          {
+            "name": "MAILER",
+            "class_name": "Mailer",
+            "script_name": "rf-app-staging"
+          }
+        ]
+      }
+    }
+  }
+}

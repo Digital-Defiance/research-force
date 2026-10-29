@@ -1,0 +1,24 @@
+{
+  "proofVersion": 1,
+  "installationId": "replace-with-observed-installation",
+  "releaseId": "replace-with-tested-release",
+  "backupId": "replace-with-verified-backup",
+  "schemaRelease": "replace-with-restored-schema-release",
+  "schemas": {
+    "core": 10,
+    "search": 3,
+    "public": 0
+  },
+  "verificationDigest": null,
+  "completedAt": null,
+  "freshIsolatedEnvironment": false,
+  "checks": {
+    "counts": false,
+    "hashes": false,
+    "references": false,
+    "authorization": false,
+    "consent": false,
+    "suppression": false,
+    "bootstrapIdentity": false
+  }
+}

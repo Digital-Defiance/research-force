@@ -113,7 +113,8 @@ INSERT INTO `config_values` (`id`, `set_key`, `name`, `name_key`, `retired`, `lo
 ('0000000000000000000000X001', 'relation', 'Based on', 'based on', 0, 0, NULL, 1, 'The material builds on the linked material.', 1, 0),
 ('0000000000000000000000X002', 'relation', 'Produced by', 'produced by', 0, 0, NULL, 2, 'The material was produced by the linked run or work.', 1, 0),
 ('0000000000000000000000X003', 'relation', 'Discusses', 'discusses', 0, 0, NULL, 3, 'The material discusses the linked material.', 1, 0),
-('0000000000000000000000X004', 'relation', 'Related', 'related', 0, 0, NULL, 4, 'The materials are related in a way the record describes.', 1, 0);
+('0000000000000000000000X004', 'relation', 'Related', 'related', 0, 0, NULL, 4, 'The materials are related in a way the record describes.', 1, 0),
+('00000000000000000000000006', 'relation', 'Addresses', 'addresses', 0, 1, NULL, 5, 'The Research Question lists the linked material as bearing on the question.', 1, 0);
 --> statement-breakpoint
 INSERT INTO `methods_terms` (`key`, `group_key`, `name`, `position`, `public_description`, `rev`, `updated_seq`) VALUES
 ('source_kind.primary', 'source_kind', 'Primary', 0, 'Original material from the time and place it describes, such as a document, message, or log.', 1, 0),

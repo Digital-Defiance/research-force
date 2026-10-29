@@ -59,7 +59,7 @@ export async function rehearseRelease(root: string, manifest: ReleaseManifest, p
         const seed = buildDevSeed(); db.exec(seed[store]);
         assertDatabaseHealthy(db);
         if (store === 'search') while (!searchIndexSlice(db, manifest).complete) { /* bounded slices retain checkpoints */ }
-        if (store === 'search' && Number(db.prepare("SELECT count(*) AS n FROM search_fts WHERE search_fts MATCH 'synthetic'").get()?.['n']) !== 8) throw new Error('FTS read/trigger rehearsal failed.');
+        if (store === 'search' && Number(db.prepare("SELECT count(*) AS n FROM search_fts WHERE search_fts MATCH 'synthetic'").get()?.['n']) !== 9) throw new Error('FTS read/trigger rehearsal failed.');
         const repeated = applyUpgrade(db, root, manifest, store, { phase: 'expand' });
         if (repeated.applied.length) throw new Error('Applied migration was replayed.');
         results.push({ ...result, checkpoint, restoreReopened: true, recoveryCopySha256: hash(readFileSync(recoveryPath)), identityPreserved: store === 'core', seedVerified: true });

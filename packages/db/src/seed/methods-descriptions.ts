@@ -56,6 +56,7 @@ export const VALUE_DESCRIPTIONS = Object.freeze({
     'Produced by': 'The material was produced by the linked run or work.',
     Discusses: 'The material discusses the linked material.',
     Related: 'The materials are related in a way the record describes.',
+    Addresses: 'The Research Question lists the linked material as bearing on the question.',
   },
 });
 

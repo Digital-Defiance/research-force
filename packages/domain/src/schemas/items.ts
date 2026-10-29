@@ -16,13 +16,16 @@ export type ItemValidationOptions =
   | { readonly mode: 'submit' | 'import' | 'restore'; readonly staged?: StagedSectionTotals }
   | { readonly mode: 'parser'; readonly sourceBytes: number }
   | { readonly mode: 'edit'; readonly previous: { readonly logSummary?: RichText; readonly sectionCount?: number; readonly sectionCharacters?: number }; readonly staged?: StagedSectionTotals };
+/** R50.1: at most 20 Question_Groups of at most 200 entries each; the entries name Research_Items or Attachments, which the records layer checks. */
+export const QUESTION_LIMITS = Object.freeze({ questionCodePoints: 500, introductionCodePoints: 20_000, groups: 20, headingCodePoints: 200, entriesPerGroup: 200 });
+export const questionGroupSchema = z.strictObject({ id: idSchema.optional(), heading: textField(QUESTION_LIMITS.headingCodePoints, true), entries: z.array(z.strictObject({ targetId: idSchema })).max(QUESTION_LIMITS.entriesPerGroup) });
 export const entrySectionSchema = z.strictObject({ id: idSchema.optional(), content: richTextSchema(undefined, true) });
 
 function missingRich(value: unknown): boolean {
   return value === undefined || (typeof value === 'object' && value !== null && 'text' in value && typeof value.text === 'string' && isBlank(value.text));
 }
 function summaryCheck(kind: ItemKind, options: ItemValidationOptions, raw: Record<string, unknown>, report: ReportIssue): void {
-  const requiredOnSubmit = options.mode === 'submit' && kind !== 'journal_entry' && kind !== 'topic';
+  const requiredOnSubmit = options.mode === 'submit' && kind !== 'journal_entry' && kind !== 'topic' && kind !== 'research_question';
   const hadSummary = options.mode === 'edit' && options.previous.logSummary !== undefined && !isBlank(options.previous.logSummary.text);
   if ((requiredOnSubmit || hadSummary) && missingRich(raw['logSummary'])) report(['logSummary'], hadSummary ? 'An existing Log Summary can be changed but not removed.' : 'This kind requires a Log Summary of 1 to 2000 Unicode code points.');
 }
@@ -191,6 +194,22 @@ function buildResearchItemSchema(kind: ItemKind, context: ValidationContext, opt
         }
         if (replied.success && replied.data.value > today) report(['replyDate'], 'The reply date cannot be after today.');
         if (sent.success && replied.success && replied.data.value < sent.data.value) report(['replyDate'], 'The reply date precedes the date sent.');
+      });
+    case 'research_question':
+      return finish(z.strictObject({ ...common, kind: z.literal('research_question'), question: textField(QUESTION_LIMITS.questionCodePoints, true), introduction: richTextSchema(QUESTION_LIMITS.introductionCodePoints).optional(),
+        groups: z.array(questionGroupSchema).max(QUESTION_LIMITS.groups).prefault([]) }), (raw, report) => {
+        if (!Array.isArray(raw['groups'])) return;
+        const seen = new Set<string>();
+        for (const [groupIndex, group] of raw['groups'].entries()) {
+          const entries = (group as { entries?: unknown })?.entries;
+          if (!Array.isArray(entries)) continue;
+          for (const [entryIndex, entry] of entries.entries()) {
+            const target = (entry as { targetId?: unknown })?.targetId;
+            if (typeof target !== 'string') continue;
+            if (seen.has(target)) report(['groups', groupIndex, 'entries', entryIndex, 'targetId'], 'Each Research Item or Attachment can appear at most once in a Research Question.');
+            seen.add(target);
+          }
+        }
       });
     case 'topic': return finish(z.strictObject({ ...common, kind: z.literal('topic'), body: richTextSchema(50_000, true) }));
   }

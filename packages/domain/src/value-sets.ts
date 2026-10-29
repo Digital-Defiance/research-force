@@ -13,6 +13,8 @@ export const LOCKED_VALUE_IDS = Object.freeze({
   archivalSent: asULID('00000000000000000000000003'),
   archivalReplied: asULID('00000000000000000000000004'),
   rightsUnknown: asULID('00000000000000000000000005'),
+  // The fixed relation label of a Question_Group entry; it is never offered for ordinary Cross_Links (R50.2).
+  relationAddresses: asULID('00000000000000000000000006'),
 });
 /** Semantic identities stay stable when an Administrator renames a status. Seeds share these IDs. */
 export const BUILT_IN_VALUE_IDS = Object.freeze({
@@ -56,7 +58,8 @@ function descriptionError(kind: ValueSetKind, description: string | undefined): 
   if (description !== undefined && publicDescriptionIssue(description)) return refused('public_description', 'publicDescription', 'Use a Public Description of 1 to 500 Unicode code points.');
   return undefined;
 }
-export function acceptsNewlySet(value: ConfigValue | undefined): boolean { return value !== undefined && !value.retired; }
+/** A retired value, and the fixed Addresses label that only a Question_Group entry carries (R50.2), are never newly chosen. */
+export function acceptsNewlySet(value: ConfigValue | undefined): boolean { return value !== undefined && !value.retired && value.id !== LOCKED_VALUE_IDS.relationAddresses; }
 export function offeredValues(set: ValueSet): readonly ConfigValue[] { return set.values.filter(acceptsNewlySet); }
 
 function nameError(set: ValueSet, name: string, excluding?: ULID): RuleResult<ValueSet> | undefined {
@@ -83,6 +86,7 @@ export function changeValueSet(set: ValueSet, operation: ValueSetOperation): Rul
   switch (operation.kind) {
     case 'rename': {
       if (value.id === LOCKED_VALUE_IDS.rightsUnknown && value.name !== operation.name) return refused('locked_name', 'name', 'Unknown cannot be renamed.');
+      if (value.id === LOCKED_VALUE_IDS.relationAddresses && value.name !== operation.name) return refused('locked_name', 'name', 'Addresses cannot be renamed.');
       const invalidName = nameError(set, operation.name, value.id);
       if (invalidName) return invalidName;
       changed = { ...value, name: operation.name };

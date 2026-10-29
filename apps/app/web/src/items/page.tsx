@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router';
 import { ITEM_KIND_NAMES } from '@researchforce/domain/kind-names';
 import type { RichText } from '@researchforce/domain/richtext';
-import { ITEM_KINDS } from '@researchforce/domain/types';
+import { ITEM_KINDS, SUBMITTABLE_KINDS } from '@researchforce/domain/types';
 import type { ItemKind } from '@researchforce/domain/types';
 import { BUILT_IN_VALUE_IDS, RESUMABLE_RUN_OUTCOME_IDS } from '@researchforce/domain/value-sets';
 import type { ValueSetKind } from '@researchforce/domain/value-sets';
@@ -278,7 +278,7 @@ export function ItemDetails({ data }: { readonly data: ItemPageData }) {
       <section className="rf-section" aria-label="Submit from here">
         <h2>Submit a new record in this Project</h2>
         <ul className="rf-actions rf-list">
-          {ITEM_KINDS.map((kind) => <li key={kind}><Link to={`/items/new/${kind}?unit=${item.id}`}>{ITEM_KIND_NAMES[kind]}</Link></li>)}
+          {SUBMITTABLE_KINDS.map((kind) => <li key={kind}><Link to={`/items/new/${kind}?unit=${item.id}`}>{ITEM_KIND_NAMES[kind]}</Link></li>)}
         </ul>
       </section>
     </article>

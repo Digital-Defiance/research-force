@@ -167,6 +167,8 @@ export const projects = sqliteTable('projects', {
   accent: text('accent'),
   disclosureLevel: text('disclosure_level', { enum: LEVELS }).notNull().default('not_published'),
   disclosureLine: text('disclosure_line', { mode: 'json' }).$type<DisclosureLine>(),
+  /** The Research_Question ids in the order an Administrator set for the Project page; those missing from it follow, newest first (R50.5). */
+  questionOrder: text('question_order', { mode: 'json' }).$type<string[]>().notNull().default(sql`'[]'`),
   createdBy: text('created_by').notNull(),
   createdAt: text('created_at').notNull(),
   ...versioned(),

@@ -36,6 +36,7 @@ export function buildDevSeed() {
     correspondence: { table: 'correspondences', fields: { date: '2026-01-01', direction: 'received', content: 'Synthetic correspondence. No real contact details.' }, status: null },
     archival_request: { table: 'archival_requests', fields: { archive_kind: 'member', archive_id: DEV_MEMBERS[0].id, request_text: 'Locate synthetic box 1.', date_sent: '2026-01-01' }, status: V.archivalSent },
     topic: { table: 'topics', fields: { body: 'A restricted synthetic discussion.' }, status: null },
+    research_question: { table: 'research_questions', fields: { question: 'Which synthetic keys remain untested?' }, status: null },
   };
   const unit = (id: string, root: string, type: string, submission: string, parent: string | null) => insert('units', {
     id, root_id: root, project_id: project, unit_type: type, parent_id: parent, owner_id: owner, credit: JSON.stringify([{ member: owner }]),

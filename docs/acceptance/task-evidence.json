@@ -773,6 +773,31 @@
       "checks": [
         "docs/acceptance/checks/local-tests.json"
       ]
+    },
+    {
+      "task": "55.1",
+      "state": "accepted",
+      "reason": "Verified that a Research_Question is a real Item kind. It has a required question of at most 500 code points, an optional introduction of rich text up to 20,000 code points with its spans, and up to 20 ordered groups, with a duplicate target in one question reported at the exact group and entry. It needs no Log Summary, and carries only a creation date. Migration 0012 adds the question, group and entry tables, rebuilds the Item table with the new kind, and adds the project question order, without changing any existing row. The fixed Addresses relation label is seeded with a locked identity: it cannot be renamed or retired, is never offered for ordinary Cross_Links, and an ordinary link carrying it is refused. The kind is registered in the record adapters, search, public listing titles, the kernel and the form model; it is kept out of the submit routes and menus until 55.2 supplies groups and entries. Groups, entries and public rendering follow in 55.2 to 55.4. No deployment or production certification is claimed.",
+      "sourcePaths": [
+        "packages/domain/src/schemas/items.ts",
+        "packages/domain/src/value-sets.ts",
+        "packages/db/src/schema/core/units.ts",
+        "packages/db/migrations/core/0012_research_questions.sql",
+        "apps/app/src/records/kinds/question.ts",
+        "apps/app/src/records/links.ts"
+      ],
+      "testPaths": [
+        "packages/domain/test/schema-items.test.ts",
+        "packages/domain/test/value-sets.test.ts",
+        "apps/app/test/migration-research-questions.test.ts",
+        "apps/app/test/research-questions.test.ts",
+        "apps/app/test/links.test.ts",
+        "packages/db/test/seed.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
     }
   ]
 }

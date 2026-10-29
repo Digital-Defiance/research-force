@@ -16,7 +16,7 @@ describe('all Research Item kinds', () => {
 
   it.each(ITEM_KINDS)('applies submission, import, and existing-summary rules for %s', (kind) => {
     const input = itemFixture(kind);
-    const required = kind !== 'journal_entry' && kind !== 'topic';
+    const required = kind !== 'journal_entry' && kind !== 'topic' && kind !== 'research_question';
     for (const summary of [undefined, rt(' \u0085 ')]) expect(researchItemSchema(kind, context).safeParse({ ...input, logSummary: summary }).success).toBe(!required);
     expect(researchItemSchema(kind, context, { mode: 'import' }).safeParse({ ...input, logSummary: undefined }).success).toBe(true);
     const saved = researchItemSchema(kind, context).parse(input);
@@ -142,5 +142,49 @@ describe('kind-specific validation', () => {
     expect(archival.safeParse(replied).success).toBe(true);
     expect(archival.safeParse({ ...replied, replyDate: { value: '2026-03-05', approx: false } }).success).toBe(false);
     expect(archival.safeParse({ ...replied, replyDate: { value: '2026-03-08', approx: false } }).success).toBe(false);
+  });
+});
+
+describe('Research Question limits (R50.1, R50.6)', () => {
+  const schema = researchItemSchema('research_question', context);
+  const target = (n: number) => '0000000000000000000000' + String(n).padStart(4, '0');
+  const group = (heading: string, count: number, start = 0) => ({ heading, entries: Array.from({ length: count }, (_, i) => ({ targetId: target(start + i) })) });
+  const accepted = (value: Record<string, unknown>) => schema.safeParse({ ...itemFixture('research_question'), ...value }).success;
+
+  it('takes a question of 1 to 500 characters and an introduction of at most 20,000 with labels', () => {
+    expect(accepted({ question: 'Q' })).toBe(true);
+    expect(accepted({ question: '😀'.repeat(500) })).toBe(true);
+    for (const question of ['', '   ', '😀'.repeat(501)]) expect(accepted({ question })).toBe(false);
+    expect(accepted({ question: undefined })).toBe(false);
+    expect(accepted({ introduction: rt('😀'.repeat(20_000)) })).toBe(true);
+    expect(accepted({ introduction: rt('😀'.repeat(20_001)) })).toBe(false);
+    expect(accepted({ introduction: { text: 'Quoted words', spans: [{ k: 'quote', s: 0, e: 6, source: 'A source' }] } })).toBe(true);
+    expect(accepted({ introduction: { text: 'Quoted words', spans: [{ k: 'quote', s: 0, e: 6 }] } })).toBe(false);
+  });
+
+  it('takes 0 to 20 groups with headings of 1 to 200 characters and at most 200 entries each', () => {
+    expect(accepted({ groups: [] })).toBe(true);
+    expect(schema.parse(itemFixture('research_question')).groups).toEqual([]);
+    expect(accepted({ groups: Array.from({ length: 20 }, (_, i) => group(`Group ${i}`, 1, i)) })).toBe(true);
+    expect(accepted({ groups: Array.from({ length: 21 }, (_, i) => group(`Group ${i}`, 1, i)) })).toBe(false);
+    expect(accepted({ groups: [group('H'.repeat(200), 0)] })).toBe(true);
+    for (const heading of ['', '  ', 'H'.repeat(201)]) expect(accepted({ groups: [group(heading, 0)] })).toBe(false);
+    expect(accepted({ groups: [group('Full', 200)] })).toBe(true);
+    expect(accepted({ groups: [group('Over', 201)] })).toBe(false);
+    expect(accepted({ groups: [{ heading: 'Extra', entries: [], position: 3 }] })).toBe(false);
+    expect(accepted({ groups: [{ heading: 'Bad target', entries: [{ targetId: 'not-an-id' }] }] })).toBe(false);
+  });
+
+  it('names every entry that repeats a target, in the group or across groups', () => {
+    const result = validate(schema, { ...itemFixture('research_question'), groups: [group('One', 2), { heading: 'Two', entries: [{ targetId: target(1) }, { targetId: target(5) }, { targetId: target(0) }] }] });
+    if (result.ok) throw new Error('Expected errors.');
+    expect(result.issues.map((issue) => issue.field)).toEqual(['groups.1.entries.0.targetId', 'groups.1.entries.2.targetId']);
+    expect(accepted({ groups: [group('One', 3), group('Two', 3, 3)] })).toBe(true);
+  });
+
+  it('names each invalid value together, not only the first', () => {
+    const result = validate(schema, { ...itemFixture('research_question'), title: ' ', question: '', groups: [group('', 1)] });
+    if (result.ok) throw new Error('Expected errors.');
+    expect(new Set(result.issues.map((issue) => issue.field))).toEqual(new Set(['title', 'question', 'groups.0.heading']));
   });
 });

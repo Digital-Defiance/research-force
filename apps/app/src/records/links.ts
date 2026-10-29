@@ -18,6 +18,9 @@ const LINKABLE = new Set(['research_item', 'attachment', 'reply', 'entry_section
 export const LINKS_PER_PAGE = 100;
 const DUPLICATE = 'These two ends are already linked with this relation label.';
 
+/** The Addresses label of a Question_Group entry: only the records pipeline writes it, and `linkIssues` refuses it for any other link (R50.2). */
+export const ADDRESSES_LABEL = BUILT_IN_VALUE_IDS.relationAddresses;
+
 /** A Cross_Link from cited evidence to the Finding or Hypothesis it supports (R5.2, R8.2). */
 export function evidenceLink(citedId: string, supportedId: string): LinkInput {
   return { originId: citedId, targetId: supportedId, relationValueId: BUILT_IN_VALUE_IDS.relationEvidenceFor };
@@ -33,7 +36,7 @@ const ids = (values: Iterable<string>) => JSON.stringify([...new Set(values)]);
  */
 export async function linkIssues(
   c: Context<ApiEnv>, links: readonly LinkInput[],
-  options: { readonly pending?: ReadonlyMap<string, string>; readonly prefix?: (index: number) => string } = {},
+  options: { readonly pending?: ReadonlyMap<string, string>; readonly prefix?: (index: number) => string; readonly questionEntries?: boolean } = {},
 ): Promise<FieldIssue[]> {
   const db = c.env.RF_CORE;
   const prefix = options.prefix ?? (() => '');
@@ -65,6 +68,7 @@ export async function linkIssues(
     if (link.relationValueId) {
       const state = retired.get(link.relationValueId);
       if (state === undefined) issues.push({ field: field('relationValueId'), rule: 'Choose a relation label from the relation label set.' });
+      else if (link.relationValueId === BUILT_IN_VALUE_IDS.relationAddresses && options.questionEntries !== true) issues.push({ field: field('relationValueId'), rule: 'The Addresses label is reserved for the entries of a Research Question.' });
       else if (state) issues.push({ field: field('relationValueId'), rule: 'This relation label has been retired.' });
     }
     if (issues.length > before) return;

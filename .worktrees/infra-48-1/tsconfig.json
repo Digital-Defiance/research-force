@@ -1,0 +1,56 @@
+{
+  "files": [],
+  "references": [
+    {
+      "path": "packages/domain"
+    },
+    {
+      "path": "packages/kernel"
+    },
+    {
+      "path": "packages/markdown"
+    },
+    {
+      "path": "packages/manifest"
+    },
+    {
+      "path": "packages/design"
+    },
+    {
+      "path": "packages/public-render"
+    },
+    {
+      "path": "packages/search-public"
+    },
+    {
+      "path": "packages/db"
+    },
+    {
+      "path": "packages/testing"
+    },
+    {
+      "path": "apps/app"
+    },
+    {
+      "path": "apps/site-shell"
+    },
+    {
+      "path": "apps/submit"
+    },
+    {
+      "path": "apps/dl"
+    },
+    {
+      "path": "apps/ops"
+    },
+    {
+      "path": "tools"
+    },
+    {
+      "path": "apps/app/web"
+    },
+    {
+      "path": "tsconfig.tooling.json"
+    }
+  ]
+}

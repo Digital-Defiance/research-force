@@ -59,3 +59,13 @@ describe('configurable value sets', () => {
     expect(addValue(specialties, { id: c, name: 'Other', retired: true }).ok).toBe(false);
   });
 });
+
+describe('the Addresses relation label (R50.2)', () => {
+  const set = { kind: 'relation' as const, values: [{ id: LOCKED_VALUE_IDS.relationAddresses, name: 'Addresses', retired: false, publicDescription: 'A Research Question lists the linked material.' }, { id: asULID('0000000000000000000000X004'), name: 'Related', retired: false, publicDescription: 'Related.' }] };
+  it('is never offered for a new ordinary Cross_Link, and stays fixed against renaming and retiring', () => {
+    expect(offeredValues(set).map((value) => value.name)).toEqual(['Related']);
+    expect(acceptsNewlySet(set.values[0])).toBe(false);
+    expect(renameValue(set, LOCKED_VALUE_IDS.relationAddresses, 'Other').ok).toBe(false);
+    expect(retireValue(set, LOCKED_VALUE_IDS.relationAddresses).ok).toBe(false);
+  });
+});

@@ -96,16 +96,19 @@ describe('Property 110: Mutation retries preserve a single logical result', () =
           if (entry !== undefined && entry.state !== 'pending-old') {
             await execute(op.actor, op.key, op.v, results[0]!, entry); await execute(op.actor, op.key, op.w, results[1]!, entry);
           } else {
-            // Nothing recorded yet: exactly one request wins and records its body; the other replays it, conflicts, or finds it pending.
-            const statuses = await Promise.all(results.map(async (response) => ({ status: response.status, replayed: response.headers.get('Idempotency-Replayed') === 'true', body: await response.clone().json<Record<string, unknown>>() })));
-            const executed = statuses.filter((s) => !s.replayed && (s.status === 201 || s.status === 422));
+            // Nothing recorded yet, or an old record that nobody finished: a request with another body conflicts; of the requests that may run, exactly one does and records its body, and the rest replay it, conflict, or find it pending.
+            const variants = [op.v, op.w];
+            const statuses = await Promise.all(results.map(async (response, i) => ({ variant: variants[i]!, status: response.status, replayed: response.headers.get('Idempotency-Replayed') === 'true', body: await response.clone().json<Record<string, unknown>>() })));
+            const mayRun = statuses.filter((s) => entry === undefined || s.variant === entry.variant);
+            for (const s of statuses) if (!mayRun.includes(s)) expect(s.status, JSON.stringify(s.body)).toBe(409);
+            if (mayRun.length === 0) continue;
+            const executed = mayRun.filter((s) => !s.replayed && (s.status === 201 || s.status === 422));
             expect(executed.length, JSON.stringify(statuses.map((x) => [x.status, x.replayed, x.body]))).toBe(1);
-            const winner = executed[0]!; const winnerVariant = statuses[0] === winner ? op.v : op.w;
-            const loser = statuses.find((s) => s !== winner)!;
-            if (winnerVariant === (statuses[0] === winner ? op.w : op.v)) expect([winner.status, 409]).toContain(loser.status);
-            else expect(loser.status).toBe(409);
-            if (winner.status === 201) { items++; table.set(address(op.actor, op.key), { variant: winnerVariant, state: 'committed', status: 201, itemId: (winner.body['item'] as ItemView).id }); }
-            else table.set(address(op.actor, op.key), { variant: winnerVariant, state: 'refused', status: 422 });
+            const winner = executed[0]!;
+            for (const s of statuses) if (s !== winner && mayRun.includes(s)) expect([winner.status, 409]).toContain(s.status);
+            if (entry === undefined) for (const s of statuses) if (s !== winner && s.variant !== winner.variant) expect(s.status).toBe(409);
+            if (winner.status === 201) { items++; table.set(address(op.actor, op.key), { variant: winner.variant, state: 'committed', status: 201, itemId: (winner.body['item'] as ItemView).id }); }
+            else table.set(address(op.actor, op.key), { variant: winner.variant, state: 'refused', status: 422 });
           }
         } else if (op.t === 'stall') {
           // A request that was cut off after it was recorded and before it committed: pending, and unknown once old enough.

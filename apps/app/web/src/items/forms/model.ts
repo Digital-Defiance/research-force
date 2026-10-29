@@ -44,6 +44,12 @@ export const KIND_FIELDS: Readonly<Record<ItemKind, readonly FieldSpec[]>> = {
     { name: 'sections', label: 'Entry Sections', kind: 'sections', required: true },
     logSummary(false), groupNote,
   ],
+  research_question: [
+    title,
+    { name: 'question', label: 'Question', kind: 'longtext', max: 500, required: true },
+    { name: 'introduction', label: 'Introduction', kind: 'rich', max: 20_000 },
+    logSummary(false), groupNote,
+  ],
   finding: [
     title,
     { name: 'claim', label: 'Claim', kind: 'rich', max: 2000, required: true },
