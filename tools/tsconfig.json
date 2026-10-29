@@ -5,7 +5,8 @@
     "outDir": ".cache/types",
     "tsBuildInfoFile": ".cache/tsconfig.tsbuildinfo",
     "types": [
-      "node"
+      "node",
+      "@cloudflare/workers-types"
     ]
   },
   "include": [
