@@ -265,20 +265,20 @@
     },
     {
       "task": "30.11",
-      "state": "reopened",
-      "reason": "Property 46 must cover bounded CSV scanning, oversized quoted records and truthful unscanned/truncation reporting as well as text prefixes.",
+      "state": "accepted",
+      "reason": "Verified that Property 46 covers truthful bounded CSV scanning as well as text prefixes. Over random rows (quoted cells with commas, quotes, line breaks and non-ASCII text), random chunk sizes and random row, scan, record and buffer limits, every row shown is a complete row of the file in order and never more than the row limit; scanned bytes never pass the scan budget; end means every row was shown with nothing exceeded, more means the row limit was reached with a real lookahead row, and unknown names a budget that was actually exceeded (scan, record or buffer) and is never reported when nothing was; the transfer is always released and reading stops within one chunk of the record that decided the answer. Further cases prove that a quoted record larger than the record limit never appears even in part and cancels the transfer, that an unbroken endless stream stops at the buffering budget, and the original text-prefix cases at the byte boundary and the one-megabyte cut remain. A 5,000-run pass found no counterexample. No deployment or production certification is claimed.",
       "sourcePaths": [
         "apps/app/web/src/files/preview/index.tsx",
+        "apps/app/web/src/files/preview/csv-stream.ts",
         "apps/app/web/src/files/preview/truncate.ts"
       ],
       "testPaths": [
         "apps/app/web/test/properties/p46-preview-truncation.test.ts"
       ],
-      "correctionTasks": [
-        "30.11",
-        "57.8"
-      ],
-      "checks": []
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
     },
     {
       "task": "52.1",

@@ -2,15 +2,14 @@
   "inputs": {
     ".kiro/specs/research-collab-cms/requirements.md": "9e2d7cee953f4aeece04bad4a7dfae273a908c0df65c95beea7a4e572b71b5df",
     ".kiro/specs/research-collab-cms/design.md": "85df571e6efad1205603dca7addcea9c16f68252023d5483a2fbe81d705c4d93",
-    ".kiro/specs/research-collab-cms/tasks.md": "3e88593457bdb42112ce8bbfccc06270745dabd68dab94eed0e60bc756a0e153",
-    "docs/acceptance/task-evidence.json": "6feb8f9e3dba46343fa575c954d4f7e17d3ef9683c77bd1c5bd910071f245b4b"
+    ".kiro/specs/research-collab-cms/tasks.md": "483fa2a47a0f8edf7bf9963bea3802359fb3954dbf30b2ba0cb63c9941a29935",
+    "docs/acceptance/task-evidence.json": "543d2bf9196f2ca2dcb7c79ae013caf0ff8d7912e610766249ca7786dfbff72f"
   },
   "schemaVersion": 1,
   "nextTasks": [
-    "30.11"
+    "57.6"
   ],
   "remainingBuildOrder": [
-    "30.11",
     "57.6",
     "57.7",
     "57.8",
@@ -222,11 +221,11 @@
     "criteria": 738,
     "properties": 126,
     "leafTasks": 406,
-    "checkedLeaves": 200,
+    "checkedLeaves": 201,
     "historicalUnverified": 182,
-    "acceptedWithLocalEvidence": 18,
+    "acceptedWithLocalEvidence": 19,
     "propertyFiles": 62,
-    "remainingWaves": 206,
+    "remainingWaves": 205,
     "gates": 4
   },
   "structuralIssues": [],
@@ -15367,7 +15366,7 @@
         {
           "path": "apps/app/web/test/properties/p46-preview-truncation.test.ts",
           "kind": "file",
-          "sha256": "97e482eb28e60b1c6d0e2e45c7f75a088ce03bec8b512bd80c0bb71890ea633d"
+          "sha256": "59d39b925d99eca4483052b8c3b559ec43d693258570303a9afee1eb1ac9c7e5"
         }
       ],
       "gates": [
@@ -15502,7 +15501,7 @@
     {
       "id": "30.11",
       "title": "Write property test for preview truncation",
-      "checked": false,
+      "checked": true,
       "requirements": [
         "14.3",
         "14.4",
@@ -15512,12 +15511,17 @@
         46
       ],
       "prerequisites": [],
-      "phase": "repair",
+      "phase": "completed_baseline",
       "sourcePaths": [
         {
           "path": "apps/app/web/src/files/preview/index.tsx",
           "kind": "file",
           "sha256": "3d9e9f62c86203b24e8ece02971aae5ad87f7a7adede90c74a2e207ac984b123"
+        },
+        {
+          "path": "apps/app/web/src/files/preview/csv-stream.ts",
+          "kind": "file",
+          "sha256": "3852d5fca2e60c9687efd21f11093c8d0c7048a181c2326401d26cf652f70e44"
         },
         {
           "path": "apps/app/web/src/files/preview/truncate.ts",
@@ -15527,30 +15531,30 @@
         {
           "path": "apps/app/web/test/properties/p46-preview-truncation.test.ts",
           "kind": "file",
-          "sha256": "97e482eb28e60b1c6d0e2e45c7f75a088ce03bec8b512bd80c0bb71890ea633d"
+          "sha256": "59d39b925d99eca4483052b8c3b559ec43d693258570303a9afee1eb1ac9c7e5"
         }
       ],
       "gates": [
         "team_archive",
         "final_checkpoint_49"
       ],
-      "acceptance": "reopened",
+      "acceptance": "accepted",
       "evidence": {
         "task": "30.11",
-        "state": "reopened",
-        "reason": "Property 46 must cover bounded CSV scanning, oversized quoted records and truthful unscanned/truncation reporting as well as text prefixes.",
+        "state": "accepted",
+        "reason": "Verified that Property 46 covers truthful bounded CSV scanning as well as text prefixes. Over random rows (quoted cells with commas, quotes, line breaks and non-ASCII text), random chunk sizes and random row, scan, record and buffer limits, every row shown is a complete row of the file in order and never more than the row limit; scanned bytes never pass the scan budget; end means every row was shown with nothing exceeded, more means the row limit was reached with a real lookahead row, and unknown names a budget that was actually exceeded (scan, record or buffer) and is never reported when nothing was; the transfer is always released and reading stops within one chunk of the record that decided the answer. Further cases prove that a quoted record larger than the record limit never appears even in part and cancels the transfer, that an unbroken endless stream stops at the buffering budget, and the original text-prefix cases at the byte boundary and the one-megabyte cut remain. A 5,000-run pass found no counterexample. No deployment or production certification is claimed.",
         "sourcePaths": [
           "apps/app/web/src/files/preview/index.tsx",
+          "apps/app/web/src/files/preview/csv-stream.ts",
           "apps/app/web/src/files/preview/truncate.ts"
         ],
         "testPaths": [
           "apps/app/web/test/properties/p46-preview-truncation.test.ts"
         ],
-        "correctionTasks": [
-          "30.11",
-          "57.8"
-        ],
-        "checks": []
+        "correctionTasks": [],
+        "checks": [
+          "docs/acceptance/checks/local-tests.json"
+        ]
       }
     },
     {
@@ -19173,7 +19177,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "6feb8f9e3dba46343fa575c954d4f7e17d3ef9683c77bd1c5bd910071f245b4b"
+          "sha256": "543d2bf9196f2ca2dcb7c79ae013caf0ff8d7912e610766249ca7786dfbff72f"
         },
         {
           "path": "README.md",
@@ -19262,7 +19266,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "6feb8f9e3dba46343fa575c954d4f7e17d3ef9683c77bd1c5bd910071f245b4b"
+          "sha256": "543d2bf9196f2ca2dcb7c79ae013caf0ff8d7912e610766249ca7786dfbff72f"
         },
         {
           "path": "apps/app/src/index.ts",
@@ -19401,7 +19405,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "6feb8f9e3dba46343fa575c954d4f7e17d3ef9683c77bd1c5bd910071f245b4b"
+          "sha256": "543d2bf9196f2ca2dcb7c79ae013caf0ff8d7912e610766249ca7786dfbff72f"
         },
         {
           "path": "apps/app/src/local/services.ts",
@@ -20878,12 +20882,12 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "6feb8f9e3dba46343fa575c954d4f7e17d3ef9683c77bd1c5bd910071f245b4b"
+          "sha256": "543d2bf9196f2ca2dcb7c79ae013caf0ff8d7912e610766249ca7786dfbff72f"
         },
         {
           "path": "docs/acceptance/checks/local-tests.json",
           "kind": "file",
-          "sha256": "66de3e1b78e54b8745045e8426f93880ae259ca79673b3d3ecf9891f60476075"
+          "sha256": "6206f75241d770a1bfbe42ee6589bb5cef221cc05d4b25b05a1bd7d88a02d128"
         },
         {
           "path": "tools/src/specs.ts",
@@ -20970,7 +20974,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "6feb8f9e3dba46343fa575c954d4f7e17d3ef9683c77bd1c5bd910071f245b4b"
+          "sha256": "543d2bf9196f2ca2dcb7c79ae013caf0ff8d7912e610766249ca7786dfbff72f"
         },
         {
           "path": "packages/domain/src/settings.ts",
@@ -21070,7 +21074,7 @@
         {
           "path": "apps/app/web/test/properties/p46-preview-truncation.test.ts",
           "kind": "file",
-          "sha256": "97e482eb28e60b1c6d0e2e45c7f75a088ce03bec8b512bd80c0bb71890ea633d"
+          "sha256": "59d39b925d99eca4483052b8c3b559ec43d693258570303a9afee1eb1ac9c7e5"
         }
       ],
       "gates": [
@@ -21150,7 +21154,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "6feb8f9e3dba46343fa575c954d4f7e17d3ef9683c77bd1c5bd910071f245b4b"
+          "sha256": "543d2bf9196f2ca2dcb7c79ae013caf0ff8d7912e610766249ca7786dfbff72f"
         },
         {
           "path": "docs/storage/logical-fields.md",
@@ -21738,9 +21742,7 @@
       "properties": [
         109
       ],
-      "prerequisites": [
-        "30.11"
-      ],
+      "prerequisites": [],
       "phase": "repair",
       "sourcePaths": [
         {
@@ -23014,7 +23016,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "6feb8f9e3dba46343fa575c954d4f7e17d3ef9683c77bd1c5bd910071f245b4b"
+          "sha256": "543d2bf9196f2ca2dcb7c79ae013caf0ff8d7912e610766249ca7786dfbff72f"
         },
         {
           "path": "packages/domain/src/compatibility.ts",
@@ -23450,23 +23452,6 @@
   ],
   "knownGaps": [
     {
-      "task": "30.11",
-      "state": "reopened",
-      "reason": "Property 46 must cover bounded CSV scanning, oversized quoted records and truthful unscanned/truncation reporting as well as text prefixes.",
-      "sourcePaths": [
-        "apps/app/web/src/files/preview/index.tsx",
-        "apps/app/web/src/files/preview/truncate.ts"
-      ],
-      "testPaths": [
-        "apps/app/web/test/properties/p46-preview-truncation.test.ts"
-      ],
-      "correctionTasks": [
-        "30.11",
-        "57.8"
-      ],
-      "checks": []
-    },
-    {
       "task": "52.4",
       "state": "partial",
       "reason": "Access-change transactions, owner widening, atomic bulk updates and history are implemented and locally tested. The preview currently lists reset units rather than rendered removed Public_Views; task 31.1 must integrate the projection loader. Revoked-owner Dual_Approval is deliberately owned by 54.5.",
@@ -23524,43 +23509,43 @@
   "phases": {
     "repair": {
       "firstWave": 0,
-      "lastWave": 3
+      "lastWave": 2
     },
     "collaboration": {
-      "firstWave": 4,
-      "lastWave": 34
+      "firstWave": 3,
+      "lastWave": 33
     },
     "privacy": {
-      "firstWave": 35,
-      "lastWave": 58
+      "firstWave": 34,
+      "lastWave": 57
     },
     "imports_and_log": {
-      "firstWave": 59,
-      "lastWave": 82
+      "firstWave": 58,
+      "lastWave": 81
     },
     "publication": {
-      "firstWave": 83,
-      "lastWave": 100
+      "firstWave": 82,
+      "lastWave": 99
     },
     "outside_and_ai": {
-      "firstWave": 101,
-      "lastWave": 148
+      "firstWave": 100,
+      "lastWave": 147
     },
     "recovery": {
-      "firstWave": 149,
-      "lastWave": 166
+      "firstWave": 148,
+      "lastWave": 165
     },
     "release_tooling": {
-      "firstWave": 167,
-      "lastWave": 196
+      "firstWave": 166,
+      "lastWave": 195
     },
     "staging_and_acceptance": {
-      "firstWave": 197,
-      "lastWave": 204
+      "firstWave": 196,
+      "lastWave": 203
     },
     "production_activation": {
-      "firstWave": 205,
-      "lastWave": 205
+      "firstWave": 204,
+      "lastWave": 204
     }
   },
   "gates": [

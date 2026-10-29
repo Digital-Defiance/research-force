@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "command": "npm test -- --reporter=json --outputFile=<temporary report>",
-  "recordedAt": "2026-10-29T19:52:08.089Z",
+  "recordedAt": "2026-10-29T20:00:37.230Z",
   "scope": "local-synthetic",
   "success": true,
   "suites": [
@@ -523,7 +523,7 @@
     },
     {
       "path": "apps/app/web/test/properties/p46-preview-truncation.test.ts",
-      "passed": 2,
+      "passed": 5,
       "failed": 0,
       "skipped": 0
     },
@@ -1138,7 +1138,7 @@
     "apps/app/web/test/files.test.tsx": "c9dfcbbb311fcb4e2d906cbf4542a62ddc9f492c468231d58120fbf7d1e3efe2",
     "apps/app/web/test/local-development.test.tsx": "5491ae081bcc8638596d3775549102d6b8f9cebc3cb6516eefaa1690ca329580",
     "apps/app/web/test/preview.test.tsx": "35e7bdfbd5696f64a75d749e8a4bbdba3a6a8ce6de5734ea01114630fe0ebbbb",
-    "apps/app/web/test/properties/p46-preview-truncation.test.ts": "97e482eb28e60b1c6d0e2e45c7f75a088ce03bec8b512bd80c0bb71890ea633d",
+    "apps/app/web/test/properties/p46-preview-truncation.test.ts": "59d39b925d99eca4483052b8c3b559ec43d693258570303a9afee1eb1ac9c7e5",
     "apps/app/web/test/resource-profile.test.ts": "81cde34191c258fb1d0effd526b32c747bb65597854774d63c3ecd9aa6341877",
     "apps/dl/src/index.ts": "8b2d47afd2d41e8a6837a78a4f6dfd2b182f211e113b3949e5fa87d6e25f1a4f",
     "apps/dl/test/properties/p05-live-download-channel.test.ts": "8721adb272579599672be30a5c9071f7dca297ef9bf1a30d1376b1d4671e8262",
