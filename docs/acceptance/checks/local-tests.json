@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "command": "npm test -- --reporter=json --outputFile=<temporary report>",
-  "recordedAt": "2026-10-29T19:43:15.302Z",
+  "recordedAt": "2026-10-29T19:52:08.089Z",
   "scope": "local-synthetic",
   "success": true,
   "suites": [
@@ -440,6 +440,12 @@
     {
       "path": "apps/app/web/test/api.test.ts",
       "passed": 25,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/web/test/attachments.test.tsx",
+      "passed": 3,
       "failed": 0,
       "skipped": 0
     },
@@ -1112,7 +1118,7 @@
     "apps/app/web/src/access/access.tsx": "78f5366bab76cc3fb59253a40e8c2380cca29c4e45aaad3eab05cfde597f88b5",
     "apps/app/web/src/api.ts": "1b66d25b88888c8c1a30e83dc4c1492996e5e245a3aab41da40e4c1ab126f2ce",
     "apps/app/web/src/discussion/thread.tsx": "bb739eb7d0e7c5228a1da7d769af9d53711503f97983570e787ea18226b05500",
-    "apps/app/web/src/files/attachment-page.tsx": "d794541d51aad6671ab36fa4f45a68cf34e6fb802a92efd6c784e68882b6e672",
+    "apps/app/web/src/files/attachment-page.tsx": "c041b01438cf517aae55d043158c9796268e31d7e219ee0dd9ff9ec07bf26486",
     "apps/app/web/src/files/preview/csv-stream.ts": "3852d5fca2e60c9687efd21f11093c8d0c7048a181c2326401d26cf652f70e44",
     "apps/app/web/src/files/preview/image.tsx": "82a0afeb23c4dd823974995b4b67f2cb293e0f7ac60f00c1b60ce4ddcd5ba626",
     "apps/app/web/src/files/preview/index.tsx": "3d9e9f62c86203b24e8ece02971aae5ad87f7a7adede90c74a2e207ac984b123",
@@ -1128,6 +1134,7 @@
     "apps/app/web/src/main.tsx": "821678c0a320c0dd40ae7a35f68aa8fcc69561f05fb5d59641cc5d3e923bfa70",
     "apps/app/web/test/access.test.tsx": "72aedefe06b32fbe484d783851af616311c3ca14346506a6af7ff23157132d13",
     "apps/app/web/test/api.test.ts": "348dc97bf1889f1183882cdabf035a3989b4394cfdf3103c40566b19fea853b7",
+    "apps/app/web/test/attachments.test.tsx": "58e2e8c558cf7f635274f1be06dd2ed66e44154643649869e68d91653290cdb9",
     "apps/app/web/test/files.test.tsx": "c9dfcbbb311fcb4e2d906cbf4542a62ddc9f492c468231d58120fbf7d1e3efe2",
     "apps/app/web/test/local-development.test.tsx": "5491ae081bcc8638596d3775549102d6b8f9cebc3cb6516eefaa1690ca329580",
     "apps/app/web/test/preview.test.tsx": "35e7bdfbd5696f64a75d749e8a4bbdba3a6a8ce6de5734ea01114630fe0ebbbb",
@@ -1143,7 +1150,7 @@
     "infra/recovery/deployment.example.json": "f50e284de933da91b761d0b6293f62caef82e8aa0c8db7c83e31e7eca5398bec",
     "infra/recovery/restore-proof.example.json": "2c02a645aaa612d1dd4f0bc537433a5e58764b4244a02562523aabc6d6a31554",
     "infra/releases/README.md": "73919ce7f8cc7b532d520dbc250f4f16ccd28f84e70e32d21d556190afe50ade",
-    "infra/releases/development.json": "be697986ca2692b4ec08fe1bbe26e016e9903b88e4c64cd38eed993e8a24768e",
+    "infra/releases/development.json": "ff0b0ecd55e08797aa04cfa370e7d1f89df40e0eb7882e37e8ac6fcc33052faf",
     "package-lock.json": "46bb71e749eeb2b853d3113a54c6b75e0a3a610f1178687a73334d4114e099d5",
     "package.json": "a57669ad85b1bb5873507b1ef7021825127f5e1aaa49ab3f7101b42ef8857e36",
     "packages/db/migrations/core/0007_restricted_access.sql": "68d6acff93c939939932102ad9a767541a9181815f983c24ebdcfc18ce3518a1",

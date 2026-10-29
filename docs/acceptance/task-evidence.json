@@ -250,19 +250,18 @@
     },
     {
       "task": "30.8",
-      "state": "reopened",
-      "reason": "Listing attachments currently records views for listed files. Only opening or a permitted download should clear the corresponding flag.",
+      "state": "accepted",
+      "reason": "Verified that listing a Parent’s Attachments no longer records views: the listing keeps its flag marks from the opening snapshot and sends nothing to /views, so unread file flags remain until a file is actually opened. The Attachment screen records a view only for the file whose page is open (and only after it loaded), never for the other versions in its chain; the chain list, Cross_Link/Backlink lists, search and feed show their entries’ flags and supersession notices without opening them. The screen continues to show metadata, Original_Name, Origin, credit, rights status with the publication flag, rights holder and terms, the protected full download, the preview, the Version_Chain with position, Owner, time, viewed and last marks, and the supersession notice. Browser tests load a Parent listing and prove that the New and Updated marks stay with no view recorded, open one file and prove that exactly that file’s ID is recorded while the other versions keep their marks, and check the rights, publication, credit, Origin and superseding-version display. Citations and derivations are added in task 62. No deployment or production certification is claimed.",
       "sourcePaths": [
         "apps/app/web/src/files/attachment-page.tsx"
       ],
       "testPaths": [
-        "apps/app/web/test/files.test.tsx"
+        "apps/app/web/test/attachments.test.tsx"
       ],
-      "correctionTasks": [
-        "30.8",
-        "57.8"
-      ],
-      "checks": []
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
     },
     {
       "task": "30.11",

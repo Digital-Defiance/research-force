@@ -665,7 +665,7 @@
     },
     {
       "path": "apps/app/web/src/files/attachment-page.tsx",
-      "sha256": "d794541d51aad6671ab36fa4f45a68cf34e6fb802a92efd6c784e68882b6e672"
+      "sha256": "c041b01438cf517aae55d043158c9796268e31d7e219ee0dd9ff9ec07bf26486"
     },
     {
       "path": "apps/app/web/src/files/hash-worker.ts",

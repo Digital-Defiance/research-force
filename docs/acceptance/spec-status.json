@@ -2,15 +2,14 @@
   "inputs": {
     ".kiro/specs/research-collab-cms/requirements.md": "9e2d7cee953f4aeece04bad4a7dfae273a908c0df65c95beea7a4e572b71b5df",
     ".kiro/specs/research-collab-cms/design.md": "85df571e6efad1205603dca7addcea9c16f68252023d5483a2fbe81d705c4d93",
-    ".kiro/specs/research-collab-cms/tasks.md": "bebc7fb5929f7e273444a65ccdfe61f1f8ff08c886d37d869357da75fe968f47",
-    "docs/acceptance/task-evidence.json": "b5bfe3687085428065057b4ae2f70de5d704d6abc483c3dba71154d48f523500"
+    ".kiro/specs/research-collab-cms/tasks.md": "3e88593457bdb42112ce8bbfccc06270745dabd68dab94eed0e60bc756a0e153",
+    "docs/acceptance/task-evidence.json": "6feb8f9e3dba46343fa575c954d4f7e17d3ef9683c77bd1c5bd910071f245b4b"
   },
   "schemaVersion": 1,
   "nextTasks": [
-    "30.8"
+    "30.11"
   ],
   "remainingBuildOrder": [
-    "30.8",
     "30.11",
     "57.6",
     "57.7",
@@ -223,11 +222,11 @@
     "criteria": 738,
     "properties": 126,
     "leafTasks": 406,
-    "checkedLeaves": 199,
+    "checkedLeaves": 200,
     "historicalUnverified": 182,
-    "acceptedWithLocalEvidence": 17,
+    "acceptedWithLocalEvidence": 18,
     "propertyFiles": 62,
-    "remainingWaves": 207,
+    "remainingWaves": 206,
     "gates": 4
   },
   "structuralIssues": [],
@@ -15266,7 +15265,7 @@
         {
           "path": "apps/app/web/src/files/attachment-page.tsx",
           "kind": "file",
-          "sha256": "d794541d51aad6671ab36fa4f45a68cf34e6fb802a92efd6c784e68882b6e672"
+          "sha256": "c041b01438cf517aae55d043158c9796268e31d7e219ee0dd9ff9ec07bf26486"
         },
         {
           "path": "apps/app/web/test/files.test.tsx",
@@ -15403,7 +15402,7 @@
     {
       "id": "30.8",
       "title": "Build the Attachment screens in `apps/app/web/src/files/attachment-page.tsx`",
-      "checked": false,
+      "checked": true,
       "requirements": [
         "13.4",
         "13.6",
@@ -15413,39 +15412,38 @@
       ],
       "properties": [],
       "prerequisites": [],
-      "phase": "repair",
+      "phase": "completed_baseline",
       "sourcePaths": [
         {
           "path": "apps/app/web/src/files/attachment-page.tsx",
           "kind": "file",
-          "sha256": "d794541d51aad6671ab36fa4f45a68cf34e6fb802a92efd6c784e68882b6e672"
+          "sha256": "c041b01438cf517aae55d043158c9796268e31d7e219ee0dd9ff9ec07bf26486"
         },
         {
-          "path": "apps/app/web/test/files.test.tsx",
+          "path": "apps/app/web/test/attachments.test.tsx",
           "kind": "file",
-          "sha256": "c9dfcbbb311fcb4e2d906cbf4542a62ddc9f492c468231d58120fbf7d1e3efe2"
+          "sha256": "58e2e8c558cf7f635274f1be06dd2ed66e44154643649869e68d91653290cdb9"
         }
       ],
       "gates": [
         "team_archive",
         "final_checkpoint_49"
       ],
-      "acceptance": "reopened",
+      "acceptance": "accepted",
       "evidence": {
         "task": "30.8",
-        "state": "reopened",
-        "reason": "Listing attachments currently records views for listed files. Only opening or a permitted download should clear the corresponding flag.",
+        "state": "accepted",
+        "reason": "Verified that listing a Parent’s Attachments no longer records views: the listing keeps its flag marks from the opening snapshot and sends nothing to /views, so unread file flags remain until a file is actually opened. The Attachment screen records a view only for the file whose page is open (and only after it loaded), never for the other versions in its chain; the chain list, Cross_Link/Backlink lists, search and feed show their entries’ flags and supersession notices without opening them. The screen continues to show metadata, Original_Name, Origin, credit, rights status with the publication flag, rights holder and terms, the protected full download, the preview, the Version_Chain with position, Owner, time, viewed and last marks, and the supersession notice. Browser tests load a Parent listing and prove that the New and Updated marks stay with no view recorded, open one file and prove that exactly that file’s ID is recorded while the other versions keep their marks, and check the rights, publication, credit, Origin and superseding-version display. Citations and derivations are added in task 62. No deployment or production certification is claimed.",
         "sourcePaths": [
           "apps/app/web/src/files/attachment-page.tsx"
         ],
         "testPaths": [
-          "apps/app/web/test/files.test.tsx"
+          "apps/app/web/test/attachments.test.tsx"
         ],
-        "correctionTasks": [
-          "30.8",
-          "57.8"
-        ],
-        "checks": []
+        "correctionTasks": [],
+        "checks": [
+          "docs/acceptance/checks/local-tests.json"
+        ]
       }
     },
     {
@@ -15513,9 +15511,7 @@
       "properties": [
         46
       ],
-      "prerequisites": [
-        "30.8"
-      ],
+      "prerequisites": [],
       "phase": "repair",
       "sourcePaths": [
         {
@@ -19177,7 +19173,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "b5bfe3687085428065057b4ae2f70de5d704d6abc483c3dba71154d48f523500"
+          "sha256": "6feb8f9e3dba46343fa575c954d4f7e17d3ef9683c77bd1c5bd910071f245b4b"
         },
         {
           "path": "README.md",
@@ -19266,7 +19262,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "b5bfe3687085428065057b4ae2f70de5d704d6abc483c3dba71154d48f523500"
+          "sha256": "6feb8f9e3dba46343fa575c954d4f7e17d3ef9683c77bd1c5bd910071f245b4b"
         },
         {
           "path": "apps/app/src/index.ts",
@@ -19405,7 +19401,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "b5bfe3687085428065057b4ae2f70de5d704d6abc483c3dba71154d48f523500"
+          "sha256": "6feb8f9e3dba46343fa575c954d4f7e17d3ef9683c77bd1c5bd910071f245b4b"
         },
         {
           "path": "apps/app/src/local/services.ts",
@@ -20882,12 +20878,12 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "b5bfe3687085428065057b4ae2f70de5d704d6abc483c3dba71154d48f523500"
+          "sha256": "6feb8f9e3dba46343fa575c954d4f7e17d3ef9683c77bd1c5bd910071f245b4b"
         },
         {
           "path": "docs/acceptance/checks/local-tests.json",
           "kind": "file",
-          "sha256": "3d1f0d46b565a1edaded4f3ce6e9ca66f2d1f6a299f9c514fdc2d2e3af5cf58c"
+          "sha256": "66de3e1b78e54b8745045e8426f93880ae259ca79673b3d3ecf9891f60476075"
         },
         {
           "path": "tools/src/specs.ts",
@@ -20974,7 +20970,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "b5bfe3687085428065057b4ae2f70de5d704d6abc483c3dba71154d48f523500"
+          "sha256": "6feb8f9e3dba46343fa575c954d4f7e17d3ef9683c77bd1c5bd910071f245b4b"
         },
         {
           "path": "packages/domain/src/settings.ts",
@@ -21154,7 +21150,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "b5bfe3687085428065057b4ae2f70de5d704d6abc483c3dba71154d48f523500"
+          "sha256": "6feb8f9e3dba46343fa575c954d4f7e17d3ef9683c77bd1c5bd910071f245b4b"
         },
         {
           "path": "docs/storage/logical-fields.md",
@@ -21319,7 +21315,7 @@
         {
           "path": "infra/releases/development.json",
           "kind": "file",
-          "sha256": "be697986ca2692b4ec08fe1bbe26e016e9903b88e4c64cd38eed993e8a24768e"
+          "sha256": "ff0b0ecd55e08797aa04cfa370e7d1f89df40e0eb7882e37e8ac6fcc33052faf"
         },
         {
           "path": "infra/recovery/deployment.example.json",
@@ -21594,7 +21590,7 @@
         {
           "path": "infra/releases/development.json",
           "kind": "file",
-          "sha256": "be697986ca2692b4ec08fe1bbe26e016e9903b88e4c64cd38eed993e8a24768e"
+          "sha256": "ff0b0ecd55e08797aa04cfa370e7d1f89df40e0eb7882e37e8ac6fcc33052faf"
         },
         {
           "path": "apps/app/test/operations.test.ts",
@@ -23018,7 +23014,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "b5bfe3687085428065057b4ae2f70de5d704d6abc483c3dba71154d48f523500"
+          "sha256": "6feb8f9e3dba46343fa575c954d4f7e17d3ef9683c77bd1c5bd910071f245b4b"
         },
         {
           "path": "packages/domain/src/compatibility.ts",
@@ -23068,7 +23064,7 @@
         {
           "path": "infra/releases/development.json",
           "kind": "file",
-          "sha256": "be697986ca2692b4ec08fe1bbe26e016e9903b88e4c64cd38eed993e8a24768e"
+          "sha256": "ff0b0ecd55e08797aa04cfa370e7d1f89df40e0eb7882e37e8ac6fcc33052faf"
         },
         {
           "path": "infra/releases/README.md",
@@ -23454,22 +23450,6 @@
   ],
   "knownGaps": [
     {
-      "task": "30.8",
-      "state": "reopened",
-      "reason": "Listing attachments currently records views for listed files. Only opening or a permitted download should clear the corresponding flag.",
-      "sourcePaths": [
-        "apps/app/web/src/files/attachment-page.tsx"
-      ],
-      "testPaths": [
-        "apps/app/web/test/files.test.tsx"
-      ],
-      "correctionTasks": [
-        "30.8",
-        "57.8"
-      ],
-      "checks": []
-    },
-    {
       "task": "30.11",
       "state": "reopened",
       "reason": "Property 46 must cover bounded CSV scanning, oversized quoted records and truthful unscanned/truncation reporting as well as text prefixes.",
@@ -23544,43 +23524,43 @@
   "phases": {
     "repair": {
       "firstWave": 0,
-      "lastWave": 4
+      "lastWave": 3
     },
     "collaboration": {
-      "firstWave": 5,
-      "lastWave": 35
+      "firstWave": 4,
+      "lastWave": 34
     },
     "privacy": {
-      "firstWave": 36,
-      "lastWave": 59
+      "firstWave": 35,
+      "lastWave": 58
     },
     "imports_and_log": {
-      "firstWave": 60,
-      "lastWave": 83
+      "firstWave": 59,
+      "lastWave": 82
     },
     "publication": {
-      "firstWave": 84,
-      "lastWave": 101
+      "firstWave": 83,
+      "lastWave": 100
     },
     "outside_and_ai": {
-      "firstWave": 102,
-      "lastWave": 149
+      "firstWave": 101,
+      "lastWave": 148
     },
     "recovery": {
-      "firstWave": 150,
-      "lastWave": 167
+      "firstWave": 149,
+      "lastWave": 166
     },
     "release_tooling": {
-      "firstWave": 168,
-      "lastWave": 197
+      "firstWave": 167,
+      "lastWave": 196
     },
     "staging_and_acceptance": {
-      "firstWave": 198,
-      "lastWave": 205
+      "firstWave": 197,
+      "lastWave": 204
     },
     "production_activation": {
-      "firstWave": 206,
-      "lastWave": 206
+      "firstWave": 205,
+      "lastWave": 205
     }
   },
   "gates": [

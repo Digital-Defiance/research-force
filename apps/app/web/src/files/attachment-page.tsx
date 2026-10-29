@@ -37,7 +37,6 @@ export function AttachmentList({ parentId }: { readonly parentId: string }) {
   const loaded = useLoad<{ attachments: { id: string; title: string; originalName: string; sizeBytes: number; flag: 'new' | 'updated' | null }[] }>(`/items/${parentId}/attachments`);
   const session = useSession();
   const entries = loaded.data?.attachments ?? []; const flagOf = useFlagSnapshot(entries);
-  useRecordViews(loaded.data ? entries.map((entry) => entry.id) : undefined);
   return <section className="rf-section" aria-label="Attachments"><h2>Attachments</h2>
     {loaded.data ? <ul className="rf-list">{entries.map((file) => <li key={file.id}><Link to={`/attachments/${file.id}`}>{file.title}</Link>{` (${file.originalName}, ${file.sizeBytes} bytes) `}<FlagMark flag={flagOf(file.id)} /></li>)}</ul> : <LoadState error={loaded.error} />}
     {session.can('attachment.upload') && <Link to={`/items/${parentId}/files`}>Attach files</Link>}
