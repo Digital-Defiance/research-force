@@ -275,7 +275,7 @@ export async function createItem(c: Context<ApiEnv>, kind: ItemKind, body: unkno
   const now = c.get('now');
   await authorize(c, [
     { permission: kind === 'topic' ? 'topic.create' : 'item.create' },
-    ...((envelope.links?.length ?? 0) + (envelope.evidence?.length ?? 0) > 0 ? [{ permission: 'link.add' as const }] : []),
+    ...((envelope.links?.length ?? 0) + (envelope.evidence?.length ?? 0) > 0 || hasEntries(rest['groups']) ? [{ permission: 'link.add' as const }] : []),
     ...((envelope.reviews?.length ?? 0) > 0 ? [{ permission: 'review.request' as const }] : []),
   ]);
   const context = await validationContext(c);
@@ -371,7 +371,7 @@ export async function editItem(c: Context<ApiEnv>, current: LoadedItem, body: un
   const checks: PermissionCheck[] = [{ permission: 'item.edit', target: { ...target, field: 'content' } }];
   if (touchesSummary) checks.push({ permission: 'item.edit', target: { ...target, field: 'logSummary' } }, { permission: 'logSummary.write', target });
   if (envelope.mark?.mark === 'correction') checks.push({ permission: 'item.correct', target });
-  if ((envelope.links?.length ?? 0) + (envelope.evidence?.length ?? 0) > 0) checks.push({ permission: 'link.add' });
+  if ((envelope.links?.length ?? 0) + (envelope.evidence?.length ?? 0) > 0 || hasEntries(patch['groups'])) checks.push({ permission: 'link.add' });
   await authorize(c, checks);
 
   const issues: FieldIssue[] = [];
@@ -489,6 +489,11 @@ async function submissionReviews(
     else issues.push({ field: `reviews.${index}`, rule: NO_ELIGIBLE_REVIEWER });
   }
   return { reviews, issues };
+}
+
+/** Whether a Research_Question's groups name any entry, each of which is a Cross_Link (R50.2). */
+function hasEntries(groups: unknown): boolean {
+  return Array.isArray(groups) && groups.some((group) => Array.isArray((group as { entries?: unknown })?.entries) && (group as { entries: unknown[] }).entries.length > 0);
 }
 
 function stagedTotals(staged: StagedSections | undefined): { staged?: { count: number; characters: number } } {

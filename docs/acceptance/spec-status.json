@@ -2,15 +2,14 @@
   "inputs": {
     ".kiro/specs/research-collab-cms/requirements.md": "9e2d7cee953f4aeece04bad4a7dfae273a908c0df65c95beea7a4e572b71b5df",
     ".kiro/specs/research-collab-cms/design.md": "85df571e6efad1205603dca7addcea9c16f68252023d5483a2fbe81d705c4d93",
-    ".kiro/specs/research-collab-cms/tasks.md": "a8859277851c912a3b32d405e2018e05349123929bd72b34845362440cac023c",
-    "docs/acceptance/task-evidence.json": "6e930a4a018b2ede04f940895c14403dd76c8574e84e1726acfade2f817d82f5"
+    ".kiro/specs/research-collab-cms/tasks.md": "da4c9058f8e7b7062d41585c4585fa26b3154d900c67ba8604acbbacf43f21f3",
+    "docs/acceptance/task-evidence.json": "218bed997313dbbaeb223f9b639e8bed47a505a1f94d36148db8fa2fc72a2b09"
   },
   "schemaVersion": 1,
   "nextTasks": [
-    "55.2"
+    "55.3"
   ],
   "remainingBuildOrder": [
-    "55.2",
     "55.3",
     "62.1",
     "61.1",
@@ -217,11 +216,11 @@
     "criteria": 738,
     "properties": 126,
     "leafTasks": 406,
-    "checkedLeaves": 205,
+    "checkedLeaves": 206,
     "historicalUnverified": 182,
-    "acceptedWithLocalEvidence": 23,
+    "acceptedWithLocalEvidence": 24,
     "propertyFiles": 64,
-    "remainingWaves": 201,
+    "remainingWaves": 200,
     "gates": 4
   },
   "structuralIssues": [],
@@ -13365,7 +13364,7 @@
         {
           "path": "apps/app/src/api/routes/items.ts",
           "kind": "file",
-          "sha256": "dac49de957bd38282a189d0addd5c21334aafc777a224827252974d840f60382"
+          "sha256": "4ea6b42052f132ecdfba7f31af3d47f6637a47a83f8a54d3f0556747de1baf28"
         }
       ],
       "gates": [],
@@ -13458,7 +13457,7 @@
         {
           "path": "apps/app/src/records/items.ts",
           "kind": "file",
-          "sha256": "efb316d52ed68b1c65b154565025f71e214a5afa54d9acf647f11fd615b2df1c"
+          "sha256": "e94536eb1dd8e1ca4c55423c0378b7e57e19c9168d7bf8e98a14a62a3123b216"
         },
         {
           "path": "apps/app/web/src/api.ts",
@@ -13947,7 +13946,7 @@
         {
           "path": "apps/app/src/jobs/deletion.ts",
           "kind": "file",
-          "sha256": "09c24b9e23e1bec929aca04bc8432cc7e3aa0f3357ee4763bd54027f38259a88"
+          "sha256": "86250c5c6a2050a294434c9f1709c9526baf44755ee1b4ae9b7af9bc3c9847f9"
         }
       ],
       "gates": [],
@@ -19177,7 +19176,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "6e930a4a018b2ede04f940895c14403dd76c8574e84e1726acfade2f817d82f5"
+          "sha256": "218bed997313dbbaeb223f9b639e8bed47a505a1f94d36148db8fa2fc72a2b09"
         },
         {
           "path": "README.md",
@@ -19266,7 +19265,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "6e930a4a018b2ede04f940895c14403dd76c8574e84e1726acfade2f817d82f5"
+          "sha256": "218bed997313dbbaeb223f9b639e8bed47a505a1f94d36148db8fa2fc72a2b09"
         },
         {
           "path": "apps/app/src/index.ts",
@@ -19405,7 +19404,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "6e930a4a018b2ede04f940895c14403dd76c8574e84e1726acfade2f817d82f5"
+          "sha256": "218bed997313dbbaeb223f9b639e8bed47a505a1f94d36148db8fa2fc72a2b09"
         },
         {
           "path": "apps/app/src/local/services.ts",
@@ -20493,7 +20492,7 @@
         {
           "path": "apps/app/src/records/kinds/question.ts",
           "kind": "file",
-          "sha256": "ccd6e7dc7ded89a0ff75781db57bb837298582d1df230a53eb8403c7a55fbbd7"
+          "sha256": "b91fd65f4a72d7aaad2748befdcdcf8b2f688e89fb1d1aaafa3ab0b707f14e24"
         },
         {
           "path": "packages/domain/test/schema-items.test.ts",
@@ -20513,7 +20512,7 @@
         {
           "path": "apps/app/test/research-questions.test.ts",
           "kind": "file",
-          "sha256": "c85b052f8c4f91583fb6d7350af00a958d8039d042cb03eff9cca9eb38878bd9"
+          "sha256": "c1c0b2b16bc0dcf8ae345169748ff9fce8f89d7a5eb531220c99adfb5d761491"
         },
         {
           "path": "apps/app/test/links.test.ts",
@@ -20560,7 +20559,7 @@
     {
       "id": "55.2",
       "title": "Implement Research_Questions in `apps/app/src/records/kinds/question.ts`",
-      "checked": false,
+      "checked": true,
       "requirements": [
         "41.2",
         "50.1",
@@ -20570,20 +20569,87 @@
       ],
       "properties": [],
       "prerequisites": [],
-      "phase": "collaboration",
+      "phase": "completed_baseline",
       "sourcePaths": [
         {
           "path": "apps/app/src/records/kinds/question.ts",
           "kind": "file",
-          "sha256": "ccd6e7dc7ded89a0ff75781db57bb837298582d1df230a53eb8403c7a55fbbd7"
+          "sha256": "b91fd65f4a72d7aaad2748befdcdcf8b2f688e89fb1d1aaafa3ab0b707f14e24"
+        },
+        {
+          "path": "apps/app/src/records/items.ts",
+          "kind": "file",
+          "sha256": "e94536eb1dd8e1ca4c55423c0378b7e57e19c9168d7bf8e98a14a62a3123b216"
+        },
+        {
+          "path": "apps/app/src/api/routes/items.ts",
+          "kind": "file",
+          "sha256": "4ea6b42052f132ecdfba7f31af3d47f6637a47a83f8a54d3f0556747de1baf28"
+        },
+        {
+          "path": "apps/app/src/jobs/deletion.ts",
+          "kind": "file",
+          "sha256": "86250c5c6a2050a294434c9f1709c9526baf44755ee1b4ae9b7af9bc3c9847f9"
+        },
+        {
+          "path": "apps/app/src/search/read.ts",
+          "kind": "file",
+          "sha256": "e2eb2282a71d9e9336ff1d0cc3b98978dea2acc3cec516f1b4117384a158e420"
+        },
+        {
+          "path": "packages/db/src/field-backfill.ts",
+          "kind": "file",
+          "sha256": "1ccd26cb97c1d86d719ef2dce32f69adc59704cf4b81534cc0fa2922ceb9e85c"
+        },
+        {
+          "path": "apps/app/test/question-entries.test.ts",
+          "kind": "file",
+          "sha256": "d8c5a24843ba87a730f55a3a1c5a949873c79574361ef337da3e07dd79bff7f9"
+        },
+        {
+          "path": "apps/app/test/research-questions.test.ts",
+          "kind": "file",
+          "sha256": "c1c0b2b16bc0dcf8ae345169748ff9fce8f89d7a5eb531220c99adfb5d761491"
+        },
+        {
+          "path": "apps/app/test/links.test.ts",
+          "kind": "file",
+          "sha256": "587c36836333c5dadbd7e39415358c0b670ae6a12d60a6b4ae2b6730a4a5e339"
+        },
+        {
+          "path": "apps/app/test/search.test.ts",
+          "kind": "file",
+          "sha256": "c29f3a3bb3503f8b47505097b32166042d2bc6dc7055da55bb34eabb19ce42e4"
         }
       ],
       "gates": [
         "team_archive",
         "final_checkpoint_49"
       ],
-      "acceptance": "planned",
-      "evidence": null
+      "acceptance": "accepted",
+      "evidence": {
+        "task": "55.2",
+        "state": "accepted",
+        "reason": "Verified that a Research_Question is created and edited through the ordinary records pipeline with its Question_Groups. Each entry is stored as an Addresses Cross_Link from the question to its target, with its group and position, so the target lists the question among its Backlinks; the groups and entries keep their order, an edit keeps the group identities and the links of entries it retains, and an entry it drops becomes a removed link with the removing Member and time. Targets must be Research_Items or Attachments of the question's own Project that the Member can read and that are not deleted, at most once per question, and a question cannot address itself; a value outside the limits, a target in another Project, a missing target, a duplicate, or a blank question or heading saves nothing and names each invalid field. A Log_Summary is not required, the entries need the link permission, and the question, introduction and group headings are searchable. The shared helper removeQuestionEntries removes the entries naming given targets inside the caller's batch, guards against a question another save changed first, and records each removal with its reason and the previous groups in the question's history; permanent deletion of an Item or Attachment calls it and the deletion job removes a deleted question's own rows. Item moves (31.6) and Attachment moves (53.1) call the same helper when they are built. The Workspace screens, public rendering and Property 106 follow in 55.3 to 55.5. No deployment or production certification is claimed.",
+        "sourcePaths": [
+          "apps/app/src/records/kinds/question.ts",
+          "apps/app/src/records/items.ts",
+          "apps/app/src/api/routes/items.ts",
+          "apps/app/src/jobs/deletion.ts",
+          "apps/app/src/search/read.ts",
+          "packages/db/src/field-backfill.ts"
+        ],
+        "testPaths": [
+          "apps/app/test/question-entries.test.ts",
+          "apps/app/test/research-questions.test.ts",
+          "apps/app/test/links.test.ts",
+          "apps/app/test/search.test.ts"
+        ],
+        "correctionTasks": [],
+        "checks": [
+          "docs/acceptance/checks/local-tests.json"
+        ]
+      }
     },
     {
       "id": "55.3",
@@ -20594,9 +20660,7 @@
         "50.3"
       ],
       "properties": [],
-      "prerequisites": [
-        "55.2"
-      ],
+      "prerequisites": [],
       "phase": "collaboration",
       "sourcePaths": [
         {
@@ -20958,12 +21022,12 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "6e930a4a018b2ede04f940895c14403dd76c8574e84e1726acfade2f817d82f5"
+          "sha256": "218bed997313dbbaeb223f9b639e8bed47a505a1f94d36148db8fa2fc72a2b09"
         },
         {
           "path": "docs/acceptance/checks/local-tests.json",
           "kind": "file",
-          "sha256": "5595f76862e6f75eccd96e2ce0817288290e3aa49a42275485461c172d5f94b3"
+          "sha256": "2267c6d334742042ecb62e9e9b340027b8de5dc83af60fc22508352c3b833ec9"
         },
         {
           "path": "tools/src/specs.ts",
@@ -21050,7 +21114,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "6e930a4a018b2ede04f940895c14403dd76c8574e84e1726acfade2f817d82f5"
+          "sha256": "218bed997313dbbaeb223f9b639e8bed47a505a1f94d36148db8fa2fc72a2b09"
         },
         {
           "path": "packages/domain/src/settings.ts",
@@ -21230,7 +21294,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "6e930a4a018b2ede04f940895c14403dd76c8574e84e1726acfade2f817d82f5"
+          "sha256": "218bed997313dbbaeb223f9b639e8bed47a505a1f94d36148db8fa2fc72a2b09"
         },
         {
           "path": "docs/storage/logical-fields.md",
@@ -21280,7 +21344,7 @@
         {
           "path": "packages/db/src/field-backfill.ts",
           "kind": "file",
-          "sha256": "e9c2977327338f1fe35a2faf14584aab9809bed903e6dd5119aa82195c57f0de"
+          "sha256": "1ccd26cb97c1d86d719ef2dce32f69adc59704cf4b81534cc0fa2922ceb9e85c"
         },
         {
           "path": "packages/db/src/batch.ts",
@@ -21340,7 +21404,7 @@
         {
           "path": "apps/app/src/records/items.ts",
           "kind": "file",
-          "sha256": "efb316d52ed68b1c65b154565025f71e214a5afa54d9acf647f11fd615b2df1c"
+          "sha256": "e94536eb1dd8e1ca4c55423c0378b7e57e19c9168d7bf8e98a14a62a3123b216"
         },
         {
           "path": "apps/app/src/records/history.ts",
@@ -21355,7 +21419,7 @@
         {
           "path": "apps/app/src/search/read.ts",
           "kind": "file",
-          "sha256": "8c0cc7420c1c31316d92b140e88ee500bb967f5969d83f310e67170956434240"
+          "sha256": "e2eb2282a71d9e9336ff1d0cc3b98978dea2acc3cec516f1b4117384a158e420"
         },
         {
           "path": "apps/app/src/search/logical.ts",
@@ -21395,7 +21459,7 @@
         {
           "path": "infra/releases/development.json",
           "kind": "file",
-          "sha256": "25a163f1f8c92ee74c879c0a791a83e7be358d2f47450cb838db0319ecb84f76"
+          "sha256": "5ad97c64fe1279f1ddf94b4c57cf449f0a8d281c09d82ce8dbe7a255110b5e39"
         },
         {
           "path": "infra/recovery/deployment.example.json",
@@ -21670,7 +21734,7 @@
         {
           "path": "infra/releases/development.json",
           "kind": "file",
-          "sha256": "25a163f1f8c92ee74c879c0a791a83e7be358d2f47450cb838db0319ecb84f76"
+          "sha256": "5ad97c64fe1279f1ddf94b4c57cf449f0a8d281c09d82ce8dbe7a255110b5e39"
         },
         {
           "path": "apps/app/test/operations.test.ts",
@@ -23231,7 +23295,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "6e930a4a018b2ede04f940895c14403dd76c8574e84e1726acfade2f817d82f5"
+          "sha256": "218bed997313dbbaeb223f9b639e8bed47a505a1f94d36148db8fa2fc72a2b09"
         },
         {
           "path": "packages/domain/src/compatibility.ts",
@@ -23281,7 +23345,7 @@
         {
           "path": "infra/releases/development.json",
           "kind": "file",
-          "sha256": "25a163f1f8c92ee74c879c0a791a83e7be358d2f47450cb838db0319ecb84f76"
+          "sha256": "5ad97c64fe1279f1ddf94b4c57cf449f0a8d281c09d82ce8dbe7a255110b5e39"
         },
         {
           "path": "infra/releases/README.md",
@@ -23724,39 +23788,39 @@
   "phases": {
     "collaboration": {
       "firstWave": 0,
-      "lastWave": 29
+      "lastWave": 28
     },
     "privacy": {
-      "firstWave": 30,
-      "lastWave": 53
+      "firstWave": 29,
+      "lastWave": 52
     },
     "imports_and_log": {
-      "firstWave": 54,
-      "lastWave": 77
+      "firstWave": 53,
+      "lastWave": 76
     },
     "publication": {
-      "firstWave": 78,
-      "lastWave": 95
+      "firstWave": 77,
+      "lastWave": 94
     },
     "outside_and_ai": {
-      "firstWave": 96,
-      "lastWave": 143
+      "firstWave": 95,
+      "lastWave": 142
     },
     "recovery": {
-      "firstWave": 144,
-      "lastWave": 161
+      "firstWave": 143,
+      "lastWave": 160
     },
     "release_tooling": {
-      "firstWave": 162,
-      "lastWave": 191
+      "firstWave": 161,
+      "lastWave": 190
     },
     "staging_and_acceptance": {
-      "firstWave": 192,
-      "lastWave": 199
+      "firstWave": 191,
+      "lastWave": 198
     },
     "production_activation": {
-      "firstWave": 200,
-      "lastWave": 200
+      "firstWave": 199,
+      "lastWave": 199
     }
   },
   "gates": [

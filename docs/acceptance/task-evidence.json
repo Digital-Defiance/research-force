@@ -798,6 +798,29 @@
       "checks": [
         "docs/acceptance/checks/local-tests.json"
       ]
+    },
+    {
+      "task": "55.2",
+      "state": "accepted",
+      "reason": "Verified that a Research_Question is created and edited through the ordinary records pipeline with its Question_Groups. Each entry is stored as an Addresses Cross_Link from the question to its target, with its group and position, so the target lists the question among its Backlinks; the groups and entries keep their order, an edit keeps the group identities and the links of entries it retains, and an entry it drops becomes a removed link with the removing Member and time. Targets must be Research_Items or Attachments of the question's own Project that the Member can read and that are not deleted, at most once per question, and a question cannot address itself; a value outside the limits, a target in another Project, a missing target, a duplicate, or a blank question or heading saves nothing and names each invalid field. A Log_Summary is not required, the entries need the link permission, and the question, introduction and group headings are searchable. The shared helper removeQuestionEntries removes the entries naming given targets inside the caller's batch, guards against a question another save changed first, and records each removal with its reason and the previous groups in the question's history; permanent deletion of an Item or Attachment calls it and the deletion job removes a deleted question's own rows. Item moves (31.6) and Attachment moves (53.1) call the same helper when they are built. The Workspace screens, public rendering and Property 106 follow in 55.3 to 55.5. No deployment or production certification is claimed.",
+      "sourcePaths": [
+        "apps/app/src/records/kinds/question.ts",
+        "apps/app/src/records/items.ts",
+        "apps/app/src/api/routes/items.ts",
+        "apps/app/src/jobs/deletion.ts",
+        "apps/app/src/search/read.ts",
+        "packages/db/src/field-backfill.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/question-entries.test.ts",
+        "apps/app/test/research-questions.test.ts",
+        "apps/app/test/links.test.ts",
+        "apps/app/test/search.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
     }
   ]
 }

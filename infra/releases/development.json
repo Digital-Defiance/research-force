@@ -336,7 +336,7 @@
     },
     {
       "path": "apps/app/src/api/routes/items.ts",
-      "sha256": "dac49de957bd38282a189d0addd5c21334aafc777a224827252974d840f60382"
+      "sha256": "4ea6b42052f132ecdfba7f31af3d47f6637a47a83f8a54d3f0556747de1baf28"
     },
     {
       "path": "apps/app/src/api/routes/links.ts",
@@ -464,7 +464,7 @@
     },
     {
       "path": "apps/app/src/jobs/deletion.ts",
-      "sha256": "09c24b9e23e1bec929aca04bc8432cc7e3aa0f3357ee4763bd54027f38259a88"
+      "sha256": "86250c5c6a2050a294434c9f1709c9526baf44755ee1b4ae9b7af9bc3c9847f9"
     },
     {
       "path": "apps/app/src/local/mailer.ts",
@@ -544,7 +544,7 @@
     },
     {
       "path": "apps/app/src/records/items.ts",
-      "sha256": "efb316d52ed68b1c65b154565025f71e214a5afa54d9acf647f11fd615b2df1c"
+      "sha256": "e94536eb1dd8e1ca4c55423c0378b7e57e19c9168d7bf8e98a14a62a3123b216"
     },
     {
       "path": "apps/app/src/records/kinds/archival.ts",
@@ -576,7 +576,7 @@
     },
     {
       "path": "apps/app/src/records/kinds/question.ts",
-      "sha256": "ccd6e7dc7ded89a0ff75781db57bb837298582d1df230a53eb8403c7a55fbbd7"
+      "sha256": "b91fd65f4a72d7aaad2748befdcdcf8b2f688e89fb1d1aaafa3ab0b707f14e24"
     },
     {
       "path": "apps/app/src/records/kinds/run.ts",
@@ -644,7 +644,7 @@
     },
     {
       "path": "apps/app/src/search/read.ts",
-      "sha256": "8c0cc7420c1c31316d92b140e88ee500bb967f5969d83f310e67170956434240"
+      "sha256": "e2eb2282a71d9e9336ff1d0cc3b98978dea2acc3cec516f1b4117384a158e420"
     },
     {
       "path": "apps/app/web/src/access/access.tsx",
@@ -872,7 +872,7 @@
     },
     {
       "path": "packages/db/src/field-backfill.ts",
-      "sha256": "e9c2977327338f1fe35a2faf14584aab9809bed903e6dd5119aa82195c57f0de"
+      "sha256": "1ccd26cb97c1d86d719ef2dce32f69adc59704cf4b81534cc0fa2922ceb9e85c"
     },
     {
       "path": "packages/db/src/field-snapshots.ts",

@@ -32,7 +32,7 @@ describe('the Research_Question kind rows', () => {
     adapter.insert(batch, { id: item.id, projectId: place.projectId, ownerId: place.ownerId, credit: [{ member: place.ownerId }], submissionId: place.submissionId, now: at }, { question: 'What did the synthetic tiles show?', introduction });
     await batch.commit();
     const results = await core().batch(adapter.load(core(), item.id));
-    expect(adapter.read(results, {} as never).fields).toEqual({ question: 'What did the synthetic tiles show?', introduction });
+    expect(adapter.read(results, {} as never).fields).toEqual({ question: 'What did the synthetic tiles show?', introduction, groups: [] });
     expect(adapter.dates({})).toEqual({ kind: 'research_question' });
   });
 
@@ -41,14 +41,14 @@ describe('the Research_Question kind rows', () => {
     const created = new GuardedBatch(core(), { id: place.ownerId, now: at });
     adapter.insert(created, { id: item.id, projectId: place.projectId, ownerId: place.ownerId, credit: [{ member: place.ownerId }], submissionId: place.submissionId, now: at }, { question: 'First?' });
     await created.commit();
-    expect(adapter.read(await core().batch(adapter.load(core(), item.id)), {} as never).fields).toEqual({ question: 'First?' });
+    expect(adapter.read(await core().batch(adapter.load(core(), item.id)), {} as never).fields).toEqual({ question: 'First?', groups: [] });
     const edited = new GuardedBatch(core(), { id: place.ownerId, now: at });
     adapter.update(edited, { id: item.id } as never, { question: 'First?' }, { question: 'Second?' }, new Set(['question']), at);
     await edited.commit();
-    expect(adapter.read(await core().batch(adapter.load(core(), item.id)), {} as never).fields).toEqual({ question: 'Second?' });
+    expect(adapter.read(await core().batch(adapter.load(core(), item.id)), {} as never).fields).toEqual({ question: 'Second?', groups: [] });
   });
 
-  it('is not yet a kind that Members can submit through the API', async () => {
+  it('stays out of the web submit menus until the Question screens exist', async () => {
     const { SUBMITTABLE_KINDS, ITEM_KINDS } = await import('@researchforce/domain/types');
     expect(ITEM_KINDS).toContain('research_question');
     expect(SUBMITTABLE_KINDS).not.toContain('research_question');

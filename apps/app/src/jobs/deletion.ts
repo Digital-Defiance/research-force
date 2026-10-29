@@ -7,6 +7,7 @@ import { OPERATIONS } from '@researchforce/domain/settings';
 import type { ItemKind, ULID } from '@researchforce/domain/types';
 import type { ApiEnv } from '../api/app';
 import { JOB_HANDLERS } from '../do/jobs';
+import { removeQuestionEntries } from '../records/kinds/question';
 import type { JobHandler, JsonValue } from '../do/jobs';
 
 /**
@@ -26,7 +27,7 @@ interface Cursor {
 /** Tables holding a unit's fields and per-Member state, each keyed by `unit_id`. */
 const UNIT_TABLES = [
   'research_items', 'journal_entries', 'je_members', 'entry_sections', 'findings', 'sources', 'runs', 'run_counts', 'hypotheses', 'correspondences',
-  'correspondence_parties', 'archival_requests', 'topics', 'replies', 'attachments', 'dissent_notes', 'flags', 'views',
+  'correspondence_parties', 'archival_requests', 'topics', 'research_questions', 'replies', 'attachments', 'dissent_notes', 'flags', 'views',
 ] as const;
 const SLICE_ROWS = OPERATIONS.jobSliceRows;
 
@@ -58,6 +59,11 @@ export async function requestDeletion(c: Context<ApiEnv>, target: DeletionTarget
   } else {
     batch.run(sql`DELETE FROM replies WHERE unit_id = ${target.unitId}`);
   }
+  // Entries of Research_Questions that name a removed Research_Item or Attachment go in the same save (R50.7).
+  const named = (target.scope === 'item'
+    ? await c.env.RF_CORE.prepare("SELECT id FROM units WHERE root_id = ?1 AND unit_type IN ('research_item', 'attachment')").bind(target.rootId).all<{ id: string }>()
+    : await c.env.RF_CORE.prepare("SELECT id FROM units WHERE parent_id = ?1 AND unit_type = 'attachment'").bind(target.unitId).all<{ id: string }>()).results;
+  await removeQuestionEntries(c.env.RF_CORE, batch, named.map((row) => row.id), 'The Research Item or Attachment was permanently deleted.');
   await batch
     .insert(jobs, { id: jobId, type: 'deletion', state: 'queued', requestedBy: actor, params, createdAt: now, updatedAt: now })
     .outbox('jobs', `job:${jobId}`)
@@ -105,6 +111,8 @@ export const deletionJob: JobHandler = {
       const list = JSON.stringify(params.scope === 'item' || last ? [...ids, params.unitId] : ids);
       await db.batch([
         ...UNIT_TABLES.map((table) => db.prepare(`DELETE FROM ${table} WHERE unit_id IN (SELECT value FROM json_each(?1))`).bind(list)),
+        db.prepare('DELETE FROM question_entries WHERE question_id IN (SELECT value FROM json_each(?1))').bind(list),
+        db.prepare('DELETE FROM question_groups WHERE question_id IN (SELECT value FROM json_each(?1))').bind(list),
         db.prepare(`DELETE FROM revisions WHERE target_type = 'unit' AND target_id IN (SELECT value FROM json_each(?1)) AND NOT (kind = 'deletion' AND target_id = ?2)`).bind(list, params.unitId),
         // A deleted Reply's unit row keeps its place in the Thread for its placeholder.
         db.prepare('DELETE FROM units WHERE id IN (SELECT value FROM json_each(?1)) AND id <> ?2').bind(list, params.scope === 'reply' ? params.unitId : ''),

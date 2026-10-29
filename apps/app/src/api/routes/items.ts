@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { SUBMITTABLE_KINDS } from '@researchforce/domain/types';
+import { ITEM_KINDS } from '@researchforce/domain/types';
 import type { ItemKind } from '@researchforce/domain/types';
 import { authorizeRead } from '../../auth/authorize';
 import { changeItemAccess, previewItemAccess } from '../../records/access';
@@ -10,7 +10,7 @@ import { readJson } from '../input';
 
 export const itemsRoutes = new Hono<ApiEnv>();
 
-const KIND_PATHS: ReadonlyMap<string, ItemKind> = new Map(SUBMITTABLE_KINDS.map((kind) => [kind.replaceAll('_', '-'), kind]));
+const KIND_PATHS: ReadonlyMap<string, ItemKind> = new Map(ITEM_KINDS.map((kind) => [kind.replaceAll('_', '-'), kind]));
 
 /** Submit a new Research_Item of the kind named in the path, such as `journal-entry` or `finding`. */
 itemsRoutes.post('/:kind', async (c) => {
