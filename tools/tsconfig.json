@@ -1,7 +1,7 @@
 {
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
-    "rootDir": ".",
+    "rootDir": "..",
     "outDir": ".cache/types",
     "tsBuildInfoFile": ".cache/tsconfig.tsbuildinfo",
     "types": [
@@ -11,7 +11,10 @@
   "include": [
     "src/**/*.ts",
     "*.ts",
-    "types/*.d.ts"
+    "types/*.d.ts",
+    "../infra/secrets.ts",
+    "../infra/cloudflare/resources.ts",
+    "../infra/cloudflare/provision.ts"
   ],
   "references": [
     {

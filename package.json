@@ -32,6 +32,8 @@
     "dev:reset": "node --import tsx scripts/dev.ts --reset --seed-only",
     "dev:seed": "node --import tsx tools/dev-seed.ts",
     "profile:certify": "node --import tsx tools/certify-profile.ts",
+    "secrets:check": "node --import tsx tools/check-secrets.ts",
+    "cloudflare:plan": "node --import tsx infra/cloudflare/provision.ts --dry-run",
     "release:write": "node --import tsx tools/release.ts write",
     "release:check": "node --import tsx tools/release.ts check",
     "release:plan": "node --import tsx tools/release.ts plan",
