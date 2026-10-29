@@ -2,15 +2,14 @@
   "inputs": {
     ".kiro/specs/research-collab-cms/requirements.md": "9e2d7cee953f4aeece04bad4a7dfae273a908c0df65c95beea7a4e572b71b5df",
     ".kiro/specs/research-collab-cms/design.md": "85df571e6efad1205603dca7addcea9c16f68252023d5483a2fbe81d705c4d93",
-    ".kiro/specs/research-collab-cms/tasks.md": "483fa2a47a0f8edf7bf9963bea3802359fb3954dbf30b2ba0cb63c9941a29935",
-    "docs/acceptance/task-evidence.json": "543d2bf9196f2ca2dcb7c79ae013caf0ff8d7912e610766249ca7786dfbff72f"
+    ".kiro/specs/research-collab-cms/tasks.md": "c25edf20bb3f7b458af6ab4b6d8591a6cac4c0100c1f724b7e21cd6bbb5753a2",
+    "docs/acceptance/task-evidence.json": "953ed7b3c154b1924e7dfa7526b2202085037d8954ea7c0bac0f0a71409b73a1"
   },
   "schemaVersion": 1,
   "nextTasks": [
-    "57.6"
+    "57.7"
   ],
   "remainingBuildOrder": [
-    "57.6",
     "57.7",
     "57.8",
     "55.1",
@@ -221,11 +220,11 @@
     "criteria": 738,
     "properties": 126,
     "leafTasks": 406,
-    "checkedLeaves": 201,
+    "checkedLeaves": 202,
     "historicalUnverified": 182,
-    "acceptedWithLocalEvidence": 19,
-    "propertyFiles": 62,
-    "remainingWaves": 205,
+    "acceptedWithLocalEvidence": 20,
+    "propertyFiles": 63,
+    "remainingWaves": 204,
     "gates": 4
   },
   "structuralIssues": [],
@@ -10068,7 +10067,9 @@
         "11.10"
       ],
       "task": "57.6",
-      "testPaths": []
+      "testPaths": [
+        "apps/app/test/properties/p109-text-fragments.test.ts"
+      ]
     },
     {
       "id": 110,
@@ -14000,7 +14001,7 @@
         {
           "path": "apps/app/test/properties/p30-status-rules.test.ts",
           "kind": "file",
-          "sha256": "c6d339050afdaa4487d3196addf0658cd19df154b594f5edf6cf21b35f463b19"
+          "sha256": "8031d3c951dd68fad14a0cf56d65e851aa86ce5fa9900eaef4863d75805e7fb6"
         }
       ],
       "gates": [],
@@ -19177,7 +19178,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "543d2bf9196f2ca2dcb7c79ae013caf0ff8d7912e610766249ca7786dfbff72f"
+          "sha256": "953ed7b3c154b1924e7dfa7526b2202085037d8954ea7c0bac0f0a71409b73a1"
         },
         {
           "path": "README.md",
@@ -19266,7 +19267,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "543d2bf9196f2ca2dcb7c79ae013caf0ff8d7912e610766249ca7786dfbff72f"
+          "sha256": "953ed7b3c154b1924e7dfa7526b2202085037d8954ea7c0bac0f0a71409b73a1"
         },
         {
           "path": "apps/app/src/index.ts",
@@ -19405,7 +19406,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "543d2bf9196f2ca2dcb7c79ae013caf0ff8d7912e610766249ca7786dfbff72f"
+          "sha256": "953ed7b3c154b1924e7dfa7526b2202085037d8954ea7c0bac0f0a71409b73a1"
         },
         {
           "path": "apps/app/src/local/services.ts",
@@ -19689,7 +19690,7 @@
         {
           "path": "apps/app/test/properties/p100-restricted-reads.test.ts",
           "kind": "file",
-          "sha256": "f972b671e612788a3bed9065a39160f553e95e6d4ccd930cfe78d365fde6c213"
+          "sha256": "0eff8c88390c91899b0c3eb0f5e85a9dabcd85e0be6dbfca837cc588209526da"
         },
         {
           "path": "apps/app/test/activity.test.ts",
@@ -19771,7 +19772,7 @@
         {
           "path": "apps/app/test/properties/p100-restricted-reads.test.ts",
           "kind": "file",
-          "sha256": "f972b671e612788a3bed9065a39160f553e95e6d4ccd930cfe78d365fde6c213"
+          "sha256": "0eff8c88390c91899b0c3eb0f5e85a9dabcd85e0be6dbfca837cc588209526da"
         }
       ],
       "gates": [
@@ -20021,7 +20022,7 @@
         {
           "path": "apps/app/test/properties/p100-restricted-reads.test.ts",
           "kind": "file",
-          "sha256": "f972b671e612788a3bed9065a39160f553e95e6d4ccd930cfe78d365fde6c213"
+          "sha256": "0eff8c88390c91899b0c3eb0f5e85a9dabcd85e0be6dbfca837cc588209526da"
         }
       ],
       "gates": [
@@ -20882,12 +20883,12 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "543d2bf9196f2ca2dcb7c79ae013caf0ff8d7912e610766249ca7786dfbff72f"
+          "sha256": "953ed7b3c154b1924e7dfa7526b2202085037d8954ea7c0bac0f0a71409b73a1"
         },
         {
           "path": "docs/acceptance/checks/local-tests.json",
           "kind": "file",
-          "sha256": "6206f75241d770a1bfbe42ee6589bb5cef221cc05d4b25b05a1bd7d88a02d128"
+          "sha256": "5d3ab5d2e57e5dd6fe04dfa90915ca00d2fea3dd5bb72fc7f730117604664d2d"
         },
         {
           "path": "tools/src/specs.ts",
@@ -20974,7 +20975,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "543d2bf9196f2ca2dcb7c79ae013caf0ff8d7912e610766249ca7786dfbff72f"
+          "sha256": "953ed7b3c154b1924e7dfa7526b2202085037d8954ea7c0bac0f0a71409b73a1"
         },
         {
           "path": "packages/domain/src/settings.ts",
@@ -21154,7 +21155,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "543d2bf9196f2ca2dcb7c79ae013caf0ff8d7912e610766249ca7786dfbff72f"
+          "sha256": "953ed7b3c154b1924e7dfa7526b2202085037d8954ea7c0bac0f0a71409b73a1"
         },
         {
           "path": "docs/storage/logical-fields.md",
@@ -21733,7 +21734,7 @@
     {
       "id": "57.6",
       "title": "Write property and regression tests for logical field fragments",
-      "checked": false,
+      "checked": true,
       "requirements": [
         "4.10",
         "4.11",
@@ -21743,19 +21744,57 @@
         109
       ],
       "prerequisites": [],
-      "phase": "repair",
+      "phase": "completed_baseline",
       "sourcePaths": [
         {
           "path": "apps/app/test/properties/p109-text-fragments.test.ts",
-          "kind": "missing"
+          "kind": "file",
+          "sha256": "1b50e33dd4182f583bdc5d5bdb714099c68073a8ce671ccf2468373191cdaf72"
+        },
+        {
+          "path": "packages/domain/src/text-fragments.ts",
+          "kind": "file",
+          "sha256": "d7ba82822f7db3a70a35d6799a8935edd25715f3d1f1fda82f454004da6d1fdc"
+        },
+        {
+          "path": "apps/app/src/records/stages.ts",
+          "kind": "file",
+          "sha256": "da676138512638f05c562a22603e64af299e1209d16bb902bc13b11bfcd43d4a"
+        },
+        {
+          "path": "packages/db/src/field-versions.ts",
+          "kind": "file",
+          "sha256": "de69c96656b7f0b91b6ee246a7353a654a35664cc11838b93a8fdb89aa00fed4"
+        },
+        {
+          "path": "apps/app/src/search/indexer.ts",
+          "kind": "file",
+          "sha256": "6fa7974f5952f74b0b0416da0100e80c54784cffc71ea351e7d3272d17bfa86f"
         }
       ],
       "gates": [
         "team_archive",
         "final_checkpoint_49"
       ],
-      "acceptance": "planned",
-      "evidence": null
+      "acceptance": "accepted",
+      "evidence": {
+        "task": "57.6",
+        "state": "accepted",
+        "reason": "Verified Property 109 with models written from the requirements rather than from the splitter. Over random fields of mixed UTF-8 widths, surrogate pairs, line separators and JSON-escaped characters, with disjoint Quote, Paraphrase, language and source-reported labels placed across the points where fragments cut, the text pieces are contiguous global UTF-16 ranges that fall only on code point boundaries, rejoin to the exact text, carry the exact spans, keep every encoded piece within the 128000-byte fragment budget and the manifest within the 512000-byte row, and are read back exactly by the verified reader and the streaming reader. Fault injection drops, repeats, swaps and alters a piece, trims the manifest, adds an unlisted piece, or gives a wrong digest, and every case is rejected, never returned as a different field. Maximum inputs hold: two million escape-heavy code points, two million emoji, two million quotes, and exactly 50,000 spans, with 50,001 refused. Through the Worker, random staged saves of one to three logical sections, with replayed pieces, a withheld final piece and a refused first commit, keep the committed state invisible until the save completes (row counts unchanged) and then return exact text, spans, identities and order; no physical row exceeds 512000 bytes; a later staged edit of one section keeps every other section’s identity and content and history at creation still reconstructs the old state exactly. A phrase that straddles the first physical cut is found at the right place, a phrase of non-adjacent words is not, and a Restricted Item is invisible to a colleague immediately through search and reads without reindexing. Browser and staging proof remain with the browser regressions in 57.8 and the staging tasks. No deployment or production certification is claimed.",
+        "sourcePaths": [
+          "packages/domain/src/text-fragments.ts",
+          "apps/app/src/records/stages.ts",
+          "packages/db/src/field-versions.ts",
+          "apps/app/src/search/indexer.ts"
+        ],
+        "testPaths": [
+          "apps/app/test/properties/p109-text-fragments.test.ts"
+        ],
+        "correctionTasks": [],
+        "checks": [
+          "docs/acceptance/checks/local-tests.json"
+        ]
+      }
     },
     {
       "id": "57.7",
@@ -21769,9 +21808,7 @@
       "properties": [
         110
       ],
-      "prerequisites": [
-        "57.6"
-      ],
+      "prerequisites": [],
       "phase": "repair",
       "sourcePaths": [
         {
@@ -23016,7 +23053,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "543d2bf9196f2ca2dcb7c79ae013caf0ff8d7912e610766249ca7786dfbff72f"
+          "sha256": "953ed7b3c154b1924e7dfa7526b2202085037d8954ea7c0bac0f0a71409b73a1"
         },
         {
           "path": "packages/domain/src/compatibility.ts",
@@ -23509,43 +23546,43 @@
   "phases": {
     "repair": {
       "firstWave": 0,
-      "lastWave": 2
+      "lastWave": 1
     },
     "collaboration": {
-      "firstWave": 3,
-      "lastWave": 33
+      "firstWave": 2,
+      "lastWave": 32
     },
     "privacy": {
-      "firstWave": 34,
-      "lastWave": 57
+      "firstWave": 33,
+      "lastWave": 56
     },
     "imports_and_log": {
-      "firstWave": 58,
-      "lastWave": 81
+      "firstWave": 57,
+      "lastWave": 80
     },
     "publication": {
-      "firstWave": 82,
-      "lastWave": 99
+      "firstWave": 81,
+      "lastWave": 98
     },
     "outside_and_ai": {
-      "firstWave": 100,
-      "lastWave": 147
+      "firstWave": 99,
+      "lastWave": 146
     },
     "recovery": {
-      "firstWave": 148,
-      "lastWave": 165
+      "firstWave": 147,
+      "lastWave": 164
     },
     "release_tooling": {
-      "firstWave": 166,
-      "lastWave": 195
+      "firstWave": 165,
+      "lastWave": 194
     },
     "staging_and_acceptance": {
-      "firstWave": 196,
-      "lastWave": 203
+      "firstWave": 195,
+      "lastWave": 202
     },
     "production_activation": {
-      "firstWave": 204,
-      "lastWave": 204
+      "firstWave": 203,
+      "lastWave": 203
     }
   },
   "gates": [

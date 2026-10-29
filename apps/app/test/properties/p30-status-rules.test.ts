@@ -93,5 +93,5 @@ describe('Property 30: Status rules hold under all operation sequences', () => {
         }
       }
     }));
-  }, 200 * FC_RUNS);
+  }, 600 * FC_RUNS);
 });

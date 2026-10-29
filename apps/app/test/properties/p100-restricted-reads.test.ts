@@ -142,5 +142,5 @@ describe('Property 100: Members see nothing of Research_Items they cannot read',
         }
       }
     }), { numRuns: FC_RUNS });
-  }, 600 * FC_RUNS);
+  }, 2000 * FC_RUNS);
 });

@@ -715,6 +715,24 @@
       "checks": [
         "docs/acceptance/checks/local-tests.json"
       ]
+    },
+    {
+      "task": "57.6",
+      "state": "accepted",
+      "reason": "Verified Property 109 with models written from the requirements rather than from the splitter. Over random fields of mixed UTF-8 widths, surrogate pairs, line separators and JSON-escaped characters, with disjoint Quote, Paraphrase, language and source-reported labels placed across the points where fragments cut, the text pieces are contiguous global UTF-16 ranges that fall only on code point boundaries, rejoin to the exact text, carry the exact spans, keep every encoded piece within the 128000-byte fragment budget and the manifest within the 512000-byte row, and are read back exactly by the verified reader and the streaming reader. Fault injection drops, repeats, swaps and alters a piece, trims the manifest, adds an unlisted piece, or gives a wrong digest, and every case is rejected, never returned as a different field. Maximum inputs hold: two million escape-heavy code points, two million emoji, two million quotes, and exactly 50,000 spans, with 50,001 refused. Through the Worker, random staged saves of one to three logical sections, with replayed pieces, a withheld final piece and a refused first commit, keep the committed state invisible until the save completes (row counts unchanged) and then return exact text, spans, identities and order; no physical row exceeds 512000 bytes; a later staged edit of one section keeps every other section’s identity and content and history at creation still reconstructs the old state exactly. A phrase that straddles the first physical cut is found at the right place, a phrase of non-adjacent words is not, and a Restricted Item is invisible to a colleague immediately through search and reads without reindexing. Browser and staging proof remain with the browser regressions in 57.8 and the staging tasks. No deployment or production certification is claimed.",
+      "sourcePaths": [
+        "packages/domain/src/text-fragments.ts",
+        "apps/app/src/records/stages.ts",
+        "packages/db/src/field-versions.ts",
+        "apps/app/src/search/indexer.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/properties/p109-text-fragments.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
     }
   ]
 }
