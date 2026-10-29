@@ -3,3 +3,4 @@ export * from './core/identity';
 export * from './core/units';
 export * from './core/activity';
 export * from './core/work';
+export * from './core/fields';

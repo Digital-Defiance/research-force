@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "operatingProfile": "Paid_Standard",
+  "productionApproved": false,
+  "budgetApproved": false,
+  "monthlyBudget": {
+    "currency": "USD",
+    "platformAlertCents": 500,
+    "r2AlertCents": 500,
+    "independentBackupAlertCents": 500
+  },
+  "quotas": {
+    "period": "month",
+    "requests": 10000000,
+    "rowsRead": 25000000000,
+    "rowsWritten": 50000000
+  },
+  "referenceArchiveVersion": "reference-archive-v1",
+  "growthVersion": "growth-v1",
+  "abuseVersion": "abuse-v1",
+  "curatorCorpusMeasured": false,
+  "growth": {
+    "originals": {
+      "initialBytes": 137000000,
+      "annualBytes": 274000000
+    },
+    "derivatives": {
+      "initialBytes": 50000000,
+      "annualBytes": 100000000
+    },
+    "history": {
+      "initialBytes": 20000000,
+      "annualBytes": 40000000
+    },
+    "publicCopies": {
+      "initialBytes": 100000000,
+      "annualBytes": 200000000
+    },
+    "releases": {
+      "initialBytes": 100000000,
+      "annualBytes": 200000000
+    },
+    "exports": {
+      "initialBytes": 100000000,
+      "annualBytes": 200000000
+    },
+    "transientCopies": 2,
+    "independentBackupCopies": 1,
+    "metadata": {
+      "initialBytes": 10000000,
+      "annualBytes": 20000000
+    }
+  }
+}

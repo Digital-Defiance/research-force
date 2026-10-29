@@ -24,5 +24,6 @@ export interface EmailProvider { send(message: EmailMessage): Promise<SendResult
  * Returns `null` when the provider's secrets are not set, which counts as a failed attempt.
  */
 export function providerFor(env: Env, fetcher: typeof fetch = fetch): EmailProvider | null {
+  if (env.RF_LOCAL_SERVICES !== undefined || env.LOCAL_SERVICES !== undefined || env.RF_DEV_AUTH !== undefined || env.RF_DEV_AUTH_PRIVATE_KEY !== undefined) throw new Error('Local mail capture requires the local Mailer entrypoint.');
   return GraphProvider.fromEnv(env, fetcher);
 }

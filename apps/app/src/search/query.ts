@@ -1,3 +1,5 @@
+import { logicalMatchStart, logicalTermExpression } from '@researchforce/domain/logical-search';
+import { readLogicalDocument } from './logical';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { canRead } from '@researchforce/db/access';
@@ -97,7 +99,7 @@ export interface SearchResult {
 }
 export interface SearchPage { readonly results: readonly SearchResult[]; readonly next: string | null }
 
-interface Candidate { key: number; root: ULID }
+interface Candidate { key: number; root: ULID; unit: ULID }
 
 /** The label of each character of a text, as runs cut at the label boundaries (R21.7). */
 export function runsOf(text: string, spans: readonly DocSpan[]): ExcerptRun[] {
@@ -116,10 +118,11 @@ const STOP = '\u0002';
 const WINDOW = 600;
 
 /** At most 300 characters around the first match of the stored text, highlighted and labelled (R21.7). */
-export function excerptOf(body: string, spans: readonly DocSpan[], snippet: string | null, terms: readonly QueryTerm[]): Excerpt {
+export function excerptOf(body: string, spans: readonly DocSpan[], snippet: string | null, terms: readonly QueryTerm[], position?: number | null): Excerpt {
   let from = 0;
   let to = body.length;
-  if (snippet !== null && snippet.includes(START)) {
+  if (position !== undefined && position !== null) { from = Math.max(0, position - 100); to = Math.min(body.length, position + WINDOW); }
+  else if (snippet !== null && snippet.includes(START)) {
     const plain = snippet.replaceAll(START, '').replaceAll(STOP, '');
     const at = body.indexOf(plain);
     if (at >= 0) { from = Math.max(0, at - WINDOW); to = Math.min(body.length, at + plain.length + WINDOW); }
@@ -150,32 +153,41 @@ function filters(params: SearchParams, range: { start?: Timestamp; endExclusive?
 }
 
 interface CoreRow {
-  id: ULID; type: string; rootId: ULID; createdAt: Timestamp; rootCreatedAt: Timestamp; own: Level; withdrawnAt: string | null; credit: string; rootLevel: Level; kind: ItemKind; rootTitle: string;
+  documentId: ULID; id: ULID; type: string; rootId: ULID; createdAt: Timestamp; rootCreatedAt: Timestamp; own: Level; withdrawnAt: string | null; credit: string; rootLevel: Level; kind: ItemKind; rootTitle: string;
   access: string; projectId: ULID; projectName: string; projectLevel: Level; ownTitle: string | null; superseded: number; flag: 'new' | 'updated' | null;
 }
 interface DocRow { key: number; unit: ULID; result: ULID; type: string; level: Level; title: string; body: string; spans: string; titleSnippet: string | null; bodySnippet: string | null }
 type Found = Candidate & { readonly group: 1 | 2 };
 
 /** The documents matching in the order of the two groups, readable by the viewer, and the cursor to continue after the last returned. */
-async function readableMatches(c: Context<ApiEnv>, params: SearchParams, expression: string, range: { start?: Timestamp; endExclusive?: Timestamp }, holders: readonly string[] | null) {
+async function readableMatches(c: Context<ApiEnv>, params: SearchParams, expression: string, range: { start?: Timestamp; endExclusive?: Timestamp }, holders: readonly string[] | null, terms: readonly QueryTerm[]) {
   const viewer = c.get('session').member.id;
   const accountant = c.get('accountant');
-  const filter = filters(params, range, holders, 2);
+  const filter = filters(params, range, holders, 3);
+  const logicalQuery = JSON.stringify({ title: titleExpression(expression), terms: terms.map((term) => ({ title: titleExpression(matchExpression([term])), body: logicalTermExpression(term) })) });
   let group: 1 | 2 = params.after === undefined ? 1 : Number(params.after[0]) as 1 | 2;
   let before: number | null = params.after === undefined ? null : Number(params.after.slice(2));
   const found: Found[] = [];
   let scanned: string | null = null;
   for (let round = 0; round < MAX_ROUNDS && found.length <= SEARCH_PAGE; round++) {
     const match = group === 1 ? titleExpression(expression) : restExpression(expression);
+    const condition = group === 1
+      ? `EXISTS(SELECT 1 FROM search_fts WHERE rowid=d.doc_key AND search_fts MATCH ?1) AND ?2 IS NOT NULL`
+      : `((NOT EXISTS(SELECT 1 FROM logical_search_heads h WHERE h.doc_key=d.doc_key) AND EXISTS(SELECT 1 FROM search_fts WHERE rowid=d.doc_key AND search_fts MATCH ?1))
+        OR (EXISTS(SELECT 1 FROM logical_search_heads h WHERE h.doc_key=d.doc_key)
+          AND NOT EXISTS(SELECT 1 FROM search_fts WHERE rowid=d.doc_key AND search_fts MATCH json_extract(?2,'$.title'))
+          AND NOT EXISTS(SELECT 1 FROM json_each(?2,'$.terms') t WHERE NOT (
+            EXISTS(SELECT 1 FROM search_fts WHERE rowid=d.doc_key AND search_fts MATCH (t.value ->> '$.title'))
+            OR EXISTS(SELECT 1 FROM logical_search_fts f JOIN logical_search_parts p ON p.id=f.rowid JOIN logical_search_heads h ON h.version_id=p.version_id
+              WHERE h.doc_key=d.doc_key AND logical_search_fts MATCH (t.value ->> '$.body'))))))`;
     const rows = rowsOf<Candidate>(await accountant.track(c.env.RF_SEARCH.prepare(
-      `SELECT d.doc_key AS key, d.root_id AS root FROM search_fts f JOIN search_docs d ON d.doc_key = f.rowid
-        WHERE search_fts MATCH ?1 AND ${filter.sql}${before === null ? '' : ` AND d.doc_key < ?${2 + filter.binds.length}`} ORDER BY d.doc_key DESC LIMIT ${CHUNK}`,
-    ).bind(match, ...filter.binds, ...(before === null ? [] : [before])).all()));
-    const roots = [...new Set(rows.map((row) => row.root))];
+      `SELECT d.doc_key AS key,d.root_id AS root,d.unit_id AS unit FROM search_docs d WHERE ${condition} AND ${filter.sql}${before === null ? '' : ` AND d.doc_key < ?${3 + filter.binds.length}`} ORDER BY d.doc_key DESC LIMIT ${CHUNK}`,
+    ).bind(match, logicalQuery, ...filter.binds, ...(before === null ? [] : [before])).all()));
+    const roots = [...new Set(rows.map((row) => row.unit))];
     const readable = new Set(roots.length === 0 ? [] : rowsOf<{ id: string }>(await accountant.track(c.env.RF_CORE.prepare(
-      `SELECT j.value AS id FROM json_each(?2) j WHERE ${canRead('?1', 'j.value')}`,
+      `SELECT u.id FROM json_each(?2) j JOIN units u ON u.id=j.value WHERE ${canRead('?1', 'u.root_id')} AND NOT EXISTS(SELECT 1 FROM deletions gone WHERE gone.unit_id=u.id)`,
     ).bind(viewer, JSON.stringify(roots)).all())).map((row) => row.id));
-    for (const row of rows) if (readable.has(row.root)) found.push({ ...row, group });
+    for (const row of rows) if (readable.has(row.unit)) found.push({ ...row, group });
     if (rows.length < CHUNK) {
       if (group === 2) {
         const page = found.slice(0, SEARCH_PAGE);
@@ -210,26 +222,28 @@ export async function runSearch(c: Context<ApiEnv>, params: SearchParams): Promi
   const holders = params.specialty === undefined ? null
     : rowsOf<{ id: string }>(await accountant.track(core.prepare('SELECT member_id AS id FROM profile_specialties WHERE value_id = ?1').bind(params.specialty).all())).map((row) => row.id);
   const expression = matchExpression(terms);
-  const { found, next } = await readableMatches(c, params, expression, range, holders);
+  const { found, next } = await readableMatches(c, params, expression, range, holders, terms);
   if (found.length === 0) return { results: [], next };
 
   const keys = JSON.stringify(found.map((row) => row.key));
   const docs = rowsOf<DocRow>(await accountant.track(c.env.RF_SEARCH.prepare(
-    `SELECT d.doc_key AS key, d.unit_id AS unit, d.result_unit_id AS result, d.disclosure_level AS level, d.unit_type AS type, d.title, d.body, d.spans,
-        snippet(search_fts, 0, char(1), char(2), '', 64) AS titleSnippet, snippet(search_fts, 1, char(1), char(2), '', 64) AS bodySnippet
-      FROM search_fts f JOIN search_docs d ON d.doc_key = f.rowid WHERE search_fts MATCH ?1 AND d.doc_key IN (SELECT value FROM json_each(?2))`,
+    `SELECT d.doc_key AS key,d.unit_id AS unit,d.result_unit_id AS result,d.disclosure_level AS level,d.unit_type AS type,d.title,d.body,d.spans,
+      (SELECT snippet(search_fts,0,char(1),char(2),'',64) FROM search_fts WHERE rowid=d.doc_key AND search_fts MATCH ?1) AS titleSnippet,
+      (SELECT snippet(search_fts,1,char(1),char(2),'',64) FROM search_fts WHERE rowid=d.doc_key AND search_fts MATCH ?1) AS bodySnippet
+      FROM search_docs d WHERE d.doc_key IN(SELECT value FROM json_each(?2))`,
   ).bind(expression, keys).all()));
   const byKey = new Map(docs.map((doc) => [doc.key, doc]));
-  const units = JSON.stringify([...new Set(docs.map((doc) => doc.result))]);
+  const units = JSON.stringify([...new Set(docs.map((doc) => doc.unit))]);
   const info = rowsOf<CoreRow>(await accountant.track(core.prepare(
-    `SELECT u.id, u.unit_type AS type, u.root_id AS rootId, u.created_at AS createdAt, u.disclosure_level AS own, u.withdrawn_at AS withdrawnAt, u.credit,
+    `SELECT source.id AS documentId,u.id, u.unit_type AS type, u.root_id AS rootId, u.created_at AS createdAt, u.disclosure_level AS own, u.withdrawn_at AS withdrawnAt, u.credit,
         ru.disclosure_level AS rootLevel, ru.created_at AS rootCreatedAt, ri.kind, ri.title AS rootTitle, ri.access_level AS access, pr.id AS projectId, pr.name AS projectName, pr.disclosure_level AS projectLevel,
         a.title AS ownTitle, EXISTS (SELECT 1 FROM attachments n WHERE n.supersedes_unit_id = u.id) AS superseded,
         (SELECT f.flag FROM flags f WHERE f.member_id = ?2 AND f.unit_id = CASE WHEN u.unit_type = 'entry_section' THEN u.root_id ELSE u.id END) AS flag
-      FROM json_each(?1) j JOIN units u ON u.id = j.value JOIN units ru ON ru.id = u.root_id JOIN research_items ri ON ri.unit_id = u.root_id
-        JOIN projects pr ON pr.id = u.project_id LEFT JOIN attachments a ON a.unit_id = u.id`,
+      FROM json_each(?1) j JOIN units source ON source.id=j.value JOIN units u ON u.id=CASE WHEN source.unit_type='dissent_note' THEN source.root_id ELSE source.id END JOIN units ru ON ru.id = u.root_id JOIN research_items ri ON ri.unit_id = u.root_id
+        JOIN projects pr ON pr.id = u.project_id LEFT JOIN attachments a ON a.unit_id = u.id
+      WHERE ${canRead('?2', 'source.root_id')} AND NOT EXISTS(SELECT 1 FROM deletions gone WHERE gone.unit_id=source.id OR gone.unit_id=source.root_id)`,
   ).bind(units, c.get('session').member.id).all()));
-  const byUnit = new Map(info.map((row) => [row.id, row]));
+  const byUnit = new Map(info.map((row) => [row.documentId, row]));
   const dissenters = JSON.stringify(docs.filter((doc) => doc.type === 'dissent_note').map((doc) => doc.unit));
   const authors = new Map(rowsOf<{ id: string; author: string }>(await accountant.track(core.prepare(
     'SELECT dn.unit_id AS id, p.display_name AS author FROM dissent_notes dn JOIN profiles p ON p.member_id = dn.author_id WHERE dn.unit_id IN (SELECT value FROM json_each(?1))',
@@ -242,19 +256,20 @@ export async function runSearch(c: Context<ApiEnv>, params: SearchParams): Promi
   const results: SearchResult[] = [];
   for (const candidate of found) {
     const doc = byKey.get(candidate.key);
-    const row = doc === undefined ? undefined : byUnit.get(doc.result);
+    const row = doc === undefined ? undefined : byUnit.get(doc.unit);
     if (doc === undefined || row === undefined) continue; // removed since it was indexed
+    const logical = await readLogicalDocument(c.env.RF_SEARCH, doc.key);
     const restricted = row.access === 'restricted';
     const own = doc.level;
     const titleMatched = doc.titleSnippet?.includes('\u0001') === true && doc.bodySnippet?.includes('\u0001') !== true;
     results.push({
-      id: doc.result, rootId: row.rootId, unitType: doc.type, kind: row.kind, title: row.type === 'research_item' ? row.rootTitle : row.ownTitle ?? row.rootTitle,
+      id: row.id, rootId: row.rootId, unitType: doc.type, kind: row.kind, title: row.type === 'research_item' ? row.rootTitle : row.ownTitle ?? row.rootTitle,
       credit: (JSON.parse(row.credit) as CreditEntry[]).map((entry) => ('member' in entry ? names.get(entry.member) ?? '' : 'outside' in entry ? entry.outside.name : entry.imported)).filter((name) => name !== ''),
       createdAt: row.type === 'entry_section' ? row.rootCreatedAt : row.createdAt,
       withdrawn: row.withdrawnAt !== null, superseded: row.superseded === 1, level: own, effective: restricted ? 'not_published' : lessPublic(lessPublic(own, row.rootLevel), row.projectLevel),
       restricted, flag: row.flag, project: { id: row.projectId, name: row.projectName },
       ...(authors.has(doc.unit) ? { dissent: { author: authors.get(doc.unit)! } } : {}),
-      excerpt: titleMatched ? excerptOf(doc.title, [], doc.titleSnippet, terms) : excerptOf(doc.body, JSON.parse(doc.spans) as DocSpan[], doc.bodySnippet, terms),
+      excerpt: titleMatched ? excerptOf(doc.title, [], doc.titleSnippet, terms) : excerptOf(logical?.text ?? doc.body, logical ? logical.spans as DocSpan[] : JSON.parse(doc.spans) as DocSpan[], doc.bodySnippet, terms, logical ? logicalMatchStart(logical.text, terms) : undefined),
     });
   }
   return { results, next };

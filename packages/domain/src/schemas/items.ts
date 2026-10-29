@@ -1,3 +1,4 @@
+import { DEFAULT_RESOURCE_PROFILE } from '../resource-profile';
 import { z } from 'zod';
 import { dateSortKey, todayInZone } from '../dates';
 import { cpLength, isBlank } from '../text';
@@ -8,7 +9,7 @@ import { BUILT_IN_VALUE_IDS } from '../value-sets';
 import { distinctIds, documentDateSchema, enteredTimeSchema, fullDateSchema, idSchema, knownId, partialDateSchema, richTextSchema, selectedValue, textField, validDate, withChecks } from './common';
 import type { ReportIssue, ValidationContext } from './common';
 
-export const JOURNAL_LIMITS = Object.freeze({ sections: 5000, codePoints: 2_000_000, parserSourceBytes: 2_000_000 });
+export const JOURNAL_LIMITS = Object.freeze({ sections: DEFAULT_RESOURCE_PROFILE.chosen.logical.journalSections, codePoints: DEFAULT_RESOURCE_PROFILE.chosen.logical.journalCodePoints, parserSourceBytes: 2_000_000 });
 /** The size of Entry_Sections sent as parts of a staged save, which the schema checks in place of the sections themselves. */
 export interface StagedSectionTotals { readonly count: number; readonly characters: number }
 export type ItemValidationOptions =

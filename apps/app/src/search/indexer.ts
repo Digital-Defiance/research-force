@@ -1,3 +1,4 @@
+import { needsLogicalSearch, prepareLogicalDocument } from './logical';
 import { OPERATIONS } from '@researchforce/domain/settings';
 import type { Timestamp, ULID } from '@researchforce/domain/types';
 import { drainOutbox } from '../outbox';
@@ -43,6 +44,8 @@ async function assignKeys(search: D1Database, rootId: string, docs: readonly Sea
 export async function applyRoot(search: D1Database, rootId: ULID, docs: readonly SearchDoc[]): Promise<void> {
   const keys = await assignKeys(search, rootId, docs);
   const live = JSON.stringify(docs.map((doc) => doc.unitId));
+  const logical = new Map<string,string>();
+  for (const doc of docs) if (needsLogicalSearch(doc)) logical.set(doc.unitId, await prepareLogicalDocument(search, keys.get(doc.unitId)!, doc));
   const statements = [
     search.prepare('DELETE FROM search_credits WHERE doc_key IN (SELECT doc_key FROM search_docs WHERE root_id = ?1 AND unit_id NOT IN (SELECT value FROM json_each(?2)))').bind(rootId, live),
     search.prepare('DELETE FROM search_docs WHERE root_id = ?1 AND unit_id NOT IN (SELECT value FROM json_each(?2))').bind(rootId, live),
@@ -54,13 +57,15 @@ export async function applyRoot(search: D1Database, rootId: ULID, docs: readonly
           ON CONFLICT (unit_id) DO UPDATE SET result_unit_id = excluded.result_unit_id, root_kind = excluded.root_kind, project_id = excluded.project_id, disclosure_level = excluded.disclosure_level,
             created_at = excluded.created_at, completed = excluded.completed, withdrawn = excluded.withdrawn, superseded = excluded.superseded, title = excluded.title, body = excluded.body, spans = excluded.spans`)
           .bind(key, doc.unitId, doc.resultUnitId, doc.rootId, doc.rootKind, doc.projectId, doc.unitType, doc.level, doc.createdAt, doc.completed ? 1 : 0, doc.withdrawn ? 1 : 0, doc.superseded ? 1 : 0,
-            doc.title, doc.body, JSON.stringify(doc.spans)),
+            doc.title, logical.has(doc.unitId) ? '' : doc.body, logical.has(doc.unitId) ? '[]' : JSON.stringify(doc.spans)),
+        ...(logical.has(doc.unitId) ? [search.prepare('INSERT INTO logical_search_heads(doc_key,version_id) VALUES(?,?) ON CONFLICT(doc_key) DO UPDATE SET version_id=excluded.version_id').bind(key, logical.get(doc.unitId)!)] : [search.prepare('DELETE FROM logical_search_heads WHERE doc_key=?').bind(key)]),
         search.prepare('DELETE FROM search_credits WHERE doc_key = ?1').bind(key),
         ...(doc.credits.length === 0 ? [] : [search.prepare('INSERT INTO search_credits (member_id, doc_key) SELECT value, ?1 FROM json_each(?2) WHERE true ON CONFLICT DO NOTHING').bind(key, JSON.stringify(doc.credits))]),
       ];
     }),
   ];
   await search.batch(statements);
+  await search.prepare('DELETE FROM logical_search_heads WHERE doc_key NOT IN(SELECT doc_key FROM search_docs)').run();
 }
 
 /** The Research_Items that outbox rows name: `unit:{id}`, `root:{id}`, and `submission:{id}` scopes. */

@@ -1,3 +1,4 @@
+import { readRevisionSnapshot } from '@researchforce/db/field-snapshots';
 import type { Context } from 'hono';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
@@ -68,8 +69,8 @@ export async function loadHistory(c: Context<ApiEnv>, item: LoadedItem): Promise
   const [sectionRows, revisionRows, creatorRows, nameRows] = await c.get('accountant').track(db.batch([
     db.prepare(`SELECT id, disclosure_level AS disclosureLevel, classification_state AS classificationState, disclosure_line AS disclosureLine
       FROM units WHERE root_id = ?1 AND unit_type = 'entry_section'`).bind(id),
-    db.prepare(`SELECT r.id, r.seq, r.target_id AS targetId, r.kind, r.prev, r.member_id AS memberId, p.display_name AS displayName, r.at, r.reason, r.restored_point AS restoredPoint
-      FROM revisions r LEFT JOIN profiles p ON p.member_id = r.member_id
+    db.prepare(`SELECT r.id, r.seq, r.target_id AS targetId, r.kind, COALESCE(fs.prev_json,r.prev) AS prev, EXISTS(SELECT 1 FROM field_references f WHERE f.holder_type='revision' AND f.holder_id=r.id) AS hasFields, r.member_id AS memberId, p.display_name AS displayName, r.at, r.reason, r.restored_point AS restoredPoint
+      FROM revisions r LEFT JOIN profiles p ON p.member_id = r.member_id LEFT JOIN revision_field_snapshots fs ON fs.revision_id=r.id
       WHERE r.target_type = 'unit' AND (r.target_id = ?1 OR r.root_id = ?1)`).bind(id),
     db.prepare('SELECT s.member_id AS memberId, p.display_name AS displayName FROM submissions s LEFT JOIN profiles p ON p.member_id = s.member_id WHERE s.id = ?1').bind(item.base.submissionId),
     db.prepare(`SELECT DISTINCT j.value AS id, p.display_name AS displayName FROM revisions r, json_each(r.prev, '$.accessMembers') j LEFT JOIN profiles p ON p.member_id = j.value
@@ -79,7 +80,11 @@ export async function loadHistory(c: Context<ApiEnv>, item: LoadedItem): Promise
     row.id, defined({ disclosureLevel: row.disclosureLevel, classificationState: row.classificationState, disclosureLine: row.disclosureLine === null ? null : JSON.parse(row.disclosureLine) as DisclosureLine }),
   ]));
   const current: HistoryState = { id, item: itemFields(item), sections };
-  const all = rowsOf<Omit<HistoryRevision, 'prev'> & { prev: string }>(revisionRows).map((row) => ({ ...row, prev: JSON.parse(row.prev) as Record<string, unknown> }));
+  const all: HistoryRevision[] = [];
+  for (const { hasFields, ...row } of rowsOf<Omit<HistoryRevision, 'prev'> & { prev: string; hasFields: number }>(revisionRows)) {
+    const previous = JSON.parse(row.prev) as Record<string, unknown>;
+    all.push({ ...row, prev: hasFields ? await readRevisionSnapshot(db, row.id, previous) : previous });
+  }
   const covered = sectionIds(current, all);
   const revisions = inSaveOrder(all.filter((revision) => revision.targetId === id || covered.has(revision.targetId)));
   const creator = rowsOf<{ memberId: ULID; displayName: string | null }>(creatorRows)[0];

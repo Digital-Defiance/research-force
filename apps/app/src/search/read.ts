@@ -1,3 +1,5 @@
+import { resolveStoredRows } from '../records/field-values';
+import type { Span } from '@researchforce/domain/richtext';
 import type { CreditEntry, ItemKind, Level, ULID } from '@researchforce/domain/types';
 import { Body, creditMembers, creditWords } from './documents';
 import type { SearchDoc } from './documents';
@@ -46,6 +48,7 @@ export async function readRootDocuments(db: D1Database, rootId: ULID): Promise<S
       FROM attachments a JOIN units u ON u.id = a.unit_id WHERE u.root_id = ?1`),
     one(`SELECT d.unit_id AS id, d.text, d.text_spans AS spans FROM dissent_notes d JOIN units u ON u.id = d.unit_id WHERE u.root_id = ?1`),
   ]);
+  await resolveStoredRows(db, [item, finding, source, run, hypothesis, correspondence, archival, topic, sections, replies, dissent].flatMap((r) => r?.results ?? []));
   const unitRows = (units!.results as unknown as UnitRow[]);
   const root = unitRows.find((unit) => unit.id === rootId);
   const rootItem = item!.results[0];
@@ -66,8 +69,8 @@ export async function readRootDocuments(db: D1Database, rootId: ULID): Promise<S
   // The Research_Item: identifier, Credit, summaries, and every free-text and name field of its kind.
   const body = new Body();
   body.plain(text(rootItem, 'item_identifier')).plain(creditWords(credits.get(rootId)!, names).join(' '));
-  body.rich(text(rootItem, 'public_summary'), text(rootItem, 'public_summary_spans')).rich(text(rootItem, 'log_summary'), text(rootItem, 'log_summary_spans'));
-  const rich = (row: Row | undefined, field: string) => body.rich(text(row, field), text(row, `${field}_spans`));
+  body.rich(text(rootItem, 'public_summary'), rootItem['public_summary_spans'] as string | readonly Span[]).rich(text(rootItem, 'log_summary'), rootItem['log_summary_spans'] as string | readonly Span[]);
+  const rich = (row: Row | undefined, field: string) => body.rich(text(row, field), row?.[`${field}_spans`] as string | readonly Span[] | undefined);
   const finding0 = finding!.results[0];
   rich(finding0, 'claim'); rich(finding0, 'scope_caveat');
   body.plain(text(journal!.results[0], 'heading_text'));

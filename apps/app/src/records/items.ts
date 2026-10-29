@@ -1,3 +1,4 @@
+import { prepareItemFields, resolveItemFields, resolveStoredRows } from './field-values';
 import { prepareAttachments } from '../files/attachments';
 import type { Context } from 'hono';
 import { eq } from 'drizzle-orm';
@@ -129,7 +130,7 @@ async function missingItem(c: Context<ApiEnv>, id: string): Promise<ApiError> {
 }
 
 /** A Research_Item the Member can see, with its kind fields, Entry_Sections, Group_Note, Project, and the names it shows (R3.5). */
-export async function loadItem(c: Context<ApiEnv>, id: string): Promise<LoadedItem> {
+export async function loadItem(c: Context<ApiEnv>, id: string, readAttempt = 0): Promise<LoadedItem> {
   if (!isULID(id)) throw new ApiError('not_found');
   const db = c.env.RF_CORE;
   const viewer = c.get('session').member.id;
@@ -164,8 +165,19 @@ export async function loadItem(c: Context<ApiEnv>, id: string): Promise<LoadedIt
     db.prepare('SELECT v.id, v.name FROM profile_specialties ps JOIN config_values v ON v.id = ps.value_id WHERE ps.member_id = ?1 ORDER BY v.position').bind(base.ownerId),
   ]));
   const kindResults = results.slice(0, -2);
-  const { fields, children = [] } = adapter.read(kindResults, base);
+  const read = adapter.read(kindResults, base);
+  const hydrated = await resolveItemFields(db, id, { ...read.fields, ...(base.logSummary ? { logSummary: base.logSummary } : {}) });
+  const { logSummary: hydratedSummary, ...fields } = hydrated;
+  if (hydratedSummary) Object.assign(base, { logSummary: hydratedSummary });
+  const children = read.children ?? [];
+  await resolveStoredRows(db, (noteRows?.results ?? []) as Record<string, unknown>[]);
   const note = rowsOf<{ id: ULID; rev: number; level: Level; classification: string | null; ownerId: ULID; withdrawnAt: string | null; text: string; spans: string }>(noteRows)[0];
+  const current = await c.get('accountant').track(db.prepare(`SELECT u.rev FROM units u WHERE u.id=?1 AND ${visibleTo('u', '?2')}`).bind(id, viewer).all<{ rev: number }>());
+  if (!current.results[0]) throw await missingItem(c, id);
+  if (current.results[0].rev !== base.rev) {
+    if (readAttempt === 0) return loadItem(c, id, 1);
+    throw new ApiError('conflict', { details: { rev: current.results[0].rev } });
+  }
   return {
     base, fields: normalized(fields), children,
     groupNote: note ? { id: note.id, rev: note.rev, level: note.level, unclassified: note.classification === 'unclassified', ownerId: note.ownerId, withdrawn: note.withdrawnAt !== null, text: richText(note.text, note.spans)! } : null,
@@ -308,8 +320,10 @@ export async function createItem(c: Context<ApiEnv>, kind: ItemKind, body: unkno
     rightsStatusId: (fields['rightsStatusId'] as ULID | undefined) ?? BUILT_IN_VALUE_IDS.rightsUnknown,
     rightsHolder: (fields['rightsHolder'] as string | undefined) ?? null, rightsTerms: (fields['rightsTerms'] as string | undefined) ?? null, retired: 0,
   } : undefined);
+  const fieldPointers = await prepareItemFields(c, id, fields);
   await commitWithIdentifiers(c.env.RF_CORE, { id: actor, now }, [id, ...attached.ids], (batch, issued) => {
     staged?.guard(batch);
+    fieldPointers(batch);
     addSubmission(batch, { id: submissionId, memberId: actor, kind: 'member', now, complete: true, hasGroupNote: present(groupNote) });
     batch.insert(units, {
       id, unitType: 'research_item', projectId, rootId: id, ownerId: actor, credit, submissionId, createdAt: now,
@@ -415,6 +429,7 @@ export async function editItem(c: Context<ApiEnv>, current: LoadedItem, body: un
   const changed = new Set(changes.map((change) => change.field));
   const mentioned = (await mentionRecipients(c, addedMentions(before, input), actor, { rootId: base.id })).map((recipient) => recipient.memberId);
   const summaryChanged = changed.has('logSummary');
+  const fieldPointers = await prepareItemFields(c, base.id, after, before);
   await commitSave(c, {
     target: { type: 'unit', id: base.id, rootId: base.id },
     startedFrom: envelope.rev,
@@ -426,6 +441,7 @@ export async function editItem(c: Context<ApiEnv>, current: LoadedItem, body: un
     },
     write: (batch) => {
       staged?.guard(batch);
+      fieldPointers(batch);
       if (summaryChanged) guardLogSummaryOwner(batch, base.id, actor);
       batch.update(units, { ...rules.unit }, eq(units.id, base.id));
       batch.update(researchItems, {

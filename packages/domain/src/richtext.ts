@@ -1,3 +1,4 @@
+import { DEFAULT_RESOURCE_PROFILE } from './resource-profile';
 import { isLanguageCode } from './languages';
 import { cpLength, isBlank, isCodePointBoundary } from './text';
 
@@ -71,7 +72,7 @@ export function validateSpans(richText: RichText): SpanIssue[] {
     else ranges.push({ span, index });
     if (index > 0 && span.s < richText.spans[index - 1]!.s) add(index, 'order');
     if ((span.k === 'quote' || span.k === 'paraphrase') && isBlank(span.source)) add(index, 'source_required');
-    if ('source' in span && span.source !== undefined && cpLength(span.source) > 300) add(index, 'source_too_long');
+    if ('source' in span && span.source !== undefined && cpLength(span.source) > DEFAULT_RESOURCE_PROFILE.chosen.logical.sourceCodePoints) add(index, 'source_too_long');
     if (span.k === 'lang' && !isLanguageCode(span.lang)) add(index, 'language');
     if (span.k === 'mention') {
       const targets = [span.member, span.specialty].filter((value) => value !== undefined);

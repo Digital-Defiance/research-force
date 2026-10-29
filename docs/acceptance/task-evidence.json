@@ -1,0 +1,659 @@
+{
+  "schemaVersion": 1,
+  "historicalBaseline": [
+    "1.1",
+    "1.2",
+    "1.3",
+    "1.4",
+    "2.1",
+    "2.2",
+    "2.3",
+    "2.4",
+    "2.5",
+    "2.6",
+    "3.1",
+    "3.2",
+    "3.3",
+    "3.4",
+    "3.5",
+    "3.6",
+    "3.7",
+    "3.8",
+    "3.9",
+    "3.10",
+    "4.1",
+    "4.2",
+    "4.3",
+    "4.4",
+    "5.1",
+    "5.2",
+    "5.3",
+    "5.4",
+    "5.5",
+    "5.6",
+    "5.7",
+    "5.8",
+    "6.1",
+    "6.2",
+    "6.3",
+    "6.4",
+    "6.5",
+    "6.6",
+    "6.7",
+    "7.1",
+    "7.2",
+    "7.3",
+    "7.4",
+    "7.5",
+    "7.6",
+    "7.7",
+    "7.8",
+    "7.9",
+    "7.10",
+    "8.1",
+    "8.2",
+    "8.3",
+    "8.4",
+    "8.5",
+    "8.6",
+    "8.7",
+    "9.1",
+    "9.2",
+    "9.3",
+    "9.4",
+    "9.5",
+    "9.6",
+    "9.7",
+    "9.8",
+    "9.9",
+    "10.1",
+    "10.2",
+    "10.3",
+    "10.4",
+    "10.5",
+    "11.1",
+    "11.2",
+    "11.3",
+    "11.4",
+    "11.5",
+    "11.6",
+    "13.1",
+    "13.2",
+    "13.3",
+    "13.4",
+    "13.5",
+    "13.6",
+    "14.1",
+    "14.2",
+    "14.3",
+    "14.4",
+    "14.5",
+    "14.6",
+    "14.7",
+    "15.1",
+    "15.2",
+    "15.3",
+    "16.1",
+    "16.2",
+    "16.3",
+    "16.4",
+    "17.1",
+    "17.2",
+    "17.3",
+    "17.4",
+    "17.5",
+    "18.1",
+    "18.2",
+    "18.3",
+    "18.4",
+    "18.5",
+    "18.6",
+    "18.7",
+    "18.8",
+    "18.9",
+    "18.10",
+    "19.2",
+    "19.3",
+    "20.1",
+    "20.2",
+    "20.3",
+    "20.4",
+    "21.1",
+    "21.2",
+    "21.3",
+    "21.4",
+    "21.5",
+    "21.6",
+    "21.7",
+    "23.1",
+    "23.2",
+    "23.3",
+    "23.4",
+    "23.5",
+    "23.6",
+    "23.7",
+    "23.8",
+    "23.9",
+    "23.10",
+    "24.1",
+    "24.2",
+    "24.3",
+    "24.4",
+    "24.5",
+    "25.1",
+    "25.2",
+    "25.3",
+    "25.4",
+    "25.5",
+    "25.6",
+    "25.7",
+    "25.8",
+    "25.9",
+    "25.10",
+    "26.1",
+    "26.2",
+    "26.3",
+    "26.4",
+    "26.5",
+    "26.6",
+    "26.7",
+    "27.1",
+    "27.2",
+    "27.3",
+    "27.4",
+    "27.5",
+    "27.6",
+    "27.7",
+    "27.8",
+    "27.9",
+    "27.10",
+    "27.11",
+    "28.1",
+    "28.2",
+    "28.3",
+    "28.4",
+    "28.5",
+    "30.1",
+    "30.2",
+    "30.3",
+    "30.4",
+    "30.5",
+    "30.9",
+    "30.10",
+    "30.12",
+    "51.1",
+    "51.2"
+  ],
+  "historicalPolicy": "These inherited checked leaf tasks are inventoried as historical_unverified, not retroactively certified. Fresh acceptance records are required for newly checked work. The runtime gates of R60.4 remain task 68.4 and require separate browser/provider/recovery evidence.",
+  "records": [
+    {
+      "task": "19.1",
+      "state": "reopened",
+      "reason": "A valid large Entry_Section can exceed the 512000-byte staged envelope and D1 row limit. Logical field storage must precede inside-section transport repair.",
+      "sourcePaths": [
+        "apps/app/src/records/stages.ts",
+        "apps/app/web/src/api.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/stages.test.ts"
+      ],
+      "correctionTasks": [
+        "57.3",
+        "19.1"
+      ],
+      "checks": []
+    },
+    {
+      "task": "30.6",
+      "state": "reopened",
+      "reason": "Upload metadata is held in component state and lost on reload. Persist acknowledged metadata and revalidate upload identity without fabricating a File object.",
+      "sourcePaths": [
+        "apps/app/web/src/files/upload.tsx"
+      ],
+      "testPaths": [
+        "apps/app/web/test/files.test.tsx"
+      ],
+      "correctionTasks": [
+        "30.6",
+        "57.8",
+        "64.1"
+      ],
+      "checks": []
+    },
+    {
+      "task": "30.7",
+      "state": "reopened",
+      "reason": "CSV preview buffers the entire file before applying a row limit. Stream with explicit scan, record and buffer budgets and bounded PDF/image handling.",
+      "sourcePaths": [
+        "apps/app/web/src/files/preview/index.tsx",
+        "apps/app/web/src/files/preview/pdf.tsx"
+      ],
+      "testPaths": [
+        "apps/app/web/test/files.test.tsx"
+      ],
+      "correctionTasks": [
+        "30.7",
+        "30.11",
+        "57.8"
+      ],
+      "checks": []
+    },
+    {
+      "task": "30.8",
+      "state": "reopened",
+      "reason": "Listing attachments currently records views for listed files. Only opening or a permitted download should clear the corresponding flag.",
+      "sourcePaths": [
+        "apps/app/web/src/files/attachment-page.tsx"
+      ],
+      "testPaths": [
+        "apps/app/web/test/files.test.tsx"
+      ],
+      "correctionTasks": [
+        "30.8",
+        "57.8"
+      ],
+      "checks": []
+    },
+    {
+      "task": "30.11",
+      "state": "reopened",
+      "reason": "Property 46 must cover bounded CSV scanning, oversized quoted records and truthful unscanned/truncation reporting as well as text prefixes.",
+      "sourcePaths": [
+        "apps/app/web/src/files/preview/index.tsx",
+        "apps/app/web/src/files/preview/truncate.ts"
+      ],
+      "testPaths": [
+        "apps/app/web/test/properties/p46-preview-truncation.test.ts"
+      ],
+      "correctionTasks": [
+        "30.11",
+        "57.8"
+      ],
+      "checks": []
+    },
+    {
+      "task": "52.1",
+      "state": "accepted",
+      "reason": "Verified against current local synthetic suites: existing migration 0007 preserves rows, indexes and revision immutability and installs the planned access permissions. No migration is recreated or applied to production.",
+      "sourcePaths": [
+        "packages/db/migrations/core/0007_restricted_access.sql",
+        "packages/db/src/schema/core/units.ts",
+        "packages/db/src/batch.ts",
+        "packages/domain/src/permissions.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/migration-restricted-access.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "52.2",
+      "state": "accepted",
+      "reason": "Verified against current local synthetic suites: shared Can_Read and visibility predicates gate current read paths. Current channel/recipient suites will establish local acceptance; future kinds must extend them.",
+      "sourcePaths": [
+        "packages/db/src/access.ts",
+        "apps/app/src/records/submissions.ts",
+        "apps/app/src/activity/feed.ts",
+        "apps/app/src/notifications/centre.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/properties/p100-restricted-reads.test.ts",
+        "apps/app/test/activity.test.ts",
+        "apps/app/test/notifications.test.ts",
+        "apps/app/test/search.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "52.3",
+      "state": "accepted",
+      "reason": "Verified against current local synthetic suites: submissions validate access lists and mentions/reviews refuse unreadable addressees, with recipient filtering in the save transaction.",
+      "sourcePaths": [
+        "apps/app/src/records/access.ts",
+        "apps/app/src/discussion/mentions.ts",
+        "apps/app/src/reviews/reviews.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/access.test.ts",
+        "apps/app/test/properties/p100-restricted-reads.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "52.4",
+      "state": "partial",
+      "reason": "Access-change transactions, owner widening, atomic bulk updates and history are implemented and locally tested. The preview currently lists reset units rather than rendered removed Public_Views; task 31.1 must integrate the projection loader. Revoked-owner Dual_Approval is deliberately owned by 54.5.",
+      "sourcePaths": [
+        "apps/app/src/records/access.ts",
+        "apps/app/src/records/history.ts",
+        "packages/domain/src/history.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/access.test.ts",
+        "apps/app/test/properties/p101-access-changes.test.ts"
+      ],
+      "correctionTasks": [
+        "31.1",
+        "54.5"
+      ],
+      "checks": []
+    },
+    {
+      "task": "52.5",
+      "state": "partial",
+      "reason": "The kernel restricted flag and disclosure gates exist and have tests; the promised loadProjectionInput integration is still task 31.1. Keep this task open until real database inputs reach the kernel.",
+      "sourcePaths": [
+        "packages/kernel/src/effective.ts",
+        "packages/kernel/src/input.ts",
+        "packages/kernel/src/preview.ts"
+      ],
+      "testPaths": [
+        "packages/kernel/test/preview.test.ts",
+        "packages/kernel/test/properties/p01-effective-disclosure.test.ts"
+      ],
+      "correctionTasks": [
+        "31.1"
+      ],
+      "checks": []
+    },
+    {
+      "task": "52.6",
+      "state": "partial",
+      "reason": "Access choices, labels, dialog/confirmation and reusable bulk widgets have component tests. Actual bulk selection on Workspace lists awaits task 40.3, and rendered removal previews await 31.1. This does not claim browser accessibility or staging acceptance.",
+      "sourcePaths": [
+        "apps/app/web/src/access/access.tsx",
+        "apps/app/web/src/items/page.tsx"
+      ],
+      "testPaths": [
+        "apps/app/web/test/access.test.tsx"
+      ],
+      "correctionTasks": [
+        "31.1",
+        "40.3"
+      ],
+      "checks": []
+    },
+    {
+      "task": "52.7",
+      "state": "accepted",
+      "reason": "Verified against current local synthetic suites: the Property 100 suite models all currently implemented read endpoints and per-Member inserts. New kinds/channels must extend its generators; public delivery requires the real adapters in 57.5.",
+      "sourcePaths": [
+        "packages/db/src/access.ts",
+        "apps/app/src/records/submissions.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/properties/p100-restricted-reads.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "52.8",
+      "state": "accepted",
+      "reason": "Verified against current local synthetic suites: Property 101 models owner widening, narrowing, reset levels, events, history and all-or-nothing bulk changes. Future revoked-owner approval paths remain 54.5.",
+      "sourcePaths": [
+        "apps/app/src/records/access.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/properties/p101-access-changes.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "57.1",
+      "state": "accepted",
+      "reason": "Implemented criterion/property/task/path inventory, serial/helper/gate structure validation, reviewed task 52 status, source-fingerprinted local evidence, stale-inventory CI checks and negative regression tests. Local evidence does not certify runtime release gates.",
+      "sourcePaths": [
+        "tools/check-specs.ts",
+        "tools/src/specs.ts",
+        "tools/src/spec-test-report.ts",
+        "package.json",
+        "tsconfig.tooling.json"
+      ],
+      "testPaths": [
+        "tools/test/check-specs.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "50.1",
+      "state": "accepted",
+      "reason": "Local-only runner, migrations, repeatable synthetic fixtures and reset verified. Real Wrangler smoke checks: dev:reset completed all local migrations/R2/SQL; repeated startup applied no duplicate migrations; Vite returned 200; /api/v1/me through its proxy returned 401 without authentication; Ctrl-C released ports 5173 and 8787 and removed the run lock. Node SQLite tests cover current migration compatibility, every implemented kind, full-text indexing, preservation of edits, configuration isolation and reset boundaries. Sign-in and remote service stand-ins remain 50.2 and 50.3.",
+      "sourcePaths": [
+        "scripts/dev.ts",
+        "tools/dev-seed.ts",
+        "tools/src/local-dev.ts",
+        "tools/src/dev-seed-data.ts",
+        "README.md",
+        "package.json",
+        "tsconfig.tooling.json"
+      ],
+      "testPaths": [
+        "tools/test/local-dev.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "50.2",
+      "state": "accepted",
+      "reason": "Verified local-only RS256 sign-in using seeded identities and the existing verifier/session/authorization pipeline. Tests cover disabled 404 routes, production and unsafe-binding refusal, CSRF/body limits, current role/revocation, pending activation, tampered cookies/header refusal, switching and both logout paths, opt-in/key persistence, deployment refusal and HTTP credential-file denial. Live HTTP checks and an isolated Edge browser exercised sign-in, protected Projects navigation, sign-out and reauthentication. Production build and all guarded Worker dry-run bundles passed. No resources were deployed; service stand-ins remain task 50.3.",
+      "sourcePaths": [
+        "apps/app/src/auth/dev.ts",
+        "apps/app/src/index.ts",
+        "apps/app/src/local.ts",
+        "apps/app/src/env.ts",
+        "apps/app/web/src/local-development.tsx",
+        "apps/app/web/src/main.tsx",
+        "tools/src/dev-config.ts",
+        "tools/src/deploy-guard.ts",
+        "tools/src/local-dev.ts",
+        "tools/src/dev-seed-data.ts",
+        "packages/testing/src/dev-members.ts",
+        "scripts/deploy.ts",
+        "scripts/check-workers.mjs",
+        "README.md"
+      ],
+      "testPaths": [
+        "apps/app/test/dev-auth.test.ts",
+        "tools/test/dev-config.test.ts",
+        "apps/app/web/test/local-development.test.tsx",
+        "tools/test/local-dev.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "50.3",
+      "state": "accepted",
+      "reason": "Verified persistent local OPS/AI/mail stand-ins behind the controlled entrypoint and local namespace. The actual invitation/Mailer path captures mail, repeated kicks do not resend completed entries, retention/pagination is bounded, captured HTML is inert, access requires a current Administrator and AI probes retain digests rather than prompt bodies. Native Worker requests regress the request-bound RPC issue. Browser verification covered invitation capture/outbox detail, deterministic AI and Contributor refusal; capture/diagnostic state survived a full restart. All local tests, type/lint checks, production builds and guarded Worker dry-run bundles passed. No Graph or Cloudflare AI delivery/inference was performed.",
+      "sourcePaths": [
+        "apps/app/src/local/services.ts",
+        "apps/app/src/local/runtime.ts",
+        "apps/app/src/local/mailer.ts",
+        "apps/app/src/local.ts",
+        "apps/app/src/index.ts",
+        "apps/app/src/env.ts",
+        "apps/app/src/auth/dev.ts",
+        "apps/app/src/api/app.ts",
+        "apps/app/src/do/mailer.ts",
+        "apps/app/src/mail/provider.ts",
+        "apps/app/web/src/local-development.tsx",
+        "tools/src/local-dev.ts",
+        "tools/src/dev-config.ts",
+        "tools/src/deploy-guard.ts",
+        "vitest.config.ts",
+        "README.md"
+      ],
+      "testPaths": [
+        "apps/app/test/local-services.test.ts",
+        "apps/app/test/dev-auth.test.ts",
+        "tools/test/dev-config.test.ts",
+        "apps/app/web/test/local-development.test.tsx"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "57.2",
+      "state": "accepted",
+      "reason": "Verified strict versioned Free_Qualified/Paid_Standard contracts, distinct provider/chosen CPU/call/statement/byte/memory limits, shared logical/span and preview constants, explicit installation examples and budget/corpus validation, separate abuse/reference/growth versions, 1/3/5-year retained/transient storage and recovery-transfer forecasts, and dated source-fingerprinted local certification reports. Maximum single-field text, escaped labels, inline revisions, 600000-character ASCII/emoji sections and cross-boundary spans are measured; bounded guards reject oversized physical representations without changing logical acceptance. Authenticated API/client integration validates the descriptor and reports pending production evidence. Corrected a preview property that rejected valid literal U+FFFD, with an independent code-point oracle and deterministic regression. All 1035 tests, lint, type checking, frontend builds and eight guarded Worker dry-runs passed. No paid service or deployment was enabled. Runtime certification remains task 48.3; fragment storage, transport and preview repairs remain their scheduled tasks.",
+      "sourcePaths": [
+        "packages/domain/src/resource-profile.ts",
+        "packages/domain/src/settings.ts",
+        "packages/domain/src/richtext.ts",
+        "packages/domain/src/schemas/common.ts",
+        "packages/domain/src/schemas/items.ts",
+        "packages/testing/src/resource-fixtures.ts",
+        "tools/src/profile-certification.ts",
+        "tools/certify-profile.ts",
+        "apps/app/src/api/app.ts",
+        "apps/app/src/env.ts",
+        "apps/app/web/src/api.ts",
+        "infra/profiles/Free_Qualified.example.json",
+        "infra/profiles/Paid_Standard.example.json",
+        "infra/profiles/README.md",
+        "README.md",
+        "package.json",
+        "packages/domain/src/files.ts"
+      ],
+      "testPaths": [
+        "packages/domain/test/resource-profile.test.ts",
+        "tools/test/profile-certification.test.ts",
+        "apps/app/test/resource-profile.test.ts",
+        "apps/app/web/test/resource-profile.test.ts",
+        "apps/app/web/test/properties/p46-preview-truncation.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "67.1",
+      "state": "accepted",
+      "reason": "Verified versioned source/configuration/dependency/migration fingerprints, strict Worker/schema/backup declarations, immutable candidate sealing, deployment preflight and safe rollback/forward plans. Local expansion preserves existing rows/columns/identity/history/indexes/triggers and atomically records history; verified adoption does not replay applied migrations. Bounded row/byte backfills atomically fence generations and commit effects/cursors, match declared job versions at contraction, and refuse oversized rows. A seeded pre-upgrade rehearsal exposed missing FTS population; the registered bounded repair now handles it with atomic reset/cursor rollback and final FTS integrity checks. Contraction requires ended recovery windows, drained old consumers, matching fresh installation-specific restore proof and exact completed backfills; completed contraction replays are no-ops. Seven actual SQLite-copy/reopen upgrades cover core 9/8/7, search 2/1/0 and public 0 with seeded bootstrap/text/revision/upload/search data. Synthetic tests exercise current/two-prior released-reader retention, unsupported readers, immutable field-version preservation and unsafe recovery combinations. All 1051 tests, lint, type checking, release checks, frontend builds and eight guarded Worker dry-runs passed; CLI rehearsal, plan and deployment preflight also passed. Node minimum is 22.16 for the actual local copy API. No production deployment, released version, backup format support or independent RPO/RTO certification is claimed; those remain their explicit downstream gates.",
+      "sourcePaths": [
+        "packages/domain/src/compatibility.ts",
+        "tools/src/release-manifest.ts",
+        "tools/src/upgrade-store.ts",
+        "tools/src/upgrade-cli.ts",
+        "tools/src/release-rehearsal.ts",
+        "tools/release.ts",
+        "scripts/expand.ts",
+        "scripts/contract.ts",
+        "scripts/deploy.ts",
+        "infra/releases/development.json",
+        "infra/releases/README.md",
+        "infra/recovery/deployment.example.json",
+        "infra/recovery/restore-proof.example.json",
+        "tools/test/release-fixtures.ts",
+        "README.md",
+        "package.json",
+        "tools/src/upgrade-backfills.ts",
+        "scripts/backfill.ts",
+        "package-lock.json"
+      ],
+      "testPaths": [
+        "tools/test/release-compatibility.test.ts",
+        "tools/test/upgrade-store.test.ts",
+        "tools/test/release-tools.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "57.3",
+      "state": "accepted",
+      "reason": "Verified immutable sealed logical field versions with canonical checksums, 128000-byte text/span fragments, exact Unicode/global offsets, scoped readers, guarded current pointers, immutable retained references, renewable read leases and reference-safe collection. Large new Revision values use bounded retained snapshots; checkpointed legacy migration preserves original text/history bytes and identities. Shared record/thread/history/kernel/Markdown readers and bounded JSON/public continuation helpers retain logical semantics. Logical search supports terms/phrases across physical cuts and exact excerpts, with current core access/deletion fences. Seven disposable SQLite recovery checkpoints passed; the real field-migration CLI paused after two slices and resumed to completion at generation 37. All 1071 tests in 171 files, lint, type checking, release fingerprints, frontend production builds and eight guarded Worker dry-runs passed. No deployment or production certification is claimed. Inside-section staging/atomic-save transport remains 19.1; end-to-end property ownership remains 57.6; later citation/draft/backup/export features consume the shared reader/retention contract.",
+      "sourcePaths": [
+        "packages/domain/src/text-fragments.ts",
+        "packages/domain/src/logical-search.ts",
+        "packages/domain/src/bounded-json.ts",
+        "packages/domain/package.json",
+        "packages/db/src/schema/core/fields.ts",
+        "packages/db/src/schema/core.ts",
+        "packages/db/src/schema/search.ts",
+        "packages/db/src/field-versions.ts",
+        "packages/db/src/field-snapshots.ts",
+        "packages/db/src/field-backfill.ts",
+        "packages/db/src/batch.ts",
+        "packages/db/migrations/core/0010_logical_fields.sql",
+        "packages/db/migrations/core/meta/_journal.json",
+        "packages/db/migrations/core/meta/0010_snapshot.json",
+        "packages/db/migrations/search/0003_logical_search.sql",
+        "packages/db/migrations/search/meta/_journal.json",
+        "packages/db/migrations/search/meta/0003_snapshot.json",
+        "packages/kernel/src/field-reader.ts",
+        "packages/markdown/src/journal/print.ts",
+        "packages/public-render/src/continuations.ts",
+        "apps/app/src/records/field-values.ts",
+        "apps/app/src/records/items.ts",
+        "apps/app/src/records/history.ts",
+        "apps/app/src/discussion/replies.ts",
+        "apps/app/src/search/read.ts",
+        "apps/app/src/search/logical.ts",
+        "apps/app/src/search/indexer.ts",
+        "apps/app/src/search/query.ts",
+        "tools/migrate-fields.ts",
+        "tools/src/sqlite-field-adapter.ts",
+        "tools/src/release-manifest.ts",
+        "docs/storage/logical-fields.md",
+        "infra/releases/README.md",
+        "infra/releases/development.json",
+        "infra/recovery/deployment.example.json",
+        "infra/recovery/restore-proof.example.json",
+        "package.json",
+        "package-lock.json",
+        "README.md"
+      ],
+      "testPaths": [
+        "packages/domain/test/text-fragments.test.ts",
+        "packages/domain/test/logical-search.test.ts",
+        "packages/domain/test/bounded-json.test.ts",
+        "apps/app/test/field-versions.test.ts",
+        "apps/app/test/logical-search.test.ts",
+        "packages/kernel/test/field-reader.test.ts",
+        "packages/markdown/test/versioned-print.test.ts",
+        "packages/public-render/test/continuations.test.ts",
+        "tools/test/field-migration.test.ts",
+        "tools/test/upgrade-store.test.ts",
+        "tools/test/release-tools.test.ts",
+        "tools/test/release-compatibility.test.ts",
+        "apps/app/test/history.test.ts",
+        "apps/app/test/search.test.ts",
+        "apps/app/test/search-indexer.test.ts",
+        "apps/app/test/stages.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    }
+  ]
+}

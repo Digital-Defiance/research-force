@@ -3,6 +3,10 @@ import { cloudflareTest, readD1Migrations } from '@cloudflare/vitest-pool-worker
 import react from '@vitejs/plugin-react';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { generateKeyPairSync } from 'node:crypto';
+
+// Ephemeral synthetic key for native SELF requests in the isolated local-worker project; never written to disk.
+const localTestKey = generateKeyPairSync('rsa', { modulusLength: 2048, privateKeyEncoding: { type: 'pkcs8', format: 'pem' }, publicKeyEncoding: { type: 'spki', format: 'pem' } }).privateKey;
 
 const worker = JSON.parse(readFileSync(new URL('./apps/app/wrangler.jsonc', import.meta.url), 'utf8')) as {
   compatibility_date: string;
@@ -59,9 +63,25 @@ export default defineConfig({
         })],
         test: {
           name: 'workers', include: ['apps/*/test/**/*.test.ts'], testTimeout,
+          exclude: ['apps/app/test/local-services.test.ts'],
           provide: { fcRuns, d1Migrations },
           setupFiles: ['./packages/testing/test/setup.ts'],
         },
+      },
+      {
+        plugins: [cloudflareTest({
+          remoteBindings: false, main: './apps/app/src/local.ts',
+          miniflare: {
+            compatibilityDate: worker.compatibility_date,
+            bindings: { WORKSPACE_ORIGIN: 'http://127.0.0.1:5173', ACCESS_TEAM_DOMAIN: 'http://127.0.0.1:8787', ACCESS_AUD: 'local-development', RF_LOCAL_SERVICES: '1', RF_DEV_AUTH: '1', RF_DEV_AUTH_PRIVATE_KEY: localTestKey },
+            d1Databases: worker.d1_databases.map((entry) => entry.binding),
+            r2Buckets: worker.r2_buckets.map((entry) => entry.binding),
+            durableObjects: { ...Object.fromEntries(worker.durable_objects.bindings.map((entry) => [entry.name, { className: entry.class_name, useSQLite: true }])),
+              LOCAL_SERVICES: { className: 'LocalServices', useSQLite: true } },
+          },
+        })],
+        test: { name: 'local-workers', include: ['apps/app/test/local-services.test.ts'], testTimeout,
+          provide: { fcRuns, d1Migrations }, setupFiles: ['./packages/testing/test/setup.ts'] },
       },
     ],
   },

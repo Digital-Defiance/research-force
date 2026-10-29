@@ -4,6 +4,8 @@ import { fileURLToPath } from 'node:url';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const cli = fileURLToPath(new URL('../node_modules/wrangler/bin/wrangler.js', import.meta.url));
 for (const worker of ['app', 'submit', 'dl', 'ops']) {
+  const guarded = spawnSync(process.execPath, ['--import', 'tsx', 'scripts/deploy.ts', '--check', `apps/${worker}/wrangler.jsonc`], { cwd: root, stdio: 'inherit' });
+  if (guarded.status !== 0) process.exit(guarded.status ?? 1);
   for (const environment of ['production', 'staging']) {
     const args = [cli, 'deploy', '--dry-run', '--config', `apps/${worker}/wrangler.jsonc`, '--outdir', `.cache/worker-check/${worker}/${environment}`];
     args.push('--env', environment === 'staging' ? 'staging' : '');

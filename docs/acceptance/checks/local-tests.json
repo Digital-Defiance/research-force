@@ -1,0 +1,1184 @@
+{
+  "schemaVersion": 1,
+  "command": "npm test -- --reporter=json --outputFile=<temporary report>",
+  "recordedAt": "2026-10-29T17:50:34.544Z",
+  "scope": "local-synthetic",
+  "success": true,
+  "suites": [
+    {
+      "path": "apps/app/test/access.test.ts",
+      "passed": 13,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/activity.test.ts",
+      "passed": 23,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/api-foundation.test.ts",
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/auth.test.ts",
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/db-schema.test.ts",
+      "passed": 16,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/dev-auth.test.ts",
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/discussion.test.ts",
+      "passed": 16,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/domain-foundations.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/domain-rules.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/domain-schemas.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/field-versions.test.ts",
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/files.test.ts",
+      "passed": 12,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/graph.test.ts",
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/history.test.ts",
+      "passed": 21,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/item-kinds.test.ts",
+      "passed": 14,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/items.test.ts",
+      "passed": 17,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/links.test.ts",
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/local-services.test.ts",
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/logical-search.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/mailer.test.ts",
+      "passed": 12,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/members.test.ts",
+      "passed": 15,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/migration-files.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/migration-not-published.test.ts",
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/migration-restricted-access.test.ts",
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/notifications.test.ts",
+      "passed": 21,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/outbox.test.ts",
+      "passed": 14,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/parties.test.ts",
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/pipeline.test.ts",
+      "passed": 14,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/profile.test.ts",
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/projects.test.ts",
+      "passed": 13,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p100-restricted-reads.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p101-access-changes.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p21-identity-assertions.test.ts",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p22-acting-member.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p23-permission-decisions.test.ts",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p24-last-administrator.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p25-member-identity.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p26-profile-gate.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p30-status-rules.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p32-journal-edits.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p33-history-reconstruction.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p34-restoration.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p40-mentions.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p42-cross-links.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p43-version-chains.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p49-new-flags.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p50-updated-flags.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p51-submission-visibility.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p52-counts.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p53-mark-all-seen.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p55-notification-grouping.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p56-email-batching.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p57-daily-digests.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p58-sending-queue.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p60-member-search.test.ts",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p61-search-excerpts.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p76-project-order.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p94-project-accents.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p99-party-duplicates.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/resource-profile.test.ts",
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/reviews.test.ts",
+      "passed": 16,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/runtime.test.ts",
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/search-indexer.test.ts",
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/search.test.ts",
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/settings.test.ts",
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/stages.test.ts",
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/submissions.test.ts",
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/value-sets.test.ts",
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/web/test/access.test.tsx",
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/web/test/activity.test.tsx",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/web/test/api.test.ts",
+      "passed": 13,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/web/test/discussion.test.tsx",
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/web/test/editor.test.tsx",
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/web/test/files.test.tsx",
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/web/test/forms.test.tsx",
+      "passed": 17,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/web/test/history.test.tsx",
+      "passed": 14,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/web/test/local-development.test.tsx",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/web/test/notifications.test.tsx",
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/web/test/page.test.tsx",
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/web/test/people.test.tsx",
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/web/test/persist.test.tsx",
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/web/test/projects.test.tsx",
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/web/test/properties/p46-preview-truncation.test.ts",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/web/test/resource-profile.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/web/test/reviews.test.tsx",
+      "passed": 15,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/web/test/search.test.tsx",
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/web/test/shell.test.tsx",
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/web/test/spans.test.ts",
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/dl/test/properties/p45-download-links.test.ts",
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/dl/test/scaffold.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/ops/test/access.test.ts",
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/submit/test/scaffold.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/db/test/seed.test.ts",
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/design/test/components.test.ts",
+      "passed": 14,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/design/test/fixed-texts.test.ts",
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/design/test/fonts.test.ts",
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/design/test/render.test.ts",
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/design/test/tokens.test.ts",
+      "passed": 24,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/domain/test/bounded-json.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/domain/test/dates.test.ts",
+      "passed": 34,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/domain/test/history.test.ts",
+      "passed": 26,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/domain/test/identifiers-search.test.ts",
+      "passed": 18,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/domain/test/logical-search.test.ts",
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/domain/test/permissions.test.ts",
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/domain/test/properties/p27-validators.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/domain/test/properties/p31-value-sets.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/domain/test/properties/p35-comparisons.test.ts",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/domain/test/properties/p37-label-edits.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/domain/test/properties/p38-label-validity.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/domain/test/properties/p44-file-kinds.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/domain/test/properties/p47-threads.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/domain/test/properties/p91-dates-and-times.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/domain/test/properties/p97-retention-table.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/domain/test/resource-profile.test.ts",
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/domain/test/retention.test.ts",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/domain/test/richtext.test.ts",
+      "passed": 15,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/domain/test/schema-items.test.ts",
+      "passed": 23,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/domain/test/schema-other.test.ts",
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/domain/test/schema-people.test.ts",
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/domain/test/settings.test.ts",
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/domain/test/text-fragments.test.ts",
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/domain/test/text-types.test.ts",
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/domain/test/thread.test.ts",
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/domain/test/value-sets.test.ts",
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/kernel/test/field-reader.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/kernel/test/preview.test.ts",
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/kernel/test/project.test.ts",
+      "passed": 13,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/kernel/test/properties/p01-effective-disclosure.test.ts",
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/kernel/test/properties/p14-preview-diffs.test.ts",
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/kernel/test/substitute.test.ts",
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/markdown/test/journal.test.ts",
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/markdown/test/properties/p66-journal-round-trip.test.ts",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/markdown/test/properties/p67-journal-parsing.test.ts",
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/markdown/test/properties/p93-math-delimiters.test.ts",
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/markdown/test/render.test.ts",
+      "passed": 13,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/markdown/test/versioned-print.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/public-render/test/continuations.test.ts",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/public-render/test/pages.test.ts",
+      "passed": 29,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/public-render/test/paths.test.ts",
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/search-public/test/search.test.ts",
+      "passed": 24,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/testing/test/clock.test.ts",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/testing/test/fc.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/testing/test/properties/p05-public-output-confinement.test.ts",
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/testing/test/properties/p06-withheld-disclosure-line.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/testing/test/properties/p08-summary-only-fields.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/testing/test/properties/p09-companion-fields.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/testing/test/properties/p10-do-not-name.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/testing/test/properties/p11-member-emails.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/testing/test/properties/p16-public-pages-complete.test.ts",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/testing/test/properties/p17-public-cross-links.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/testing/test/properties/p18-public-listings.test.ts",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/testing/test/properties/p20-page-metadata.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/testing/test/properties/p39-label-rendering.test.ts",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/testing/test/properties/p59-email-branding.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/testing/test/properties/p62-public-search.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/testing/test/properties/p63-index-ignores-hidden-text.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/testing/test/properties/p94-project-accents.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/testing/test/properties/p96-methods-terms.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/testing/test/search-excerpts.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "tools/test/boundaries.test.mjs",
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "tools/test/check-specs.test.ts",
+      "passed": 23,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "tools/test/design-tokens.test.mjs",
+      "passed": 13,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "tools/test/dev-config.test.ts",
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "tools/test/field-migration.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "tools/test/lint-copy.test.ts",
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "tools/test/local-dev.test.ts",
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "tools/test/migration-tools.test.ts",
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "tools/test/profile-certification.test.ts",
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "tools/test/release-compatibility.test.ts",
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "tools/test/release-tools.test.ts",
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "tools/test/upgrade-store.test.ts",
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0
+    }
+  ],
+  "files": {
+    "README.md": "5586119f3717b609a4ec434dc2df22976d2d199f22f3b899111a94b2fe734884",
+    "apps/app/src/activity/feed.ts": "9b74f0a76f927852265149a64fc2931155214083cc9d4a2294dfa0371c9bc5c0",
+    "apps/app/src/api/app.ts": "e81e111801e0976e53f0ee33ecd50b52a8ab88a08b5d771e2d18598ee0ebd8d1",
+    "apps/app/src/auth/dev.ts": "0aeb7704f14d35e4a5553c272a5793dcf184e6c848cf39776be0ce93a0bba166",
+    "apps/app/src/discussion/mentions.ts": "15878df17398bac63c6c18314e25f69e657e87d24effbf5b6d81931f5ac3d460",
+    "apps/app/src/discussion/replies.ts": "5a35f42c80d4f6bccb3a558a3eb496ee7787bbbeb636c261a39a32ed5d5d7100",
+    "apps/app/src/do/mailer.ts": "2dad36be3355dccc245b9c7c1a4cdbd963fce38d22e5305ecfbb2f229cae2cee",
+    "apps/app/src/env.ts": "8a2694fa3b3fcee04dbb3b8b91285284c20d7adcad59b5dc859ead9883a1cc9d",
+    "apps/app/src/index.ts": "74ba6f2607ae7e6d22162767623eacdd6974be7ee2800b501f863b4401bb0451",
+    "apps/app/src/local.ts": "7f2726c7ad7069da6d06b84cdb624adb75b96a02dbb40c3e6a8a49eb9eded406",
+    "apps/app/src/local/mailer.ts": "8407f4dbe617580d2222e9f0ff5f929e1789828a5b27d4563f08b388120abd35",
+    "apps/app/src/local/runtime.ts": "4be8c5ece99dd676d3224c54f34779be717a6b081b70bf91808dfb816165b0d6",
+    "apps/app/src/local/services.ts": "4125d2d6da2b79304f2edefd1ef7699dd951533b0218b38be542e6b65a7458c7",
+    "apps/app/src/mail/provider.ts": "159b1d5e839bd3a8e97ad0b5bab21433c81621c229bf332ca359ee5bc1191b79",
+    "apps/app/src/notifications/centre.ts": "1eff10ea330c6a4f8c54311569038d852a51a4cd4ae1a35b4d9ce2ddda375771",
+    "apps/app/src/records/access.ts": "2f1cc0e95a2e9d2acc436ece5f74323f62b82f41521bbf0d627f7011b40b0110",
+    "apps/app/src/records/field-values.ts": "62544c7633894faf051160160a5bc53bfaef6fa539e39a8c232383887f75c993",
+    "apps/app/src/records/history.ts": "7c4bd027ecc4fab1e571c5cef115baf81f42beb208f5c719566743bc38cfc764",
+    "apps/app/src/records/items.ts": "b71603e925b9cbe3c696012895304be4880aed488177ac9d6f2e41a7ffdb4cbb",
+    "apps/app/src/records/stages.ts": "3e3e187bad73eb2a6da6730f470a3de7e9781f5fb2bfb04b7e638128d986b7fe",
+    "apps/app/src/records/submissions.ts": "9cf103427ff4be5d6cec10958db8f0f641c6ee06390a6c23d7513d9519ba7ef9",
+    "apps/app/src/reviews/reviews.ts": "8bbf2e3427f609b7ad0521d5f07772424390e18bf3cab6c06393f3e366e918f0",
+    "apps/app/src/search/indexer.ts": "6fa7974f5952f74b0b0416da0100e80c54784cffc71ea351e7d3272d17bfa86f",
+    "apps/app/src/search/logical.ts": "05b326fd59b2d06c122b190e80825458542920bf513179e622772c7519fa1985",
+    "apps/app/src/search/query.ts": "d193022ee87505627878cc95be6755b66fb0574258f0f23091f90f0075f99ae7",
+    "apps/app/src/search/read.ts": "8c0cc7420c1c31316d92b140e88ee500bb967f5969d83f310e67170956434240",
+    "apps/app/test/access.test.ts": "66c2d6c46e44668dc03a60a7adbffd133625cd5af3cc001d913e7f1b285d3904",
+    "apps/app/test/activity.test.ts": "c377c6fed6f35e8fd4eb2c13b0ae5411a740231f28fc3ada6313e4b0798737f9",
+    "apps/app/test/dev-auth.test.ts": "fa9b8f0adc243c50dd6170cb738751ece480a48c514b7b3580c2059757882f9f",
+    "apps/app/test/field-versions.test.ts": "46a5e22ebb2e8bc9b04275d0f3b50629db3889ab763d31b2c0b94b7864acd2a9",
+    "apps/app/test/history.test.ts": "90bbe70b076e873ab7877d685030bc30b56c4e738f0278f44f690d79aa7bdf7c",
+    "apps/app/test/local-services.test.ts": "fbf4f3b8994650410d05367db43bf8b009c4b7d65915ddc4da9d320b218f68c8",
+    "apps/app/test/logical-search.test.ts": "81c0d0ff6d66889814f0cc4622bd5dff6f31dbdf236448b43617bbc120ec4b8c",
+    "apps/app/test/migration-restricted-access.test.ts": "a7282523c9baad92c284c4a880b8408911d53314731dd24d750376bde161a75a",
+    "apps/app/test/notifications.test.ts": "e2216924c9fb9c34379dca53d89c831305201de160862d97273886ab9e92be04",
+    "apps/app/test/properties/p100-restricted-reads.test.ts": "f972b671e612788a3bed9065a39160f553e95e6d4ccd930cfe78d365fde6c213",
+    "apps/app/test/properties/p101-access-changes.test.ts": "6bc83a71a3e15b534caa1fd13605fc30ebffb3ded920a08351933634db823066",
+    "apps/app/test/resource-profile.test.ts": "800884eb7c85819a7c94f78044f52cc91caf7f94dcd43d7ca848e0349beb51f6",
+    "apps/app/test/search-indexer.test.ts": "5bbef95727bfa6b5e4e32e7f9a70ae38911372ca35f4848930a05890acfa7ab7",
+    "apps/app/test/search.test.ts": "c29f3a3bb3503f8b47505097b32166042d2bc6dc7055da55bb34eabb19ce42e4",
+    "apps/app/test/stages.test.ts": "e2379503c307c89b28ecc490d9c52fe9a4b4eebb58626cb381ca98347ce8302c",
+    "apps/app/web/src/access/access.tsx": "78f5366bab76cc3fb59253a40e8c2380cca29c4e45aaad3eab05cfde597f88b5",
+    "apps/app/web/src/api.ts": "db27c02d9207392f8b8bf17bbd38d65ced0ac3035034329264fd035b0a250b43",
+    "apps/app/web/src/files/attachment-page.tsx": "9d0562c60a7563edab7dfdf92b61420e4be8c7a96381f61d0cc0fd5e4c49e9c3",
+    "apps/app/web/src/files/preview/index.tsx": "f4370ab8878f9058b4b7ab2671b1746b6dcf626c796771631022c0e59abbaf42",
+    "apps/app/web/src/files/preview/pdf.tsx": "ed4f949f30d165f02f6a06f5e31721ec84831986cfa6874ef1a7f6c96275484a",
+    "apps/app/web/src/files/preview/truncate.ts": "8111091e88c92e1bc64a2c5a9758850daf307569e5f1b4a5111f3a6b7e9d54a7",
+    "apps/app/web/src/files/upload.tsx": "bbcbd6b3d5a93bc645384806ced054b6232cb2e106b14ef18d6c2aee7913e191",
+    "apps/app/web/src/items/page.tsx": "48b1e925cd85435dc539771147645d83e987fc0975a1d02ebae2f836bbe67194",
+    "apps/app/web/src/local-development.tsx": "009a5fff4446a4263c434b75957eb618a17fb62bba4b396eacced5749fd8f367",
+    "apps/app/web/src/main.tsx": "821678c0a320c0dd40ae7a35f68aa8fcc69561f05fb5d59641cc5d3e923bfa70",
+    "apps/app/web/test/access.test.tsx": "72aedefe06b32fbe484d783851af616311c3ca14346506a6af7ff23157132d13",
+    "apps/app/web/test/files.test.tsx": "cba54ef56627801609643d9abf2b07781342dcdd6d4f61e73de5ac4fc0b54ab6",
+    "apps/app/web/test/local-development.test.tsx": "5491ae081bcc8638596d3775549102d6b8f9cebc3cb6516eefaa1690ca329580",
+    "apps/app/web/test/properties/p46-preview-truncation.test.ts": "38fb557827b3232d2f0aa0eaae7b69b14f87c68c7b43f4d6b5e4937d7dc43d8f",
+    "apps/app/web/test/resource-profile.test.ts": "81cde34191c258fb1d0effd526b32c747bb65597854774d63c3ecd9aa6341877",
+    "docs/storage/logical-fields.md": "849c9d75569c73b91e77128ac672c5e59778c69ab9820af68c9aa2cb8cb33a3a",
+    "infra/profiles/Free_Qualified.example.json": "aa95a018197ffa0c2c3d0749170546dc4ce3e95bb5d082f8de9c87c6061b4f28",
+    "infra/profiles/Paid_Standard.example.json": "b547a22a1d1b6ff2fe47a8279858014c6c482c8f3f33a677edbffee2c4500abb",
+    "infra/profiles/README.md": "de10349af58fbba685b14fe527d183545b6fc6b11a81800fcf185776d6de3fee",
+    "infra/recovery/deployment.example.json": "f50e284de933da91b761d0b6293f62caef82e8aa0c8db7c83e31e7eca5398bec",
+    "infra/recovery/restore-proof.example.json": "2c02a645aaa612d1dd4f0bc537433a5e58764b4244a02562523aabc6d6a31554",
+    "infra/releases/README.md": "73919ce7f8cc7b532d520dbc250f4f16ccd28f84e70e32d21d556190afe50ade",
+    "infra/releases/development.json": "6a333fc31c92e689148f09031e1ed67744ed5b1ac5b9c7b3eb531aca159ab7ab",
+    "package-lock.json": "46bb71e749eeb2b853d3113a54c6b75e0a3a610f1178687a73334d4114e099d5",
+    "package.json": "a57669ad85b1bb5873507b1ef7021825127f5e1aaa49ab3f7101b42ef8857e36",
+    "packages/db/migrations/core/0007_restricted_access.sql": "68d6acff93c939939932102ad9a767541a9181815f983c24ebdcfc18ce3518a1",
+    "packages/db/migrations/core/0010_logical_fields.sql": "38c563873f47345ae40b8729ace938fb68237efe83e7660203ef40aa5e5e8f63",
+    "packages/db/migrations/core/meta/0010_snapshot.json": "cfcb5ae3332aca25c9591b3f5721a042b4671a1922d271da6eb37a34e407efdc",
+    "packages/db/migrations/core/meta/_journal.json": "7b8333bc8c99586f0461d302c5f372d85ed5045bfd92dbac5e935af08a76e322",
+    "packages/db/migrations/search/0003_logical_search.sql": "54217825ac2bf02efa2a5cbfad558ec57f62f03b88a8398a6909d2615938b16b",
+    "packages/db/migrations/search/meta/0003_snapshot.json": "9660b0ac8ff7cb06fb450a3b6ffcd1ce3e7ed919af3cd46e63cab6e91345d434",
+    "packages/db/migrations/search/meta/_journal.json": "3ddae4a6d53af9ffb459f579988f2c3e98da7ddf51ad027ed3866211c410a4fb",
+    "packages/db/src/access.ts": "07089247e1b925b3b8326e07512bc8aec574bb669ed923e8b1dcce39800b0e40",
+    "packages/db/src/batch.ts": "b35c0741b68d21b7b377b5d3fdf62e2bd94c0594725b16d32244433624446e18",
+    "packages/db/src/field-backfill.ts": "e9c2977327338f1fe35a2faf14584aab9809bed903e6dd5119aa82195c57f0de",
+    "packages/db/src/field-snapshots.ts": "0539cfb9c1aad0621f8a2831d16dce1922d1d38af3ff047de0b78bb1f414d36d",
+    "packages/db/src/field-versions.ts": "de69c96656b7f0b91b6ee246a7353a654a35664cc11838b93a8fdb89aa00fed4",
+    "packages/db/src/schema/core.ts": "b56e567f4aeaf418fc08c7f12b4b06f6c98d94bae2b94f8baedbb53d6ddd1c4c",
+    "packages/db/src/schema/core/fields.ts": "f479bb9fc2921c62e68d751173ca28a8dab528a1f867438ea712007d327748e8",
+    "packages/db/src/schema/core/units.ts": "cbc9af3a4bef1c1690286ab51f3f6842bf10072ff964428c0949eb369af45774",
+    "packages/db/src/schema/search.ts": "c315953c01578341e9522caaf9fced8660ce937dd4297e6e4ea0e5137df13e29",
+    "packages/domain/package.json": "da942d944bc9f5f896e294e152aa0ab57745f4bcc8f42ee6856656c3784e7e7c",
+    "packages/domain/src/bounded-json.ts": "36aaecee5500df4b6caa606a9cc2f921e1a19bb90c1877efc3e9f30e1caf2139",
+    "packages/domain/src/compatibility.ts": "f669247a5a5cf3c4c95255c14ff5e2c4a679dd7af9896298700158b18d74cd38",
+    "packages/domain/src/files.ts": "d9372bf27b305f6a4e6499ad2c1baaada0e4cfcce920c9c01716281620755658",
+    "packages/domain/src/history.ts": "225cb01bea5bfb438a35b9126c9f487306f567eebd2723ae50473725f2862247",
+    "packages/domain/src/logical-search.ts": "d8f1226d611fa3423e401f274ea84852f6e66f633fdf14cae2d7f350649511cd",
+    "packages/domain/src/permissions.ts": "ccf6ec190cc69cfe99664696805423ffb56fa6fae6ac86967ab3d6cab4beae5a",
+    "packages/domain/src/resource-profile.ts": "6e43159a5cd56c5c36cf5122a8adf0de7386b65258b5d67af77cb148a00c2d31",
+    "packages/domain/src/richtext.ts": "8e8ae161d133fd870d6ff5edf68791fe1e7c88568f332b00347611d03ab7c4bc",
+    "packages/domain/src/schemas/common.ts": "27415c63f985efab7c7eb02dfd783be932fae4c2e6d8046f2ddcb6ef9d87c3d4",
+    "packages/domain/src/schemas/items.ts": "c25add4ca2fdf8047d6ae3d741be89b1eaf51878171cd9d1bffdbf6eaa08d282",
+    "packages/domain/src/settings.ts": "30b7afd97c348d2953501990a20edd1d7d735c20d9418a7ce62a69d65f72eaad",
+    "packages/domain/src/text-fragments.ts": "d7ba82822f7db3a70a35d6799a8935edd25715f3d1f1fda82f454004da6d1fdc",
+    "packages/domain/test/bounded-json.test.ts": "0693f415158d64adb06cedeb79d4bdd17569c3bde8681be03f315d0e386c7a8b",
+    "packages/domain/test/logical-search.test.ts": "73d419e143066b9882ecdfc0cfe3384e9ed80b4b8ea50b146563e9dc13e86635",
+    "packages/domain/test/resource-profile.test.ts": "7b028413407d42fd06053b585c1d6782a1033d1d13556f1191684cc7b94c5803",
+    "packages/domain/test/text-fragments.test.ts": "10b4df502952d3b672d72c60a6d5b83307754a3837be58ad1b047bda58e6b600",
+    "packages/kernel/src/effective.ts": "c9843212e8101e5b26a51fca37e37ee82bfb3d1cc3a00cfe38bc77593eaaf0d8",
+    "packages/kernel/src/field-reader.ts": "9a9259451109d6c66506d6616cb2ce76c4d9322b7fcae9bd47e4f8644239c41c",
+    "packages/kernel/src/input.ts": "3eabb13757763a56b6e63d92396a119354b5a1dd3fc8d3dc78f7c7055fec6ed4",
+    "packages/kernel/src/preview.ts": "cd63e10c3767146bfb70e2f93f323b2eed9f69aeb43868a9aa2be17e3de177b5",
+    "packages/kernel/test/field-reader.test.ts": "1023bca850fd642e46de56f54e0ab5d2f2f0beab524f4722b5dc9e24225981e8",
+    "packages/kernel/test/preview.test.ts": "6f3e68591664db7a78f20f0b1f8bea474373f2a2b6645e41b8b28967a59b7633",
+    "packages/kernel/test/properties/p01-effective-disclosure.test.ts": "a29a0a22e3d073e48d12246ec9b8f411bacd30c78a08fe80cf73ae7c5fea083d",
+    "packages/markdown/src/journal/print.ts": "bea3b536ba8e40f9c611f1f442c1d6a53897b1bae50974f74f4f1f80d566203b",
+    "packages/markdown/test/versioned-print.test.ts": "5badf1b11384495b893af6946671de187aad2f540e5ac825a5be64faea5f1e4d",
+    "packages/public-render/src/continuations.ts": "e78dd4dd4bd14c69c8731bcda58d453f8247a2f19110715cbe3a59ea20eed58a",
+    "packages/public-render/test/continuations.test.ts": "f7a029133c70ebeab0cc103f92625e35cb6423b2aec17c711e4cc65a8b65e303",
+    "packages/testing/src/dev-members.ts": "a92626f3ae560125b27693e6c7fea3cec32a82fadfdaad62b358cdbbcbc952aa",
+    "packages/testing/src/resource-fixtures.ts": "e4a50f21e863d14113c086f2db4e1ef02e3a472ddd466f48f6cf1c341bedfd75",
+    "scripts/backfill.ts": "c8388bb5a9442bf0bf81cc876e95cf06f7eb457275ef2e2b815aeddb9e8e8c61",
+    "scripts/check-workers.mjs": "de6414495c80dd141f24cf52c7d4d5320841ec9681433896c84e753ce1a7caf8",
+    "scripts/contract.ts": "54f3cb42829ae1c274d29478ca61bc74c83aa943934e45af7f1a0aa55cfcaf40",
+    "scripts/deploy.ts": "79eff2a586c1d0cb8c6777d821d7920521a573561f3097af59b8e29a5a9db9c4",
+    "scripts/dev.ts": "cf757732a5b86ca51a2ec53879942df91385f607166a75e998f0d2ca7bc2272f",
+    "scripts/expand.ts": "1f2d917c9bf4ca38ee8ad944180a9b115908ade58c9f8b37003b47de5b204cb4",
+    "tools/certify-profile.ts": "2a34d62abe80cbd9b94184a1127179abc657158ec32f3f924bb1f3152d775167",
+    "tools/check-specs.ts": "87465b962c8b6af27c6a53df903733f040b4222289532d67cbcb0cd09f8cfd10",
+    "tools/dev-seed.ts": "eb81c9a62672e6288884ebf69543e7d91863797a2b9e03d8353d769ed5a92ca2",
+    "tools/migrate-fields.ts": "656305b10e31318824a5663f29d32e788db783a2aa9dade5d201a374fa605274",
+    "tools/release.ts": "6dd8551127659df9a4daa789e3d1acb4edc0c728637f875687e5d2a991910ccc",
+    "tools/src/deploy-guard.ts": "5d6d8ea6234700e131ebe651a96cf61e1742a6bc79ffd4df70d552e875480b75",
+    "tools/src/dev-config.ts": "df8357bdc7b78549828bb2e2c3a6cc301e175fa1f2a2cf76e4c0a8f183bcc204",
+    "tools/src/dev-seed-data.ts": "141b8ae91cf1fbb4024bc2d0aefe82fa7902673fbc3b86e425fc14713640d2da",
+    "tools/src/local-dev.ts": "baea3f959b9061d91c6e2ffc2e5c6a38d94da3337f91910bd3d41ed668b870ab",
+    "tools/src/profile-certification.ts": "e480b754b8e14423e5fa1c79a645ea209b31203e60e987b18076794e7eecbeed",
+    "tools/src/release-manifest.ts": "67d382af252714fc55132e042e4e4825d532d7261d7aa9c98dea690d47d5b5fd",
+    "tools/src/release-rehearsal.ts": "36fa9ca6e065b4d2a3c2fee885e7775c503882b4d5acaac8564a6875ab941d71",
+    "tools/src/spec-test-report.ts": "750aa0c6a33d0f4733c53741e8d8b433135f7cf16837dc1555ea8dc72151bf61",
+    "tools/src/specs.ts": "678ae50550a77c35658a6754e54d9d30e46df7f65b69d2fb98d8575a979c327f",
+    "tools/src/sqlite-field-adapter.ts": "89b8f3793c6990eb605fecbd86a03eaa5c5e16f6a6a0fa35aaf9fc264d154c1b",
+    "tools/src/upgrade-backfills.ts": "500062939dfb4608e9a10aa35e8c6eedca20bac8c061e806167ebf987a791c62",
+    "tools/src/upgrade-cli.ts": "cb086ac1f82197dc79de873cf18b07818c0e33e7ca9a7ea2bd8d333f7f39fd07",
+    "tools/src/upgrade-store.ts": "0a23d7e42d3cce111dbf1ca4725464ebb1cd5a25907edd86ff30743b51db1125",
+    "tools/test/check-specs.test.ts": "b0b0a9c4e9b6afe7e0471d681ff979b0ab84690b966d3769907da121fcb41bc7",
+    "tools/test/dev-config.test.ts": "eaa105ae1bd43d0b6082bfb7dcf5ba6925cd9a8b5f5891ea7b7ad210ae362dcf",
+    "tools/test/field-migration.test.ts": "75867730e50970d3d5e78c80766b87dc6150ad8940ed6a02daf24423a3ab801c",
+    "tools/test/local-dev.test.ts": "7d1ab7c47ed14c6431a7965091c7d99516a30f8a0a61191f8747f0c320b84fd1",
+    "tools/test/profile-certification.test.ts": "2c656d247375979d847975865a073277f19e9a1bf36f3249308206a672e5a22f",
+    "tools/test/release-compatibility.test.ts": "c0190302da8efc74cd2fd681fd978cadeb1346df7925ae85de20f7977c3e77ee",
+    "tools/test/release-fixtures.ts": "b577cd9f043e527ae56a3a12e1dd35c73941e8e2167bf92858c33118aebc310c",
+    "tools/test/release-tools.test.ts": "93e71de90a8df04a5bcc2e31c1eacd9bb8e4a80b3b0182d0cf2fa2a29c894cf4",
+    "tools/test/upgrade-store.test.ts": "791eccfc1f513d3d57f6f49aa59fe84b1b934aef96511b597a9666795e897c75",
+    "tsconfig.tooling.json": "4b45be249bedb7fa23a041f2e71ad7849caeaab2485b9811e68c4273e34e9ecb",
+    "vitest.config.ts": "b8633df9139ed21f4e9342f24deb5bd7c4e25e797734fbb3bb5e213a47375384"
+  }
+}

@@ -71,6 +71,13 @@
       "when": 1793162510384,
       "tag": "0009_files",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1793290733585,
+      "tag": "0010_logical_fields",
+      "breakpoints": true
     }
   ]
 }

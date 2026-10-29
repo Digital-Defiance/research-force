@@ -1,10 +1,12 @@
+import { DEFAULT_RESOURCE_PROFILE, resourceProfileSchema } from '@researchforce/domain/resource-profile';
+import type { ResourceProfile } from '@researchforce/domain/resource-profile';
 import { createContext, useContext, useSyncExternalStore } from 'react';
 
 /** Matches the Worker's CSRF check: every write carries this header from the Workspace origin. */
 export const CSRF_HEADER = 'X-RF-CSRF';
 export const API_BASE = '/api/v1';
 /** Saves whose JSON is larger go through a staged save (design "Staged commits for large payloads"). */
-export const STAGED_SAVE_THRESHOLD_BYTES = 512_000;
+export const STAGED_SAVE_THRESHOLD_BYTES = DEFAULT_RESOURCE_PROFILE.chosen.bytes.request;
 
 export type ErrorCode =
   | 'unauthenticated' | 'forbidden' | 'profile_incomplete' | 'validation' | 'rule' | 'gate' | 'conflict' | 'preview_stale'
@@ -77,6 +79,12 @@ export class ApiClient {
     this.#fetch = options.fetch ?? ((input, init) => globalThis.fetch(input, init));
     this.#reload = options.reload ?? (() => globalThis.location.reload());
     this.status = options.status ?? new StatusStore();
+  }
+
+  /** Deployment-selected limits, validated before any editor/preview uses them. No certification is inferred. */
+  async resourceProfile(): Promise<ResourceProfile> {
+    const response = await this.get<{ profile: unknown }>('/resource-profile');
+    return resourceProfileSchema.parse(response.profile);
   }
 
   get<T>(path: string): Promise<T> { return this.request<T>('GET', path); }

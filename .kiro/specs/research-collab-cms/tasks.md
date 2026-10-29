@@ -29,18 +29,20 @@ Tests use synthetic data only. No task copies, quotes, or commits content from t
 
 ### Canonical build order after the 27 October review
 
-The JSON graph at the end is the single scheduling source. Checked leaf tasks form an inherited baseline whose evidence is reconciled in 57.1. Remaining waves are serial barriers; every leaf appears exactly once across baseline and waves. A historical parent can remain checked only while all its leaf acceptance is complete; 19 and 30 are reopened for the identified gaps. Task 52's existing implementation is audited before marking acceptance, without rerunning an applied migration.
+The JSON graph at the end is the single scheduling source. Checked leaf tasks form an inherited baseline whose evidence is reconciled in 57.1. Remaining waves are serial barriers; every leaf appears exactly once across baseline and waves. Tasks 57.1–57.3, 67.1 and the local environment in 50.1–50.3 are complete; 19.1 is the next remaining leaf. Its reconciled task 52 evidence leaves 52.4–52.6 open. A historical parent can remain checked only while all its leaf acceptance is complete; 19 and 30 are reopened for the identified gaps. Task 52's verified portions are reconciled without rerunning an applied migration; unfinished 52.4/52.5 follow the privacy helpers and 52.6 follows the Workspace lists.
 
 | Milestone | Required scope and order |
 |---|---|
-| Repair and local walkthroughs | Status audit 57.1; local runner 50; Resource_Profile and compatible chunk foundations; reopened 19.1, 30.6–30.8 and 30.11; idempotency/real-channel regressions; reconcile existing access implementation 52 |
+| Repair and local walkthroughs | Status audit 57.1; local runner 50; Resource_Profile and compatible chunk foundations; reopened 19.1, 30.6–30.8 and 30.11; idempotency/real-channel regressions; reconcile existing access implementation 52 through the audit; retain unfinished integration in its dependent phase |
 | Team collaboration | Question Workspace; bibliography/decision/release schemas; work and Question lifecycle; precise citations/derivations; decisions; compute reproducibility; durable drafts/proposed edits; navigation |
-| Privacy and public archive implementation | Shared Owner/permission snapshot data before kernel gates and disclosure callers; holds/dual approvals and moves; imports/logs/Dissent; independent publication epochs/containment/admission; Publisher; public Questions/releases/exports and required properties |
+| Privacy and public archive implementation | Shared Owner/permission snapshot data before kernel gates and disclosure callers; holds/dual approvals and moves; imports/logs/Dissent; complete 52.4/52.5 after their privacy helpers and 52.6 after 40.3; independent publication epochs/containment/admission; Publisher; public Questions/releases/exports and required properties |
 | Complete feature scope | Public submission, moderation and emailed permission flows; AI drafting; full policy and presentation. All remain disabled in production until the appropriate gate passes. |
 | Recovery and operational assurance | Complete table inventory; encrypted format and lease helpers before backup/restore callers; automatic independent copies; fresh restore rehearsal; compatibility/retention/alerts, browser security and measured capacity |
 | Release acceptance | Prepare all infrastructure/staging/gate tooling, then operator setup and real verification; team-archive gate before sole-copy custody; public gate before serving research; outside-service gate before enabling dynamic public endpoints; final 49 |
 
 Tasks 26/27 code already exist in the inherited baseline; feature additions still extend their event/preference/recipient rules. The graph linearizes shared helpers before callers: 55.2 before moves, field-version/idempotency before new records, permission coverage before apply, codec/preflight before restore, and publication/permission gates before serving releases. Every authoritative new table is registered for backup/format migrations when added. This is an implementation schedule, not authorization to activate a paid service, publish content, or ingest sole-copy research before its release evidence passes.
+
+Canonical phases: `repair` → `collaboration` → `privacy` → `imports_and_log` → `publication` → `outside_and_ai` → `recovery` → `release_tooling` → `staging_and_acceptance` → `production_activation`
 
 ## Tasks
 
@@ -1178,9 +1180,10 @@ Tasks 26/27 code already exist in the inherited baseline; feature additions stil
     - _Requirements: 20.22, 20.23_
   - [ ] 48.4 Write the deployment and bootstrap scripts in `scripts/deploy.ts`, `tools/bootstrap.ts`, and `.github/workflows/ci.yml`
     - Implement the explicit compatible rollout: additive expansion, compatible Worker deployment, bounded backfill/verification, switch read paths, contraction only after old consumers and the recovery window end. Record Worker/schema/backup compatibility and safe rollback or forward-recovery versions; CI runs all mandatory evidence for the selected scope, not npm run ci alone.
-    - Bootstrap validated installation identity, origins, initial Project and Responsible_Person. Require the owner-configured Content_Licence before publication/agreement collection; require an approved Operating_Profile/budget, independent recovery destination/key custody, initial fresh restore and containment capability for the applicable production gates. Provisioning does not infer permission to buy plans, publish research, or select a content licence.
+    - Bootstrap validated installation identity, origins, initial Project and Responsible_Person. Consume task 48.10’s validated `Installation_Public_Copy`, record its version/digest in bootstrap and site-build state, initialize “About the group” from its configured prose, and refuse a partial or changed-without-release bundle.
+    - Require the owner-configured Content_Licence before publication/agreement collection; require an approved Operating_Profile/budget, independent recovery destination/key custody, initial fresh restore and containment capability for the applicable production gates. Provisioning does not infer permission to buy plans, publish research, or select a content licence.
     - Use task 67 compatibility manifests and task 68 launch-gate checks; this script is built before operator setup and calls the completed gate checker at execution. A Workspace-only deployment must have public dynamic endpoints disabled until their own gate passes.
-    - _Requirements: 2.2, 26.1, 46.37, 28.1, 28.4, 36.12, 36.17, 60.3, 60.4, 60.5_
+    - _Requirements: 2.2, 26.1, 40.12, 46.37, 46.41, 46.42, 28.1, 28.4, 36.12, 36.17, 60.3, 60.4, 60.5_
   - [ ] 48.5 Write the staging verification suites in `tests/staging/` and `infra/m365/Verify-ResearchForceMail.ps1`
     - Make real staging verification mandatory for its deployment scope: Access redirects and scoped bearer exceptions; real single/multipart R2 checksum/CORS behavior; Graph least privilege, credential rotation, SPF/DKIM/DMARC, acceptance versus delivery, MIME/plain text and residual provider retention; Turnstile and addressed snapshots.
     - Certify public change timing and independently verified containment across pages/index/files/People/policy/release assets; inject deploy/quota failures and old-generation retries; run the distributed Abuse_Profile while Members save/download and compare measured resource/spend reserve.
@@ -1197,15 +1200,17 @@ Tasks 26/27 code already exist in the inherited baseline; feature additions stil
     - _Requirements: 20.22, 20.23_
   - [ ] 48.9 Activate only production scopes with passing launch evidence
     - After 48.12, run the 68.4 checker on the complete version/configuration-bound evidence. Bootstrap production with the explicit installation/profile/budget/recovery inputs and operator-selected content licence; run the production import only after the team-archive gate passes, creating everything Not_Published and Unclassified.
+    - Before enabling the public site, compare the rendered production home and About pages with `docs/instance/researchforce-org-content.md`: exact masthead/strapline, Mission paragraph, three About paragraphs, seven Principles and their order; verify their configured version/digest is in the deployed site manifest and a copy-only release invalidates every affected output.
     - Enable public research only after the public gate and normal content approvals, and enable outside submissions/emailed grants/AI only after their provider/privacy gates and configured settings. Verify production deny controls and independent health/recovery alerts. No setup step infers permission to buy a service or publish particular research.
-    - _Requirements: 26.4, 26.11, 27.7, 28.17, 36.12, 36.17, 60.3, 60.4, 60.5, 60.9_
+    - _Requirements: 26.4, 26.11, 27.7, 28.17, 36.12, 36.17, 40.12, 46.41, 46.42, 60.3, 60.4, 60.5, 60.9_
   - [ ] 48.10 Prepare the reusable source release and independent-installation guide
-    - Document installation configuration, migration and upgrade steps, and the separate software/content licensing boundaries; include the MIT licence and required third-party notices in software distributions
-    - Verify setup with a synthetic second installation whose domain, identity, policy statements, first Project, and chosen content licence differ from ResearchForce.org; verify missing content-licence configuration refuses publication and agreement collection
+    - Add a typed, versioned and digest-addressed `Installation_Public_Copy` and wire it through the public header/home/About renderers, metadata, page last-updated inputs, site-build manifest input and policy-page export. Validate a complete masthead name, strapline, Mission statement, About prose and ordered Principles. ResearchForce.org uses `docs/instance/researchforce-org-content.md` verbatim; fixtures and other installations provide different complete bundles, with no ResearchForce.org fallback.
+    - Document installation configuration, migration and upgrade steps, and the separate software/content licensing boundaries; include the MIT licence and required third-party notices in software distributions.
+    - Verify the shared configuration and renderers with a synthetic second installation whose domain, identity, masthead, strapline, Mission, About prose, Principles, policy statements, first Project, and chosen content licence differ from ResearchForce.org; verify missing/partial public copy or content-licence configuration refuses site generation, publication and agreement collection, and verify no ResearchForce.org organizational wording leaks into its rendered pages or export.
     - Check release material for real research, personal data, secrets, backups, and instance state; do not include them or publish a repository as part of this preparation
-    - _Requirements: Introduction (product and installation scope), 23.2, 29.10, 33.4, 46.16, 46.17_
+    - _Requirements: Introduction (product and installation scope), 23.2, 29.10, 33.4, 40.12, 46.16, 46.17, 46.41, 46.42_
   - [ ] 48.11 Bootstrap an isolated staging installation for provider verification
-    - After operator resource/mail/DNS setup, deploy the completed compatible code to staging with public research and outside features denied by default. Configure synthetic installation/profile/licence inputs, independent recovery destination and custodians, alert routes and containment controls; obtain credentials through secrets, never source or reports.
+    - After operator resource/mail/DNS setup, deploy the completed compatible code to staging with public research and outside features denied by default. Configure a visibly synthetic public identity/editorial bundle as well as synthetic installation/profile/licence inputs, independent recovery destination and custodians, alert routes and containment controls; obtain credentials through secrets, never source or reports. Verify a copy-only release refreshes the home/About pages and leaves ResearchForce.org wording absent.
     - Establish Access/R2/Graph/edge-control connectivity and record the deployed versions and resource bindings. This is test infrastructure readiness, not approval for production or sole-copy custody; use synthetic data until the protected import rehearsal in 48.12.
     - _Requirements: 1.1, 1.3, 28.17, 36.12, 60.4, 60.5, 60.6_
   - [ ] 48.12 Execute and retain complete staging and team acceptance evidence
@@ -1216,18 +1221,23 @@ Tasks 26/27 code already exist in the inherited baseline; feature additions stil
 - [ ] 49. Final checkpoint - Ensure all tests pass
   - Require the selected R60.4/68.4 gate evidence, compatible upgrade/recovery manifest and current operator inputs in addition to `npm run ci`; no required test is skipped and no public/custodial launch proceeds on unit results alone.
 
-- [ ] 50. Add a local development environment
-  - [ ] 50.1 Add the local runner and synthetic seed data in `scripts/dev.ts` and `tools/dev-seed.ts`
+- [x] 50. Add a local development environment
+  - [x] 50.1 Add the local runner and synthetic seed data in `scripts/dev.ts` and `tools/dev-seed.ts`
     - `npm run dev` applies the D1 migrations to local databases (`wrangler d1 migrations apply --local`), starts `rf-app` with `wrangler dev` in local mode (Miniflare, no remote bindings, storage under `.wrangler/`), and starts the Vite dev server for the Workspace with `/api` proxied to the Worker
     - `tools/dev-seed.ts` fills the local databases and R2 buckets with synthetic Members, Profiles, Projects, and Research_Items of every kind; `npm run dev:reset` deletes the local state and seeds again
     - _Requirements: none (developer tooling)_
-  - [ ] 50.2 Add a development-only sign-in in `apps/app/src/auth/dev.ts`
+    - Acceptance: `docs/acceptance/task-evidence.json` records the local Wrangler/Vite startup, proxy, reset/reseed and shutdown checks plus executed migration/seed/isolation tests. Usage and boundaries are documented in `README.md`; the runner has no local-auth bypass.
+  - [x] 50.2 Add a development-only sign-in in `apps/app/src/auth/dev.ts`
     - A local signer, like the test key server in `packages/testing/src/jwt.ts`, issues Access-shaped assertions for a chosen seeded Member; a small page lists the seeded Members to sign in as, and signing out clears the local session
     - It is enabled only by a variable in `.dev.vars`, which is ignored by git; `rf-app` refuses to start when that variable is set with non-local bindings, and `scripts/deploy.ts` refuses any configuration that sets it; tests check both refusals and that the sign-in routes answer 404 without the variable
     - _Requirements: none (developer tooling)_
-  - [ ] 50.3 Add local stand-ins for remote services
+    - Acceptance: `docs/acceptance/task-evidence.json` records executed local/runtime/deploy/HTTP-file-denial and UI tests plus live HTTP and browser sign-in, protected navigation, sign-out and reauthentication checks. Production builds and guarded Worker dry-run bundles passed; no deployment occurred.
+  - [x] 50.3 Add local stand-ins for remote services
     - Stub the `OPS` service binding and Workers AI with deterministic responses; capture outgoing email in a local outbox page instead of calling Microsoft Graph; document in `README.md` what runs locally and what does not (Cloudflare Access, Workers AI, Microsoft 365)
+    - Integrate stand-ins through the controlled local entrypoint and extend its explicit local-binding checks; retain production and deployment refusal of local-auth configuration.
     - _Requirements: none (developer tooling)_
+
+    - Acceptance: `docs/acceptance/task-evidence.json` records native-worker, queue/capture, retention/paging, authorization and safe rendering tests plus browser invitation/AI/refusal and full-restart persistence checks. `README.md` documents emulation limits and the local outbox. Production builds and guarded dry-run bundles passed; nothing was deployed.
 
 - [x] 51. Rename the stored Disclosure_Level `private` to `not_published`
   - [x] 51.1 Rename the value in the domain, database, and kernel
@@ -1240,17 +1250,17 @@ Tasks 26/27 code already exist in the inherited baseline; feature additions stil
     - _Requirements: 23.1_
 
 - [ ] 52. Build restricted access inside the team
-  - Existing implementation and migration are present; task 57.1 reconciles acceptance evidence and checks these boxes individually. Do not recreate an already applied migration. Later kinds extend these privacy checks in their own tasks.
-  - [ ] 52.1 Add the access data and Permissions
+  - Existing implementation and migration are present; task 57.1 reconciled acceptance individually. See `docs/acceptance/README.md` and the task-evidence ledger; 52.4–52.6 retain their preview/projection/list integration gaps. Do not recreate an already applied migration. Later kinds extend these privacy checks in their own tasks.
+  - [x] 52.1 Add the access data and Permissions
     - The next migration adds `research_items.access_level` (`whole_team` or `restricted`, default `whole_team`), `access_grants (root_id, member_id, granted_by, granted_at)` with primary key (`root_id`, `member_id`), the guard table `_g_access_owner`, and the Revision_Kind `access_change`; add `access_owner` to `GUARD_CODES` in `packages/db/src/batch.ts`
     - Adding `access_change` changes the `revisions_kind_values` check, so the migration rebuilds `revisions` as task 51's migration rebuilt `units`, and recreates the `revisions_immutable` trigger from `0001_raw.sql`, which dropping the table removes; extend the migration test pattern of `apps/app/test/migration-not-published.test.ts` to check the rows, the indexes, and that the trigger still refuses updates
     - Add the Permissions `access.restrict`, `access.widen`, `hold.place`, `hold.lift`, `consent.give`, `consent.propose`, `dual.propose`, `dual.approve`, `dual.decline`, and `attachment.move` to the Role_Permission_Map in `packages/domain/src/permissions.ts` as the design's table assigns them, so that tasks 53 to 55 use them without changing the map again
     - _Requirements: 2.4, 2.5, 47.1_
-  - [ ] 52.2 Implement the `canRead` fragment and retrofit the existing read paths
+  - [x] 52.2 Implement the `canRead` fragment and retrofit the existing read paths
     - `canRead(memberId, isAdmin, rootColumn)` in `packages/db/src/access.ts`, the SQL fragment of the design; join it into `visibleTo` in `apps/app/src/records/submissions.ts`, so that every read path from tasks 17 to 24 that uses the visibility gate applies it: item pages and sections, history and comparisons, Threads and Replies, Cross_Links and Backlinks, Mentions, Review_Request queues and responses, the Projects list counts, and Parties' item lists
     - A request that names an element the Member cannot read answers the shared `not_found` response; Activity_Feed entries already written keep only readable references when read (the feed itself arrives with task 25)
     - _Requirements: 2.8, 47.3, 47.4_
-  - [ ] 52.3 Apply access to Submissions, Mentions, and Review_Requests
+  - [x] 52.3 Apply access to Submissions, Mentions, and Review_Requests
     - Submissions accept `access: { level, members }` for each new Research_Item, with members limited to Pending or Active Members and the statement that the Owner and every Administrator can read Restricted items returned for display
     - Mentions and Review_Requests that name a Member who cannot read the Research_Item are refused with `rule: access_addressee` listing the Members, keeping the input; Specialty Mentions and Specialty or Role addressees reach only holders who Can_Read the Research_Item
     - _Requirements: 47.1, 47.2, 47.5, 47.10_
@@ -1265,11 +1275,11 @@ Tasks 26/27 code already exist in the inherited baseline; feature additions stil
   - [ ] 52.6 Build the access screens in `apps/app/web/src/access/`
     - The access fields in the item form (Whole_Team or Restricted, a Member picker, and the statement of who can always read), the Restricted mark with the Owner and the Access_List on item pages, lists, and Thread headers, the access dialog with the preview and confirmation, and bulk selection on lists
     - _Requirements: 47.2, 47.7, 47.8, 47.11, 47.14_
-  - [ ] 52.7 Write property test for restricted reads
+  - [x] 52.7 Write property test for restricted reads
     - Generate Members, Administrators, Research_Items with access settings, and every element kind under them; check every read endpoint built so far and every per-Member insert
     - **Property 100: Members see nothing of Research_Items they cannot read**
     - **Validates: Requirements 2.8, 47.3, 47.4, 47.5, 47.10**
-  - [ ] 52.8 Write property test for access changes
+  - [x] 52.8 Write property test for access changes
     - **Property 101: Only the Owner widens access, and restricting unpublishes**
     - **Validates: Requirements 47.6, 47.7, 47.8, 47.12, 47.14**
 
@@ -1377,19 +1387,22 @@ Tasks 26/27 code already exist in the inherited baseline; feature additions stil
 
 - [ ] 57. Repair acceptance gaps and add bounded, retry-safe foundations
   - Retain existing code; complete the reopened acceptance work rather than recreating historical migrations or discarding tested behavior.
-  - [ ] 57.1 Reconcile task status and acceptance evidence in `tools/check-specs.ts` and `docs/acceptance/`
+  - [x] 57.1 Reconcile task status and acceptance evidence in `tools/check-specs.ts` and `docs/acceptance/`
     - Inventory every leaf task, requirement criterion, property, source/test path and known correction. Verify existing task 52 code/migration/read-path tests and record evidence before checking its subtasks; a file existing is not acceptance and an applied migration is not rerun.
     - Implement graph/coverage validators for the canonical dependency graph below and milestone gates; preserve IDs and record why a task is reopened. Identify older tests that must be extended for new fields/kinds.
     - _Requirements: 60.1, 60.3, 60.4_
-  - [ ] 57.2 Implement the versioned Resource_Profile in `packages/domain/src/resource-profile.ts` and `tools/certify-profile.ts`
+    - Acceptance: `docs/acceptance/task-evidence.json` records source/test fingerprints and `docs/acceptance/checks/local-tests.json` records the passing synthetic suites; `npm run check:specs` is required by CI. Historical checkboxes remain explicitly unverified.
+  - [x] 57.2 Implement the versioned Resource_Profile in `packages/domain/src/resource-profile.ts` and `tools/certify-profile.ts`
     - Expose and validate Operating_Profile, separate provider versus chosen CPU/call/statement/byte/memory limits, logical text/spans, preview budgets, growth and Abuse_Profile versions; update domain settings and installation examples without enabling a paid service.
     - Include maximum encoded text/span/Revision payloads and a single large section in acceptance fixtures; publish the certified boundary/transfer limits to browser clients and bounded server validators.
     - _Requirements: 4.10, 4.11, 11.10, 14.10, 28.1, 28.3, 28.4, 28.17, 60.7_
-  - [ ] 57.3 Add immutable logical field versions and bounded text/span storage
+    - Acceptance: strict shared contracts, boundary/large-field fixtures, authenticated profile API/client, installation examples and local certification/growth reports are verified in `docs/acceptance/task-evidence.json`. Production runtime/abuse/recovery certification remains 48.3; no plan is activated.
+  - [x] 57.3 Add immutable logical field versions and bounded text/span storage
     - Implement `packages/domain/src/text-fragments.ts`, the next additive DB migration for field_versions/text_fragments/manifests, and shared readers in the records/markdown/kernel adapters. Keep logical IDs, exact text and global offsets; cap fragments and encoded envelopes per Resource_Profile.
     - Move bulky previous values into immutable version references, migrate existing fields without losing revisions, make FTS/logical phrase matching and excerpts cross chunk boundaries, and support bounded public continuation output, history/compare, printers, citations, drafts and backup/export readers.
     - Use version/ref/read leases for retention; retain old readers during migration and prove compatibility before contraction. Task 19.1 integrates the reopened inside-section transport and atomic commit after this foundation.
     - _Requirements: 4.1, 4.4, 4.8, 4.10, 4.11, 11.8, 11.10, 21.1, 21.3, 21.4, 22.1, 22.3, 22.5, 45.13, 60.5_
+    - Acceptance: immutable storage, retained history, resumable legacy migration, scoped/leased readers, logical search and bounded output helpers are verified in `docs/acceptance/task-evidence.json` and documented in `docs/storage/logical-fields.md`. Task 19.1 retains the staged transport/atomic-save cutover; 57.6 retains end-to-end property ownership.
   - [ ] 57.4 Implement actor-scoped mutation idempotency and uncertain-result reconciliation
     - Add `idempotency_results` and logical external-effect operation IDs with request digests and recorded results in the same GuardedBatch as every mutation; replay identical requests, conflict changed bodies, protect status reads from other actors and retain content-free result tombstones.
     - Extend `ApiClient`, persistence and every mutating API route, including uploads, stages, membership and mail queuing, to store operation keys before sending, reconcile a lost response through `GET /operations/{key}`, and distinguish refused/committed/pending/unknown without duplicating results or external actions.
@@ -1611,10 +1624,11 @@ Tasks 26/27 code already exist in the inherited baseline; feature additions stil
     - **Validates: Requirements 59.1, 59.2, 59.3, 59.4, 59.5**
 
 - [ ] 67. Implement compatibility, independent operations and retention assurance
-  - [ ] 67.1 Implement compatible release manifests and upgrade/recovery tooling
+  - [x] 67.1 Implement compatible release manifests and upgrade/recovery tooling
     - Add versioned release/schema/backup compatibility declarations, expand/contract scripts, bounded backfill/checkpoints and rollback/forward-recovery checks; reject incompatible Worker/schema rollout combinations and unsupported backup readers.
     - Test current and two prior released schemas where available, seeded/bootstrap identity, stored field versions and indexes/triggers through upgrades, and restore rehearsal before any destructive contraction. Record the deployed versions and accepted recovery window.
     - _Requirements: 36.16, 60.3, 60.5_
+    - Acceptance: compatibility/candidate manifests, preflight/recovery checks, local expand/backfill/contract scripts and seven seeded SQLite-copy upgrade rehearsals pass; source/test fingerprints and executed evidence are in `docs/acceptance/task-evidence.json`. Production deployment, authenticated backup readers and independent restore certification remain their downstream tasks.
   - [ ] 67.2 Implement independent health, recovery-age, removal and spend alerts
     - Prepare provider-native/independent external checks and operator-controlled notification delivery without rf-core or Graph queue dependence, plus credential-loss, identity outage, freeze/quota/failed-migration and containment runbooks.
     - Keep payloads free of research text, bearer links and recovery secrets, certify actual endpoint/control availability and document the separate trusted credential custody. Setup remains an explicit operator action.
@@ -1855,306 +1869,425 @@ This is the canonical scheduling and gate manifest. Phase names match the milest
     "30.10",
     "30.12",
     "51.1",
-    "51.2"
+    "51.2",
+    "52.1",
+    "52.2",
+    "52.3",
+    "52.7",
+    "52.8",
+    "57.1",
+    "50.1",
+    "50.2",
+    "50.3",
+    "57.2",
+    "67.1",
+    "57.3"
   ],
   "phases": {
     "repair": {
       "firstWave": 0,
-      "lastWave": 24
+      "lastWave": 9
     },
     "collaboration": {
-      "firstWave": 25,
-      "lastWave": 55
+      "firstWave": 10,
+      "lastWave": 40
     },
     "privacy": {
-      "firstWave": 56,
-      "lastWave": 77
+      "firstWave": 41,
+      "lastWave": 64
     },
     "imports_and_log": {
-      "firstWave": 78,
-      "lastWave": 100
+      "firstWave": 65,
+      "lastWave": 88
     },
     "publication": {
-      "firstWave": 101,
-      "lastWave": 118
+      "firstWave": 89,
+      "lastWave": 106
     },
     "outside_and_ai": {
-      "firstWave": 119,
-      "lastWave": 166
+      "firstWave": 107,
+      "lastWave": 154
     },
     "recovery": {
-      "firstWave": 167,
-      "lastWave": 184
+      "firstWave": 155,
+      "lastWave": 172
     },
     "release_tooling": {
-      "firstWave": 185,
-      "lastWave": 214
+      "firstWave": 173,
+      "lastWave": 202
     },
     "staging_and_acceptance": {
-      "firstWave": 215,
-      "lastWave": 222
+      "firstWave": 203,
+      "lastWave": 210
     },
     "production_activation": {
-      "firstWave": 223,
-      "lastWave": 223
+      "firstWave": 211,
+      "lastWave": 211
     }
   },
   "waves": [
-    {"id": 0, "phase": "repair", "dependsOn": [], "tasks": ["57.1"]},
-    {"id": 1, "phase": "repair", "dependsOn": [0], "tasks": ["50.1"]},
-    {"id": 2, "phase": "repair", "dependsOn": [1], "tasks": ["50.2"]},
-    {"id": 3, "phase": "repair", "dependsOn": [2], "tasks": ["50.3"]},
-    {"id": 4, "phase": "repair", "dependsOn": [3], "tasks": ["57.2"]},
-    {"id": 5, "phase": "repair", "dependsOn": [4], "tasks": ["67.1"]},
-    {"id": 6, "phase": "repair", "dependsOn": [5], "tasks": ["57.3"]},
-    {"id": 7, "phase": "repair", "dependsOn": [6], "tasks": ["19.1"]},
-    {"id": 8, "phase": "repair", "dependsOn": [7], "tasks": ["57.4"]},
-    {"id": 9, "phase": "repair", "dependsOn": [8], "tasks": ["57.5"]},
-    {"id": 10, "phase": "repair", "dependsOn": [9], "tasks": ["30.6"]},
-    {"id": 11, "phase": "repair", "dependsOn": [10], "tasks": ["30.7"]},
-    {"id": 12, "phase": "repair", "dependsOn": [11], "tasks": ["30.8"]},
-    {"id": 13, "phase": "repair", "dependsOn": [12], "tasks": ["30.11"]},
-    {"id": 14, "phase": "repair", "dependsOn": [13], "tasks": ["57.6"]},
-    {"id": 15, "phase": "repair", "dependsOn": [14], "tasks": ["57.7"]},
-    {"id": 16, "phase": "repair", "dependsOn": [15], "tasks": ["57.8"]},
-    {"id": 17, "phase": "repair", "dependsOn": [16], "tasks": ["52.1"]},
-    {"id": 18, "phase": "repair", "dependsOn": [17], "tasks": ["52.2"]},
-    {"id": 19, "phase": "repair", "dependsOn": [18], "tasks": ["52.3"]},
-    {"id": 20, "phase": "repair", "dependsOn": [19], "tasks": ["52.4"]},
-    {"id": 21, "phase": "repair", "dependsOn": [20], "tasks": ["52.5"]},
-    {"id": 22, "phase": "repair", "dependsOn": [21], "tasks": ["52.6"]},
-    {"id": 23, "phase": "repair", "dependsOn": [22], "tasks": ["52.7"]},
-    {"id": 24, "phase": "repair", "dependsOn": [23], "tasks": ["52.8"]},
-    {"id": 25, "phase": "collaboration", "dependsOn": [24], "tasks": ["55.1"]},
-    {"id": 26, "phase": "collaboration", "dependsOn": [25], "tasks": ["55.2"]},
-    {"id": 27, "phase": "collaboration", "dependsOn": [26], "tasks": ["55.3"]},
-    {"id": 28, "phase": "collaboration", "dependsOn": [27], "tasks": ["62.1"]},
-    {"id": 29, "phase": "collaboration", "dependsOn": [28], "tasks": ["61.1"]},
-    {"id": 30, "phase": "collaboration", "dependsOn": [29], "tasks": ["66.1"]},
-    {"id": 31, "phase": "collaboration", "dependsOn": [30], "tasks": ["60.1"]},
-    {"id": 32, "phase": "collaboration", "dependsOn": [31], "tasks": ["60.2"]},
-    {"id": 33, "phase": "collaboration", "dependsOn": [32], "tasks": ["60.3"]},
-    {"id": 34, "phase": "collaboration", "dependsOn": [33], "tasks": ["60.4"]},
-    {"id": 35, "phase": "collaboration", "dependsOn": [34], "tasks": ["60.5"]},
-    {"id": 36, "phase": "collaboration", "dependsOn": [35], "tasks": ["60.6"]},
-    {"id": 37, "phase": "collaboration", "dependsOn": [36], "tasks": ["62.2"]},
-    {"id": 38, "phase": "collaboration", "dependsOn": [37], "tasks": ["62.3"]},
-    {"id": 39, "phase": "collaboration", "dependsOn": [38], "tasks": ["62.4"]},
-    {"id": 40, "phase": "collaboration", "dependsOn": [39], "tasks": ["62.5"]},
-    {"id": 41, "phase": "collaboration", "dependsOn": [40], "tasks": ["62.6"]},
-    {"id": 42, "phase": "collaboration", "dependsOn": [41], "tasks": ["61.2"]},
-    {"id": 43, "phase": "collaboration", "dependsOn": [42], "tasks": ["61.3"]},
-    {"id": 44, "phase": "collaboration", "dependsOn": [43], "tasks": ["63.1"]},
-    {"id": 45, "phase": "collaboration", "dependsOn": [44], "tasks": ["63.2"]},
-    {"id": 46, "phase": "collaboration", "dependsOn": [45], "tasks": ["63.3"]},
-    {"id": 47, "phase": "collaboration", "dependsOn": [46], "tasks": ["63.4"]},
-    {"id": 48, "phase": "collaboration", "dependsOn": [47], "tasks": ["64.1"]},
-    {"id": 49, "phase": "collaboration", "dependsOn": [48], "tasks": ["64.2"]},
-    {"id": 50, "phase": "collaboration", "dependsOn": [49], "tasks": ["64.3"]},
-    {"id": 51, "phase": "collaboration", "dependsOn": [50], "tasks": ["64.4"]},
-    {"id": 52, "phase": "collaboration", "dependsOn": [51], "tasks": ["64.5"]},
-    {"id": 53, "phase": "collaboration", "dependsOn": [52], "tasks": ["65.1"]},
-    {"id": 54, "phase": "collaboration", "dependsOn": [53], "tasks": ["65.2"]},
-    {"id": 55, "phase": "collaboration", "dependsOn": [54], "tasks": ["65.3"]},
-    {"id": 56, "phase": "privacy", "dependsOn": [55], "tasks": ["54.1"]},
-    {"id": 57, "phase": "privacy", "dependsOn": [56], "tasks": ["68.1"]},
-    {"id": 58, "phase": "privacy", "dependsOn": [57], "tasks": ["31.1"]},
-    {"id": 59, "phase": "privacy", "dependsOn": [58], "tasks": ["54.2"]},
-    {"id": 60, "phase": "privacy", "dependsOn": [59], "tasks": ["31.2"]},
-    {"id": 61, "phase": "privacy", "dependsOn": [60], "tasks": ["31.3"]},
-    {"id": 62, "phase": "privacy", "dependsOn": [61], "tasks": ["54.3"]},
-    {"id": 63, "phase": "privacy", "dependsOn": [62], "tasks": ["54.4"]},
-    {"id": 64, "phase": "privacy", "dependsOn": [63], "tasks": ["54.5"]},
-    {"id": 65, "phase": "privacy", "dependsOn": [64], "tasks": ["54.6"]},
-    {"id": 66, "phase": "privacy", "dependsOn": [65], "tasks": ["54.7"]},
-    {"id": 67, "phase": "privacy", "dependsOn": [66], "tasks": ["54.8"]},
-    {"id": 68, "phase": "privacy", "dependsOn": [67], "tasks": ["54.9"]},
-    {"id": 69, "phase": "privacy", "dependsOn": [68], "tasks": ["31.4"]},
-    {"id": 70, "phase": "privacy", "dependsOn": [69], "tasks": ["31.5"]},
-    {"id": 71, "phase": "privacy", "dependsOn": [70], "tasks": ["31.6"]},
-    {"id": 72, "phase": "privacy", "dependsOn": [71], "tasks": ["31.7"]},
-    {"id": 73, "phase": "privacy", "dependsOn": [72], "tasks": ["68.2"]},
-    {"id": 74, "phase": "privacy", "dependsOn": [73], "tasks": ["68.3"]},
-    {"id": 75, "phase": "privacy", "dependsOn": [74], "tasks": ["53.1"]},
-    {"id": 76, "phase": "privacy", "dependsOn": [75], "tasks": ["53.2"]},
-    {"id": 77, "phase": "privacy", "dependsOn": [76], "tasks": ["53.3"]},
-    {"id": 78, "phase": "imports_and_log", "dependsOn": [77], "tasks": ["36.1"]},
-    {"id": 79, "phase": "imports_and_log", "dependsOn": [78], "tasks": ["36.2"]},
-    {"id": 80, "phase": "imports_and_log", "dependsOn": [79], "tasks": ["36.3"]},
-    {"id": 81, "phase": "imports_and_log", "dependsOn": [80], "tasks": ["36.4"]},
-    {"id": 82, "phase": "imports_and_log", "dependsOn": [81], "tasks": ["37.1"]},
-    {"id": 83, "phase": "imports_and_log", "dependsOn": [82], "tasks": ["37.2"]},
-    {"id": 84, "phase": "imports_and_log", "dependsOn": [83], "tasks": ["37.3"]},
-    {"id": 85, "phase": "imports_and_log", "dependsOn": [84], "tasks": ["37.4"]},
-    {"id": 86, "phase": "imports_and_log", "dependsOn": [85], "tasks": ["37.5"]},
-    {"id": 87, "phase": "imports_and_log", "dependsOn": [86], "tasks": ["37.6"]},
-    {"id": 88, "phase": "imports_and_log", "dependsOn": [87], "tasks": ["37.7"]},
-    {"id": 89, "phase": "imports_and_log", "dependsOn": [88], "tasks": ["37.8"]},
-    {"id": 90, "phase": "imports_and_log", "dependsOn": [89], "tasks": ["37.9"]},
-    {"id": 91, "phase": "imports_and_log", "dependsOn": [90], "tasks": ["37.10"]},
-    {"id": 92, "phase": "imports_and_log", "dependsOn": [91], "tasks": ["37.11"]},
-    {"id": 93, "phase": "imports_and_log", "dependsOn": [92], "tasks": ["40.1"]},
-    {"id": 94, "phase": "imports_and_log", "dependsOn": [93], "tasks": ["40.2"]},
-    {"id": 95, "phase": "imports_and_log", "dependsOn": [94], "tasks": ["40.3"]},
-    {"id": 96, "phase": "imports_and_log", "dependsOn": [95], "tasks": ["40.4"]},
-    {"id": 97, "phase": "imports_and_log", "dependsOn": [96], "tasks": ["40.5"]},
-    {"id": 98, "phase": "imports_and_log", "dependsOn": [97], "tasks": ["41.1"]},
-    {"id": 99, "phase": "imports_and_log", "dependsOn": [98], "tasks": ["41.2"]},
-    {"id": 100, "phase": "imports_and_log", "dependsOn": [99], "tasks": ["41.3"]},
-    {"id": 101, "phase": "publication", "dependsOn": [100], "tasks": ["59.1"]},
-    {"id": 102, "phase": "publication", "dependsOn": [101], "tasks": ["59.2"]},
-    {"id": 103, "phase": "publication", "dependsOn": [102], "tasks": ["59.3"]},
-    {"id": 104, "phase": "publication", "dependsOn": [103], "tasks": ["32.1"]},
-    {"id": 105, "phase": "publication", "dependsOn": [104], "tasks": ["32.2"]},
-    {"id": 106, "phase": "publication", "dependsOn": [105], "tasks": ["32.3"]},
-    {"id": 107, "phase": "publication", "dependsOn": [106], "tasks": ["32.4"]},
-    {"id": 108, "phase": "publication", "dependsOn": [107], "tasks": ["32.5"]},
-    {"id": 109, "phase": "publication", "dependsOn": [108], "tasks": ["32.6"]},
-    {"id": 110, "phase": "publication", "dependsOn": [109], "tasks": ["32.7"]},
-    {"id": 111, "phase": "publication", "dependsOn": [110], "tasks": ["55.4"]},
-    {"id": 112, "phase": "publication", "dependsOn": [111], "tasks": ["55.5"]},
-    {"id": 113, "phase": "publication", "dependsOn": [112], "tasks": ["66.2"]},
-    {"id": 114, "phase": "publication", "dependsOn": [113], "tasks": ["66.3"]},
-    {"id": 115, "phase": "publication", "dependsOn": [114], "tasks": ["66.4"]},
-    {"id": 116, "phase": "publication", "dependsOn": [115], "tasks": ["38.3"]},
-    {"id": 117, "phase": "publication", "dependsOn": [116], "tasks": ["38.1"]},
-    {"id": 118, "phase": "publication", "dependsOn": [117], "tasks": ["38.2"]},
-    {"id": 119, "phase": "outside_and_ai", "dependsOn": [118], "tasks": ["34.1"]},
-    {"id": 120, "phase": "outside_and_ai", "dependsOn": [119], "tasks": ["34.2"]},
-    {"id": 121, "phase": "outside_and_ai", "dependsOn": [120], "tasks": ["34.3"]},
-    {"id": 122, "phase": "outside_and_ai", "dependsOn": [121], "tasks": ["34.4"]},
-    {"id": 123, "phase": "outside_and_ai", "dependsOn": [122], "tasks": ["34.5"]},
-    {"id": 124, "phase": "outside_and_ai", "dependsOn": [123], "tasks": ["34.6"]},
-    {"id": 125, "phase": "outside_and_ai", "dependsOn": [124], "tasks": ["35.1"]},
-    {"id": 126, "phase": "outside_and_ai", "dependsOn": [125], "tasks": ["35.2"]},
-    {"id": 127, "phase": "outside_and_ai", "dependsOn": [126], "tasks": ["35.3"]},
-    {"id": 128, "phase": "outside_and_ai", "dependsOn": [127], "tasks": ["35.4"]},
-    {"id": 129, "phase": "outside_and_ai", "dependsOn": [128], "tasks": ["35.5"]},
-    {"id": 130, "phase": "outside_and_ai", "dependsOn": [129], "tasks": ["35.6"]},
-    {"id": 131, "phase": "outside_and_ai", "dependsOn": [130], "tasks": ["56.1"]},
-    {"id": 132, "phase": "outside_and_ai", "dependsOn": [131], "tasks": ["56.2"]},
-    {"id": 133, "phase": "outside_and_ai", "dependsOn": [132], "tasks": ["56.3"]},
-    {"id": 134, "phase": "outside_and_ai", "dependsOn": [133], "tasks": ["56.4"]},
-    {"id": 135, "phase": "outside_and_ai", "dependsOn": [134], "tasks": ["56.5"]},
-    {"id": 136, "phase": "outside_and_ai", "dependsOn": [135], "tasks": ["56.6"]},
-    {"id": 137, "phase": "outside_and_ai", "dependsOn": [136], "tasks": ["56.7"]},
-    {"id": 138, "phase": "outside_and_ai", "dependsOn": [137], "tasks": ["56.8"]},
-    {"id": 139, "phase": "outside_and_ai", "dependsOn": [138], "tasks": ["56.9"]},
-    {"id": 140, "phase": "outside_and_ai", "dependsOn": [139], "tasks": ["56.10"]},
-    {"id": 141, "phase": "outside_and_ai", "dependsOn": [140], "tasks": ["35.7"]},
-    {"id": 142, "phase": "outside_and_ai", "dependsOn": [141], "tasks": ["35.8"]},
-    {"id": 143, "phase": "outside_and_ai", "dependsOn": [142], "tasks": ["35.9"]},
-    {"id": 144, "phase": "outside_and_ai", "dependsOn": [143], "tasks": ["35.10"]},
-    {"id": 145, "phase": "outside_and_ai", "dependsOn": [144], "tasks": ["35.11"]},
-    {"id": 146, "phase": "outside_and_ai", "dependsOn": [145], "tasks": ["35.12"]},
-    {"id": 147, "phase": "outside_and_ai", "dependsOn": [146], "tasks": ["35.13"]},
-    {"id": 148, "phase": "outside_and_ai", "dependsOn": [147], "tasks": ["42.1"]},
-    {"id": 149, "phase": "outside_and_ai", "dependsOn": [148], "tasks": ["42.2"]},
-    {"id": 150, "phase": "outside_and_ai", "dependsOn": [149], "tasks": ["42.3"]},
-    {"id": 151, "phase": "outside_and_ai", "dependsOn": [150], "tasks": ["42.4"]},
-    {"id": 152, "phase": "outside_and_ai", "dependsOn": [151], "tasks": ["42.5"]},
-    {"id": 153, "phase": "outside_and_ai", "dependsOn": [152], "tasks": ["42.6"]},
-    {"id": 154, "phase": "outside_and_ai", "dependsOn": [153], "tasks": ["42.7"]},
-    {"id": 155, "phase": "outside_and_ai", "dependsOn": [154], "tasks": ["31.8"]},
-    {"id": 156, "phase": "outside_and_ai", "dependsOn": [155], "tasks": ["31.9"]},
-    {"id": 157, "phase": "outside_and_ai", "dependsOn": [156], "tasks": ["31.10"]},
-    {"id": 158, "phase": "outside_and_ai", "dependsOn": [157], "tasks": ["31.11"]},
-    {"id": 159, "phase": "outside_and_ai", "dependsOn": [158], "tasks": ["31.12"]},
-    {"id": 160, "phase": "outside_and_ai", "dependsOn": [159], "tasks": ["31.13"]},
-    {"id": 161, "phase": "outside_and_ai", "dependsOn": [160], "tasks": ["31.14"]},
-    {"id": 162, "phase": "outside_and_ai", "dependsOn": [161], "tasks": ["31.15"]},
-    {"id": 163, "phase": "outside_and_ai", "dependsOn": [162], "tasks": ["41.4"]},
-    {"id": 164, "phase": "outside_and_ai", "dependsOn": [163], "tasks": ["41.5"]},
-    {"id": 165, "phase": "outside_and_ai", "dependsOn": [164], "tasks": ["41.6"]},
-    {"id": 166, "phase": "outside_and_ai", "dependsOn": [165], "tasks": ["41.7"]},
-    {"id": 167, "phase": "recovery", "dependsOn": [166], "tasks": ["58.1"]},
-    {"id": 168, "phase": "recovery", "dependsOn": [167], "tasks": ["58.3"]},
-    {"id": 169, "phase": "recovery", "dependsOn": [168], "tasks": ["38.4"]},
-    {"id": 170, "phase": "recovery", "dependsOn": [169], "tasks": ["58.2"]},
-    {"id": 171, "phase": "recovery", "dependsOn": [170], "tasks": ["58.4"]},
-    {"id": 172, "phase": "recovery", "dependsOn": [171], "tasks": ["38.5"]},
-    {"id": 173, "phase": "recovery", "dependsOn": [172], "tasks": ["38.6"]},
-    {"id": 174, "phase": "recovery", "dependsOn": [173], "tasks": ["38.7"]},
-    {"id": 175, "phase": "recovery", "dependsOn": [174], "tasks": ["38.8"]},
-    {"id": 176, "phase": "recovery", "dependsOn": [175], "tasks": ["38.9"]},
-    {"id": 177, "phase": "recovery", "dependsOn": [176], "tasks": ["38.10"]},
-    {"id": 178, "phase": "recovery", "dependsOn": [177], "tasks": ["38.11"]},
-    {"id": 179, "phase": "recovery", "dependsOn": [178], "tasks": ["38.12"]},
-    {"id": 180, "phase": "recovery", "dependsOn": [179], "tasks": ["38.13"]},
-    {"id": 181, "phase": "recovery", "dependsOn": [180], "tasks": ["58.6"]},
-    {"id": 182, "phase": "recovery", "dependsOn": [181], "tasks": ["58.7"]},
-    {"id": 183, "phase": "recovery", "dependsOn": [182], "tasks": ["67.2"]},
-    {"id": 184, "phase": "recovery", "dependsOn": [183], "tasks": ["67.3"]},
-    {"id": 185, "phase": "release_tooling", "dependsOn": [184], "tasks": ["43.1"]},
-    {"id": 186, "phase": "release_tooling", "dependsOn": [185], "tasks": ["43.2"]},
-    {"id": 187, "phase": "release_tooling", "dependsOn": [186], "tasks": ["43.3"]},
-    {"id": 188, "phase": "release_tooling", "dependsOn": [187], "tasks": ["43.4"]},
-    {"id": 189, "phase": "release_tooling", "dependsOn": [188], "tasks": ["43.5"]},
-    {"id": 190, "phase": "release_tooling", "dependsOn": [189], "tasks": ["43.6"]},
-    {"id": 191, "phase": "release_tooling", "dependsOn": [190], "tasks": ["43.7"]},
-    {"id": 192, "phase": "release_tooling", "dependsOn": [191], "tasks": ["43.8"]},
-    {"id": 193, "phase": "release_tooling", "dependsOn": [192], "tasks": ["43.9"]},
-    {"id": 194, "phase": "release_tooling", "dependsOn": [193], "tasks": ["43.10"]},
-    {"id": 195, "phase": "release_tooling", "dependsOn": [194], "tasks": ["43.11"]},
-    {"id": 196, "phase": "release_tooling", "dependsOn": [195], "tasks": ["43.12"]},
-    {"id": 197, "phase": "release_tooling", "dependsOn": [196], "tasks": ["44.1"]},
-    {"id": 198, "phase": "release_tooling", "dependsOn": [197], "tasks": ["44.2"]},
-    {"id": 199, "phase": "release_tooling", "dependsOn": [198], "tasks": ["44.3"]},
-    {"id": 200, "phase": "release_tooling", "dependsOn": [199], "tasks": ["45.1"]},
-    {"id": 201, "phase": "release_tooling", "dependsOn": [200], "tasks": ["45.2"]},
-    {"id": 202, "phase": "release_tooling", "dependsOn": [201], "tasks": ["45.3"]},
-    {"id": 203, "phase": "release_tooling", "dependsOn": [202], "tasks": ["45.4"]},
-    {"id": 204, "phase": "release_tooling", "dependsOn": [203], "tasks": ["46.1"]},
-    {"id": 205, "phase": "release_tooling", "dependsOn": [204], "tasks": ["59.5"]},
-    {"id": 206, "phase": "release_tooling", "dependsOn": [205], "tasks": ["59.6"]},
-    {"id": 207, "phase": "release_tooling", "dependsOn": [206], "tasks": ["48.1"]},
-    {"id": 208, "phase": "release_tooling", "dependsOn": [207], "tasks": ["48.2"]},
-    {"id": 209, "phase": "release_tooling", "dependsOn": [208], "tasks": ["48.3"]},
-    {"id": 210, "phase": "release_tooling", "dependsOn": [209], "tasks": ["48.5"]},
-    {"id": 211, "phase": "release_tooling", "dependsOn": [210], "tasks": ["48.10"]},
-    {"id": 212, "phase": "release_tooling", "dependsOn": [211], "tasks": ["68.4"]},
-    {"id": 213, "phase": "release_tooling", "dependsOn": [212], "tasks": ["67.4"]},
-    {"id": 214, "phase": "release_tooling", "dependsOn": [213], "tasks": ["48.4"]},
-    {"id": 215, "phase": "staging_and_acceptance", "dependsOn": [214], "tasks": ["48.6"]},
-    {"id": 216, "phase": "staging_and_acceptance", "dependsOn": [215], "tasks": ["48.7"]},
-    {"id": 217, "phase": "staging_and_acceptance", "dependsOn": [216], "tasks": ["48.8"]},
-    {"id": 218, "phase": "staging_and_acceptance", "dependsOn": [217], "tasks": ["48.11"]},
-    {"id": 219, "phase": "staging_and_acceptance", "dependsOn": [218], "tasks": ["58.5"]},
-    {"id": 220, "phase": "staging_and_acceptance", "dependsOn": [219], "tasks": ["59.4"]},
-    {"id": 221, "phase": "staging_and_acceptance", "dependsOn": [220], "tasks": ["46.2"]},
-    {"id": 222, "phase": "staging_and_acceptance", "dependsOn": [221], "tasks": ["48.12"]},
-    {"id": 223, "phase": "production_activation", "dependsOn": [222], "tasks": ["48.9"]}
+    {"id": 0, "phase": "repair", "dependsOn": [], "tasks": ["19.1"]},
+    {"id": 1, "phase": "repair", "dependsOn": [0], "tasks": ["57.4"]},
+    {"id": 2, "phase": "repair", "dependsOn": [1], "tasks": ["57.5"]},
+    {"id": 3, "phase": "repair", "dependsOn": [2], "tasks": ["30.6"]},
+    {"id": 4, "phase": "repair", "dependsOn": [3], "tasks": ["30.7"]},
+    {"id": 5, "phase": "repair", "dependsOn": [4], "tasks": ["30.8"]},
+    {"id": 6, "phase": "repair", "dependsOn": [5], "tasks": ["30.11"]},
+    {"id": 7, "phase": "repair", "dependsOn": [6], "tasks": ["57.6"]},
+    {"id": 8, "phase": "repair", "dependsOn": [7], "tasks": ["57.7"]},
+    {"id": 9, "phase": "repair", "dependsOn": [8], "tasks": ["57.8"]},
+    {"id": 10, "phase": "collaboration", "dependsOn": [9], "tasks": ["55.1"]},
+    {"id": 11, "phase": "collaboration", "dependsOn": [10], "tasks": ["55.2"]},
+    {"id": 12, "phase": "collaboration", "dependsOn": [11], "tasks": ["55.3"]},
+    {"id": 13, "phase": "collaboration", "dependsOn": [12], "tasks": ["62.1"]},
+    {"id": 14, "phase": "collaboration", "dependsOn": [13], "tasks": ["61.1"]},
+    {"id": 15, "phase": "collaboration", "dependsOn": [14], "tasks": ["66.1"]},
+    {"id": 16, "phase": "collaboration", "dependsOn": [15], "tasks": ["60.1"]},
+    {"id": 17, "phase": "collaboration", "dependsOn": [16], "tasks": ["60.2"]},
+    {"id": 18, "phase": "collaboration", "dependsOn": [17], "tasks": ["60.3"]},
+    {"id": 19, "phase": "collaboration", "dependsOn": [18], "tasks": ["60.4"]},
+    {"id": 20, "phase": "collaboration", "dependsOn": [19], "tasks": ["60.5"]},
+    {"id": 21, "phase": "collaboration", "dependsOn": [20], "tasks": ["60.6"]},
+    {"id": 22, "phase": "collaboration", "dependsOn": [21], "tasks": ["62.2"]},
+    {"id": 23, "phase": "collaboration", "dependsOn": [22], "tasks": ["62.3"]},
+    {"id": 24, "phase": "collaboration", "dependsOn": [23], "tasks": ["62.4"]},
+    {"id": 25, "phase": "collaboration", "dependsOn": [24], "tasks": ["62.5"]},
+    {"id": 26, "phase": "collaboration", "dependsOn": [25], "tasks": ["62.6"]},
+    {"id": 27, "phase": "collaboration", "dependsOn": [26], "tasks": ["61.2"]},
+    {"id": 28, "phase": "collaboration", "dependsOn": [27], "tasks": ["61.3"]},
+    {"id": 29, "phase": "collaboration", "dependsOn": [28], "tasks": ["63.1"]},
+    {"id": 30, "phase": "collaboration", "dependsOn": [29], "tasks": ["63.2"]},
+    {"id": 31, "phase": "collaboration", "dependsOn": [30], "tasks": ["63.3"]},
+    {"id": 32, "phase": "collaboration", "dependsOn": [31], "tasks": ["63.4"]},
+    {"id": 33, "phase": "collaboration", "dependsOn": [32], "tasks": ["64.1"]},
+    {"id": 34, "phase": "collaboration", "dependsOn": [33], "tasks": ["64.2"]},
+    {"id": 35, "phase": "collaboration", "dependsOn": [34], "tasks": ["64.3"]},
+    {"id": 36, "phase": "collaboration", "dependsOn": [35], "tasks": ["64.4"]},
+    {"id": 37, "phase": "collaboration", "dependsOn": [36], "tasks": ["64.5"]},
+    {"id": 38, "phase": "collaboration", "dependsOn": [37], "tasks": ["65.1"]},
+    {"id": 39, "phase": "collaboration", "dependsOn": [38], "tasks": ["65.2"]},
+    {"id": 40, "phase": "collaboration", "dependsOn": [39], "tasks": ["65.3"]},
+    {"id": 41, "phase": "privacy", "dependsOn": [40], "tasks": ["54.1"]},
+    {"id": 42, "phase": "privacy", "dependsOn": [41], "tasks": ["68.1"]},
+    {"id": 43, "phase": "privacy", "dependsOn": [42], "tasks": ["31.1"]},
+    {"id": 44, "phase": "privacy", "dependsOn": [43], "tasks": ["54.2"]},
+    {"id": 45, "phase": "privacy", "dependsOn": [44], "tasks": ["52.5"]},
+    {"id": 46, "phase": "privacy", "dependsOn": [45], "tasks": ["31.2"]},
+    {"id": 47, "phase": "privacy", "dependsOn": [46], "tasks": ["31.3"]},
+    {"id": 48, "phase": "privacy", "dependsOn": [47], "tasks": ["54.3"]},
+    {"id": 49, "phase": "privacy", "dependsOn": [48], "tasks": ["54.4"]},
+    {"id": 50, "phase": "privacy", "dependsOn": [49], "tasks": ["54.5"]},
+    {"id": 51, "phase": "privacy", "dependsOn": [50], "tasks": ["52.4"]},
+    {"id": 52, "phase": "privacy", "dependsOn": [51], "tasks": ["54.6"]},
+    {"id": 53, "phase": "privacy", "dependsOn": [52], "tasks": ["54.7"]},
+    {"id": 54, "phase": "privacy", "dependsOn": [53], "tasks": ["54.8"]},
+    {"id": 55, "phase": "privacy", "dependsOn": [54], "tasks": ["54.9"]},
+    {"id": 56, "phase": "privacy", "dependsOn": [55], "tasks": ["31.4"]},
+    {"id": 57, "phase": "privacy", "dependsOn": [56], "tasks": ["31.5"]},
+    {"id": 58, "phase": "privacy", "dependsOn": [57], "tasks": ["31.6"]},
+    {"id": 59, "phase": "privacy", "dependsOn": [58], "tasks": ["31.7"]},
+    {"id": 60, "phase": "privacy", "dependsOn": [59], "tasks": ["68.2"]},
+    {"id": 61, "phase": "privacy", "dependsOn": [60], "tasks": ["68.3"]},
+    {"id": 62, "phase": "privacy", "dependsOn": [61], "tasks": ["53.1"]},
+    {"id": 63, "phase": "privacy", "dependsOn": [62], "tasks": ["53.2"]},
+    {"id": 64, "phase": "privacy", "dependsOn": [63], "tasks": ["53.3"]},
+    {"id": 65, "phase": "imports_and_log", "dependsOn": [64], "tasks": ["36.1"]},
+    {"id": 66, "phase": "imports_and_log", "dependsOn": [65], "tasks": ["36.2"]},
+    {"id": 67, "phase": "imports_and_log", "dependsOn": [66], "tasks": ["36.3"]},
+    {"id": 68, "phase": "imports_and_log", "dependsOn": [67], "tasks": ["36.4"]},
+    {"id": 69, "phase": "imports_and_log", "dependsOn": [68], "tasks": ["37.1"]},
+    {"id": 70, "phase": "imports_and_log", "dependsOn": [69], "tasks": ["37.2"]},
+    {"id": 71, "phase": "imports_and_log", "dependsOn": [70], "tasks": ["37.3"]},
+    {"id": 72, "phase": "imports_and_log", "dependsOn": [71], "tasks": ["37.4"]},
+    {"id": 73, "phase": "imports_and_log", "dependsOn": [72], "tasks": ["37.5"]},
+    {"id": 74, "phase": "imports_and_log", "dependsOn": [73], "tasks": ["37.6"]},
+    {"id": 75, "phase": "imports_and_log", "dependsOn": [74], "tasks": ["37.7"]},
+    {"id": 76, "phase": "imports_and_log", "dependsOn": [75], "tasks": ["37.8"]},
+    {"id": 77, "phase": "imports_and_log", "dependsOn": [76], "tasks": ["37.9"]},
+    {"id": 78, "phase": "imports_and_log", "dependsOn": [77], "tasks": ["37.10"]},
+    {"id": 79, "phase": "imports_and_log", "dependsOn": [78], "tasks": ["37.11"]},
+    {"id": 80, "phase": "imports_and_log", "dependsOn": [79], "tasks": ["40.1"]},
+    {"id": 81, "phase": "imports_and_log", "dependsOn": [80], "tasks": ["40.2"]},
+    {"id": 82, "phase": "imports_and_log", "dependsOn": [81], "tasks": ["40.3"]},
+    {"id": 83, "phase": "imports_and_log", "dependsOn": [82], "tasks": ["52.6"]},
+    {"id": 84, "phase": "imports_and_log", "dependsOn": [83], "tasks": ["40.4"]},
+    {"id": 85, "phase": "imports_and_log", "dependsOn": [84], "tasks": ["40.5"]},
+    {"id": 86, "phase": "imports_and_log", "dependsOn": [85], "tasks": ["41.1"]},
+    {"id": 87, "phase": "imports_and_log", "dependsOn": [86], "tasks": ["41.2"]},
+    {"id": 88, "phase": "imports_and_log", "dependsOn": [87], "tasks": ["41.3"]},
+    {"id": 89, "phase": "publication", "dependsOn": [88], "tasks": ["59.1"]},
+    {"id": 90, "phase": "publication", "dependsOn": [89], "tasks": ["59.2"]},
+    {"id": 91, "phase": "publication", "dependsOn": [90], "tasks": ["59.3"]},
+    {"id": 92, "phase": "publication", "dependsOn": [91], "tasks": ["32.1"]},
+    {"id": 93, "phase": "publication", "dependsOn": [92], "tasks": ["32.2"]},
+    {"id": 94, "phase": "publication", "dependsOn": [93], "tasks": ["32.3"]},
+    {"id": 95, "phase": "publication", "dependsOn": [94], "tasks": ["32.4"]},
+    {"id": 96, "phase": "publication", "dependsOn": [95], "tasks": ["32.5"]},
+    {"id": 97, "phase": "publication", "dependsOn": [96], "tasks": ["32.6"]},
+    {"id": 98, "phase": "publication", "dependsOn": [97], "tasks": ["32.7"]},
+    {"id": 99, "phase": "publication", "dependsOn": [98], "tasks": ["55.4"]},
+    {"id": 100, "phase": "publication", "dependsOn": [99], "tasks": ["55.5"]},
+    {"id": 101, "phase": "publication", "dependsOn": [100], "tasks": ["66.2"]},
+    {"id": 102, "phase": "publication", "dependsOn": [101], "tasks": ["66.3"]},
+    {"id": 103, "phase": "publication", "dependsOn": [102], "tasks": ["66.4"]},
+    {"id": 104, "phase": "publication", "dependsOn": [103], "tasks": ["38.3"]},
+    {"id": 105, "phase": "publication", "dependsOn": [104], "tasks": ["38.1"]},
+    {"id": 106, "phase": "publication", "dependsOn": [105], "tasks": ["38.2"]},
+    {"id": 107, "phase": "outside_and_ai", "dependsOn": [106], "tasks": ["34.1"]},
+    {"id": 108, "phase": "outside_and_ai", "dependsOn": [107], "tasks": ["34.2"]},
+    {"id": 109, "phase": "outside_and_ai", "dependsOn": [108], "tasks": ["34.3"]},
+    {"id": 110, "phase": "outside_and_ai", "dependsOn": [109], "tasks": ["34.4"]},
+    {"id": 111, "phase": "outside_and_ai", "dependsOn": [110], "tasks": ["34.5"]},
+    {"id": 112, "phase": "outside_and_ai", "dependsOn": [111], "tasks": ["34.6"]},
+    {"id": 113, "phase": "outside_and_ai", "dependsOn": [112], "tasks": ["35.1"]},
+    {"id": 114, "phase": "outside_and_ai", "dependsOn": [113], "tasks": ["35.2"]},
+    {"id": 115, "phase": "outside_and_ai", "dependsOn": [114], "tasks": ["35.3"]},
+    {"id": 116, "phase": "outside_and_ai", "dependsOn": [115], "tasks": ["35.4"]},
+    {"id": 117, "phase": "outside_and_ai", "dependsOn": [116], "tasks": ["35.5"]},
+    {"id": 118, "phase": "outside_and_ai", "dependsOn": [117], "tasks": ["35.6"]},
+    {"id": 119, "phase": "outside_and_ai", "dependsOn": [118], "tasks": ["56.1"]},
+    {"id": 120, "phase": "outside_and_ai", "dependsOn": [119], "tasks": ["56.2"]},
+    {"id": 121, "phase": "outside_and_ai", "dependsOn": [120], "tasks": ["56.3"]},
+    {"id": 122, "phase": "outside_and_ai", "dependsOn": [121], "tasks": ["56.4"]},
+    {"id": 123, "phase": "outside_and_ai", "dependsOn": [122], "tasks": ["56.5"]},
+    {"id": 124, "phase": "outside_and_ai", "dependsOn": [123], "tasks": ["56.6"]},
+    {"id": 125, "phase": "outside_and_ai", "dependsOn": [124], "tasks": ["56.7"]},
+    {"id": 126, "phase": "outside_and_ai", "dependsOn": [125], "tasks": ["56.8"]},
+    {"id": 127, "phase": "outside_and_ai", "dependsOn": [126], "tasks": ["56.9"]},
+    {"id": 128, "phase": "outside_and_ai", "dependsOn": [127], "tasks": ["56.10"]},
+    {"id": 129, "phase": "outside_and_ai", "dependsOn": [128], "tasks": ["35.7"]},
+    {"id": 130, "phase": "outside_and_ai", "dependsOn": [129], "tasks": ["35.8"]},
+    {"id": 131, "phase": "outside_and_ai", "dependsOn": [130], "tasks": ["35.9"]},
+    {"id": 132, "phase": "outside_and_ai", "dependsOn": [131], "tasks": ["35.10"]},
+    {"id": 133, "phase": "outside_and_ai", "dependsOn": [132], "tasks": ["35.11"]},
+    {"id": 134, "phase": "outside_and_ai", "dependsOn": [133], "tasks": ["35.12"]},
+    {"id": 135, "phase": "outside_and_ai", "dependsOn": [134], "tasks": ["35.13"]},
+    {"id": 136, "phase": "outside_and_ai", "dependsOn": [135], "tasks": ["42.1"]},
+    {"id": 137, "phase": "outside_and_ai", "dependsOn": [136], "tasks": ["42.2"]},
+    {"id": 138, "phase": "outside_and_ai", "dependsOn": [137], "tasks": ["42.3"]},
+    {"id": 139, "phase": "outside_and_ai", "dependsOn": [138], "tasks": ["42.4"]},
+    {"id": 140, "phase": "outside_and_ai", "dependsOn": [139], "tasks": ["42.5"]},
+    {"id": 141, "phase": "outside_and_ai", "dependsOn": [140], "tasks": ["42.6"]},
+    {"id": 142, "phase": "outside_and_ai", "dependsOn": [141], "tasks": ["42.7"]},
+    {"id": 143, "phase": "outside_and_ai", "dependsOn": [142], "tasks": ["31.8"]},
+    {"id": 144, "phase": "outside_and_ai", "dependsOn": [143], "tasks": ["31.9"]},
+    {"id": 145, "phase": "outside_and_ai", "dependsOn": [144], "tasks": ["31.10"]},
+    {"id": 146, "phase": "outside_and_ai", "dependsOn": [145], "tasks": ["31.11"]},
+    {"id": 147, "phase": "outside_and_ai", "dependsOn": [146], "tasks": ["31.12"]},
+    {"id": 148, "phase": "outside_and_ai", "dependsOn": [147], "tasks": ["31.13"]},
+    {"id": 149, "phase": "outside_and_ai", "dependsOn": [148], "tasks": ["31.14"]},
+    {"id": 150, "phase": "outside_and_ai", "dependsOn": [149], "tasks": ["31.15"]},
+    {"id": 151, "phase": "outside_and_ai", "dependsOn": [150], "tasks": ["41.4"]},
+    {"id": 152, "phase": "outside_and_ai", "dependsOn": [151], "tasks": ["41.5"]},
+    {"id": 153, "phase": "outside_and_ai", "dependsOn": [152], "tasks": ["41.6"]},
+    {"id": 154, "phase": "outside_and_ai", "dependsOn": [153], "tasks": ["41.7"]},
+    {"id": 155, "phase": "recovery", "dependsOn": [154], "tasks": ["58.1"]},
+    {"id": 156, "phase": "recovery", "dependsOn": [155], "tasks": ["58.3"]},
+    {"id": 157, "phase": "recovery", "dependsOn": [156], "tasks": ["38.4"]},
+    {"id": 158, "phase": "recovery", "dependsOn": [157], "tasks": ["58.2"]},
+    {"id": 159, "phase": "recovery", "dependsOn": [158], "tasks": ["58.4"]},
+    {"id": 160, "phase": "recovery", "dependsOn": [159], "tasks": ["38.5"]},
+    {"id": 161, "phase": "recovery", "dependsOn": [160], "tasks": ["38.6"]},
+    {"id": 162, "phase": "recovery", "dependsOn": [161], "tasks": ["38.7"]},
+    {"id": 163, "phase": "recovery", "dependsOn": [162], "tasks": ["38.8"]},
+    {"id": 164, "phase": "recovery", "dependsOn": [163], "tasks": ["38.9"]},
+    {"id": 165, "phase": "recovery", "dependsOn": [164], "tasks": ["38.10"]},
+    {"id": 166, "phase": "recovery", "dependsOn": [165], "tasks": ["38.11"]},
+    {"id": 167, "phase": "recovery", "dependsOn": [166], "tasks": ["38.12"]},
+    {"id": 168, "phase": "recovery", "dependsOn": [167], "tasks": ["38.13"]},
+    {"id": 169, "phase": "recovery", "dependsOn": [168], "tasks": ["58.6"]},
+    {"id": 170, "phase": "recovery", "dependsOn": [169], "tasks": ["58.7"]},
+    {"id": 171, "phase": "recovery", "dependsOn": [170], "tasks": ["67.2"]},
+    {"id": 172, "phase": "recovery", "dependsOn": [171], "tasks": ["67.3"]},
+    {"id": 173, "phase": "release_tooling", "dependsOn": [172], "tasks": ["43.1"]},
+    {"id": 174, "phase": "release_tooling", "dependsOn": [173], "tasks": ["43.2"]},
+    {"id": 175, "phase": "release_tooling", "dependsOn": [174], "tasks": ["43.3"]},
+    {"id": 176, "phase": "release_tooling", "dependsOn": [175], "tasks": ["43.4"]},
+    {"id": 177, "phase": "release_tooling", "dependsOn": [176], "tasks": ["43.5"]},
+    {"id": 178, "phase": "release_tooling", "dependsOn": [177], "tasks": ["43.6"]},
+    {"id": 179, "phase": "release_tooling", "dependsOn": [178], "tasks": ["43.7"]},
+    {"id": 180, "phase": "release_tooling", "dependsOn": [179], "tasks": ["43.8"]},
+    {"id": 181, "phase": "release_tooling", "dependsOn": [180], "tasks": ["43.9"]},
+    {"id": 182, "phase": "release_tooling", "dependsOn": [181], "tasks": ["43.10"]},
+    {"id": 183, "phase": "release_tooling", "dependsOn": [182], "tasks": ["43.11"]},
+    {"id": 184, "phase": "release_tooling", "dependsOn": [183], "tasks": ["43.12"]},
+    {"id": 185, "phase": "release_tooling", "dependsOn": [184], "tasks": ["44.1"]},
+    {"id": 186, "phase": "release_tooling", "dependsOn": [185], "tasks": ["44.2"]},
+    {"id": 187, "phase": "release_tooling", "dependsOn": [186], "tasks": ["44.3"]},
+    {"id": 188, "phase": "release_tooling", "dependsOn": [187], "tasks": ["45.1"]},
+    {"id": 189, "phase": "release_tooling", "dependsOn": [188], "tasks": ["45.2"]},
+    {"id": 190, "phase": "release_tooling", "dependsOn": [189], "tasks": ["45.3"]},
+    {"id": 191, "phase": "release_tooling", "dependsOn": [190], "tasks": ["45.4"]},
+    {"id": 192, "phase": "release_tooling", "dependsOn": [191], "tasks": ["46.1"]},
+    {"id": 193, "phase": "release_tooling", "dependsOn": [192], "tasks": ["59.5"]},
+    {"id": 194, "phase": "release_tooling", "dependsOn": [193], "tasks": ["59.6"]},
+    {"id": 195, "phase": "release_tooling", "dependsOn": [194], "tasks": ["48.1"]},
+    {"id": 196, "phase": "release_tooling", "dependsOn": [195], "tasks": ["48.2"]},
+    {"id": 197, "phase": "release_tooling", "dependsOn": [196], "tasks": ["48.3"]},
+    {"id": 198, "phase": "release_tooling", "dependsOn": [197], "tasks": ["48.5"]},
+    {"id": 199, "phase": "release_tooling", "dependsOn": [198], "tasks": ["48.10"]},
+    {"id": 200, "phase": "release_tooling", "dependsOn": [199], "tasks": ["68.4"]},
+    {"id": 201, "phase": "release_tooling", "dependsOn": [200], "tasks": ["67.4"]},
+    {"id": 202, "phase": "release_tooling", "dependsOn": [201], "tasks": ["48.4"]},
+    {"id": 203, "phase": "staging_and_acceptance", "dependsOn": [202], "tasks": ["48.6"]},
+    {"id": 204, "phase": "staging_and_acceptance", "dependsOn": [203], "tasks": ["48.7"]},
+    {"id": 205, "phase": "staging_and_acceptance", "dependsOn": [204], "tasks": ["48.8"]},
+    {"id": 206, "phase": "staging_and_acceptance", "dependsOn": [205], "tasks": ["48.11"]},
+    {"id": 207, "phase": "staging_and_acceptance", "dependsOn": [206], "tasks": ["58.5"]},
+    {"id": 208, "phase": "staging_and_acceptance", "dependsOn": [207], "tasks": ["59.4"]},
+    {"id": 209, "phase": "staging_and_acceptance", "dependsOn": [208], "tasks": ["46.2"]},
+    {"id": 210, "phase": "staging_and_acceptance", "dependsOn": [209], "tasks": ["48.12"]},
+    {"id": 211, "phase": "production_activation", "dependsOn": [210], "tasks": ["48.9"]}
   ],
   "helperEdges": [
-    ["57.2", "57.3"],
-    ["67.1", "57.3"],
-    ["57.3", "19.1"],
-    ["57.4", "64.1"],
-    ["55.2", "31.6"],
-    ["55.2", "53.1"],
-    ["61.1", "60.2"],
-    ["62.1", "61.2"],
-    ["54.1", "68.1"],
-    ["68.1", "54.2"],
-    ["31.1", "54.2"],
-    ["54.2", "31.2"],
-    ["59.1", "32.1"],
-    ["59.2", "32.5"],
-    ["59.3", "34.1"],
-    ["34.1", "56.2"],
-    ["58.1", "38.4"],
-    ["58.3", "38.4"],
-    ["58.4", "38.5"],
-    ["38.5", "58.5"],
-    ["68.4", "48.4"],
-    ["48.5", "48.11"],
-    ["48.11", "58.5"],
-    ["48.11", "59.4"],
-    ["48.11", "46.2"],
-    ["58.5", "48.12"],
-    ["59.4", "48.12"],
-    ["46.2", "48.12"],
-    ["48.12", "48.9"]
+    [
+      "57.2",
+      "57.3"
+    ],
+    [
+      "67.1",
+      "57.3"
+    ],
+    [
+      "57.3",
+      "19.1"
+    ],
+    [
+      "57.4",
+      "64.1"
+    ],
+    [
+      "55.2",
+      "31.6"
+    ],
+    [
+      "55.2",
+      "53.1"
+    ],
+    [
+      "61.1",
+      "60.2"
+    ],
+    [
+      "62.1",
+      "61.2"
+    ],
+    [
+      "54.1",
+      "68.1"
+    ],
+    [
+      "68.1",
+      "54.2"
+    ],
+    [
+      "31.1",
+      "54.2"
+    ],
+    [
+      "54.2",
+      "31.2"
+    ],
+    [
+      "59.1",
+      "32.1"
+    ],
+    [
+      "59.2",
+      "32.5"
+    ],
+    [
+      "59.3",
+      "34.1"
+    ],
+    [
+      "34.1",
+      "56.2"
+    ],
+    [
+      "58.1",
+      "38.4"
+    ],
+    [
+      "58.3",
+      "38.4"
+    ],
+    [
+      "58.4",
+      "38.5"
+    ],
+    [
+      "38.5",
+      "58.5"
+    ],
+    [
+      "68.4",
+      "48.4"
+    ],
+    [
+      "48.5",
+      "48.11"
+    ],
+    [
+      "48.11",
+      "58.5"
+    ],
+    [
+      "48.11",
+      "59.4"
+    ],
+    [
+      "48.11",
+      "46.2"
+    ],
+    [
+      "58.5",
+      "48.12"
+    ],
+    [
+      "59.4",
+      "48.12"
+    ],
+    [
+      "46.2",
+      "48.12"
+    ],
+    [
+      "48.12",
+      "48.9"
+    ],
+    [
+      "31.1",
+      "52.4"
+    ],
+    [
+      "54.5",
+      "52.4"
+    ],
+    [
+      "31.1",
+      "52.5"
+    ],
+    [
+      "54.2",
+      "52.5"
+    ],
+    [
+      "40.3",
+      "52.6"
+    ],
+    [
+      "50.1",
+      "50.2"
+    ],
+    [
+      "50.2",
+      "50.3"
+    ],
+    [
+      "50.3",
+      "57.2"
+    ]
   ],
   "gates": [
     {

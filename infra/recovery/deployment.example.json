@@ -1,0 +1,41 @@
+{
+  "inventoryVersion": 1,
+  "installationId": "synthetic-installation",
+  "environment": "rehearsal",
+  "schemas": {
+    "core": 10,
+    "search": 3,
+    "public": 0
+  },
+  "workers": [
+    {
+      "name": "app",
+      "releaseId": "development",
+      "versionId": "synthetic-app-version"
+    },
+    {
+      "name": "submit",
+      "releaseId": "development",
+      "versionId": "synthetic-submit-version"
+    },
+    {
+      "name": "dl",
+      "releaseId": "development",
+      "versionId": "synthetic-dl-version"
+    },
+    {
+      "name": "ops",
+      "releaseId": "development",
+      "versionId": "synthetic-ops-version"
+    },
+    {
+      "name": "site",
+      "releaseId": "development",
+      "versionId": "synthetic-site-version"
+    }
+  ],
+  "switchedAt": null,
+  "recoveryWindowHours": 168,
+  "oldConsumerLeases": 0,
+  "priorSafeReleaseIds": []
+}

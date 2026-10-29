@@ -45,3 +45,28 @@ export function printJournal(entries: readonly PrintableEntry[]): string {
   });
   return output;
 }
+
+/** Stored fields use the same logical section IDs; streaming output never manufactures parser sections. */
+export interface VersionedPrintableSection extends Omit<PrintableSection, 'text'> {
+  readonly text?: string;
+  readonly field?: import('@researchforce/domain/text-fragments').FieldReference;
+}
+export interface VersionedPrintableEntry extends Omit<PrintableEntry, 'sections'> { readonly sections: readonly VersionedPrintableSection[] }
+export async function* printJournalParts(entries: readonly VersionedPrintableEntry[], reader: import('@researchforce/domain/text-fragments').FieldVersionReader): AsyncGenerator<string> {
+  const { fragmentText, streamField } = await import('@researchforce/domain/text-fragments');
+  let tail = ''; let empty = true;
+  const remember = (value: string): string => { if (value.length) { empty = false; tail = (tail + value).slice(-2); } return value; };
+  const breaks = (count: number): string => empty ? '' : '\n'.repeat(Math.max(0, count - (/\n*$/u.exec(tail)?.[0].length ?? 0)));
+  for (const [entryIndex, entry] of entries.entries()) {
+    if (entry.phaseId !== null) { yield remember(entry.leading ?? breaks(2)); yield remember(entry.headingRaw ?? `### ${entry.headingText ?? entry.phaseId}`); }
+    else yield remember(entry.leading ?? '');
+    for (const [i, section] of entry.sections.entries()) {
+      const previous = entry.sections[i - 1];
+      const grouped = previous?.group && section.group && previous.group.kind === section.group.kind && previous.group.id === section.group.id;
+      yield remember(section.sepBefore ?? breaks(grouped ? 1 : 2));
+      if (section.field) { for await (const part of streamField(section.field, reader)) if (part.kind === 'text') yield remember(part.text); }
+      else for (const part of fragmentText(section.text ?? '')) yield remember(part.text);
+    }
+    yield remember(entry.trailing ?? (entryIndex === entries.length - 1 ? breaks(1) : ''));
+  }
+}

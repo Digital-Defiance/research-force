@@ -1,3 +1,4 @@
+import { DEFAULT_RESOURCE_PROFILE } from '../resource-profile';
 import { z } from 'zod';
 import { asTimestamp, asULID, isULID } from '../types';
 import type { MemberStatus, PartialDate, Timestamp, ULID } from '../types';
@@ -74,7 +75,7 @@ const spanSchema = z.discriminatedUnion('k', [
   z.strictObject({ k: z.literal('mention'), ...range, member: idSchema.optional(), specialty: idSchema.optional() }),
 ]);
 export function richTextSchema(maximum?: number, required = false) {
-  return withChecks(z.strictObject({ text: textField(maximum, required), spans: z.array(spanSchema) }), (raw, report) => {
+  return withChecks(z.strictObject({ text: textField(maximum, required), spans: z.array(spanSchema).max(DEFAULT_RESOURCE_PROFILE.chosen.logical.spansPerField) }), (raw, report) => {
     if (typeof raw['text'] !== 'string' || !Array.isArray(raw['spans'])) return;
     // A malformed span must not suppress independent errors in the other, structurally valid spans.
     const indices: number[] = [];

@@ -1,3 +1,5 @@
+import { resourceProfile } from '@researchforce/domain/resource-profile';
+import { authorizeRead } from '../auth/authorize';
 import { fileRoutes } from './routes/files';
 import { uploadRoutes } from './routes/uploads';
 import { Hono } from 'hono';
@@ -41,6 +43,8 @@ import { stagesRoutes } from './routes/stages';
 import { valueSetsRoutes } from './routes/value-sets';
 
 export interface ApiConfig {
+  /** Only the controlled local entrypoint supplies developer routes. */
+  readonly localRoutes?: Hono<ApiEnv>;
   readonly access: AccessConfig;
   readonly keys: AccessKeys;
   readonly workspaceOrigin: string;
@@ -122,6 +126,12 @@ export function createApi(config: ApiConfig): Hono<ApiEnv> {
   }));
 
   const v1 = new Hono<ApiEnv>();
+  if (config.localRoutes) v1.route('/dev', config.localRoutes);
+  v1.get('/resource-profile', async (c) => {
+    await authorizeRead(c);
+    // Local geometry is shared; production runtime certification is a separate release artifact (48.3).
+    return c.json({ profile: resourceProfile(c.env.RESOURCE_PROFILE), productionCertified: false, certification: 'pending-runtime-evidence' });
+  });
   v1.route('/uploads', uploadRoutes);
   v1.route('/', fileRoutes);
   v1.route('/me', meRoutes);

@@ -1,3 +1,4 @@
+import { DEFAULT_RESOURCE_PROFILE, operatingProfileSchema } from './resource-profile';
 import { accepted, refused } from './rules';
 import type { RuleIssue, RuleResult } from './rules';
 import { isULID } from './types';
@@ -82,9 +83,12 @@ export function defaultSettings(owner: SettingMember): WorkspaceSettings {
   return Object.freeze({ ...Object.fromEntries(Object.entries(SETTINGS).map(([key, definition]) => [key, definition.default])), responsiblePerson: owner.id }) as WorkspaceSettings;
 }
 
-/** Design budgets, not a replacement for the deployment-time free-plan checks in Task 48. */
+/** Installation-only selection. Deliberately absent from editable workspace SETTINGS: selecting a name never upgrades a plan. */
+export const INSTALLATION_SETTINGS = Object.freeze({ operatingProfile: operatingProfileSchema });
+
+/** Chosen compatibility defaults. Provider ceilings and profile-specific CPU/quota data live in Resource_Profile. */
 export const OPERATIONS = Object.freeze({
-  maxD1Statements: 40, maxExternalSubrequests: 40, stagedSaveThresholdBytes: 512_000,
+  maxD1Statements: DEFAULT_RESOURCE_PROFILE.chosen.statementsPerSave, maxExternalSubrequests: DEFAULT_RESOURCE_PROFILE.chosen.externalSubrequests, stagedSaveThresholdBytes: DEFAULT_RESOURCE_PROFILE.chosen.bytes.request,
   jobSliceRows: 500, renderPagesPerSlice: 20, projectionSliceBytes: 500_000,
   bulkImportRowsPerUTCDay: 30_000, exportObjectsPerVolume: 900,
   singlePutMaxBytes: 64 * 1024 * 1024, multipartPartBytes: 16 * 1024 * 1024,

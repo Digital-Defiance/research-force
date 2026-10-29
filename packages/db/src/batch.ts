@@ -1,3 +1,4 @@
+import { packRevisionSnapshot, snapshotRetentionSql } from './field-snapshots';
 import { getTableColumns, getTableName, sql } from 'drizzle-orm';
 import type { SQL, SQLWrapper } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/d1';
@@ -94,6 +95,8 @@ type Writable<T extends SQLiteTable> = Omit<T['$inferInsert'], Stamp>;
  * before it (for example the last-Administrator guard after a Role change).
  */
 export class GuardedBatch {
+  #pendingRevisionSize = 0;
+  readonly #revisionWrites: (() => Promise<void>)[] = [];
   readonly #db: D1Database;
   readonly #orm: DrizzleD1Database;
   readonly #dialect = new SQLiteAsyncDialect();
@@ -107,7 +110,7 @@ export class GuardedBatch {
   }
 
   /** Statements the batch will send, including the leading guard and counter increment. */
-  get size(): number { return this.#statements.length + (this.options.ignoreFreeze ? 1 : 2); }
+  get size(): number { return this.#statements.length + this.#pendingRevisionSize + (this.options.ignoreFreeze ? 1 : 2); }
   /** Topics this batch writes outbox rows to, whose owners are kicked once it commits. */
   get outboxTopics(): readonly OutboxTopic[] { return [...this.#topics]; }
 
@@ -167,26 +170,43 @@ export class GuardedBatch {
   /** One Revision per Revision_Kind that a save involves, by the acting Member (R22.1). */
   revision(input: RevisionInput): this {
     if (this.actor.id === null) throw new Error('A Revision needs an acting Member.');
-    return this.run(this.#orm.insert(revisions).values({
-      id: newULID(this.actor.now), targetType: input.targetType, targetId: input.targetId, rootId: input.rootId ?? null,
-      kind: input.kind, memberId: this.actor.id, at: this.actor.now, reason: input.reason ?? null, prev: input.prev,
+    const memberId = this.actor.id;
+    const id = newULID(this.actor.now);
+    this.#pendingRevisionSize++;
+    this.#revisionWrites.push(async () => {
+      const snapshot = await packRevisionSnapshot(this.#db, input, id, this.actor.now);
+      for (const statement of snapshotRetentionSql(snapshot.references, id)) this.run(statement);
+      this.run(this.#orm.insert(revisions).values({
+      id, targetType: input.targetType, targetId: input.targetId, rootId: input.rootId ?? null,
+      kind: input.kind, memberId, at: this.actor.now, reason: input.reason ?? null, prev: snapshot.prev,
       restoredPoint: input.restoredPoint ?? null, ai: input.ai ?? null, seq: CHANGE_SEQ,
-    }));
+      }));
+    });
+    return this;
   }
 
   /** Many Revisions in a few statements, for one save that changes many targets (for example the Project_Order). */
   revisions(inputs: readonly RevisionInput[]): this {
     if (inputs.length === 0) return this;
     if (this.actor.id === null) throw new Error('A Revision needs an acting Member.');
-    const rows = inputs.map((input) => [
-      newULID(this.actor.now), input.targetType, input.targetId, input.rootId ?? null, input.kind, input.reason ?? null,
-      JSON.stringify(input.prev), input.restoredPoint ?? null, input.ai ? JSON.stringify(input.ai) : null,
-    ]);
+    this.#pendingRevisionSize++;
+    this.#revisionWrites.push(async () => {
+      const rows = [];
+      for (const input of inputs) {
+        const id = newULID(this.actor.now);
+        const snapshot = await packRevisionSnapshot(this.#db, input, id, this.actor.now);
+        for (const statement of snapshotRetentionSql(snapshot.references, id)) this.run(statement);
+        rows.push([
+      id, input.targetType, input.targetId, input.rootId ?? null, input.kind, input.reason ?? null,
+      JSON.stringify(snapshot.prev), input.restoredPoint ?? null, input.ai ? JSON.stringify(input.ai) : null,
+        ]);
+      }
     for (const chunk of chunks(rows)) {
       this.#push(sql`INSERT INTO revisions (id, target_type, target_id, root_id, kind, reason, prev, restored_point, ai, member_id, at, seq)
         SELECT ${sql.raw([0, 1, 2, 3, 4, 5, 6, 7, 8].map((index) => `json_extract(value, '$[${index}]')`).join(', '))}, ${this.actor.id}, ${this.actor.now}, ${CHANGE_SEQ}
         FROM json_each(${JSON.stringify(chunk)})`);
     }
+    });
     return this;
   }
 
@@ -218,6 +238,9 @@ export class GuardedBatch {
   async commit(accountant?: RequestAccountant): Promise<D1Result[]> {
     for (const add of this.#deferred.values()) add(this);
     this.#deferred.clear();
+    this.#pendingRevisionSize = 0;
+    for (const prepare of this.#revisionWrites) await prepare();
+    this.#revisionWrites.length = 0;
     if (this.size > OPERATIONS.maxD1Statements) throw new BatchTooLarge(this.size);
     const statements = [
       ...(this.options.ignoreFreeze ? [] : [this.#db.prepare(FROZEN_GUARD)]),

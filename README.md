@@ -2,7 +2,7 @@
 
 Research Force is an MIT-licensed collaborative research workspace and public archive. ResearchForce.org is its first installation, beginning with the P1030680 Enigma project. Other teams can run independent installations from the same source.
 
-The implementation follows the [requirements](.kiro/specs/research-collab-cms/requirements.md), [design](.kiro/specs/research-collab-cms/design.md), and [task checklist](.kiro/specs/research-collab-cms/tasks.md). Tasks 1 through 5 establish the scaffold, domain foundations, domain rules, validation schemas, and D1 database schemas. Authentication, records, publication, and migration follow in task order. The Worker handlers currently return 404, and the Workspace displays a construction notice.
+The implementation follows the [requirements](.kiro/specs/research-collab-cms/requirements.md), [design](.kiro/specs/research-collab-cms/design.md), and [task checklist](.kiro/specs/research-collab-cms/tasks.md). The checklist and acceptance inventory distinguish implemented behavior from remaining integrations and release evidence.
 
 ## Software and research licensing
 
@@ -30,6 +30,59 @@ npm run check:workers
 - `build`: the React 19/react-router 7 Workspace and hashed public shell assets, built with Vite 8. No watcher or development server starts.
 - `check:workers`: Wrangler dry-run bundles for all four Workers, in both top-level and staging environments. Run `build` first. It never deploys or provisions resources.
 - `db:generate`: drizzle-kit migrations for `rf-core`, `rf-search`, and `rf-public` from the Drizzle schemas. It writes files only and never applies them to a database.
+
+## Local development
+
+```sh
+npm run dev
+```
+
+This applies all three D1 migration sets locally, seeds synthetic data, starts `rf-app` through Wrangler/Miniflare at `http://127.0.0.1:8787`, and starts Vite at `http://127.0.0.1:5173` with `/api` proxied to the Worker. Vite fails if its selected port is occupied so the configured Workspace origin cannot silently change. Stop the runner with Ctrl-C.
+
+To enable local sign-in, put this line in the ignored repository-root `.dev.vars` file, then start or restart `npm run dev`:
+
+```dotenv
+RF_DEV_AUTH=1
+```
+
+Open `http://127.0.0.1:5173/api/dev/sign-in` and choose a synthetic Member. The Workspace also redirects unauthenticated local sessions there and shows controls to switch Members or sign out. Normal current Role, access, profile and session checks still apply; a Pending Member activates through the normal invitation path, and a Revoked Member cannot sign in. The seeded Profiles include a default specialty so the existing research screens are immediately usable. No licence agreement is generated.
+
+The opt-in is read only from that file, not from inherited shell flags. Remove the line and restart to disable local sign-in; its endpoints then return 404. The runner generates a signing key with private file permissions under ignored `.wrangler/dev/local-auth-key.pem`, retaining it across normal restarts. Assertions stay in an HttpOnly, SameSite cookie and pass the existing JWT verifier; they are not displayed or written to logs. Signing out ends the stored session as well as clearing the cookie.
+
+Production uses `apps/app/src/index.ts` and refuses a local-auth flag or key. Only the local runner selects `apps/app/src/local.ts`; it checks the actual launch config for local bindings and loopback origins. `scripts/deploy.ts --check <config>` refuses local-auth variables, local entrypoints and unsafe named-environment/vars-file settings, and performs no deployment. The Worker dry-run checks also run this guard. Full deployment orchestration remains task 48.4.
+
+The controlled local entrypoint supplies OPS, AI and email stand-ins. Its generated config has a local SQLite `LOCAL_SERVICES` Durable Object and no remote AI/service binding, production credentials, public route or cron schedule. Production and deployment guards refuse the local service flag and namespace. Signed browser uploads and the download Worker are still outside this runner.
+
+| Service | Local behavior | Requires real staging verification |
+|---|---|---|
+| Cloudflare Access / OPS | Synthetic JWT sign-in; membership add/remove/session-revocation calls are recorded and a simulated Access list is maintained | Identity providers, Access policies, edge enforcement and actual remote session revocation |
+| Workers AI | `AI.run` returns a deterministic, visibly synthetic text fixture for bounded non-streaming JSON and `@cf/` model names; diagnostic history stores a digest rather than prompt bodies | Real model availability, output quality, streaming, token/Neuron accounting and provider latency |
+| Microsoft 365 | The real Mailer queue, batching, retry and rate-limit code writes each accepted message to the local capture store | Graph OAuth/RBAC, delivery, MIME conversion, retention and SPF/DKIM/DMARC |
+
+Sign in as the synthetic Administrator and follow **Local email outbox (Administrator)**, or open `http://127.0.0.1:5173/api/v1/dev/outbox`. Invite a synthetic address through Members to exercise OPS and immediate invitation capture. The outbox retains 200 messages, pages 50 summaries at a time, and shows plain text and escaped HTML source with scripts and external resources disabled. A normal queue status of `sent` means accepted by the capture provider here; no delivery takes place. Members without the current Administrator Role cannot inspect other recipients’ captures.
+
+Captures and call history survive server reloads/restarts in `.wrangler/dev-state/`; `dev:reset` clears them with the rest of the local state. Diagnostic history is also bounded. `/api/v1/dev/services` provides Administrator-only JSON diagnostics. From the signed-in Administrator’s Workspace page, the local AI probe can be exercised without implementing the future research drafting screens:
+
+```js
+fetch('/api/v1/dev/ai', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json', 'X-RF-CSRF': '1' },
+  body: JSON.stringify({ model: '@cf/meta/llama-3.1-8b-instruct', prompt: 'Synthetic demonstration' }),
+}).then(response => response.json());
+```
+
+The probe is a local tool, not completion of the research AI-drafting feature in task 42. No prompts or messages are sent to Cloudflare AI or Microsoft 365 by these stand-ins. Current OPS simulation covers the membership RPCs; publishing, WAF and deployment behavior remains in its own tasks.
+
+```sh
+npm run dev:seed
+npm run dev:reset
+```
+
+`dev:seed` applies pending local migrations and fills missing fixture identities without replacing edits. `dev:reset` requires the runner to be stopped, removes only `.wrangler/dev-state`, then migrates and seeds again. Neither command starts servers. All generated configs, fixture SQL/files and logs stay under ignored `.wrangler/dev/`; persistent D1, R2 and Durable Object data stay under `.wrangler/dev-state/`. A run lock prevents simultaneous reset/start commands. If a forcibly killed process leaves `.wrangler/dev.lock`, confirm the old runner has stopped before removing that lock.
+
+Fixtures use `example.test` addresses: `admin`, `researcher`, `colleague`, `pending` and `revoked`. They include two Projects, the eight currently implemented Research_Item kinds, a large journal section, a Reply, Restricted correspondence/discussion, a CSV Attachment, private full-text search data and synthetic files in both local buckets. Research and Projects start Not Published; no public research views or licence agreements are invented. Research_Questions, Work_Items and Decision_Records will gain fixtures when their implementations arrive.
+
+To change ports, set `RF_DEV_WORKER_PORT` and/or `RF_DEV_WEB_PORT` before running the command. Both listeners bind only to `127.0.0.1`. The runner builds an allow-list local configuration rather than reusing production or staging configuration; generated files should not be edited by hand.
 
 ## Structure and boundaries
 
@@ -115,3 +168,15 @@ Tests use local D1/R2 for checksum rejection, completion mismatch, atomic saves,
 - The legacy esbuild loader pulled in by drizzle-kit uses an esbuild override to 0.25.12 to remove its vulnerable older copy. Keep the override until drizzle-kit removes that legacy dependency, and validate Drizzle CLI operation when changing it.
 
 All fixtures are synthetic. The HELUT journal and attachments stay outside this repository; later migration tasks read them only from explicitly supplied paths.
+
+### Resource profiles and capacity evidence
+
+The versioned shared resource contract and installation templates are documented in [infra/profiles](infra/profiles/README.md). `npm run profile:certify -- infra/profiles/Free_Qualified.example.json` checks local encoded boundaries and produces synthetic growth forecasts. It leaves production certification pending and never activates a paid plan. The authenticated `/api/v1/resource-profile` endpoint and `ApiClient.resourceProfile()` expose the selected limits to browser consumers. Physical fragment storage, full staging integration and measured production capacity remain separately scheduled acceptance work.
+
+### Compatible releases and upgrade rehearsals
+
+[Release tooling](infra/releases/README.md) defines Worker/schema/backup compatibility, immutable candidates, deployment preflight, bounded backfills and guarded contraction/recovery. Run `npm run release:write` after source or migration changes, then `npm run release:check` (also required by CI). `npm run release:rehearse` verifies disposable SQLite upgrades and reopened recovery copies. The catalog currently has a development baseline; real deployment, independent backup readers and production release certification remain gated work.
+
+### Immutable logical fields
+
+[Logical-field storage](docs/storage/logical-fields.md) defines bounded immutable text/label pieces, scoped readers, retained history references, logical phrase search and public continuations. Existing inline data remains compatible during expansion. `npm run fields:migrate -- --local <rehearsal/core-N.sqlite>` exercises the exact resumable migration on a disposable recovery copy. Task 19.1 owns the full staged transport cutover; production deployment and recovery certification remain gated.

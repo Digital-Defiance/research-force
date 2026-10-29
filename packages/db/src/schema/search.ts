@@ -34,3 +34,16 @@ export const searchCredits = sqliteTable('search_credits', {
   memberId: text('member_id').notNull(),
   docKey: integer('doc_key').notNull(),
 }, (t) => [primaryKey({ columns: [t.memberId, t.docKey] }), index('search_credits_doc').on(t.docKey)]);
+
+/** Prepared generations stay unreachable until the document pointer switches in its metadata batch. */
+export const logicalSearchVersions = sqliteTable('logical_search_versions', {
+  id: text('id').primaryKey(), docKey: integer('doc_key').notNull(), manifest: text('manifest_json').notNull(), digest: text('sha256').notNull(), sealed: integer('sealed').notNull().default(0),
+}, (t) => [index('logical_search_doc').on(t.docKey)]);
+export const logicalSearchHeads = sqliteTable('logical_search_heads', { docKey: integer('doc_key').primaryKey(), versionId: text('version_id').notNull() });
+export const logicalSearchBodies = sqliteTable('logical_search_bodies', {
+  versionId: text('version_id').notNull(), kind: text('kind').notNull(), ordinal: integer('ordinal').notNull(), payload: text('payload_json').notNull(), digest: text('sha256').notNull(),
+}, (t) => [primaryKey({ columns: [t.versionId, t.kind, t.ordinal] })]);
+export const logicalSearchParts = sqliteTable('logical_search_parts', {
+  id: integer('id').primaryKey({ autoIncrement: true }), versionId: text('version_id').notNull(), ordinal: integer('ordinal').notNull(),
+  start: integer('start_utf16').notNull(), end: integer('end_utf16').notNull(), body: text('body').notNull(),
+}, (t) => [index('logical_search_part_version').on(t.versionId, t.ordinal)]);

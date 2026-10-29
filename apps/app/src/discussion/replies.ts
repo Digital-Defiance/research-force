@@ -1,3 +1,4 @@
+import { resolveStoredRows } from '../records/field-values';
 import { prepareAttachments } from '../files/attachments';
 import type { Context } from 'hono';
 import { sql } from 'drizzle-orm';
@@ -114,6 +115,7 @@ export async function loadThread(c: Context<ApiEnv>, rootId: string): Promise<Th
       WHERE ${visibleTo('u', '?2')} ORDER BY u.id`).bind(rootId, viewer),
   ]));
   if ((roots?.results.length ?? 0) === 0) throw new ApiError('not_found');
+  await resolveStoredRows(db, rows!.results as Record<string, unknown>[]);
   return (rows!.results as unknown as ThreadRow[]).map((row): ThreadEntry => {
     const common = { id: row.id, parentId: row.parentId, postedAt: row.postedAt, rev: row.rev, isGroupNote: row.isGroupNote === 1, ...(row.flag === null ? {} : { flag: row.flag }) };
     if (row.deletedAt !== null || row.text === null) return { ...common, deletedAt: row.deletedAt ?? row.postedAt };

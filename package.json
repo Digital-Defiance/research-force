@@ -5,7 +5,7 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=22.12.0"
+    "node": ">=22.16.0"
   },
   "packageManager": "npm@11.21.1",
   "workspaces": [
@@ -18,14 +18,29 @@
     "typecheck": "node scripts/check-boundaries.mjs && tsc -b",
     "test": "vitest --run",
     "build": "npm run build --workspace @researchforce/app && npm run build --workspace @researchforce/site-shell",
-    "ci": "npm run lint && npm run typecheck && npm test",
+    "ci": "npm run lint && npm run check:specs && npm run release:check && npm run typecheck && npm test",
     "check:workers": "node scripts/check-workers.mjs",
     "db:generate": "drizzle-kit generate --config packages/db/drizzle/core.config.ts && drizzle-kit generate --config packages/db/drizzle/search.config.ts && drizzle-kit generate --config packages/db/drizzle/public.config.ts",
     "test:nightly": "FC_RUNS=1000 vitest --run",
     "tools:export-metadata": "node --import tsx tools/export-attachment-metadata.ts",
     "tools:dry-run": "node --import tsx tools/migration-dry-run.ts",
     "design:fonts": "node --import tsx tools/vendor-fonts.ts && npm run design:css",
-    "design:css": "node --import tsx tools/generate-design-css.ts"
+    "design:css": "node --import tsx tools/generate-design-css.ts",
+    "check:specs": "node --import tsx tools/check-specs.ts",
+    "specs:write": "node --import tsx tools/check-specs.ts --write",
+    "dev": "node --import tsx scripts/dev.ts",
+    "dev:reset": "node --import tsx scripts/dev.ts --reset --seed-only",
+    "dev:seed": "node --import tsx tools/dev-seed.ts",
+    "profile:certify": "node --import tsx tools/certify-profile.ts",
+    "release:write": "node --import tsx tools/release.ts write",
+    "release:check": "node --import tsx tools/release.ts check",
+    "release:plan": "node --import tsx tools/release.ts plan",
+    "release:rehearse": "node --import tsx tools/release.ts rehearse",
+    "schema:expand": "node --import tsx scripts/expand.ts",
+    "schema:contract": "node --import tsx scripts/contract.ts",
+    "release:seal": "node --import tsx tools/release.ts seal",
+    "schema:backfill": "node --import tsx scripts/backfill.ts",
+    "fields:migrate": "node --import tsx tools/migrate-fields.ts"
   },
   "devDependencies": {
     "@capsizecss/metrics": "4.4.0",

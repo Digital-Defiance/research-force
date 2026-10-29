@@ -1,7 +1,16 @@
 import type { OpsAccess } from '@researchforce/domain/ops';
 import type { Budget, Jobs, Mailer, Publisher } from './durable-objects';
+import type { LocalServices } from './local/services';
 
 export interface Env {
+  /** Explicit deployment selection; absence keeps pre-profile development installs compatible. */
+  RESOURCE_PROFILE?: string;
+  /** Local entrypoint only; generated from the ignored .dev.vars opt-in by the local runner. */
+  RF_DEV_AUTH?: string;
+  RF_DEV_AUTH_PRIVATE_KEY?: string;
+  /** Present only in the generated local config; production refuses both fields. */
+  RF_LOCAL_SERVICES?: string;
+  LOCAL_SERVICES?: DurableObjectNamespace<LocalServices>;
   /** Bucket-scoped S3 credentials and shared download secret, configured per installation. */
   R2_ACCOUNT_ID?: string;
   R2_ACCESS_KEY_ID?: string;

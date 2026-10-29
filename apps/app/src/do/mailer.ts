@@ -6,6 +6,7 @@ import { queueDigests } from '../mail/digest';
 import { runQueue } from '../mail/mailer';
 import type { AttemptLog } from '../mail/mailer';
 import { providerFor } from '../mail/provider';
+import type { EmailProvider } from '../mail/provider';
 import { drainOutbox } from '../outbox';
 
 /** The quarter-hour check of the Daily_Digests (R20.13). */
@@ -37,6 +38,9 @@ export class Mailer extends DurableObject<Env> {
   async kick(): Promise<void> { await this.#pass(); }
   override async alarm(): Promise<void> { await this.#pass(); }
 
+  /** The local-only subclass captures mail; the deployable class always uses the configured provider. */
+  protected emailProvider(): EmailProvider | null { return providerFor(this.env); }
+
   async #pass(): Promise<void> {
     const log = createLogger();
     const nowMs = Date.now();
@@ -47,7 +51,7 @@ export class Mailer extends DurableObject<Env> {
         await queueDigests(this.env.RF_CORE, now);
         await this.ctx.storage.put('digestCheckedAt', nowMs);
       }
-      const wake = await runQueue({ db: this.env.RF_CORE, origin: this.env.WORKSPACE_ORIGIN, log: this.#log, provider: () => providerFor(this.env) }, nowMs);
+      const wake = await runQueue({ db: this.env.RF_CORE, origin: this.env.WORKSPACE_ORIGIN, log: this.#log, provider: () => this.emailProvider() }, nowMs);
       await drainOutbox(this.env.RF_CORE, 'mail', async () => undefined, { now });
       const digestAt = (await this.ctx.storage.get<number>('digestCheckedAt'))! + DIGEST_CHECK_MS;
       await this.ctx.storage.setAlarm(Math.max(nowMs + 1000, Math.min(wake ?? digestAt, digestAt)));
