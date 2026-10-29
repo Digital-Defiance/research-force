@@ -241,11 +241,13 @@ export class GuardedBatch {
     this.#pendingRevisionSize = 0;
     for (const prepare of this.#revisionWrites) await prepare();
     this.#revisionWrites.length = 0;
-    if (this.size > OPERATIONS.maxD1Statements) throw new BatchTooLarge(this.size);
+    const operation = accountant?.operation;
+    if (this.size + (operation ? 1 : 0) > OPERATIONS.maxD1Statements) throw new BatchTooLarge(this.size + (operation ? 1 : 0));
     const statements = [
       ...(this.options.ignoreFreeze ? [] : [this.#db.prepare(FROZEN_GUARD)]),
       this.#db.prepare(INCREMENT_CHANGE),
       ...this.#statements.map((statement) => this.#db.prepare(statement.sql).bind(...statement.params)),
+      ...(operation ? [this.#db.prepare("UPDATE idempotency_results SET state = 'committed', completed_at = ?3 WHERE actor_id = ?1 AND op_key = ?2 AND state = 'pending'").bind(operation.actorId, operation.key, this.actor.now)] : []),
     ];
     let results: D1Result[];
     try {

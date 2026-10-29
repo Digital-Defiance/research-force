@@ -53,9 +53,10 @@ export function testApi(
 }
 
 /** A JSON API call with the session of `token`, including the CSRF header and Workspace origin for writes. */
-export async function call(api: TestApi, bindings: Env, token: string | undefined, method: string, path: string, body?: unknown): Promise<Response> {
+export async function call(api: TestApi, bindings: Env, token: string | undefined, method: string, path: string, body?: unknown, headers: Record<string, string> = {}): Promise<Response> {
   return api.app.fetch(request(`/api/v1${path}`, token, {
-    method, ...(body === undefined ? {} : { body: JSON.stringify(body), headers: { 'content-type': 'application/json' } }),
+    method, ...(body === undefined ? {} : { body: JSON.stringify(body), headers: { 'content-type': 'application/json', ...headers } }),
+    ...(body === undefined && Object.keys(headers).length ? { headers } : {}),
   }), bindings);
 }
 

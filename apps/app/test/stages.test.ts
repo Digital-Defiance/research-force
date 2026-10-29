@@ -10,7 +10,8 @@ type Part = readonly { readonly id?: string; readonly content: RichText }[];
 const sectionIds = (item: ItemView) => (item['sections'] as { id: string }[]).map((section) => section.id);
 const sectionTexts = (item: ItemView) => (item['sections'] as { content: { text: string } }[]).map((section) => section.content.text);
 const sectionRevs = (item: ItemView) => (item['sections'] as { rev: number }[]).map((section) => section.rev);
-const staged = async () => (await world.core().prepare('SELECT count(*) AS n FROM staging_rows').first<number>('n'))!;
+/** Open stages and uploaded parts; the receipt of a committed stage stays until the sweep so a lost response can be reconciled. */
+const staged = async () => (await world.core().prepare("SELECT count(*) AS n FROM staging_rows WHERE part > 0 OR payload NOT LIKE '%\"state\":\"committed\"%'").first<number>('n'))!;
 const counts = async () => JSON.stringify((await world.core().batch(['units', 'research_items', 'entry_sections', 'submissions', 'revisions']
   .map((table) => world.core().prepare(`SELECT count(*) AS n FROM ${table}`)))).map((result) => result.results));
 
@@ -39,7 +40,7 @@ describe('staged saves of new Journal_Entries', () => {
     const { token, partBytes, maxParts } = await response.json<{ token: string; partBytes: number; maxParts: number }>();
     expect({ partBytes, maxParts }).toEqual({ partBytes: 512_000, maxParts: 256 });
     const labelled = rich('Zweiter Teil.', [{ k: 'lang', s: 0, e: 7, lang: 'de' }]);
-    expect(await (await put('author', token, 2, [{ content: labelled }, { content: rich('Part two, last.') }])).json()).toEqual({ part: 2, sections: 2 });
+    expect(await (await put('author', token, 2, [{ content: labelled }, { content: rich('Part two, last.') }])).json()).toEqual({ part: 2, sections: 2, fields: [] });
     expect((await put('author', token, 1, [{ content: rich('Draft of part one.') }])).status).toBe(200);
     expect((await put('author', token, 1, [{ content: rich('Part one, first.') }, { content: rich('Part one, second.') }])).status).toBe(200);
 
@@ -102,7 +103,10 @@ describe('staged saves of new Journal_Entries', () => {
     const saved = await commit('author', token, metadata());
     expect(saved.status).toBe(201);
     expect(sectionTexts((await saved.json<{ item: ItemView }>()).item)).toEqual(['One.', 'Two.', 'Three.']);
-    expect((await commit('author', token, metadata())).status).toBe(404);
+    const again = await commit('author', token, metadata());
+    expect(again.status).toBe(201);
+    expect((await again.json<{ item: ItemView }>()).item.id).toBe((await world.core().prepare('SELECT id FROM units WHERE unit_type = \'research_item\' ORDER BY created_at DESC, id DESC LIMIT 1').first<string>('id')));
+    expect(await counts()).not.toBe(before);
   });
 
   it('refuses a stage to a Member who may not create Items, and expires stages after 24 hours', async () => {

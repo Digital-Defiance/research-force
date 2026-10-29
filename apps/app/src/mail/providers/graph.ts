@@ -72,9 +72,11 @@ export class GraphProvider implements EmailProvider {
 
   /** `sendMail` with one recipient, an HTML body, and no copy in Sent Items: the MIME form always saves one (R20.24). */
   async send(message: EmailMessage): Promise<SendResult> {
+    let requested = false;
     try {
       const token = await this.#accessToken();
       if (token === null) return { ok: false, status: null, retryAfterMs: null };
+      requested = true;
       const response = await this.fetcher(`https://graph.microsoft.com/v1.0/users/${encodeURIComponent(this.credentials.sendingAddress)}/sendMail`, {
         method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -91,7 +93,8 @@ export class GraphProvider implements EmailProvider {
       const seconds = Number(response.headers.get('Retry-After'));
       return { ok: false, status: response.status, retryAfterMs: response.status === 429 && Number.isFinite(seconds) && seconds > 0 ? seconds * 1000 : null };
     } catch {
-      return { ok: false, status: null, retryAfterMs: null };
+      // Once sendMail was requested, a lost answer leaves open whether Exchange accepted the message.
+      return requested ? { ok: false, status: null, retryAfterMs: null, uncertain: true } : { ok: false, status: null, retryAfterMs: null };
     }
   }
 }

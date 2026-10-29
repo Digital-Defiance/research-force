@@ -14,6 +14,8 @@ export class RequestAccountant {
   #rowsRead = 0;
   #rowsWritten = 0;
   readonly #outbox = new Set<OutboxTopic>();
+  /** The write's operation key, once recorded: every batch of the request then marks it committed in the same transaction. */
+  operation?: { readonly actorId: string; readonly key: string };
 
   /** Record the outbox topics of a committed batch, so the request can kick their owners afterwards. */
   committed(topics: Iterable<OutboxTopic>): void {

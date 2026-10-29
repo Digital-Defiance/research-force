@@ -2,6 +2,8 @@ import { eq, sql } from 'drizzle-orm';
 import type { SQL } from 'drizzle-orm';
 import type { GuardedBatch } from '@researchforce/db/batch';
 import { CHANGE_SEQ, chunks } from '@researchforce/db/batch';
+import { linkCurrentField } from '@researchforce/db/field-versions';
+import type { FieldReference } from '@researchforce/domain/text-fragments';
 import { entrySections, jeMembers, journalEntries, units } from '@researchforce/db/schema/core';
 import { newULID } from '@researchforce/domain/identifiers';
 import type { RichText } from '@researchforce/domain/richtext';
@@ -158,8 +160,8 @@ export interface StagedSections {
   readonly rows: SQL;
   /** Refuse the batch if the parts changed after they were read. */
   guard(batch: GuardedBatch): void;
-  /** Delete the parts; it must follow every statement that reads them. */
-  release(batch: GuardedBatch): void;
+  /** Replace the parts with the compact committed receipt; it must follow every statement that reads them. */
+  complete(batch: GuardedBatch, itemId: ULID, rev: number): void;
 }
 export interface StagedEntry {
   readonly id: ULID;
@@ -169,6 +171,8 @@ export interface StagedEntry {
   readonly known: boolean;
   /** Its text or spans differ from the saved ones. */
   readonly changed: boolean;
+  /** A complete immutable logical field, or null when the section remains inline. */
+  readonly reference: FieldReference | null;
   /** Where it was sent, such as `parts.2.sections.7`. */
   readonly field: string;
 }
@@ -202,16 +206,26 @@ function addStagedSections(batch: GuardedBatch, owner: SectionOwner, rows: SQL):
     .run(sql`INSERT INTO entry_sections (unit_id, text, text_spans) SELECT r.id, r.text, r.spans FROM (${rows}) r WHERE r.added = 1`);
 }
 
+/** Switch logical fields and remove obsolete pointers in the same transaction as their section rows. */
+function installStagedFields(batch: GuardedBatch, staged: StagedSections, removed: readonly string[] = []): void {
+  const inline = staged.entries.filter((entry) => entry.reference === null && (entry.added || entry.changed)).map((entry) => entry.id);
+  const cleared = [...new Set([...removed, ...inline])];
+  if (cleared.length) batch.run(sql`DELETE FROM field_current WHERE owner_type='unit' AND field_key='text' AND owner_id IN (SELECT value FROM json_each(${JSON.stringify(cleared)}))`);
+  for (const entry of staged.entries) if (entry.reference && (entry.added || entry.changed)) linkCurrentField(batch, entry.reference, null);
+}
+
 /** The sections of a new Journal_Entry, moved from its staged parts. */
 export function insertStagedSections(batch: GuardedBatch, item: NewItem, staged: StagedSections): void {
   addStagedSections(batch, { id: item.id, projectId: item.projectId, ownerId: item.ownerId, credit: item.credit, submissionId: item.submissionId, createdAt: item.now }, staged.rows);
+  installStagedFields(batch, staged);
 }
 
 /** Apply a staged edit's section changes with the same effects as `writeSections` (R4.8). */
 export function writeStagedSections(batch: GuardedBatch, item: BaseRow, before: readonly Section[], staged: StagedSections, now: Timestamp): void {
   const old = new Map(before.map((section, position) => [section.id!, position]));
   const kept = new Set<string>(staged.entries.filter((entry) => !entry.added).map((entry) => entry.id));
-  removeSections(batch, item.id, before.flatMap((section) => (kept.has(section.id!) ? [] : [section.id!])));
+  const removed = before.flatMap((section) => (kept.has(section.id!) ? [] : [section.id!]));
+  removeSections(batch, item.id, removed);
   const touched = staged.entries.flatMap((entry, position) => (!entry.added && (entry.changed || old.get(entry.id) !== position) ? [[entry.id, position]] : []));
   for (const chunk of chunks(touched)) moveSections(batch, item.id, JSON.stringify(chunk));
   for (const chunk of chunks(staged.entries.filter((entry) => entry.changed).map((entry) => entry.id))) {
@@ -219,4 +233,5 @@ export function writeStagedSections(batch: GuardedBatch, item: BaseRow, before: 
         FROM (${staged.rows}) r WHERE entry_sections.unit_id = r.id AND r.id IN (SELECT value FROM json_each(${JSON.stringify(chunk)}))`);
   }
   addStagedSections(batch, { id: item.id, projectId: item.projectId, ownerId: item.ownerId, credit: item.credit, submissionId: item.submissionId, createdAt: now }, staged.rows);
+  installStagedFields(batch, staged, removed);
 }

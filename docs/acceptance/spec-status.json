@@ -2,16 +2,14 @@
   "inputs": {
     ".kiro/specs/research-collab-cms/requirements.md": "9e2d7cee953f4aeece04bad4a7dfae273a908c0df65c95beea7a4e572b71b5df",
     ".kiro/specs/research-collab-cms/design.md": "85df571e6efad1205603dca7addcea9c16f68252023d5483a2fbe81d705c4d93",
-    ".kiro/specs/research-collab-cms/tasks.md": "ad72a7dd44c5c70472690560c7b2c3f3ca3336f588800780c72f451e95b7497d",
-    "docs/acceptance/task-evidence.json": "433752e6eea76a7fd0695203fcfbf7ba97c54eb5ed114bd54266a2057b651e14"
+    ".kiro/specs/research-collab-cms/tasks.md": "8a11759e4466db3703ca492707183793969ad3a604c324b25e92bdd3533090da",
+    "docs/acceptance/task-evidence.json": "7e92d2a74df49b9905bc4e2500b01ac67bc8d5b6d6fd20302b140cd1d89c1dec"
   },
   "schemaVersion": 1,
   "nextTasks": [
-    "19.1"
+    "57.5"
   ],
   "remainingBuildOrder": [
-    "19.1",
-    "57.4",
     "57.5",
     "30.6",
     "30.7",
@@ -228,11 +226,11 @@
     "criteria": 738,
     "properties": 126,
     "leafTasks": 406,
-    "checkedLeaves": 194,
+    "checkedLeaves": 196,
     "historicalUnverified": 182,
-    "acceptedWithLocalEvidence": 12,
+    "acceptedWithLocalEvidence": 14,
     "propertyFiles": 61,
-    "remainingWaves": 212,
+    "remainingWaves": 210,
     "gates": 4
   },
   "structuralIssues": [],
@@ -11199,12 +11197,12 @@
         {
           "path": "packages/db/src/batch.ts",
           "kind": "file",
-          "sha256": "b35c0741b68d21b7b377b5d3fdf62e2bd94c0594725b16d32244433624446e18"
+          "sha256": "01b38f45fed69618c6584f0faaa0baa91c044e93d16d7eb93e647fe69dc43770"
         },
         {
           "path": "packages/db/src/accountant.ts",
           "kind": "file",
-          "sha256": "ed4167de65c8d75e296f48e8c85c728e89b64526e0c654b85037364f1e5cb5ff"
+          "sha256": "b10cd6c3abe2c570d8cabf914cd689b334f54d6e8d35124ffba993dd6cdaec77"
         }
       ],
       "gates": [],
@@ -12487,7 +12485,7 @@
         {
           "path": "apps/app/src/api/app.ts",
           "kind": "file",
-          "sha256": "e81e111801e0976e53f0ee33ecd50b52a8ab88a08b5d771e2d18598ee0ebd8d1"
+          "sha256": "833be0236bf803fbb42618824651847550786209f6d562e5204a8c1324ae7587"
         },
         {
           "path": "apps/app/src/api/errors.ts",
@@ -12570,7 +12568,7 @@
         {
           "path": "apps/app/src/api/csrf.ts",
           "kind": "file",
-          "sha256": "7ecd27a73021ceb98bfb79aae29dfa8862b10602e676a14627b2a02754a6b619"
+          "sha256": "15e77070ae956446846623fadb946e8d763749b039f1342d0df65b90ad660516"
         }
       ],
       "gates": [],
@@ -13167,7 +13165,7 @@
         {
           "path": "apps/app/src/records/kinds/journal.ts",
           "kind": "file",
-          "sha256": "704273f2fa60c15f109590d54a16f153250703bdcab79427078dc9b65ee226c3"
+          "sha256": "933c45dbd304eb1b6193cd2455d398e201116e16e622589b3498f892db457306"
         }
       ],
       "gates": [],
@@ -13424,7 +13422,7 @@
     {
       "id": "19.1",
       "title": "Implement staged commits in `apps/app/src/records/stages.ts` and `apps/app/src/api/routes/stages.ts`",
-      "checked": false,
+      "checked": true,
       "requirements": [
         "4.1",
         "4.4",
@@ -13439,50 +13437,74 @@
       "prerequisites": [
         "57.3"
       ],
-      "phase": "repair",
+      "phase": "completed_baseline",
       "sourcePaths": [
         {
           "path": "apps/app/src/records/stages.ts",
           "kind": "file",
-          "sha256": "3e3e187bad73eb2a6da6730f470a3de7e9781f5fb2bfb04b7e638128d986b7fe"
+          "sha256": "da676138512638f05c562a22603e64af299e1209d16bb902bc13b11bfcd43d4a"
         },
         {
           "path": "apps/app/src/api/routes/stages.ts",
           "kind": "file",
-          "sha256": "abd8e8da7afe8862079f1ab8f91159d41df0683bb004ae9e1ccfeabbde940e9e"
+          "sha256": "8c6db44989b5a0e6fb000feed44a8de5aa2ad49f562dba320d4d019208d353b2"
+        },
+        {
+          "path": "apps/app/src/records/kinds/journal.ts",
+          "kind": "file",
+          "sha256": "933c45dbd304eb1b6193cd2455d398e201116e16e622589b3498f892db457306"
+        },
+        {
+          "path": "apps/app/src/records/items.ts",
+          "kind": "file",
+          "sha256": "efb316d52ed68b1c65b154565025f71e214a5afa54d9acf647f11fd615b2df1c"
         },
         {
           "path": "apps/app/web/src/api.ts",
           "kind": "file",
-          "sha256": "db27c02d9207392f8b8bf17bbd38d65ced0ac3035034329264fd035b0a250b43"
+          "sha256": "1b66d25b88888c8c1a30e83dc4c1492996e5e245a3aab41da40e4c1ab126f2ce"
         },
         {
           "path": "apps/app/test/stages.test.ts",
           "kind": "file",
-          "sha256": "e2379503c307c89b28ecc490d9c52fe9a4b4eebb58626cb381ca98347ce8302c"
+          "sha256": "958ac57418ddd19da9064e76d2f1a4ae0891ccde186c4ed35728a1df4dab471a"
+        },
+        {
+          "path": "apps/app/test/stages-logical.test.ts",
+          "kind": "file",
+          "sha256": "765d41420d2d7ef577b3cc3e2baa3c5100749789357b55f28f86e4aed4a888bc"
+        },
+        {
+          "path": "apps/app/web/test/api.test.ts",
+          "kind": "file",
+          "sha256": "348dc97bf1889f1183882cdabf035a3989b4394cfdf3103c40566b19fea853b7"
         }
       ],
       "gates": [
         "team_archive",
         "final_checkpoint_49"
       ],
-      "acceptance": "reopened",
+      "acceptance": "accepted",
       "evidence": {
         "task": "19.1",
-        "state": "reopened",
-        "reason": "A valid large Entry_Section can exceed the 512000-byte staged envelope and D1 row limit. Logical field storage must precede inside-section transport repair.",
+        "state": "accepted",
+        "reason": "Verified staged Journal_Entry saves with the logical-field protocol: a stage opens idempotently by client token; ordinary sections travel as bounded parts; a section too large for any part sends its complete manifest in a part and then each bounded 128000-byte fragment under it. Manifests, offsets, digests, totals and sealed contents are validated before commit, and immutable field-version references plus old-version Revision references are installed atomically with the whole save. Part, fragment and manifest replays are idempotent and conflicting replays are refused. A committed stage keeps a compact receipt, so a lost commit response is reconciled by reading the stage and replaying the commit returns the original item without saving twice; the client retries lost part and fragment responses with the same bytes. Tests cover a 600000-character ASCII section, a 600000-emoji section, two million code points, label spans crossing fragment boundaries, heavily escaped text, mixed inline and logical sections, missing and mismatched fragments, refused batches leaving no current pointer, stale and unchanged edits, and no staging, section, revision, manifest or fragment row above 512000 bytes. Existing journal round trips and identities remain exact. No deployment or production certification is claimed; end-to-end property ownership remains 57.6.",
         "sourcePaths": [
           "apps/app/src/records/stages.ts",
+          "apps/app/src/records/kinds/journal.ts",
+          "apps/app/src/records/items.ts",
+          "apps/app/src/api/routes/stages.ts",
           "apps/app/web/src/api.ts"
         ],
         "testPaths": [
-          "apps/app/test/stages.test.ts"
+          "apps/app/test/stages.test.ts",
+          "apps/app/test/stages-logical.test.ts",
+          "apps/app/web/test/api.test.ts"
         ],
-        "correctionTasks": [
-          "57.3",
-          "19.1"
-        ],
-        "checks": []
+        "correctionTasks": [],
+        "checks": [
+          "docs/acceptance/checks/local-tests.json"
+        ]
       }
     },
     {
@@ -13653,7 +13675,7 @@
         {
           "path": "apps/app/web/src/api.ts",
           "kind": "file",
-          "sha256": "db27c02d9207392f8b8bf17bbd38d65ced0ac3035034329264fd035b0a250b43"
+          "sha256": "1b66d25b88888c8c1a30e83dc4c1492996e5e245a3aab41da40e4c1ab126f2ce"
         }
       ],
       "gates": [],
@@ -14763,7 +14785,7 @@
         {
           "path": "apps/app/src/mail/providers/graph.ts",
           "kind": "file",
-          "sha256": "eff6502acc2ea3b722a164d8cc5980a3daa9a9a85579346848e7de2ee2c1f4ea"
+          "sha256": "d5347a26087ede6730c2c76912c19ac1c7ef4be7e478b684246f63a792f2a476"
         }
       ],
       "gates": [],
@@ -19102,7 +19124,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "433752e6eea76a7fd0695203fcfbf7ba97c54eb5ed114bd54266a2057b651e14"
+          "sha256": "7e92d2a74df49b9905bc4e2500b01ac67bc8d5b6d6fd20302b140cd1d89c1dec"
         },
         {
           "path": "README.md",
@@ -19191,7 +19213,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "433752e6eea76a7fd0695203fcfbf7ba97c54eb5ed114bd54266a2057b651e14"
+          "sha256": "7e92d2a74df49b9905bc4e2500b01ac67bc8d5b6d6fd20302b140cd1d89c1dec"
         },
         {
           "path": "apps/app/src/index.ts",
@@ -19330,7 +19352,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "433752e6eea76a7fd0695203fcfbf7ba97c54eb5ed114bd54266a2057b651e14"
+          "sha256": "7e92d2a74df49b9905bc4e2500b01ac67bc8d5b6d6fd20302b140cd1d89c1dec"
         },
         {
           "path": "apps/app/src/local/services.ts",
@@ -19370,7 +19392,7 @@
         {
           "path": "apps/app/src/api/app.ts",
           "kind": "file",
-          "sha256": "e81e111801e0976e53f0ee33ecd50b52a8ab88a08b5d771e2d18598ee0ebd8d1"
+          "sha256": "833be0236bf803fbb42618824651847550786209f6d562e5204a8c1324ae7587"
         },
         {
           "path": "apps/app/src/do/mailer.ts",
@@ -19380,7 +19402,7 @@
         {
           "path": "apps/app/src/mail/provider.ts",
           "kind": "file",
-          "sha256": "159b1d5e839bd3a8e97ad0b5bab21433c81621c229bf332ca359ee5bc1191b79"
+          "sha256": "9351db12b874fa5277a9db551975e951acf30835461aede8f5edf7542b24f76c"
         },
         {
           "path": "apps/app/web/src/local-development.tsx",
@@ -19526,7 +19548,7 @@
         {
           "path": "packages/db/src/batch.ts",
           "kind": "file",
-          "sha256": "b35c0741b68d21b7b377b5d3fdf62e2bd94c0594725b16d32244433624446e18"
+          "sha256": "01b38f45fed69618c6584f0faaa0baa91c044e93d16d7eb93e647fe69dc43770"
         },
         {
           "path": "apps/app/test/migration-not-published.test.ts",
@@ -20807,12 +20829,12 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "433752e6eea76a7fd0695203fcfbf7ba97c54eb5ed114bd54266a2057b651e14"
+          "sha256": "7e92d2a74df49b9905bc4e2500b01ac67bc8d5b6d6fd20302b140cd1d89c1dec"
         },
         {
           "path": "docs/acceptance/checks/local-tests.json",
           "kind": "file",
-          "sha256": "b93f3175146239466650e1dc7a3204a3d54ea6059357a5f596f8e7f112769097"
+          "sha256": "2ade5a40b2905290fcfaa5ec45eade20ccd35795be6957b445a57122d3c85691"
         },
         {
           "path": "tools/src/specs.ts",
@@ -20899,7 +20921,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "433752e6eea76a7fd0695203fcfbf7ba97c54eb5ed114bd54266a2057b651e14"
+          "sha256": "7e92d2a74df49b9905bc4e2500b01ac67bc8d5b6d6fd20302b140cd1d89c1dec"
         },
         {
           "path": "packages/domain/src/settings.ts",
@@ -20934,7 +20956,7 @@
         {
           "path": "apps/app/src/api/app.ts",
           "kind": "file",
-          "sha256": "e81e111801e0976e53f0ee33ecd50b52a8ab88a08b5d771e2d18598ee0ebd8d1"
+          "sha256": "833be0236bf803fbb42618824651847550786209f6d562e5204a8c1324ae7587"
         },
         {
           "path": "apps/app/src/env.ts",
@@ -20944,7 +20966,7 @@
         {
           "path": "apps/app/web/src/api.ts",
           "kind": "file",
-          "sha256": "db27c02d9207392f8b8bf17bbd38d65ced0ac3035034329264fd035b0a250b43"
+          "sha256": "1b66d25b88888c8c1a30e83dc4c1492996e5e245a3aab41da40e4c1ab126f2ce"
         },
         {
           "path": "infra/profiles/Free_Qualified.example.json",
@@ -21079,7 +21101,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "433752e6eea76a7fd0695203fcfbf7ba97c54eb5ed114bd54266a2057b651e14"
+          "sha256": "7e92d2a74df49b9905bc4e2500b01ac67bc8d5b6d6fd20302b140cd1d89c1dec"
         },
         {
           "path": "docs/storage/logical-fields.md",
@@ -21109,7 +21131,7 @@
         {
           "path": "packages/db/src/schema/core.ts",
           "kind": "file",
-          "sha256": "b56e567f4aeaf418fc08c7f12b4b06f6c98d94bae2b94f8baedbb53d6ddd1c4c"
+          "sha256": "138171b2894595531a51d50e6ba935812014ea3511791f8ae5e2ba3607919d73"
         },
         {
           "path": "packages/db/src/schema/search.ts",
@@ -21134,7 +21156,7 @@
         {
           "path": "packages/db/src/batch.ts",
           "kind": "file",
-          "sha256": "b35c0741b68d21b7b377b5d3fdf62e2bd94c0594725b16d32244433624446e18"
+          "sha256": "01b38f45fed69618c6584f0faaa0baa91c044e93d16d7eb93e647fe69dc43770"
         },
         {
           "path": "packages/db/migrations/core/0010_logical_fields.sql",
@@ -21144,7 +21166,7 @@
         {
           "path": "packages/db/migrations/core/meta/_journal.json",
           "kind": "file",
-          "sha256": "7b8333bc8c99586f0461d302c5f372d85ed5045bfd92dbac5e935af08a76e322"
+          "sha256": "0419ef6ae5231fb08bf68d7ccfe53bc1dda158ab1e0032f0ee8420a197ed1aae"
         },
         {
           "path": "packages/db/migrations/core/meta/0010_snapshot.json",
@@ -21189,7 +21211,7 @@
         {
           "path": "apps/app/src/records/items.ts",
           "kind": "file",
-          "sha256": "b71603e925b9cbe3c696012895304be4880aed488177ac9d6f2e41a7ffdb4cbb"
+          "sha256": "efb316d52ed68b1c65b154565025f71e214a5afa54d9acf647f11fd615b2df1c"
         },
         {
           "path": "apps/app/src/records/history.ts",
@@ -21244,7 +21266,7 @@
         {
           "path": "infra/releases/development.json",
           "kind": "file",
-          "sha256": "6a333fc31c92e689148f09031e1ed67744ed5b1ac5b9c7b3eb531aca159ab7ab"
+          "sha256": "ccc3a335415bdcb5a72eb62296bf275798b34b6c605c86b7a9fb65108a53a8ec"
         },
         {
           "path": "infra/recovery/deployment.example.json",
@@ -21319,12 +21341,12 @@
         {
           "path": "tools/test/upgrade-store.test.ts",
           "kind": "file",
-          "sha256": "791eccfc1f513d3d57f6f49aa59fe84b1b934aef96511b597a9666795e897c75"
+          "sha256": "6cf72ecf1aa80dab0541f66445d54be22cb1f7c2ddea6ebe890b6318daac5beb"
         },
         {
           "path": "tools/test/release-tools.test.ts",
           "kind": "file",
-          "sha256": "93e71de90a8df04a5bcc2e31c1eacd9bb8e4a80b3b0182d0cf2fa2a29c894cf4"
+          "sha256": "7ebc5801734ea381a9e02fc8cab3cb4520e5376d2c774c49fb185966015c2609"
         },
         {
           "path": "tools/test/release-compatibility.test.ts",
@@ -21349,7 +21371,7 @@
         {
           "path": "apps/app/test/stages.test.ts",
           "kind": "file",
-          "sha256": "e2379503c307c89b28ecc490d9c52fe9a4b4eebb58626cb381ca98347ce8302c"
+          "sha256": "958ac57418ddd19da9064e76d2f1a4ae0891ccde186c4ed35728a1df4dab471a"
         }
       ],
       "gates": [
@@ -21429,7 +21451,7 @@
     {
       "id": "57.4",
       "title": "Implement actor-scoped mutation idempotency and uncertain-result reconciliation",
-      "checked": false,
+      "checked": true,
       "requirements": [
         "20.26",
         "28.10",
@@ -21438,17 +21460,154 @@
         "60.8"
       ],
       "properties": [],
-      "prerequisites": [
-        "19.1"
+      "prerequisites": [],
+      "phase": "completed_baseline",
+      "sourcePaths": [
+        {
+          "path": "apps/app/src/api/idempotency.ts",
+          "kind": "file",
+          "sha256": "5b80f5da9bb36815b5d222f26a779dbd8471f075419f6e71724ef00755a4e059"
+        },
+        {
+          "path": "apps/app/src/api/app.ts",
+          "kind": "file",
+          "sha256": "833be0236bf803fbb42618824651847550786209f6d562e5204a8c1324ae7587"
+        },
+        {
+          "path": "apps/app/src/api/csrf.ts",
+          "kind": "file",
+          "sha256": "15e77070ae956446846623fadb946e8d763749b039f1342d0df65b90ad660516"
+        },
+        {
+          "path": "packages/db/src/accountant.ts",
+          "kind": "file",
+          "sha256": "b10cd6c3abe2c570d8cabf914cd689b334f54d6e8d35124ffba993dd6cdaec77"
+        },
+        {
+          "path": "packages/db/src/batch.ts",
+          "kind": "file",
+          "sha256": "01b38f45fed69618c6584f0faaa0baa91c044e93d16d7eb93e647fe69dc43770"
+        },
+        {
+          "path": "packages/db/src/schema/core/operations.ts",
+          "kind": "file",
+          "sha256": "8189f318b138b95dff4b158af87a558c2fc9466bad5bfcebfb3aaea30ba96885"
+        },
+        {
+          "path": "packages/db/src/schema/core.ts",
+          "kind": "file",
+          "sha256": "138171b2894595531a51d50e6ba935812014ea3511791f8ae5e2ba3607919d73"
+        },
+        {
+          "path": "packages/db/migrations/core/0011_operation_keys.sql",
+          "kind": "file",
+          "sha256": "bd24721ce8e6fa8a57c30051925aed43fa8c6e40920cfe393251874436c84895"
+        },
+        {
+          "path": "packages/db/migrations/core/meta/_journal.json",
+          "kind": "file",
+          "sha256": "0419ef6ae5231fb08bf68d7ccfe53bc1dda158ab1e0032f0ee8420a197ed1aae"
+        },
+        {
+          "path": "packages/db/migrations/core/meta/0011_snapshot.json",
+          "kind": "file",
+          "sha256": "0b9b9389bb369a8101af72f38a11d1361abedb4a3dfc943fef8f9aa1f85d26b7"
+        },
+        {
+          "path": "apps/app/src/mail/mailer.ts",
+          "kind": "file",
+          "sha256": "5d83090a1776f91fd364e3185b2ab1f5ec7f24988600de2f933ee5a0ee2a5f08"
+        },
+        {
+          "path": "apps/app/src/mail/provider.ts",
+          "kind": "file",
+          "sha256": "9351db12b874fa5277a9db551975e951acf30835461aede8f5edf7542b24f76c"
+        },
+        {
+          "path": "apps/app/src/mail/providers/graph.ts",
+          "kind": "file",
+          "sha256": "d5347a26087ede6730c2c76912c19ac1c7ef4be7e478b684246f63a792f2a476"
+        },
+        {
+          "path": "apps/app/web/src/api.ts",
+          "kind": "file",
+          "sha256": "1b66d25b88888c8c1a30e83dc4c1492996e5e245a3aab41da40e4c1ab126f2ce"
+        },
+        {
+          "path": "docs/api/operations.md",
+          "kind": "file",
+          "sha256": "6ee19d1bff78393de2535afc1fab17e5ff0c1a88f425bd09c6b3bf8a6af255fe"
+        },
+        {
+          "path": "infra/releases/development.json",
+          "kind": "file",
+          "sha256": "ccc3a335415bdcb5a72eb62296bf275798b34b6c605c86b7a9fb65108a53a8ec"
+        },
+        {
+          "path": "apps/app/test/operations.test.ts",
+          "kind": "file",
+          "sha256": "ce1b10cd65543a580adc510525b5be1efdf749f8ef6ac51a141c90a461ebf9bd"
+        },
+        {
+          "path": "apps/app/test/files.test.ts",
+          "kind": "file",
+          "sha256": "216e8f6d88d185863dbc1d585ada1deb94574e7cbdcf5355094b0fa72117f46d"
+        },
+        {
+          "path": "apps/app/test/mailer.test.ts",
+          "kind": "file",
+          "sha256": "fc7fa871f8fbacfeae943092e52bf88fec7ab5a53eb6255ff283c609f91ca23c"
+        },
+        {
+          "path": "apps/app/test/graph.test.ts",
+          "kind": "file",
+          "sha256": "6e116ec4a7d15f440f779f43cd38bea5eb21f31cc4f9b954aeb25c59e176a851"
+        },
+        {
+          "path": "apps/app/web/test/api.test.ts",
+          "kind": "file",
+          "sha256": "348dc97bf1889f1183882cdabf035a3989b4394cfdf3103c40566b19fea853b7"
+        }
       ],
-      "phase": "repair",
-      "sourcePaths": [],
       "gates": [
         "team_archive",
         "final_checkpoint_49"
       ],
-      "acceptance": "planned",
-      "evidence": null
+      "acceptance": "accepted",
+      "evidence": {
+        "task": "57.4",
+        "state": "accepted",
+        "reason": "Verified actor-scoped operation keys on every mutating route: a keyed write records its method, path, query and body-byte digest in idempotency_results (core migration 0011) before the handler runs, and each GuardedBatch of the request flips the row to committed in the same transaction. A same-key replay of the same request returns the recorded status and result IDs with Idempotency-Replayed and does not run again; a changed request, a changed route or a still-pending original conflicts; another Member's key is indistinguishable from an unused one. Refusals keep only their status and code; no request or response body, fields or content are stored. GET /operations/{key} reports pending, committed, refused or unknown (pending beyond two minutes), and a stalled request can be claimed by the same request. Item create and edit, member invitation (one queued email), stage commit and part writes, and upload start are covered. The client sends a key with every write, stores it before sending and forgets it once the answer is definite; a lost response is reconciled by re-sending the same key when the Worker never started the write, by reading the saved result through the ordinary route when it committed, by reporting the refusal, or by reporting an unknown outcome without sending again; part, fragment and stage-commit keys are stable across retries. External mail attempts are logical external_operations recorded before the request and settled as accepted by the provider (never delivery), uncertain when sendMail was requested and no answer arrived, or failed, each without recipient or text; Graph returns no operation ID, so none is reconciled. No deployment or production certification is claimed; end-to-end property ownership remains the later owning tasks.",
+        "sourcePaths": [
+          "apps/app/src/api/idempotency.ts",
+          "apps/app/src/api/app.ts",
+          "apps/app/src/api/csrf.ts",
+          "packages/db/src/accountant.ts",
+          "packages/db/src/batch.ts",
+          "packages/db/src/schema/core/operations.ts",
+          "packages/db/src/schema/core.ts",
+          "packages/db/migrations/core/0011_operation_keys.sql",
+          "packages/db/migrations/core/meta/_journal.json",
+          "packages/db/migrations/core/meta/0011_snapshot.json",
+          "apps/app/src/mail/mailer.ts",
+          "apps/app/src/mail/provider.ts",
+          "apps/app/src/mail/providers/graph.ts",
+          "apps/app/web/src/api.ts",
+          "docs/api/operations.md",
+          "infra/releases/development.json"
+        ],
+        "testPaths": [
+          "apps/app/test/operations.test.ts",
+          "apps/app/test/files.test.ts",
+          "apps/app/test/mailer.test.ts",
+          "apps/app/test/graph.test.ts",
+          "apps/app/web/test/api.test.ts"
+        ],
+        "correctionTasks": [],
+        "checks": [
+          "docs/acceptance/checks/local-tests.json"
+        ]
+      }
     },
     {
       "id": "57.5",
@@ -21465,9 +21624,7 @@
         "60.4"
       ],
       "properties": [],
-      "prerequisites": [
-        "57.4"
-      ],
+      "prerequisites": [],
       "phase": "repair",
       "sourcePaths": [],
       "gates": [
@@ -22765,7 +22922,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "433752e6eea76a7fd0695203fcfbf7ba97c54eb5ed114bd54266a2057b651e14"
+          "sha256": "7e92d2a74df49b9905bc4e2500b01ac67bc8d5b6d6fd20302b140cd1d89c1dec"
         },
         {
           "path": "packages/domain/src/compatibility.ts",
@@ -22815,7 +22972,7 @@
         {
           "path": "infra/releases/development.json",
           "kind": "file",
-          "sha256": "6a333fc31c92e689148f09031e1ed67744ed5b1ac5b9c7b3eb531aca159ab7ab"
+          "sha256": "ccc3a335415bdcb5a72eb62296bf275798b34b6c605c86b7a9fb65108a53a8ec"
         },
         {
           "path": "infra/releases/README.md",
@@ -22870,12 +23027,12 @@
         {
           "path": "tools/test/upgrade-store.test.ts",
           "kind": "file",
-          "sha256": "791eccfc1f513d3d57f6f49aa59fe84b1b934aef96511b597a9666795e897c75"
+          "sha256": "6cf72ecf1aa80dab0541f66445d54be22cb1f7c2ddea6ebe890b6318daac5beb"
         },
         {
           "path": "tools/test/release-tools.test.ts",
           "kind": "file",
-          "sha256": "93e71de90a8df04a5bcc2e31c1eacd9bb8e4a80b3b0182d0cf2fa2a29c894cf4"
+          "sha256": "7ebc5801734ea381a9e02fc8cab3cb4520e5376d2c774c49fb185966015c2609"
         }
       ],
       "gates": [
@@ -23119,7 +23276,7 @@
         {
           "path": "apps/app/src/api/app.ts",
           "kind": "file",
-          "sha256": "e81e111801e0976e53f0ee33ecd50b52a8ab88a08b5d771e2d18598ee0ebd8d1"
+          "sha256": "833be0236bf803fbb42618824651847550786209f6d562e5204a8c1324ae7587"
         },
         {
           "path": "apps/app/src/index.ts",
@@ -23200,23 +23357,6 @@
     }
   ],
   "knownGaps": [
-    {
-      "task": "19.1",
-      "state": "reopened",
-      "reason": "A valid large Entry_Section can exceed the 512000-byte staged envelope and D1 row limit. Logical field storage must precede inside-section transport repair.",
-      "sourcePaths": [
-        "apps/app/src/records/stages.ts",
-        "apps/app/web/src/api.ts"
-      ],
-      "testPaths": [
-        "apps/app/test/stages.test.ts"
-      ],
-      "correctionTasks": [
-        "57.3",
-        "19.1"
-      ],
-      "checks": []
-    },
     {
       "task": "30.6",
       "state": "reopened",
@@ -23343,43 +23483,43 @@
   "phases": {
     "repair": {
       "firstWave": 0,
-      "lastWave": 9
+      "lastWave": 7
     },
     "collaboration": {
-      "firstWave": 10,
-      "lastWave": 40
+      "firstWave": 8,
+      "lastWave": 38
     },
     "privacy": {
-      "firstWave": 41,
-      "lastWave": 64
+      "firstWave": 39,
+      "lastWave": 62
     },
     "imports_and_log": {
-      "firstWave": 65,
-      "lastWave": 88
+      "firstWave": 63,
+      "lastWave": 86
     },
     "publication": {
-      "firstWave": 89,
-      "lastWave": 106
+      "firstWave": 87,
+      "lastWave": 104
     },
     "outside_and_ai": {
-      "firstWave": 107,
-      "lastWave": 154
+      "firstWave": 105,
+      "lastWave": 152
     },
     "recovery": {
-      "firstWave": 155,
-      "lastWave": 172
+      "firstWave": 153,
+      "lastWave": 170
     },
     "release_tooling": {
-      "firstWave": 173,
-      "lastWave": 202
+      "firstWave": 171,
+      "lastWave": 200
     },
     "staging_and_acceptance": {
-      "firstWave": 203,
-      "lastWave": 210
+      "firstWave": 201,
+      "lastWave": 208
     },
     "production_activation": {
-      "firstWave": 211,
-      "lastWave": 211
+      "firstWave": 209,
+      "lastWave": 209
     }
   },
   "gates": [

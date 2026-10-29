@@ -107,6 +107,21 @@ async function mark(deps: MailerDeps, item: Queued, now: Timestamp, change: Mark
   await batch.commit();
 }
 
+/** Record that an attempt is about to reach the provider. Content-free: the operation names the queued item, never its recipient or text. */
+async function beginExternal(deps: MailerDeps, operation: string, item: Queued, now: Timestamp): Promise<void> {
+  await new GuardedBatch(deps.db, { id: null, now }, { ignoreFreeze: true })
+    .run(sql`INSERT INTO external_operations (id, kind, request_hash, state, created_at, updated_at) VALUES (${operation}, 'mail', ${`${item.kind}:${item.id}`}, 'pending', ${now}, ${now})
+      ON CONFLICT (id) DO UPDATE SET state = 'pending', updated_at = ${now}`).commit();
+}
+/**
+ * What became of an attempt. `accepted` is the provider's acceptance of the message and never a delivery confirmation; `uncertain` means no answer
+ * arrived, so the message may still be delivered and a retry may send a duplicate.
+ */
+async function settleExternal(deps: MailerDeps, operation: string, now: Timestamp, outcome: { readonly state: 'accepted' | 'failed' | 'uncertain'; readonly detail: string }): Promise<void> {
+  await new GuardedBatch(deps.db, { id: null, now }, { ignoreFreeze: true })
+    .run(sql`UPDATE external_operations SET state = ${outcome.state}, detail = ${outcome.detail}, updated_at = ${now} WHERE id = ${operation}`).commit();
+}
+
 /** The queued emails, oldest first (R20.17). */
 async function queue(db: D1Database): Promise<Queued[]> {
   const { results } = await db.prepare(
@@ -171,7 +186,12 @@ async function attempt(deps: MailerDeps, item: Queued, nowMs: number): Promise<v
   }
   deps.log.add(nowMs, 1);
   const provider = deps.provider();
+  // Each attempt is a logical external operation, recorded before the request leaves so a crash or a lost answer is visible as uncertain.
+  const operation = `mail-${item.id}-${item.attempts}`;
+  await beginExternal(deps, operation, item, now);
   const result = provider === null ? { ok: false as const, status: null, retryAfterMs: null } : await provider.send(composed);
+  await settleExternal(deps, operation, now, result.ok ? { state: 'accepted', detail: 'accepted-by-provider' }
+    : 'uncertain' in result && result.uncertain ? { state: 'uncertain', detail: 'no-response-possible-duplicate' } : { state: 'failed', detail: result.status === null ? 'not-sent' : `status-${result.status}` });
   if (result.ok) {
     await mark(deps, item, now, { state: 'sent', sentAt: now, heldMs, attempted: true, ...(item.kind === 'email' ? { invite: 'sent' as const } : {}) });
     return;

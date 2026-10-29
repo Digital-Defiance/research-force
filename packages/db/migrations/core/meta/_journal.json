@@ -78,6 +78,13 @@
       "when": 1793290733585,
       "tag": "0010_logical_fields",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1793298410972,
+      "tag": "0011_operation_keys",
+      "breakpoints": true
     }
   ]
 }

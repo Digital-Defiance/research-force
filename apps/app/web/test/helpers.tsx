@@ -3,6 +3,7 @@ import type { ReactElement } from 'react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
 import { BUILT_IN_ROLES, ROLE_IDS } from '@researchforce/domain/permissions';
 import { ApiClient, ApiContext, StatusStore } from '../src/api';
+import type { ApiClientOptions } from '../src/api';
 import { SessionContext, sessionFor } from '../src/session';
 import type { Me, Role } from '../src/types';
 
@@ -13,7 +14,7 @@ export const json = (body: unknown, status = 200): Response => new Response(JSON
 export const failure = (status: number, error: string, extra: Record<string, unknown> = {}): Response => json({ error, ...extra }, status);
 
 /** A fake Workspace API: handlers keyed by `METHOD /path` (with the query), each answering with a Response or a JSON body. */
-export function fakeApi(handlers: Record<string, Handler>) {
+export function fakeApi(handlers: Record<string, Handler>, options: Partial<Pick<ApiClientOptions, 'storage' | 'wait'>> = {}) {
   const calls: Call[] = [];
   const reloads: number[] = [];
   const fetcher = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
@@ -22,12 +23,13 @@ export function fakeApi(handlers: Record<string, Handler>) {
     const raw = typeof init?.body === 'string' ? init.body : undefined;
     const call: Call = { method, path: url, headers: new Headers(init?.headers), body: raw === undefined ? undefined : JSON.parse(raw), raw };
     calls.push(call);
-    const handler = handlers[`${method} ${url}`] ?? handlers[`${method} ${url.split('?')[0]}`];
+    const handler = handlers[`${method} ${url}`] ?? handlers[`${method} ${url.split('?')[0]}`]
+      ?? Object.entries(handlers).find(([pattern]) => pattern.endsWith('*') && `${method} ${url}`.startsWith(pattern.slice(0, -1)))?.[1];
     if (handler === undefined) return failure(404, 'not_found');
     const result: unknown = typeof handler === 'function' ? await (handler as (call: Call) => unknown)(call) : handler instanceof Response ? handler.clone() : handler;
     return result instanceof Response ? result : json(result);
   };
-  const client = new ApiClient({ fetch: fetcher as typeof fetch, reload: () => reloads.push(Date.now()), status: new StatusStore() });
+  const client = new ApiClient({ fetch: fetcher as typeof fetch, reload: () => reloads.push(Date.now()), status: new StatusStore(), ...options });
   return { client, calls, reloads, writes: () => calls.filter((call) => call.method !== 'GET') };
 }
 

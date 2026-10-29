@@ -188,20 +188,24 @@
   "records": [
     {
       "task": "19.1",
-      "state": "reopened",
-      "reason": "A valid large Entry_Section can exceed the 512000-byte staged envelope and D1 row limit. Logical field storage must precede inside-section transport repair.",
+      "state": "accepted",
+      "reason": "Verified staged Journal_Entry saves with the logical-field protocol: a stage opens idempotently by client token; ordinary sections travel as bounded parts; a section too large for any part sends its complete manifest in a part and then each bounded 128000-byte fragment under it. Manifests, offsets, digests, totals and sealed contents are validated before commit, and immutable field-version references plus old-version Revision references are installed atomically with the whole save. Part, fragment and manifest replays are idempotent and conflicting replays are refused. A committed stage keeps a compact receipt, so a lost commit response is reconciled by reading the stage and replaying the commit returns the original item without saving twice; the client retries lost part and fragment responses with the same bytes. Tests cover a 600000-character ASCII section, a 600000-emoji section, two million code points, label spans crossing fragment boundaries, heavily escaped text, mixed inline and logical sections, missing and mismatched fragments, refused batches leaving no current pointer, stale and unchanged edits, and no staging, section, revision, manifest or fragment row above 512000 bytes. Existing journal round trips and identities remain exact. No deployment or production certification is claimed; end-to-end property ownership remains 57.6.",
       "sourcePaths": [
         "apps/app/src/records/stages.ts",
+        "apps/app/src/records/kinds/journal.ts",
+        "apps/app/src/records/items.ts",
+        "apps/app/src/api/routes/stages.ts",
         "apps/app/web/src/api.ts"
       ],
       "testPaths": [
-        "apps/app/test/stages.test.ts"
+        "apps/app/test/stages.test.ts",
+        "apps/app/test/stages-logical.test.ts",
+        "apps/app/web/test/api.test.ts"
       ],
-      "correctionTasks": [
-        "57.3",
-        "19.1"
-      ],
-      "checks": []
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
     },
     {
       "task": "30.6",
@@ -649,6 +653,40 @@
         "apps/app/test/search.test.ts",
         "apps/app/test/search-indexer.test.ts",
         "apps/app/test/stages.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "57.4",
+      "state": "accepted",
+      "reason": "Verified actor-scoped operation keys on every mutating route: a keyed write records its method, path, query and body-byte digest in idempotency_results (core migration 0011) before the handler runs, and each GuardedBatch of the request flips the row to committed in the same transaction. A same-key replay of the same request returns the recorded status and result IDs with Idempotency-Replayed and does not run again; a changed request, a changed route or a still-pending original conflicts; another Member's key is indistinguishable from an unused one. Refusals keep only their status and code; no request or response body, fields or content are stored. GET /operations/{key} reports pending, committed, refused or unknown (pending beyond two minutes), and a stalled request can be claimed by the same request. Item create and edit, member invitation (one queued email), stage commit and part writes, and upload start are covered. The client sends a key with every write, stores it before sending and forgets it once the answer is definite; a lost response is reconciled by re-sending the same key when the Worker never started the write, by reading the saved result through the ordinary route when it committed, by reporting the refusal, or by reporting an unknown outcome without sending again; part, fragment and stage-commit keys are stable across retries. External mail attempts are logical external_operations recorded before the request and settled as accepted by the provider (never delivery), uncertain when sendMail was requested and no answer arrived, or failed, each without recipient or text; Graph returns no operation ID, so none is reconciled. No deployment or production certification is claimed; end-to-end property ownership remains the later owning tasks.",
+      "sourcePaths": [
+        "apps/app/src/api/idempotency.ts",
+        "apps/app/src/api/app.ts",
+        "apps/app/src/api/csrf.ts",
+        "packages/db/src/accountant.ts",
+        "packages/db/src/batch.ts",
+        "packages/db/src/schema/core/operations.ts",
+        "packages/db/src/schema/core.ts",
+        "packages/db/migrations/core/0011_operation_keys.sql",
+        "packages/db/migrations/core/meta/_journal.json",
+        "packages/db/migrations/core/meta/0011_snapshot.json",
+        "apps/app/src/mail/mailer.ts",
+        "apps/app/src/mail/provider.ts",
+        "apps/app/src/mail/providers/graph.ts",
+        "apps/app/web/src/api.ts",
+        "docs/api/operations.md",
+        "infra/releases/development.json"
+      ],
+      "testPaths": [
+        "apps/app/test/operations.test.ts",
+        "apps/app/test/files.test.ts",
+        "apps/app/test/mailer.test.ts",
+        "apps/app/test/graph.test.ts",
+        "apps/app/web/test/api.test.ts"
       ],
       "correctionTasks": [],
       "checks": [

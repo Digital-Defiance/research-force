@@ -47,7 +47,7 @@ export interface ItemWorld {
   readonly projectId: ULID;
   readonly at: Timestamp;
   core(): D1Database;
-  request(who: Who, method: string, path: string, body?: unknown): Promise<Response>;
+  request(who: Who, method: string, path: string, body?: unknown, headers?: Record<string, string>): Promise<Response>;
   create(who: Who, kind: ItemKind, body: Record<string, unknown>): Promise<Response>;
   /** Create and return the item, failing the test on any refusal. */
   created(who: Who, kind: ItemKind, overrides?: Record<string, unknown>): Promise<ItemView>;
@@ -68,7 +68,7 @@ export function itemWorld(t0 = new Date('2026-10-27T18:00:00.000Z')): ItemWorld 
   const world = {
     at,
     core: () => world.bindings.RF_CORE,
-    request: (who: Who, method: string, path: string, body?: unknown) => call(api, world.bindings, tokens[who], method, path, body),
+    request: (who: Who, method: string, path: string, body?: unknown, headers?: Record<string, string>) => call(api, world.bindings, tokens[who], method, path, body, headers),
     create: (who: Who, kind: ItemKind, body: Record<string, unknown>) => world.request(who, 'POST', `/items/${KIND_PATH(kind)}`, body),
     async created(who: Who, kind: ItemKind, overrides: Record<string, unknown> = {}) {
       const response = await world.create(who, kind, itemBody(kind, world.projectId, overrides));

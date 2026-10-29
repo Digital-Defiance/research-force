@@ -22,7 +22,7 @@ export function workspaceCors(workspaceOrigin: string): MiddlewareHandler {
   return cors({
     origin: (origin) => (workspaceOrigin && origin === workspaceOrigin ? origin : null),
     allowMethods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE'],
-    allowHeaders: ['Content-Type', CSRF_HEADER],
+    allowHeaders: ['Content-Type', CSRF_HEADER, 'Idempotency-Key'],
     credentials: true,
     maxAge: 600,
   });

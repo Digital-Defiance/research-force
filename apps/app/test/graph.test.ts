@@ -77,6 +77,13 @@ describe('the Microsoft Graph provider', () => {
     expect(await failing.send(message)).toEqual({ ok: false, status: null, retryAfterMs: null });
   });
 
+  it('marks a send whose answer was lost after sendMail was requested as uncertain, unlike a refusal before it', async () => {
+    const lost = graph({ send: () => { throw new TypeError('connection reset'); } });
+    expect(await lost.provider.send(message)).toEqual({ ok: false, status: null, retryAfterMs: null, uncertain: true });
+    const refused = graph({ send: () => new Response(null, { status: 500 }) });
+    expect(await refused.provider.send(message)).toEqual({ ok: false, status: 500, retryAfterMs: null });
+  });
+
   it('renews the token after a 401 from sendMail', async () => {
     let calls = 0;
     const { provider, seen } = graph({ send: () => (++calls === 1 ? new Response(null, { status: 401 }) : new Response(null, { status: 202 })) });

@@ -338,7 +338,7 @@ export async function createItem(c: Context<ApiEnv>, kind: ItemKind, body: unkno
     adapter.insert(batch, { id, projectId, ownerId: actor, credit, submissionId, now }, fields);
     if (staged) {
       insertStagedSections(batch, { id, projectId, ownerId: actor, credit, submissionId, now }, staged);
-      staged.release(batch);
+      staged.complete(batch, id, 1);
     }
     if (present(groupNote)) addGroupNote(batch, { id: newULID(now), itemId: id, projectId, memberId: actor, submissionId, now, text: groupNote });
     if (linked.links.length > 0) writeLinks(batch, linked.links, { id: actor, now });
@@ -451,7 +451,7 @@ export async function editItem(c: Context<ApiEnv>, current: LoadedItem, body: un
       adapter.update(batch, base, compared, after, changed, now);
       if (staged) {
         if (sectionsChange) writeStagedSections(batch, base, sections, staged, now);
-        staged.release(batch);
+        staged.complete(batch, base.id, base.rev + 1);
       }
       if (linked.links.length > 0) writeLinks(batch, linked.links, { id: actor, now });
       rules.write?.(batch);

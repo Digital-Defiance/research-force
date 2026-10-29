@@ -47,7 +47,7 @@ describe('real migration and recovery rehearsals', () => {
     try {
       expect(output.report.productionCertified).toBe(false);
       expect(output.report.priorReleasedVersionsAvailable).toEqual([]);
-      expect(output.report.results.filter((r) => r.store === 'core').map((r) => r.checkpoint)).toEqual([10, 9, 8]);
+      expect(output.report.results.filter((r) => r.store === 'core').map((r) => r.checkpoint)).toEqual([11, 10, 9]);
       expect(output.report.results.every((r) => r.restoreReopened && r.seedVerified)).toBe(true);
       expect(output.report.results.every((r) => /^[a-f0-9]{64}$/.test(r.recoveryCopySha256))).toBe(true);
     } finally { rmSync(output.directory, { recursive: true, force: true }); }
@@ -75,7 +75,7 @@ describe('real migration and recovery rehearsals', () => {
       expect(() => adoptSchema(db, ROOT, manifest, 'core', 7)).toThrow(/DDL/);
       adoptSchema(db, ROOT, manifest, 'core', 8);
       expect(() => adoptSchema(db, ROOT, manifest, 'core', 8)).toThrow(/already/);
-      expect(applyUpgrade(db, ROOT, manifest, 'core', { phase: 'expand' }).applied).toEqual(['0009_files', '0010_logical_fields']);
+      expect(applyUpgrade(db, ROOT, manifest, 'core', { phase: 'expand' }).applied).toEqual(['0009_files', '0010_logical_fields', '0011_operation_keys']);
       expect(applyUpgrade(db, ROOT, manifest, 'core', { phase: 'expand' }).applied).toEqual([]);
       db.exec("UPDATE _rf_release_migrations SET sha256='changed' WHERE revision=8");
       expect(() => applyUpgrade(db, ROOT, manifest, 'core', { phase: 'expand' })).toThrow(/divergent/);

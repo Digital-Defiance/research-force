@@ -21,6 +21,7 @@ import { hashMemberId } from '../log';
 import type { Logger } from '../log';
 import { kick } from '../outbox';
 import { csrfGuard, workspaceCors } from './csrf';
+import { idempotency, operationRoutes } from './idempotency';
 import { ApiError, errorResponse, toApiError } from './errors';
 import type { ErrorCode } from './errors';
 import { profileGate } from '../auth/profile-gate';
@@ -125,6 +126,8 @@ export function createApi(config: ApiConfig): Hono<ApiEnv> {
     },
   }));
 
+  app.use('/api/*', idempotency());
+
   const v1 = new Hono<ApiEnv>();
   if (config.localRoutes) v1.route('/dev', config.localRoutes);
   v1.get('/resource-profile', async (c) => {
@@ -132,6 +135,7 @@ export function createApi(config: ApiConfig): Hono<ApiEnv> {
     // Local geometry is shared; production runtime certification is a separate release artifact (48.3).
     return c.json({ profile: resourceProfile(c.env.RESOURCE_PROFILE), productionCertified: false, certification: 'pending-runtime-evidence' });
   });
+  v1.route('/operations', operationRoutes);
   v1.route('/uploads', uploadRoutes);
   v1.route('/', fileRoutes);
   v1.route('/me', meRoutes);

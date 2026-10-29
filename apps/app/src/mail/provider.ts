@@ -14,7 +14,7 @@ export interface EmailMessage {
  */
 export type SendResult =
   | { readonly ok: true }
-  | { readonly ok: false; readonly status: number | null; readonly retryAfterMs: number | null };
+  | { readonly ok: false; readonly status: number | null; readonly retryAfterMs: number | null; /** The request may have reached the provider and been accepted: no response arrived. */ readonly uncertain?: true };
 
 /** The Email_Provider interface; Microsoft Graph is the one implementation (R20.11). */
 export interface EmailProvider { send(message: EmailMessage): Promise<SendResult> }

@@ -195,3 +195,43 @@ describe('failures and retries', () => {
     expect((await stateOf(made.id))).toMatchObject({ state: 'queued', attempts: 1 });
   });
 });
+
+describe('external mail operations', () => {
+  const operations = () => rows<{ id: string; state: string; detail: string }>("SELECT id, state, detail FROM external_operations WHERE kind = 'mail' ORDER BY id");
+
+  it('records an accepted attempt as accepted by the provider, never as delivered, without any recipient or text', async () => {
+    fake = new FakeProvider();
+    await world.core().prepare('DELETE FROM external_operations').run();
+    const { id } = await invitation('accepted@example.test');
+    await mailer().run(START);
+    expect(await operations()).toEqual([{ id: `mail-${id}-0`, state: 'accepted', detail: 'accepted-by-provider' }]);
+    const row = JSON.stringify(await rows('SELECT * FROM external_operations'));
+    expect(row).not.toContain('accepted@example.test');
+    expect(row).not.toContain('confirmed');
+  });
+
+  it('separates a refusal from an attempt whose answer was lost, and keeps each retry as its own operation', async () => {
+    fake = new FakeProvider();
+    await world.core().prepare('DELETE FROM external_operations').run();
+    const { id } = await invitation('lost@example.test');
+    fake.results = [{ ok: false, status: 503, retryAfterMs: null }, { ok: false, status: null, retryAfterMs: null, uncertain: true }, { ok: true }];
+    const { run } = mailer();
+    await run(START);
+    await run(START + 2 * MIN);
+    await run(START + 12 * MIN);
+    expect(await operations()).toEqual([
+      { id: `mail-${id}-0`, state: 'failed', detail: 'status-503' },
+      { id: `mail-${id}-1`, state: 'uncertain', detail: 'no-response-possible-duplicate' },
+      { id: `mail-${id}-2`, state: 'accepted', detail: 'accepted-by-provider' },
+    ]);
+    expect((await stateOf(id))?.state).toBe('sent');
+  });
+
+  it('records a missing provider as not sent', async () => {
+    await world.core().prepare('DELETE FROM external_operations').run();
+    const { id } = await invitation('none@example.test');
+    await mailer(() => null).run(START);
+    expect(await operations()).toEqual([{ id: `mail-${id}-0`, state: 'failed', detail: 'not-sent' }]);
+  });
+});
+

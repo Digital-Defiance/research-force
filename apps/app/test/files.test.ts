@@ -15,6 +15,20 @@ async function start(sizeBytes = 0, groupId = newULID(world.at)) {
   return world.request('author', 'POST', '/uploads', { groupId, fileName: 'Synthetic empty.txt', sizeBytes, sha256: sha });
 }
 describe('file upload and atomic Attachments', () => {
+  it('starts an upload once under its operation key and answers a lost-response retry with the recorded upload', async () => {
+    const key = `upload-${newULID(world.at)}`;
+    const body = { groupId: newULID(world.at), fileName: 'Synthetic empty.txt', sizeBytes: 0, sha256: sha };
+    const first = await world.request('author', 'POST', '/uploads', body, { 'Idempotency-Key': key });
+    expect(first.status).toBe(201);
+    const { id } = await first.json<{ id: string }>();
+    const again = await world.request('author', 'POST', '/uploads', body, { 'Idempotency-Key': key });
+    expect(again.status).toBe(201);
+    expect(await again.json()).toMatchObject({ replayed: true, operation: { state: 'committed', resource: { id } } });
+    expect(await world.core().prepare('SELECT count(*) AS n FROM uploads').first('n')).toBe(1);
+    const status = await world.request('author', 'GET', `/operations/${key}`);
+    expect(await status.json()).toMatchObject({ operation: { state: 'committed', status: 201 } });
+    expect((await world.request('colleague', 'GET', `/operations/${key}`)).status).toBe(404);
+  });
   it('signs exact length, checksum, and write-once conditions without file bytes', async () => {
     const response = await start(); expect(response.status).toBe(201);
     const body = await response.json<{ id: string; url: string; headers: Record<string, string> }>();

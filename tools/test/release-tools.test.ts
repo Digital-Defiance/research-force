@@ -52,7 +52,7 @@ describe('reviewable release commands', () => {
     const manifest = developmentManifest(ROOT); const { directory } = await rehearseRelease(ROOT, manifest, tmpdir());
     try {
       const db = resolve(directory, 'core-9.sqlite');
-      expect(upgradeCommand(ROOT, 'expand', ['--local', 'infra/releases/development.json', 'core', db])).toMatchObject({ revision: 10, applied: [], productionAuthorized: false });
+      expect(upgradeCommand(ROOT, 'expand', ['--local', 'infra/releases/development.json', 'core', db])).toMatchObject({ revision: 11, applied: [], productionAuthorized: false });
       expect(upgradeCommand(ROOT, 'backfill', ['--local', 'infra/releases/development.json', 'search', resolve(directory, 'search-2.sqlite')])).toMatchObject({ complete: true, productionAuthorized: false });
       expect(() => upgradeCommand(ROOT, 'expand', ['--remote', 'infra/releases/development.json', 'core', db])).toThrow(/Usage/);
       expect(() => upgradeCommand(ROOT, 'expand', ['--local', 'infra/releases/development.json', 'search', db])).toThrow(/matching local/);

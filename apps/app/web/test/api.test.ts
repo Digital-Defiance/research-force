@@ -114,7 +114,7 @@ describe('saving Research_Items', () => {
     const result = await api.client.saveItem<{ item: { id: string } }>({ kindPath: 'journal-entry' }, { projectId: 'p', title: 'Big', sections });
     expect(result.item.id).toBe('new');
     const writes = api.writes();
-    expect(writes[0]).toMatchObject({ method: 'POST', path: '/stages', body: {} });
+    expect(writes[0]).toMatchObject({ method: 'POST', path: '/stages', body: { token: expect.any(String) } });
     const parts = writes.filter((call) => call.method === 'PUT');
     expect(parts.map((call) => call.path)).toEqual(['/stages/tok/parts/1', '/stages/tok/parts/2', '/stages/tok/parts/3']);
     for (const part of parts) expect(new TextEncoder().encode(part.raw).length).toBeLessThanOrEqual(partBytes);
@@ -123,12 +123,52 @@ describe('saving Research_Items', () => {
     expect(writes.at(-1)!.body).not.toHaveProperty('sections');
   });
 
+  it('sends a section above the part size as a logical field: manifest in its part, then each bounded fragment', async () => {
+    const content = { text: 'x'.repeat(600_000), spans: [{ k: 'quote' as const, s: 127_990, e: 128_010, source: 'S' }] };
+    const small = section(100);
+    const api = fakeApi({
+      'POST /stages': { token: 'tok', partBytes: 200_000, fragmentBytes: 128_000, maxParts: 256 },
+      'PUT /stages/tok/parts/1': { ok: true }, 'PUT /stages/tok/parts/2': { ok: true }, 'PUT /stages/tok/parts/3': { ok: true },
+      'PUT /stages/tok/parts/2/sections/0/fragments': { stored: true },
+      'POST /stages/tok/commit': json({ item: { id: 'new' } }, 201),
+    });
+    await api.client.saveItem({ id: 'i1' }, { rev: 1, sections: [small, { id: 'keep', content }, small] });
+    const puts = api.writes().filter((call) => call.method === 'PUT');
+    const fragments = puts.filter((call) => call.path.endsWith('/fragments'));
+    expect(puts.filter((call) => !call.path.endsWith('/fragments')).map((call) => call.path)).toEqual(['/stages/tok/parts/1', '/stages/tok/parts/2', '/stages/tok/parts/3']);
+    const logical = (puts[1]!.body as { sections: { id: string; field: { codePoints: number; fragments: unknown[] } }[] }).sections;
+    expect(logical).toHaveLength(1);
+    expect(logical[0]).toMatchObject({ id: 'keep', field: { codePoints: 600_000 } });
+    expect(fragments).toHaveLength(logical[0]!.field.fragments.length);
+    for (const call of fragments) expect(new TextEncoder().encode(call.raw).length).toBeLessThanOrEqual(128_000);
+    expect(Math.max(...api.writes().map((call) => call.raw?.length ?? 0))).toBeLessThanOrEqual(200_000);
+  });
+
+  it('re-sends a part whose request never started, and reconciles a lost commit from the Worker’s record of its key', async () => {
+    let fails = 1;
+    const api = fakeApi({
+      'POST /stages': { token: 'tok', partBytes: 200_000, maxParts: 256 },
+      'PUT /stages/tok/parts/1': () => { if (fails-- > 0) throw new TypeError('offline'); return { ok: true }; },
+      'PUT /stages/tok/parts/2': { ok: true }, 'PUT /stages/tok/parts/3': { ok: true }, 'PUT /stages/tok/parts/4': { ok: true },
+      'POST /stages/tok/commit': () => { throw new TypeError('offline'); },
+      'GET /operations/commit-tok': { operation: { key: 'commit-tok', state: 'committed', status: 201, resource: { 'item.id': 'saved' }, createdAt: 'then' } },
+      'GET /items/saved': { item: { id: 'saved' } },
+    });
+    const result = await api.client.saveItem<{ item: { id: string } }>({ kindPath: 'journal-entry' }, { projectId: 'p', sections: [section(150_000), section(150_000), section(150_000), section(150_000)] });
+    expect(result.item.id).toBe('saved');
+    const first = api.calls.filter((call) => call.path === '/stages/tok/parts/1');
+    expect(first).toHaveLength(2);
+    expect(first[0]!.headers.get('Idempotency-Key')).toBe(first[1]!.headers.get('Idempotency-Key'));
+    expect(api.calls.filter((call) => call.path === '/stages/tok/commit')).toHaveLength(1);
+    expect(api.calls.find((call) => call.path === '/stages/tok/commit')!.headers.get('Idempotency-Key')).toBe('commit-tok');
+  });
+
   it('opens an edit stage for the item and refuses a save that needs more parts than the stage allows', async () => {
     const api = fakeApi({ 'POST /stages': { token: 't', partBytes: 300_000, maxParts: 1 } });
     const error = await api.client.saveItem({ id: 'i9' }, { rev: 1, sections: [section(290_000), section(290_000)] }).catch((caught: unknown) => caught);
     expect(error).toMatchObject({ code: 'too_large', status: 413 });
     expect(api.writes()).toHaveLength(1);
-    expect(api.writes()[0]!.body).toEqual({ itemId: 'i9' });
+    expect(api.writes()[0]!.body).toEqual({ token: expect.any(String), itemId: 'i9' });
     expect(STAGED_SAVE_THRESHOLD_BYTES).toBe(512_000);
   });
 
@@ -143,5 +183,82 @@ describe('saving Research_Items', () => {
         expect(parsed.sections.length).toBeGreaterThan(0);
       }
     }), { numRuns: FC_RUNS });
+  });
+});
+
+describe('operation keys', () => {
+  const memory = () => { const data = new Map<string, string>(); return { getItem: (key: string) => data.get(key) ?? null, setItem: (key: string, value: string) => void data.set(key, value), data }; };
+  const noWait = (): Promise<void> => Promise.resolve();
+  const view = (state: string, extra: Record<string, unknown> = {}) => ({ operation: { key: 'k', state, createdAt: 'then', ...extra } });
+  const offline = (): never => { throw new TypeError('offline'); };
+  const client = (handlers: Parameters<typeof fakeApi>[0]) => {
+    const storage = memory();
+    const api = fakeApi(handlers, { storage, wait: noWait });
+    return { ...api, storage };
+  };
+
+  it('sends a fresh key with every write, stores it before sending, and forgets it once the answer is definite', async () => {
+    let during: string[] = [];
+    const api = client({ 'POST /links': () => { during = (api.client.pendingOperations()).map((op) => op.key); return { link: {} }; }, 'GET /me': { ok: true } });
+    await api.client.get('/me');
+    await api.client.post('/links', { a: 1 });
+    await api.client.post('/links', { a: 1 });
+    const [read, one, two] = api.calls;
+    expect(read!.headers.has('Idempotency-Key')).toBe(false);
+    expect(one!.headers.get('Idempotency-Key')).toMatch(/^[0-9A-Z]{26}$/u);
+    expect(two!.headers.get('Idempotency-Key')).not.toBe(one!.headers.get('Idempotency-Key'));
+    expect(during).toHaveLength(1);
+    expect(api.client.pendingOperations()).toEqual([]);
+  });
+
+  it('returns the saved result when the response is lost but the Worker committed', async () => {
+    const api = client({ 'POST /topics': offline, 'GET /operations/*': view('committed', { status: 201, resource: { 'item.id': 'T1' } }), 'GET /items/T1': { item: { id: 'T1' } } });
+    const result = await api.client.saveItem<{ item: { id: string } }>({ kindPath: 'topic' }, { title: 'x' });
+    expect(result.item.id).toBe('T1');
+    expect(api.client.pendingOperations()).toEqual([]);
+  });
+
+  it('re-sends the same key once when the Worker never started the write', async () => {
+    let attempts = 0;
+    const api = client({ 'POST /links': () => { if (attempts++ === 0) throw new TypeError('offline'); return { link: { id: 'L' } }; } });
+    expect(await api.client.post('/links', { a: 1 })).toEqual({ link: { id: 'L' } });
+    const sent = api.calls.filter((call) => call.path === '/links');
+    expect(sent).toHaveLength(2);
+    expect(sent[1]!.headers.get('Idempotency-Key')).toBe(sent[0]!.headers.get('Idempotency-Key'));
+  });
+
+  it.each([
+    ['committed', { status: 201 }, 'committed'],
+    ['refused', { status: 403, error: 'forbidden' }, 'forbidden'],
+    ['unknown', {}, 'unknown'],
+    ['pending', {}, 'unknown'],
+  ])('reports a lost %s write accurately', async (state, extra, code) => {
+    const api = client({ 'POST /links': offline, 'GET /operations/*': view(state, extra) });
+    await expect(api.client.post('/links', {})).rejects.toMatchObject({ code });
+    expect(api.client.pendingOperations()).toHaveLength(code === 'unknown' || code === 'committed' ? 1 : 0);
+    expect(api.calls.filter((call) => call.path === '/links')).toHaveLength(1);
+  });
+
+  it('keeps an unknown write in storage for the next page load and never sends it a second time on its own', async () => {
+    const storage = memory();
+    const api = fakeApi({ 'POST /links': offline }, { storage, wait: noWait });
+    const failure = await api.client.post('/links', { a: 1 }).catch((caught: unknown) => caught);
+    expect(failure).toMatchObject({ code: 'network' });
+    expect(api.client.pendingOperations()).toHaveLength(1);
+    expect(api.calls.filter((call) => call.path === '/links')).toHaveLength(3);
+  });
+
+  it('treats a replayed answer as committed, and a definite refusal as final', async () => {
+    const replay = client({ 'POST /topics': json({ replayed: true, operation: { key: 'k', state: 'committed', status: 201, resource: { 'item.id': 'T2' }, createdAt: 'then' } }, 201), 'GET /items/T2': { item: { id: 'T2' } } });
+    expect((await replay.client.saveItem<{ item: { id: string } }>({ kindPath: 'topic' }, { title: 'x' })).item.id).toBe('T2');
+    const refused = client({ 'POST /links': failure(403, 'forbidden') });
+    await expect(refused.client.post('/links', {})).rejects.toMatchObject({ code: 'forbidden' });
+    expect(refused.client.pendingOperations()).toEqual([]);
+    expect(refused.calls.filter((call) => call.path === '/links')).toHaveLength(1);
+  });
+
+  it('describes committed and unknown outcomes accurately', () => {
+    expect(failureMessage(new ApiFailure(0, 'committed'))).toMatch(/saved/u);
+    expect(failureMessage(new ApiFailure(0, 'unknown'))).toMatch(/not confirmed/u);
   });
 });
