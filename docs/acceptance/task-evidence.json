@@ -227,21 +227,26 @@
     },
     {
       "task": "30.7",
-      "state": "reopened",
-      "reason": "CSV preview buffers the entire file before applying a row limit. Stream with explicit scan, record and buffer budgets and bounded PDF/image handling.",
+      "state": "accepted",
+      "reason": "Verified that every preview reads only what it needs through a Member-bound Download_Link and names why it cannot show a file. A shared transport fetches the link through the ordinary authorized route, renews it before its 15-minute life ends or once when storage refuses a read, never sends credentials to storage, and caps every body: text logs ask for the first decimal megabyte by Range and are cut at that size even when a server ignores the Range, and a response is cancelled as soon as its limit is reached. CSV is streamed through Papa Parse: a scanner that follows quotes splits complete records, the header and 1,000 data rows are shown with the next record as a one-row lookahead, and the transfer is cancelled when the answer is known. The preview distinguishes more rows exist, end of file, and a budget-limited unknown remainder, with the 32 MiB scan, 256 KiB record and 2 MiB buffering limits from the Resource_Profile, and it never shows a quoted cell cut short. PDFs are read by PDF.js through a range transport of our own, so every range uses the refreshing link and counts against the 16 MiB cache budget; the document is canvas-only with no annotation layer, scripting, XFA or auto-fetch, keeps page n of N with previous, next and go-to controls, and draws pages smaller when the canvas would pass the 32 MiB decoded-image budget. Raster images are decoded only after the magic bytes match PNG, JPEG, GIF or WebP and the header size fits the decoded-image budget; SVG, HTML and polyglots never become anything but an image/png blob; fit, zoom to 400% and keyboard and pointer panning remain. Damaged, password-protected, mismatched, unavailable and resource-limited files each get their own message while metadata and the full download stay available. Browser tests cover bounded transfer and early cancellation, abort, link refresh on a refused range, very long and malformed CSV records, quoted line breaks across chunk boundaries, malicious and polyglot files, a password-protected PDF, and the cache budget; Property 46 now exercises the streaming parser across random chunkings. Rendering in the SPA is controlled rendering in the Workspace, not origin isolation by itself. No deployment or production certification is claimed.",
       "sourcePaths": [
         "apps/app/web/src/files/preview/index.tsx",
-        "apps/app/web/src/files/preview/pdf.tsx"
+        "apps/app/web/src/files/preview/transport.ts",
+        "apps/app/web/src/files/preview/ranges.ts",
+        "apps/app/web/src/files/preview/csv-stream.ts",
+        "apps/app/web/src/files/preview/pdf.tsx",
+        "apps/app/web/src/files/preview/image.tsx",
+        "apps/app/web/src/files/preview/magic.ts",
+        "apps/app/web/src/files/preview/truncate.ts"
       ],
       "testPaths": [
-        "apps/app/web/test/files.test.tsx"
+        "apps/app/web/test/preview.test.tsx",
+        "apps/app/web/test/properties/p46-preview-truncation.test.ts"
       ],
-      "correctionTasks": [
-        "30.7",
-        "30.11",
-        "57.8"
-      ],
-      "checks": []
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
     },
     {
       "task": "30.8",

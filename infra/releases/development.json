@@ -672,24 +672,36 @@
       "sha256": "cb0518441e51f88bafe37580720faf7b96cf59149b225ed22d9786b38f830775"
     },
     {
+      "path": "apps/app/web/src/files/preview/csv-stream.ts",
+      "sha256": "3852d5fca2e60c9687efd21f11093c8d0c7048a181c2326401d26cf652f70e44"
+    },
+    {
       "path": "apps/app/web/src/files/preview/image.tsx",
-      "sha256": "985e92d19bfedb49d7c4c6f832d5a48b2212ac054b00d4c1c382a5d9a35c5104"
+      "sha256": "82a0afeb23c4dd823974995b4b67f2cb293e0f7ac60f00c1b60ce4ddcd5ba626"
     },
     {
       "path": "apps/app/web/src/files/preview/index.tsx",
-      "sha256": "f4370ab8878f9058b4b7ab2671b1746b6dcf626c796771631022c0e59abbaf42"
+      "sha256": "3d9e9f62c86203b24e8ece02971aae5ad87f7a7adede90c74a2e207ac984b123"
     },
     {
       "path": "apps/app/web/src/files/preview/magic.ts",
-      "sha256": "915a500c46b192a5a3a48976f240e5b459417fc8ad3402d58686d33215eff9e0"
+      "sha256": "5f767ed1fddbc5508a483edb73e9a2bffae3cdbb7d77900032050a746e646e8c"
     },
     {
       "path": "apps/app/web/src/files/preview/pdf.tsx",
-      "sha256": "ed4f949f30d165f02f6a06f5e31721ec84831986cfa6874ef1a7f6c96275484a"
+      "sha256": "20d143d283ed9f7bf6416739e2f8ccba8549445eb618737c5d9b377cac6eed2b"
+    },
+    {
+      "path": "apps/app/web/src/files/preview/ranges.ts",
+      "sha256": "3cd03d2178749d5edf1e8d20a4045e8fe81641fbea8177713e7c3f23dec271f0"
+    },
+    {
+      "path": "apps/app/web/src/files/preview/transport.ts",
+      "sha256": "9d6a7a172960b2bb87fad20cf19f5abd2f3d095578955b51426132315fa289a1"
     },
     {
       "path": "apps/app/web/src/files/preview/truncate.ts",
-      "sha256": "8111091e88c92e1bc64a2c5a9758850daf307569e5f1b4a5111f3a6b7e9d54a7"
+      "sha256": "151765638fb6dfd94f53480bfaa12861aed62d3083e4a31a31e5e7e780cf1017"
     },
     {
       "path": "apps/app/web/src/files/upload.tsx",

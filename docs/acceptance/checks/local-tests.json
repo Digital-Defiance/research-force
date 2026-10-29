@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "command": "npm test -- --reporter=json --outputFile=<temporary report>",
-  "recordedAt": "2026-10-29T19:15:28.823Z",
+  "recordedAt": "2026-10-29T19:43:15.302Z",
   "scope": "local-synthetic",
   "success": true,
   "suites": [
@@ -500,6 +500,12 @@
     {
       "path": "apps/app/web/test/persist.test.tsx",
       "passed": 5,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/web/test/preview.test.tsx",
+      "passed": 27,
       "failed": 0,
       "skipped": 0
     },
@@ -1107,9 +1113,14 @@
     "apps/app/web/src/api.ts": "1b66d25b88888c8c1a30e83dc4c1492996e5e245a3aab41da40e4c1ab126f2ce",
     "apps/app/web/src/discussion/thread.tsx": "bb739eb7d0e7c5228a1da7d769af9d53711503f97983570e787ea18226b05500",
     "apps/app/web/src/files/attachment-page.tsx": "d794541d51aad6671ab36fa4f45a68cf34e6fb802a92efd6c784e68882b6e672",
-    "apps/app/web/src/files/preview/index.tsx": "f4370ab8878f9058b4b7ab2671b1746b6dcf626c796771631022c0e59abbaf42",
-    "apps/app/web/src/files/preview/pdf.tsx": "ed4f949f30d165f02f6a06f5e31721ec84831986cfa6874ef1a7f6c96275484a",
-    "apps/app/web/src/files/preview/truncate.ts": "8111091e88c92e1bc64a2c5a9758850daf307569e5f1b4a5111f3a6b7e9d54a7",
+    "apps/app/web/src/files/preview/csv-stream.ts": "3852d5fca2e60c9687efd21f11093c8d0c7048a181c2326401d26cf652f70e44",
+    "apps/app/web/src/files/preview/image.tsx": "82a0afeb23c4dd823974995b4b67f2cb293e0f7ac60f00c1b60ce4ddcd5ba626",
+    "apps/app/web/src/files/preview/index.tsx": "3d9e9f62c86203b24e8ece02971aae5ad87f7a7adede90c74a2e207ac984b123",
+    "apps/app/web/src/files/preview/magic.ts": "5f767ed1fddbc5508a483edb73e9a2bffae3cdbb7d77900032050a746e646e8c",
+    "apps/app/web/src/files/preview/pdf.tsx": "20d143d283ed9f7bf6416739e2f8ccba8549445eb618737c5d9b377cac6eed2b",
+    "apps/app/web/src/files/preview/ranges.ts": "3cd03d2178749d5edf1e8d20a4045e8fe81641fbea8177713e7c3f23dec271f0",
+    "apps/app/web/src/files/preview/transport.ts": "9d6a7a172960b2bb87fad20cf19f5abd2f3d095578955b51426132315fa289a1",
+    "apps/app/web/src/files/preview/truncate.ts": "151765638fb6dfd94f53480bfaa12861aed62d3083e4a31a31e5e7e780cf1017",
     "apps/app/web/src/files/upload.tsx": "e94daf2f1558a1a6466510f28f4c9d0317d7342b23e848e8319e4946234997de",
     "apps/app/web/src/items/forms/ItemForm.tsx": "7ba14bacec28eb5a195135c57d8f878cab6e153c89867051412c6d98ee4156ec",
     "apps/app/web/src/items/page.tsx": "48b1e925cd85435dc539771147645d83e987fc0975a1d02ebae2f836bbe67194",
@@ -1119,7 +1130,8 @@
     "apps/app/web/test/api.test.ts": "348dc97bf1889f1183882cdabf035a3989b4394cfdf3103c40566b19fea853b7",
     "apps/app/web/test/files.test.tsx": "c9dfcbbb311fcb4e2d906cbf4542a62ddc9f492c468231d58120fbf7d1e3efe2",
     "apps/app/web/test/local-development.test.tsx": "5491ae081bcc8638596d3775549102d6b8f9cebc3cb6516eefaa1690ca329580",
-    "apps/app/web/test/properties/p46-preview-truncation.test.ts": "38fb557827b3232d2f0aa0eaae7b69b14f87c68c7b43f4d6b5e4937d7dc43d8f",
+    "apps/app/web/test/preview.test.tsx": "35e7bdfbd5696f64a75d749e8a4bbdba3a6a8ce6de5734ea01114630fe0ebbbb",
+    "apps/app/web/test/properties/p46-preview-truncation.test.ts": "97e482eb28e60b1c6d0e2e45c7f75a088ce03bec8b512bd80c0bb71890ea633d",
     "apps/app/web/test/resource-profile.test.ts": "81cde34191c258fb1d0effd526b32c747bb65597854774d63c3ecd9aa6341877",
     "apps/dl/src/index.ts": "8b2d47afd2d41e8a6837a78a4f6dfd2b182f211e113b3949e5fa87d6e25f1a4f",
     "apps/dl/test/properties/p05-live-download-channel.test.ts": "8721adb272579599672be30a5c9071f7dca297ef9bf1a30d1376b1d4671e8262",
@@ -1131,7 +1143,7 @@
     "infra/recovery/deployment.example.json": "f50e284de933da91b761d0b6293f62caef82e8aa0c8db7c83e31e7eca5398bec",
     "infra/recovery/restore-proof.example.json": "2c02a645aaa612d1dd4f0bc537433a5e58764b4244a02562523aabc6d6a31554",
     "infra/releases/README.md": "73919ce7f8cc7b532d520dbc250f4f16ccd28f84e70e32d21d556190afe50ade",
-    "infra/releases/development.json": "4862e8c7a0c523d2528d201143edb9b13e10be84c3d472515183717dc7a740a5",
+    "infra/releases/development.json": "be697986ca2692b4ec08fe1bbe26e016e9903b88e4c64cd38eed993e8a24768e",
     "package-lock.json": "46bb71e749eeb2b853d3113a54c6b75e0a3a610f1178687a73334d4114e099d5",
     "package.json": "a57669ad85b1bb5873507b1ef7021825127f5e1aaa49ab3f7101b42ef8857e36",
     "packages/db/migrations/core/0007_restricted_access.sql": "68d6acff93c939939932102ad9a767541a9181815f983c24ebdcfc18ce3518a1",

@@ -2,15 +2,14 @@
   "inputs": {
     ".kiro/specs/research-collab-cms/requirements.md": "9e2d7cee953f4aeece04bad4a7dfae273a908c0df65c95beea7a4e572b71b5df",
     ".kiro/specs/research-collab-cms/design.md": "85df571e6efad1205603dca7addcea9c16f68252023d5483a2fbe81d705c4d93",
-    ".kiro/specs/research-collab-cms/tasks.md": "d28a0bba408d2dc4c45117f9fb3cee909033f3d0627e5ee52582d40bc90dbb50",
-    "docs/acceptance/task-evidence.json": "905353cdfcd4af15836a3be80669317c1f94c75af9b24ef29990a06959102beb"
+    ".kiro/specs/research-collab-cms/tasks.md": "bebc7fb5929f7e273444a65ccdfe61f1f8ff08c886d37d869357da75fe968f47",
+    "docs/acceptance/task-evidence.json": "b5bfe3687085428065057b4ae2f70de5d704d6abc483c3dba71154d48f523500"
   },
   "schemaVersion": 1,
   "nextTasks": [
-    "30.7"
+    "30.8"
   ],
   "remainingBuildOrder": [
-    "30.7",
     "30.8",
     "30.11",
     "57.6",
@@ -224,11 +223,11 @@
     "criteria": 738,
     "properties": 126,
     "leafTasks": 406,
-    "checkedLeaves": 198,
+    "checkedLeaves": 199,
     "historicalUnverified": 182,
-    "acceptedWithLocalEvidence": 16,
+    "acceptedWithLocalEvidence": 17,
     "propertyFiles": 62,
-    "remainingWaves": 208,
+    "remainingWaves": 207,
     "gates": 4
   },
   "structuralIssues": [],
@@ -15302,7 +15301,7 @@
     {
       "id": "30.7",
       "title": "Build the inline previews in `apps/app/web/src/files/preview/`",
-      "checked": false,
+      "checked": true,
       "requirements": [
         "14.1",
         "14.2",
@@ -15315,7 +15314,7 @@
       ],
       "properties": [],
       "prerequisites": [],
-      "phase": "repair",
+      "phase": "completed_baseline",
       "sourcePaths": [
         {
           "path": "apps/app/web/src/files/preview/",
@@ -15324,41 +15323,81 @@
         {
           "path": "apps/app/web/src/files/preview/index.tsx",
           "kind": "file",
-          "sha256": "f4370ab8878f9058b4b7ab2671b1746b6dcf626c796771631022c0e59abbaf42"
+          "sha256": "3d9e9f62c86203b24e8ece02971aae5ad87f7a7adede90c74a2e207ac984b123"
+        },
+        {
+          "path": "apps/app/web/src/files/preview/transport.ts",
+          "kind": "file",
+          "sha256": "9d6a7a172960b2bb87fad20cf19f5abd2f3d095578955b51426132315fa289a1"
+        },
+        {
+          "path": "apps/app/web/src/files/preview/ranges.ts",
+          "kind": "file",
+          "sha256": "3cd03d2178749d5edf1e8d20a4045e8fe81641fbea8177713e7c3f23dec271f0"
+        },
+        {
+          "path": "apps/app/web/src/files/preview/csv-stream.ts",
+          "kind": "file",
+          "sha256": "3852d5fca2e60c9687efd21f11093c8d0c7048a181c2326401d26cf652f70e44"
         },
         {
           "path": "apps/app/web/src/files/preview/pdf.tsx",
           "kind": "file",
-          "sha256": "ed4f949f30d165f02f6a06f5e31721ec84831986cfa6874ef1a7f6c96275484a"
+          "sha256": "20d143d283ed9f7bf6416739e2f8ccba8549445eb618737c5d9b377cac6eed2b"
         },
         {
-          "path": "apps/app/web/test/files.test.tsx",
+          "path": "apps/app/web/src/files/preview/image.tsx",
           "kind": "file",
-          "sha256": "c9dfcbbb311fcb4e2d906cbf4542a62ddc9f492c468231d58120fbf7d1e3efe2"
+          "sha256": "82a0afeb23c4dd823974995b4b67f2cb293e0f7ac60f00c1b60ce4ddcd5ba626"
+        },
+        {
+          "path": "apps/app/web/src/files/preview/magic.ts",
+          "kind": "file",
+          "sha256": "5f767ed1fddbc5508a483edb73e9a2bffae3cdbb7d77900032050a746e646e8c"
+        },
+        {
+          "path": "apps/app/web/src/files/preview/truncate.ts",
+          "kind": "file",
+          "sha256": "151765638fb6dfd94f53480bfaa12861aed62d3083e4a31a31e5e7e780cf1017"
+        },
+        {
+          "path": "apps/app/web/test/preview.test.tsx",
+          "kind": "file",
+          "sha256": "35e7bdfbd5696f64a75d749e8a4bbdba3a6a8ce6de5734ea01114630fe0ebbbb"
+        },
+        {
+          "path": "apps/app/web/test/properties/p46-preview-truncation.test.ts",
+          "kind": "file",
+          "sha256": "97e482eb28e60b1c6d0e2e45c7f75a088ce03bec8b512bd80c0bb71890ea633d"
         }
       ],
       "gates": [
         "team_archive",
         "final_checkpoint_49"
       ],
-      "acceptance": "reopened",
+      "acceptance": "accepted",
       "evidence": {
         "task": "30.7",
-        "state": "reopened",
-        "reason": "CSV preview buffers the entire file before applying a row limit. Stream with explicit scan, record and buffer budgets and bounded PDF/image handling.",
+        "state": "accepted",
+        "reason": "Verified that every preview reads only what it needs through a Member-bound Download_Link and names why it cannot show a file. A shared transport fetches the link through the ordinary authorized route, renews it before its 15-minute life ends or once when storage refuses a read, never sends credentials to storage, and caps every body: text logs ask for the first decimal megabyte by Range and are cut at that size even when a server ignores the Range, and a response is cancelled as soon as its limit is reached. CSV is streamed through Papa Parse: a scanner that follows quotes splits complete records, the header and 1,000 data rows are shown with the next record as a one-row lookahead, and the transfer is cancelled when the answer is known. The preview distinguishes more rows exist, end of file, and a budget-limited unknown remainder, with the 32 MiB scan, 256 KiB record and 2 MiB buffering limits from the Resource_Profile, and it never shows a quoted cell cut short. PDFs are read by PDF.js through a range transport of our own, so every range uses the refreshing link and counts against the 16 MiB cache budget; the document is canvas-only with no annotation layer, scripting, XFA or auto-fetch, keeps page n of N with previous, next and go-to controls, and draws pages smaller when the canvas would pass the 32 MiB decoded-image budget. Raster images are decoded only after the magic bytes match PNG, JPEG, GIF or WebP and the header size fits the decoded-image budget; SVG, HTML and polyglots never become anything but an image/png blob; fit, zoom to 400% and keyboard and pointer panning remain. Damaged, password-protected, mismatched, unavailable and resource-limited files each get their own message while metadata and the full download stay available. Browser tests cover bounded transfer and early cancellation, abort, link refresh on a refused range, very long and malformed CSV records, quoted line breaks across chunk boundaries, malicious and polyglot files, a password-protected PDF, and the cache budget; Property 46 now exercises the streaming parser across random chunkings. Rendering in the SPA is controlled rendering in the Workspace, not origin isolation by itself. No deployment or production certification is claimed.",
         "sourcePaths": [
           "apps/app/web/src/files/preview/index.tsx",
-          "apps/app/web/src/files/preview/pdf.tsx"
+          "apps/app/web/src/files/preview/transport.ts",
+          "apps/app/web/src/files/preview/ranges.ts",
+          "apps/app/web/src/files/preview/csv-stream.ts",
+          "apps/app/web/src/files/preview/pdf.tsx",
+          "apps/app/web/src/files/preview/image.tsx",
+          "apps/app/web/src/files/preview/magic.ts",
+          "apps/app/web/src/files/preview/truncate.ts"
         ],
         "testPaths": [
-          "apps/app/web/test/files.test.tsx"
+          "apps/app/web/test/preview.test.tsx",
+          "apps/app/web/test/properties/p46-preview-truncation.test.ts"
         ],
-        "correctionTasks": [
-          "30.7",
-          "30.11",
-          "57.8"
-        ],
-        "checks": []
+        "correctionTasks": [],
+        "checks": [
+          "docs/acceptance/checks/local-tests.json"
+        ]
       }
     },
     {
@@ -15373,9 +15412,7 @@
         "33.7"
       ],
       "properties": [],
-      "prerequisites": [
-        "30.7"
-      ],
+      "prerequisites": [],
       "phase": "repair",
       "sourcePaths": [
         {
@@ -15484,17 +15521,17 @@
         {
           "path": "apps/app/web/src/files/preview/index.tsx",
           "kind": "file",
-          "sha256": "f4370ab8878f9058b4b7ab2671b1746b6dcf626c796771631022c0e59abbaf42"
+          "sha256": "3d9e9f62c86203b24e8ece02971aae5ad87f7a7adede90c74a2e207ac984b123"
         },
         {
           "path": "apps/app/web/src/files/preview/truncate.ts",
           "kind": "file",
-          "sha256": "8111091e88c92e1bc64a2c5a9758850daf307569e5f1b4a5111f3a6b7e9d54a7"
+          "sha256": "151765638fb6dfd94f53480bfaa12861aed62d3083e4a31a31e5e7e780cf1017"
         },
         {
           "path": "apps/app/web/test/properties/p46-preview-truncation.test.ts",
           "kind": "file",
-          "sha256": "38fb557827b3232d2f0aa0eaae7b69b14f87c68c7b43f4d6b5e4937d7dc43d8f"
+          "sha256": "97e482eb28e60b1c6d0e2e45c7f75a088ce03bec8b512bd80c0bb71890ea633d"
         }
       ],
       "gates": [
@@ -19140,7 +19177,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "905353cdfcd4af15836a3be80669317c1f94c75af9b24ef29990a06959102beb"
+          "sha256": "b5bfe3687085428065057b4ae2f70de5d704d6abc483c3dba71154d48f523500"
         },
         {
           "path": "README.md",
@@ -19229,7 +19266,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "905353cdfcd4af15836a3be80669317c1f94c75af9b24ef29990a06959102beb"
+          "sha256": "b5bfe3687085428065057b4ae2f70de5d704d6abc483c3dba71154d48f523500"
         },
         {
           "path": "apps/app/src/index.ts",
@@ -19368,7 +19405,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "905353cdfcd4af15836a3be80669317c1f94c75af9b24ef29990a06959102beb"
+          "sha256": "b5bfe3687085428065057b4ae2f70de5d704d6abc483c3dba71154d48f523500"
         },
         {
           "path": "apps/app/src/local/services.ts",
@@ -20845,12 +20882,12 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "905353cdfcd4af15836a3be80669317c1f94c75af9b24ef29990a06959102beb"
+          "sha256": "b5bfe3687085428065057b4ae2f70de5d704d6abc483c3dba71154d48f523500"
         },
         {
           "path": "docs/acceptance/checks/local-tests.json",
           "kind": "file",
-          "sha256": "bc6e33c7360e3cb9519b5f2b80f7a81dbdc1565064da98e889eb21be395064d8"
+          "sha256": "3d1f0d46b565a1edaded4f3ce6e9ca66f2d1f6a299f9c514fdc2d2e3af5cf58c"
         },
         {
           "path": "tools/src/specs.ts",
@@ -20937,7 +20974,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "905353cdfcd4af15836a3be80669317c1f94c75af9b24ef29990a06959102beb"
+          "sha256": "b5bfe3687085428065057b4ae2f70de5d704d6abc483c3dba71154d48f523500"
         },
         {
           "path": "packages/domain/src/settings.ts",
@@ -21037,7 +21074,7 @@
         {
           "path": "apps/app/web/test/properties/p46-preview-truncation.test.ts",
           "kind": "file",
-          "sha256": "38fb557827b3232d2f0aa0eaae7b69b14f87c68c7b43f4d6b5e4937d7dc43d8f"
+          "sha256": "97e482eb28e60b1c6d0e2e45c7f75a088ce03bec8b512bd80c0bb71890ea633d"
         }
       ],
       "gates": [
@@ -21117,7 +21154,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "905353cdfcd4af15836a3be80669317c1f94c75af9b24ef29990a06959102beb"
+          "sha256": "b5bfe3687085428065057b4ae2f70de5d704d6abc483c3dba71154d48f523500"
         },
         {
           "path": "docs/storage/logical-fields.md",
@@ -21282,7 +21319,7 @@
         {
           "path": "infra/releases/development.json",
           "kind": "file",
-          "sha256": "4862e8c7a0c523d2528d201143edb9b13e10be84c3d472515183717dc7a740a5"
+          "sha256": "be697986ca2692b4ec08fe1bbe26e016e9903b88e4c64cd38eed993e8a24768e"
         },
         {
           "path": "infra/recovery/deployment.example.json",
@@ -21557,7 +21594,7 @@
         {
           "path": "infra/releases/development.json",
           "kind": "file",
-          "sha256": "4862e8c7a0c523d2528d201143edb9b13e10be84c3d472515183717dc7a740a5"
+          "sha256": "be697986ca2692b4ec08fe1bbe26e016e9903b88e4c64cd38eed993e8a24768e"
         },
         {
           "path": "apps/app/test/operations.test.ts",
@@ -22981,7 +23018,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "905353cdfcd4af15836a3be80669317c1f94c75af9b24ef29990a06959102beb"
+          "sha256": "b5bfe3687085428065057b4ae2f70de5d704d6abc483c3dba71154d48f523500"
         },
         {
           "path": "packages/domain/src/compatibility.ts",
@@ -23031,7 +23068,7 @@
         {
           "path": "infra/releases/development.json",
           "kind": "file",
-          "sha256": "4862e8c7a0c523d2528d201143edb9b13e10be84c3d472515183717dc7a740a5"
+          "sha256": "be697986ca2692b4ec08fe1bbe26e016e9903b88e4c64cd38eed993e8a24768e"
         },
         {
           "path": "infra/releases/README.md",
@@ -23417,24 +23454,6 @@
   ],
   "knownGaps": [
     {
-      "task": "30.7",
-      "state": "reopened",
-      "reason": "CSV preview buffers the entire file before applying a row limit. Stream with explicit scan, record and buffer budgets and bounded PDF/image handling.",
-      "sourcePaths": [
-        "apps/app/web/src/files/preview/index.tsx",
-        "apps/app/web/src/files/preview/pdf.tsx"
-      ],
-      "testPaths": [
-        "apps/app/web/test/files.test.tsx"
-      ],
-      "correctionTasks": [
-        "30.7",
-        "30.11",
-        "57.8"
-      ],
-      "checks": []
-    },
-    {
       "task": "30.8",
       "state": "reopened",
       "reason": "Listing attachments currently records views for listed files. Only opening or a permitted download should clear the corresponding flag.",
@@ -23525,43 +23544,43 @@
   "phases": {
     "repair": {
       "firstWave": 0,
-      "lastWave": 5
+      "lastWave": 4
     },
     "collaboration": {
-      "firstWave": 6,
-      "lastWave": 36
+      "firstWave": 5,
+      "lastWave": 35
     },
     "privacy": {
-      "firstWave": 37,
-      "lastWave": 60
+      "firstWave": 36,
+      "lastWave": 59
     },
     "imports_and_log": {
-      "firstWave": 61,
-      "lastWave": 84
+      "firstWave": 60,
+      "lastWave": 83
     },
     "publication": {
-      "firstWave": 85,
-      "lastWave": 102
+      "firstWave": 84,
+      "lastWave": 101
     },
     "outside_and_ai": {
-      "firstWave": 103,
-      "lastWave": 150
+      "firstWave": 102,
+      "lastWave": 149
     },
     "recovery": {
-      "firstWave": 151,
-      "lastWave": 168
+      "firstWave": 150,
+      "lastWave": 167
     },
     "release_tooling": {
-      "firstWave": 169,
-      "lastWave": 198
+      "firstWave": 168,
+      "lastWave": 197
     },
     "staging_and_acceptance": {
-      "firstWave": 199,
-      "lastWave": 206
+      "firstWave": 198,
+      "lastWave": 205
     },
     "production_activation": {
-      "firstWave": 207,
-      "lastWave": 207
+      "firstWave": 206,
+      "lastWave": 206
     }
   },
   "gates": [

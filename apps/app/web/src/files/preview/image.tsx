@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '../../ui';
-export function ImagePreview({ bytes, mime, onError }: { readonly bytes: Uint8Array; readonly mime: string; readonly onError: (cause: string) => void }) {
+import { damaged } from './transport';
+import type { PreviewError } from './transport';
+export function ImagePreview({ bytes, mime, onError }: { readonly bytes: Uint8Array; readonly mime: string; readonly onError: (cause: PreviewError) => void }) {
   const [url, setUrl] = useState('');
   const [zoom, setZoom] = useState<number | null>(null);
   const frame = useRef<HTMLDivElement>(null);
@@ -13,6 +15,6 @@ export function ImagePreview({ bytes, mime, onError }: { readonly bytes: Uint8Ar
       onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); drag.current = { x: event.clientX, y: event.clientY, left: event.currentTarget.scrollLeft, top: event.currentTarget.scrollTop }; }}
       onPointerMove={(event) => { if (drag.current) { event.currentTarget.scrollLeft = drag.current.left + drag.current.x - event.clientX; event.currentTarget.scrollTop = drag.current.top + drag.current.y - event.clientY; } }}
       onPointerUp={() => { drag.current = null; }} onPointerCancel={() => { drag.current = null; }}>
-      {url && <img src={url} draggable={false} className={zoom === null ? 'rf-file-image-fit' : 'rf-file-image-zoom'} style={zoom === null ? undefined : { zoom: zoom / 100 }} alt="Attachment preview" onError={() => onError('The image is damaged.')} />}
+      {url && <img src={url} draggable={false} className={zoom === null ? 'rf-file-image-fit' : 'rf-file-image-zoom'} style={zoom === null ? undefined : { zoom: zoom / 100 }} alt="Attachment preview" onError={() => onError(damaged('The image'))} />}
     </div></div>;
 }
