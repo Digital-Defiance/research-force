@@ -209,20 +209,21 @@
     },
     {
       "task": "30.6",
-      "state": "reopened",
-      "reason": "Upload metadata is held in component state and lost on reload. Persist acknowledged metadata and revalidate upload identity without fabricating a File object.",
+      "state": "accepted",
+      "reason": "Verified that the upload screen keeps what a Member entered across a reload without fabricating a File. With a form scope, each file’s title, caption, Origin, name, size, SHA-256 once computed, upload ID, attempt number and the group ID are mirrored into this tab’s storage before transfer begins and on every edit (never the bytes). After a reload a completed upload is revalidated against GET /uploads/{id} without the local file; one the sweeper removed fails alone with a reason, and a transfer cut off by the reload is checked with the server (finished uploads are settled as complete) or fails alone. A file whose bytes are gone is re-chosen through an input that checks name and size, and the SHA-256 when known, before the upload restarts; every other field survives. Each start attempt and each completion is a keyed write, so a lost completion response is reconciled from the Worker’s record and the upload itself, and a lost start response removes the orphan and asks for a retry. Retry and removal act on one file and leave the others’ uploads and metadata intact. A blocked submit, including Enter in a field, moves focus to the file-specific reasons. Item, Reply and Attachment forms use the scoped hook and forget their uploads when sent or discard them when discarded. Browser tests cover reload after completion and after failure, reselection (wrong name, wrong contents, correct file), a reload during a transfer, independent retry/removal, a lost completion response and the keyboard-blocked submit. The incremental Web Worker hashing, whole-number XHR progress and 60-second stall behavior are unchanged and keep their tests. Rights choices are not part of this screen: a new file starts with Rights Status Unknown and rights are set on the Attachment screen (30.8), so none are stored here. Explicit server drafts remain with task 64. No deployment or production certification is claimed.",
       "sourcePaths": [
-        "apps/app/web/src/files/upload.tsx"
+        "apps/app/web/src/files/upload.tsx",
+        "apps/app/web/src/items/forms/ItemForm.tsx",
+        "apps/app/web/src/discussion/thread.tsx",
+        "apps/app/web/src/files/attachment-page.tsx"
       ],
       "testPaths": [
         "apps/app/web/test/files.test.tsx"
       ],
-      "correctionTasks": [
-        "30.6",
-        "57.8",
-        "64.1"
-      ],
-      "checks": []
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
     },
     {
       "task": "30.7",

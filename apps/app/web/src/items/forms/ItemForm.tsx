@@ -109,7 +109,7 @@ function IssueSummary({ issues }: { readonly issues: readonly FieldIssue[] }) {
 
 /** Submit a new Research_Item of one kind into the chosen Project (R39.2, R39.3, R41.2, R41.7). */
 export function CreateItemForm({ kind, choice, data }: { readonly kind: ItemKind; readonly choice: ProjectChoice; readonly data: FormData }) {
-  const uploads = useUploads();
+  const uploads = useUploads(`item:new:${kind}`);
   const client = useApi();
   const navigate = useNavigate();
   const session = useSession();
@@ -121,13 +121,14 @@ export function CreateItemForm({ kind, choice, data }: { readonly kind: ItemKind
   const access = form.values.access ?? WHOLE_TEAM;
   const submit = async (event: FormEvent) => {
     event.preventDefault();
-    if (uploads.reasons.length > 0) return;
+    if (uploads.guard()) return;
     setBusy(true);
     setFailure(undefined);
     try {
       const reviews = form.values.reviews.length === 0 ? {} : { reviews: draftsToApi(form.values.reviews) };
       const response = await client.saveItem<{ item: ItemView }>({ kindPath: kind.replaceAll('_', '-') }, { ...createBody(kind, form.values.projectId, form.values.values), ...reviews, access: accessBody(access), ...(uploads.files.length ? { files: uploads.selected() } : {}) });
       form.sent();
+      uploads.sent();
       void navigate(`/items/${response.item.id}`);
     } catch (error) {
       setFailure(error);
@@ -154,7 +155,7 @@ export function CreateItemForm({ kind, choice, data }: { readonly kind: ItemKind
       {session.can('attachment.upload') && <UploadFields uploads={uploads} />}
       <div className="rf-actions">
         <Button type="submit" variant="primary" disabled={busy || uploads.reasons.length > 0}>Submit</Button>
-        <Button variant="quiet" onClick={form.discard}>Discard</Button>
+        <Button variant="quiet" onClick={() => { form.discard(); uploads.discard(); }}>Discard</Button>
       </div>
     </form>
   );

@@ -28,19 +28,20 @@ const EMPTY: RichText = { text: '', spans: [] };
 export function ReplyComposer({ parentId, label, mentions, onPosted, onCancel }: {
   readonly parentId: string; readonly label: string; readonly mentions: MentionOptions; readonly onPosted: () => void; readonly onCancel?: () => void;
 }) {
-  const uploads = useUploads();
+  const uploads = useUploads(`reply:${parentId}`);
   const client = useApi();
   const form = usePersistentForm<{ text: RichText }>(`reply:${parentId}`, { text: EMPTY });
   const [failure, setFailure] = useState<unknown>(undefined);
   const [busy, setBusy] = useState(false);
   const submit = async (event: FormEvent) => {
     event.preventDefault();
-    if (uploads.reasons.length > 0) return;
+    if (uploads.guard()) return;
     setBusy(true);
     setFailure(undefined);
     try {
       await client.post('/replies', { parentId, text: form.values.text, ...(uploads.files.length ? { files: uploads.selected() } : {}) });
       form.discard();
+      uploads.sent();
       onPosted();
     } catch (error) {
       setFailure(error);

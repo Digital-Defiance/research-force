@@ -19,12 +19,12 @@ export function SupersessionNotice({ successor }: { readonly successor: { id: st
   return <Notice tone="warning" title={`A later version was uploaded on ${formatDate(successor.uploadedAt)}.`}><Link to={`/attachments/${successor.id}`}>Open the superseding Attachment</Link></Notice>;
 }
 export function AttachFilesForm({ parentId, supersedesId }: { readonly parentId?: string; readonly supersedesId?: string }) {
-  const uploads = useUploads(); const client = useApi(); const navigate = useNavigate();
+  const uploads = useUploads(`attach:${supersedesId ?? parentId ?? 'new'}`); const client = useApi(); const navigate = useNavigate();
   const [failure, setFailure] = useState<unknown>(); const [busy, setBusy] = useState(false);
   const [last, setLast] = useState<{ id: string; title: string } | null>(null);
   const [target, setTarget] = useState(supersedesId);
-  return <form className="rf-stack" onSubmit={(event) => { event.preventDefault(); if (uploads.reasons.length || uploads.files.length === 0 || (target && uploads.files.length !== 1)) return; setBusy(true); setFailure(undefined);
-    void client.post<{ ids: string[] }>('/attachments', { ...(target ? { supersedesId: target } : { parentId }), files: uploads.selected() }).then((result) => { void navigate(`/attachments/${result.ids[0]}`); }, (error: unknown) => {
+  return <form className="rf-stack" onSubmit={(event) => { event.preventDefault(); if (uploads.guard() || uploads.files.length === 0 || (target && uploads.files.length !== 1)) return; setBusy(true); setFailure(undefined);
+    void client.post<{ ids: string[] }>('/attachments', { ...(target ? { supersedesId: target } : { parentId }), files: uploads.selected() }).then((result) => { uploads.sent(); void navigate(`/attachments/${result.ids[0]}`); }, (error: unknown) => {
       setFailure(error); if (typeof error === 'object' && error !== null && 'details' in error) setLast((error.details as { last?: { id: string; title: string } } | undefined)?.last ?? null);
     }).finally(() => setBusy(false)); }}>
     <h2>{target ? 'Add a new version' : 'Attach files'}</h2><SaveFailure error={failure} />

@@ -649,7 +649,7 @@
     },
     {
       "path": "apps/app/web/src/discussion/thread.tsx",
-      "sha256": "4b77182d7a4e72c8df2d479bf490552fd5db4f1892ade037bf7a25808d45d38c"
+      "sha256": "bb739eb7d0e7c5228a1da7d769af9d53711503f97983570e787ea18226b05500"
     },
     {
       "path": "apps/app/web/src/editor/RichTextEditor.tsx",
@@ -665,7 +665,7 @@
     },
     {
       "path": "apps/app/web/src/files/attachment-page.tsx",
-      "sha256": "9d0562c60a7563edab7dfdf92b61420e4be8c7a96381f61d0cc0fd5e4c49e9c3"
+      "sha256": "d794541d51aad6671ab36fa4f45a68cf34e6fb802a92efd6c784e68882b6e672"
     },
     {
       "path": "apps/app/web/src/files/hash-worker.ts",
@@ -693,7 +693,7 @@
     },
     {
       "path": "apps/app/web/src/files/upload.tsx",
-      "sha256": "bbcbd6b3d5a93bc645384806ced054b6232cb2e106b14ef18d6c2aee7913e191"
+      "sha256": "e94daf2f1558a1a6466510f28f4c9d0317d7342b23e848e8319e4946234997de"
     },
     {
       "path": "apps/app/web/src/history/delete.tsx",
@@ -713,7 +713,7 @@
     },
     {
       "path": "apps/app/web/src/items/forms/ItemForm.tsx",
-      "sha256": "15f4baf31f17dde898f66d75d01bc35857f106908cdfa2ff93c6c589c7e9f426"
+      "sha256": "7ba14bacec28eb5a195135c57d8f878cab6e153c89867051412c6d98ee4156ec"
     },
     {
       "path": "apps/app/web/src/items/forms/model.ts",
