@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router';
 import { ITEM_KIND_NAMES } from '@researchforce/domain/kind-names';
 import type { RichText } from '@researchforce/domain/richtext';
-import { ITEM_KINDS, SUBMITTABLE_KINDS } from '@researchforce/domain/types';
+import { ITEM_KINDS } from '@researchforce/domain/types';
 import type { ItemKind } from '@researchforce/domain/types';
 import { BUILT_IN_VALUE_IDS, RESUMABLE_RUN_OUTCOME_IDS } from '@researchforce/domain/value-sets';
 import type { ValueSetKind } from '@researchforce/domain/value-sets';
@@ -20,6 +20,7 @@ import { useSession } from '../session';
 import { DisclosureStatus, formatDate, LoadState, Notice, PersonLink, useLoad } from '../ui';
 import { partyName } from './forms/inputs';
 import { KIND_FIELDS } from './forms/model';
+import { QuestionBody } from './question/question-body';
 import type { CorrespondencePartyValue, CountValue, DateValue, DocumentDateValue, FieldSpec, PartyValue } from './forms/model';
 
 export interface ItemPageData {
@@ -94,7 +95,9 @@ const COMPANION_FIELDS: Readonly<Partial<Record<ItemKind, readonly string[]>>> =
   run: ['outcomeId', 'resumePoint'],
   hypothesis: ['statusValueId', 'eliminationScope'],
 };
-const HIDDEN_FIELDS = new Set(['title', 'logSummary', 'groupNote', 'sections']);
+const HIDDEN_FIELDS = new Set(['title', 'logSummary', 'groupNote', 'sections', 'groups', 'entryDetails']);
+/** Fields that a kind's own block shows instead of the general list. */
+const OWN_BLOCK: Readonly<Partial<Record<ItemKind, readonly string[]>>> = { research_question: ['question', 'introduction'] };
 
 /** Companion fields in one block with the field they qualify (R5.6, R5.10, R6.3, R7.4, R8.3). */
 function Companions({ data }: { readonly data: ItemPageData }) {
@@ -201,7 +204,7 @@ export function ItemDetails({ data }: { readonly data: ItemPageData }) {
     return index < 0 ? undefined : index + 1;
   };
   const reviewTargets = [{ value: item.id, label: 'The whole record' }, ...(item.sections ?? []).map((section, index) => ({ value: section.id, label: `Entry Section ${index + 1}` }))];
-  const companions = new Set(COMPANION_FIELDS[item.kind] ?? []);
+  const companions = new Set([...(COMPANION_FIELDS[item.kind] ?? []), ...(OWN_BLOCK[item.kind] ?? [])]);
   const fields = KIND_FIELDS[item.kind].filter((spec) => !HIDDEN_FIELDS.has(spec.name) && !companions.has(spec.name) && item[spec.name] !== undefined && item[spec.name] !== null);
   return (
     <article className="rf-stack">
@@ -239,6 +242,7 @@ export function ItemDetails({ data }: { readonly data: ItemPageData }) {
         </dl>
       </section>
       <Companions data={data} />
+      {item.kind === 'research_question' && <QuestionBody item={item} />}
       {fields.length > 0 && (
         <section className="rf-section" aria-label="Fields">
           <dl>{fields.map((spec) => <Entry key={spec.name} label={spec.label}><FieldValue spec={spec} value={item[spec.name]} data={data} /></Entry>)}</dl>
@@ -278,7 +282,7 @@ export function ItemDetails({ data }: { readonly data: ItemPageData }) {
       <section className="rf-section" aria-label="Submit from here">
         <h2>Submit a new record in this Project</h2>
         <ul className="rf-actions rf-list">
-          {SUBMITTABLE_KINDS.map((kind) => <li key={kind}><Link to={`/items/new/${kind}?unit=${item.id}`}>{ITEM_KIND_NAMES[kind]}</Link></li>)}
+          {ITEM_KINDS.map((kind) => <li key={kind}><Link to={`/items/new/${kind}?unit=${item.id}`}>{ITEM_KIND_NAMES[kind]}</Link></li>)}
         </ul>
       </section>
     </article>

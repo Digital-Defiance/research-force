@@ -48,9 +48,4 @@ describe('the Research_Question kind rows', () => {
     expect(adapter.read(await core().batch(adapter.load(core(), item.id)), {} as never).fields).toEqual({ question: 'Second?', groups: [] });
   });
 
-  it('stays out of the web submit menus until the Question screens exist', async () => {
-    const { SUBMITTABLE_KINDS, ITEM_KINDS } = await import('@researchforce/domain/types');
-    expect(ITEM_KINDS).toContain('research_question');
-    expect(SUBMITTABLE_KINDS).not.toContain('research_question');
-  });
 });

@@ -24,7 +24,8 @@ describe('the Workspace shell', () => {
     const view = renderWorkspace(fakeApi({ 'GET /me': makeMe(), 'GET /roles': { roles: BUILT_IN } }).client);
     const submit = await screen.findByRole('region', { name: 'Submit' });
     expect(within(submit).getByRole('link', { name: 'Finding' }).getAttribute('href')).toBe('/items/new/finding');
-    expect(within(submit).getAllByRole('link')).toHaveLength(8);
+    expect(within(submit).getAllByRole('link')).toHaveLength(9);
+    expect(within(submit).getByRole('link', { name: 'Research Question' }).getAttribute('href')).toBe('/items/new/research_question');
     view.unmount();
     renderWorkspace(fakeApi({ 'GET /me': makeMe(), 'GET /roles': { roles: BUILT_IN } }).client, '/items/new/unknown');
     expect(await screen.findByText('This page does not exist.')).toBeTruthy();

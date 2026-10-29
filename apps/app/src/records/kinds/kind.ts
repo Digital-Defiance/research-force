@@ -67,6 +67,8 @@ export interface KindAdapter {
   insert(batch: GuardedBatch, item: NewItem, fields: ItemFields): void;
   /** Writes of an edit's changed kind fields. */
   update(batch: GuardedBatch, item: BaseRow, before: ItemFields, after: ItemFields, changed: ReadonlySet<string>, now: Timestamp): void;
+  /** What the viewing Member may see of the kind's fields, with any extra response data, such as the entries they can read (R50.3). */
+  visible?(c: Context<ApiEnv>, fields: ItemFields): Promise<{ readonly fields: ItemFields; readonly extra?: Readonly<Record<string, unknown>> }>;
   /** Fix up an edit's merged fields before validation, such as dropping a field that the new status no longer carries. */
   adjust?(merged: Record<string, unknown>, patch: Readonly<Record<string, unknown>>, before: ItemFields): void;
   /** Data checks, guards, and automatic consequences of a submission or edit. */

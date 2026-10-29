@@ -97,6 +97,25 @@ export const question: KindAdapter = {
     addresses(batch, item.id, added);
     writeGroups(batch, item.id, groupsOf(after), new Set(groupsOf(before).flatMap((group) => (group.id === undefined ? [] : [group.id]))));
   },
+  /** The Question_Groups as the viewer sees them: entries whose targets the Member cannot read are omitted, and the others come with their kind, title, Item_Identifier and status (R50.3). */
+  async visible(c: Context<ApiEnv>, fields) {
+    const groups = groupsOf(fields);
+    const wanted = [...new Set(targetsOf(groups))];
+    if (wanted.length === 0) return { fields, extra: { entryDetails: {} } };
+    const found = await c.get('accountant').track(c.env.RF_CORE.prepare(
+      `SELECT u.id, u.unit_type AS type, ri.kind, ri.title, ri.item_identifier AS identifier, v.name AS status, a.title AS attachmentTitle, a.item_identifier AS attachmentIdentifier
+        FROM units u LEFT JOIN research_items ri ON ri.unit_id = u.id LEFT JOIN config_values v ON v.id = ri.status_value_id LEFT JOIN attachments a ON a.unit_id = u.id
+        WHERE u.id IN (SELECT value FROM json_each(?1)) AND ${visibleTo('u', '?2')} AND NOT EXISTS (SELECT 1 FROM deletions d WHERE d.unit_id = u.id)`,
+    ).bind(json(wanted), c.get('session').member.id).all<{ id: string; type: string; kind: string | null; title: string | null; identifier: string | null; status: string | null; attachmentTitle: string | null; attachmentIdentifier: string | null }>());
+    const details: Record<string, { kind: string; title: string; identifier: string | null; status?: string }> = {};
+    for (const unit of found.results) {
+      details[unit.id] = unit.type === 'attachment'
+        ? { kind: 'attachment', title: unit.attachmentTitle ?? '', identifier: unit.attachmentIdentifier }
+        : { kind: unit.kind ?? unit.type, title: unit.title ?? '', identifier: unit.identifier, ...(unit.status === null ? {} : { status: unit.status }) };
+    }
+    const shown = groups.map((group) => ({ ...group, entries: group.entries.filter((entry) => details[entry.targetId] !== undefined) }));
+    return { fields: { ...fields, groups: shown }, extra: { entryDetails: details } };
+  },
   /**
    * The entries a Research_Question may hold: live Research_Items and Attachments of its own Project that the Member can read (R50.6).
    * Entries an edit keeps are not checked again, so a Member who cannot read one can still edit the rest.
@@ -104,6 +123,11 @@ export const question: KindAdapter = {
   async rules(c: Context<ApiEnv>, save): Promise<KindRules> {
     const groups = groupsOf(save.after);
     const existing = new Set(targetsOf(groupsOf(save.before ?? {})));
+    if (save.base !== undefined && JSON.stringify(groups) !== JSON.stringify(groupsOf(save.before ?? {}))) {
+      // The Member saw only the entries they can read, so they cannot rearrange the ones they cannot (R50.3).
+      const stored = await c.get('accountant').track(c.env.RF_CORE.prepare('SELECT count(*) AS n FROM question_entries WHERE question_id = ?1').bind(save.id).all<{ n: number }>());
+      if ((stored.results[0]?.n ?? 0) > existing.size) return { issues: [{ field: 'groups', rule: 'This Research Question has entries that you cannot read, so only a Member who can read all of them can change its groups.' }] };
+    }
     const wanted = [...new Set(targetsOf(groups).filter((target) => !existing.has(target)))];
     if (wanted.length === 0) return { issues: [] };
     const projectId = (save.base?.projectId ?? save.after['projectId']) as string;

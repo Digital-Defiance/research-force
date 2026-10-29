@@ -2,7 +2,7 @@ import { AttachmentPage, AttachFilesForm } from './files/attachment-page';
 import { useMemo } from 'react';
 import { Link, Navigate, Route, Routes, useParams, useSearchParams } from 'react-router';
 import { ITEM_KIND_NAMES } from '@researchforce/domain/kind-names';
-import { SUBMITTABLE_KINDS } from '@researchforce/domain/types';
+import { ITEM_KINDS } from '@researchforce/domain/types';
 import type { ItemKind } from '@researchforce/domain/types';
 import { ActivityBadges, FeedScreen, SubmissionItemsScreen } from './activity/activity';
 import { useApiStatus } from './api';
@@ -67,14 +67,14 @@ function StartPage() {
       <section aria-label="Submit">
         <h2>Submit a new record</h2>
         <ul className="rf-list">
-          {SUBMITTABLE_KINDS.map((kind) => <li key={kind}><Link to={`/items/new/${kind}`}>{ITEM_KIND_NAMES[kind]}</Link></li>)}
+          {ITEM_KINDS.map((kind) => <li key={kind}><Link to={`/items/new/${kind}`}>{ITEM_KIND_NAMES[kind]}</Link></li>)}
         </ul>
       </section>
     </div>
   );
 }
 
-const isKind = (value: string | undefined): value is ItemKind => (SUBMITTABLE_KINDS as readonly string[]).includes(value ?? '');
+const isKind = (value: string | undefined): value is ItemKind => (ITEM_KINDS as readonly string[]).includes(value ?? '');
 
 function NewItemRoute() {
   const { kind } = useParams();

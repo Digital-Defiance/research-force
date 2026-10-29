@@ -112,6 +112,18 @@ describe('Research_Question entries (R50.1, R50.2, R50.6, R50.7)', () => {
     expect(await count("SELECT count(*) AS n FROM revisions WHERE target_id = ?1 AND kind = 'minor_edit' AND reason LIKE '%permanently deleted%'", created.id)).toBe(1);
   });
 
+  it('shows each Member only the entries they can read, with the details of those (R50.3)', async () => {
+    const open = await world.created('author', 'finding', { title: 'An open finding' });
+    const secret = await world.created('author', 'finding', { title: 'A restricted finding', access: { level: 'restricted', members: [] } });
+    const created = await world.created('author', 'research_question', { groups: [{ heading: 'Group', entries: [{ targetId: open.id }, { targetId: secret.id }] }] });
+    const seen = await world.view('colleague', created.id as string);
+    expect(groupsOf(seen)[0]!.entries.map((entry) => entry.targetId)).toEqual([open.id]);
+    expect(seen['entryDetails']).toEqual({ [open.id as string]: expect.objectContaining({ kind: 'finding', title: 'An open finding', identifier: open.identifier, status: expect.any(String) }) });
+    expect(groupsOf(await world.view('author', created.id as string))[0]!.entries).toHaveLength(2);
+    // The Administrator can read the restricted entry too, so nothing is hidden from them and nothing is lost by their edits.
+    expect(groupsOf(await world.view('admin', created.id as string))[0]!.entries).toHaveLength(2);
+  });
+
   it('is found by search on its question and group headings', async () => {
     await world.created('author', 'research_question', { question: 'Which zebra markings persisted?', groups: [{ heading: 'Quokka evidence', entries: [] }] });
     await drainSearch({ core: world.core(), search: world.bindings.RF_SEARCH }, world.at);

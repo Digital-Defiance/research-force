@@ -4,7 +4,7 @@
   "status": "development",
   "releasedAt": null,
   "build": {
-    "packageJsonSha256": "a57669ad85b1bb5873507b1ef7021825127f5e1aaa49ab3f7101b42ef8857e36",
+    "packageJsonSha256": "130382d22481985678f16064afea6e8f7106229258e370c1604d0448d2e8e83b",
     "packageLockSha256": "46bb71e749eeb2b853d3113a54c6b75e0a3a610f1178687a73334d4114e099d5"
   },
   "resourceProfileVersion": "resource-v1",
@@ -1274,6 +1274,10 @@
     {
       "path": "tools/certify-profile.ts",
       "sha256": "2a34d62abe80cbd9b94184a1127179abc657158ec32f3f924bb1f3152d775167"
+    },
+    {
+      "path": "tools/check-secrets.ts",
+      "sha256": "9b089510b984a6a49b6a05b86d67be87b75b1a9b768effe366d6862002f312ff"
     },
     {
       "path": "tools/check-specs.ts",

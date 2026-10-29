@@ -3,12 +3,14 @@ import type { ItemKind } from '@researchforce/domain/types';
 import type { ValueSetKind } from '@researchforce/domain/value-sets';
 import { EMPTY_RICH_TEXT } from '../../editor/spans';
 import type { ItemView } from '../../types';
+import { kindName } from '../question/kind-name';
+import { groupsFromItem, groupsToApi } from '../question/model';
 
 /** The fields of each Research_Item kind's form, in the order the form shows them, and how their values become a request body. */
 
 export type FieldKind =
   | 'text' | 'longtext' | 'rich' | 'value' | 'choice' | 'partial-date' | 'document-date' | 'full-date' | 'time'
-  | 'party' | 'members' | 'correspondence-parties' | 'counts' | 'sections' | 'item-ref';
+  | 'party' | 'members' | 'correspondence-parties' | 'counts' | 'sections' | 'item-ref' | 'groups';
 
 export interface FieldSpec {
   readonly name: string;
@@ -48,6 +50,7 @@ export const KIND_FIELDS: Readonly<Record<ItemKind, readonly FieldSpec[]>> = {
     title,
     { name: 'question', label: 'Question', kind: 'longtext', max: 500, required: true },
     { name: 'introduction', label: 'Introduction', kind: 'rich', max: 20_000 },
+    { name: 'groups', label: 'Question Groups', kind: 'groups' },
     logSummary(false), groupNote,
   ],
   finding: [
@@ -133,7 +136,7 @@ export function emptyValue(kind: FieldKind): unknown {
     case 'partial-date': case 'full-date': return EMPTY_DATE;
     case 'document-date': return { start: EMPTY_DATE, end: EMPTY_DATE };
     case 'party': return { kind: '', id: '' };
-    case 'members': case 'correspondence-parties': case 'counts': return [];
+    case 'members': case 'correspondence-parties': case 'counts': case 'groups': return [];
     case 'sections': return [{ content: EMPTY_RICH_TEXT }];
     default: return '';
   }
@@ -159,7 +162,7 @@ function fromStored(field: FieldSpec, stored: unknown): unknown {
 }
 
 export function valuesFromItem(item: ItemView): FormValues {
-  return Object.fromEntries(fieldsFor(item.kind, 'edit').map((field) => [field.name, fromStored(field, item[field.name])]));
+  return Object.fromEntries(fieldsFor(item.kind, 'edit').map((field) => [field.name, field.kind === 'groups' ? groupsFromItem(item[field.name], item['entryDetails'], kindName) : fromStored(field, item[field.name])]));
 }
 
 const filled = (date: DateValue): boolean => date.value.trim() !== '';
@@ -196,6 +199,7 @@ export function toApi(field: FieldSpec, value: unknown): unknown {
       const counts = (value as readonly CountValue[]).filter((count) => count.name !== '' || count.value !== '');
       return counts.length === 0 ? undefined : counts;
     }
+    case 'groups': return groupsToApi(value as Parameters<typeof groupsToApi>[0]);
     case 'sections': return (value as readonly SectionValue[]).map((section) => (section.id === undefined ? { content: section.content } : { id: section.id, content: section.content }));
     default: return value === '' ? undefined : value;
   }

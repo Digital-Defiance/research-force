@@ -6,6 +6,7 @@ import { EMPTY_RICH_TEXT } from '../../editor/spans';
 import type { MemberRow, PartyRecord, ValueSets } from '../../types';
 import { Button, CheckboxField, SelectField, TextField } from '../../ui';
 import type { Option } from '../../ui';
+import { GroupsInput } from '../question/groups-input';
 import type { CorrespondencePartyValue, CountValue, DateValue, DocumentDateValue, FieldSpec, PartyValue, SectionValue } from './model';
 
 export interface FormData {
@@ -150,6 +151,8 @@ export function FieldInput({ spec, value, onChange, errors, data }: InputProps) 
         </fieldset>
       );
     }
+    case 'groups':
+      return <GroupsInput label={spec.label} name={spec.name} value={value as Parameters<typeof GroupsInput>[0]['value']} onChange={onChange} errors={fieldErrors} />;
     case 'sections': {
       const sections = value as readonly SectionValue[];
       const update = (index: number, next: SectionValue | undefined) => onChange(next === undefined ? sections.filter((_section, at) => at !== index) : sections.map((section, at) => (at === index ? next : section)));

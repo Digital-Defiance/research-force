@@ -27,8 +27,6 @@ export type UnitType = typeof UNIT_TYPES[number];
 export type DisclosureUnitType = UnitType | 'project';
 export const ITEM_KINDS = ['journal_entry', 'finding', 'source', 'run', 'hypothesis', 'correspondence', 'archival_request', 'topic', 'research_question'] as const;
 export type ItemKind = typeof ITEM_KINDS[number];
-/** The kinds a Member can submit today; Research_Questions join them when their groups and entries are written (task 55.2). */
-export const SUBMITTABLE_KINDS: readonly ItemKind[] = ITEM_KINDS.filter((kind) => kind !== 'research_question');
 export const LEVELS = ['public', 'withheld', 'not_published'] as const;
 export type Level = typeof LEVELS[number];
 export const ACCESS_LEVELS = ['whole_team', 'restricted'] as const;

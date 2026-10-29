@@ -2,15 +2,14 @@
   "inputs": {
     ".kiro/specs/research-collab-cms/requirements.md": "9e2d7cee953f4aeece04bad4a7dfae273a908c0df65c95beea7a4e572b71b5df",
     ".kiro/specs/research-collab-cms/design.md": "85df571e6efad1205603dca7addcea9c16f68252023d5483a2fbe81d705c4d93",
-    ".kiro/specs/research-collab-cms/tasks.md": "da4c9058f8e7b7062d41585c4585fa26b3154d900c67ba8604acbbacf43f21f3",
-    "docs/acceptance/task-evidence.json": "218bed997313dbbaeb223f9b639e8bed47a505a1f94d36148db8fa2fc72a2b09"
+    ".kiro/specs/research-collab-cms/tasks.md": "18d010fbdbbfc3a99e8dd3b731c4a1dc20785faceeb83c8545ef72eb9ce2275f",
+    "docs/acceptance/task-evidence.json": "fdae0e7896f7f056cc0ecfa4c1a2ea191020ee8259295ff0529c699602ab628e"
   },
   "schemaVersion": 1,
   "nextTasks": [
-    "55.3"
+    "62.1"
   ],
   "remainingBuildOrder": [
-    "55.3",
     "62.1",
     "61.1",
     "66.1",
@@ -216,11 +215,11 @@
     "criteria": 738,
     "properties": 126,
     "leafTasks": 406,
-    "checkedLeaves": 206,
+    "checkedLeaves": 207,
     "historicalUnverified": 182,
-    "acceptedWithLocalEvidence": 24,
+    "acceptedWithLocalEvidence": 25,
     "propertyFiles": 64,
-    "remainingWaves": 200,
+    "remainingWaves": 199,
     "gates": 4
   },
   "structuralIssues": [],
@@ -10432,7 +10431,7 @@
         {
           "path": "packages/domain/src/types.ts",
           "kind": "file",
-          "sha256": "85112bf6321d928725eab29d12a920ad31f49b8f851a315cfc1b6ec81f745789"
+          "sha256": "b26465d85100fcd34f45865de797579b23ce2c488230554eadb304429d30cef9"
         },
         {
           "path": "packages/domain/src/text.ts",
@@ -13457,7 +13456,7 @@
         {
           "path": "apps/app/src/records/items.ts",
           "kind": "file",
-          "sha256": "e94536eb1dd8e1ca4c55423c0378b7e57e19c9168d7bf8e98a14a62a3123b216"
+          "sha256": "a2484b8074945cfba896c30f8c9fb2fd627d6d80b6f9533831e8f66b4c52c793"
         },
         {
           "path": "apps/app/web/src/api.ts",
@@ -13670,7 +13669,7 @@
         {
           "path": "apps/app/web/src/routes.tsx",
           "kind": "file",
-          "sha256": "8569af67cf9eb3d2df998656feab71e377a85037a9a703804120c14f44a8a20b"
+          "sha256": "9a651378d3e7276504b5559692727284f048f736b61931dbe02eaeb046ae828f"
         },
         {
           "path": "apps/app/web/src/api.ts",
@@ -13779,7 +13778,7 @@
         {
           "path": "apps/app/web/src/items/page.tsx",
           "kind": "file",
-          "sha256": "bfe1fd79a62a49e128b7f0658f5dc5baf2f1ce6ca2e576090191b04701e19363"
+          "sha256": "df27c1da27ae94ccf6ce1aa0bcdde7783cd6216e804850f99959c4cfb05deb7e"
         }
       ],
       "gates": [],
@@ -19176,7 +19175,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "218bed997313dbbaeb223f9b639e8bed47a505a1f94d36148db8fa2fc72a2b09"
+          "sha256": "fdae0e7896f7f056cc0ecfa4c1a2ea191020ee8259295ff0529c699602ab628e"
         },
         {
           "path": "README.md",
@@ -19265,7 +19264,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "218bed997313dbbaeb223f9b639e8bed47a505a1f94d36148db8fa2fc72a2b09"
+          "sha256": "fdae0e7896f7f056cc0ecfa4c1a2ea191020ee8259295ff0529c699602ab628e"
         },
         {
           "path": "apps/app/src/index.ts",
@@ -19404,7 +19403,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "218bed997313dbbaeb223f9b639e8bed47a505a1f94d36148db8fa2fc72a2b09"
+          "sha256": "fdae0e7896f7f056cc0ecfa4c1a2ea191020ee8259295ff0529c699602ab628e"
         },
         {
           "path": "apps/app/src/local/services.ts",
@@ -19959,7 +19958,7 @@
         {
           "path": "apps/app/web/src/items/page.tsx",
           "kind": "file",
-          "sha256": "bfe1fd79a62a49e128b7f0658f5dc5baf2f1ce6ca2e576090191b04701e19363"
+          "sha256": "df27c1da27ae94ccf6ce1aa0bcdde7783cd6216e804850f99959c4cfb05deb7e"
         },
         {
           "path": "apps/app/web/test/access.test.tsx",
@@ -20492,7 +20491,7 @@
         {
           "path": "apps/app/src/records/kinds/question.ts",
           "kind": "file",
-          "sha256": "b91fd65f4a72d7aaad2748befdcdcf8b2f688e89fb1d1aaafa3ab0b707f14e24"
+          "sha256": "227f6dd51e359891121b3d741420edb8df38745215b83389669b489fb52ae0ed"
         },
         {
           "path": "packages/domain/test/schema-items.test.ts",
@@ -20512,7 +20511,7 @@
         {
           "path": "apps/app/test/research-questions.test.ts",
           "kind": "file",
-          "sha256": "c1c0b2b16bc0dcf8ae345169748ff9fce8f89d7a5eb531220c99adfb5d761491"
+          "sha256": "964710e1e8b792494a9ed6aa2c05b8827e4fc2fb6f0e574c5e85921fddff2905"
         },
         {
           "path": "apps/app/test/links.test.ts",
@@ -20574,12 +20573,12 @@
         {
           "path": "apps/app/src/records/kinds/question.ts",
           "kind": "file",
-          "sha256": "b91fd65f4a72d7aaad2748befdcdcf8b2f688e89fb1d1aaafa3ab0b707f14e24"
+          "sha256": "227f6dd51e359891121b3d741420edb8df38745215b83389669b489fb52ae0ed"
         },
         {
           "path": "apps/app/src/records/items.ts",
           "kind": "file",
-          "sha256": "e94536eb1dd8e1ca4c55423c0378b7e57e19c9168d7bf8e98a14a62a3123b216"
+          "sha256": "a2484b8074945cfba896c30f8c9fb2fd627d6d80b6f9533831e8f66b4c52c793"
         },
         {
           "path": "apps/app/src/api/routes/items.ts",
@@ -20604,12 +20603,12 @@
         {
           "path": "apps/app/test/question-entries.test.ts",
           "kind": "file",
-          "sha256": "d8c5a24843ba87a730f55a3a1c5a949873c79574361ef337da3e07dd79bff7f9"
+          "sha256": "fd3b8419ca2f9eccc72ada76104c666c1fcefd4a164df3e06b75128db19b5501"
         },
         {
           "path": "apps/app/test/research-questions.test.ts",
           "kind": "file",
-          "sha256": "c1c0b2b16bc0dcf8ae345169748ff9fce8f89d7a5eb531220c99adfb5d761491"
+          "sha256": "964710e1e8b792494a9ed6aa2c05b8827e4fc2fb6f0e574c5e85921fddff2905"
         },
         {
           "path": "apps/app/test/links.test.ts",
@@ -20654,26 +20653,92 @@
     {
       "id": "55.3",
       "title": "Build the Research_Question screens in `apps/app/web/src/items/question/`",
-      "checked": false,
+      "checked": true,
       "requirements": [
         "50.1",
         "50.3"
       ],
       "properties": [],
       "prerequisites": [],
-      "phase": "collaboration",
+      "phase": "completed_baseline",
       "sourcePaths": [
         {
           "path": "apps/app/web/src/items/question/",
-          "kind": "missing"
+          "kind": "directory"
+        },
+        {
+          "path": "apps/app/web/src/items/question/groups-input.tsx",
+          "kind": "file",
+          "sha256": "bbb2a45576ca456c39e89c189c129e04a65bcf0b4e22b4764b54cfc4a0b72b3a"
+        },
+        {
+          "path": "apps/app/web/src/items/question/entry-picker.tsx",
+          "kind": "file",
+          "sha256": "ec0a59a5bc38bc17071d5af37c17c8fa7111a683fb81afe97e999284b630634a"
+        },
+        {
+          "path": "apps/app/web/src/items/question/question-body.tsx",
+          "kind": "file",
+          "sha256": "1fa09541830b42d4e09dee166a2a6295bf37e64360a789defd3d6c32343a8a32"
+        },
+        {
+          "path": "apps/app/web/src/items/question/model.ts",
+          "kind": "file",
+          "sha256": "977f64940ea6121527308bfd14ed375dec6f6659d58b84af2f642d9517af2ae7"
+        },
+        {
+          "path": "apps/app/web/src/items/forms/model.ts",
+          "kind": "file",
+          "sha256": "556310b354a1c0f0a95776f55009480e03f768dc74a2e0b365e290d7fbcc87d4"
+        },
+        {
+          "path": "apps/app/web/src/items/page.tsx",
+          "kind": "file",
+          "sha256": "df27c1da27ae94ccf6ce1aa0bcdde7783cd6216e804850f99959c4cfb05deb7e"
+        },
+        {
+          "path": "apps/app/src/records/kinds/question.ts",
+          "kind": "file",
+          "sha256": "227f6dd51e359891121b3d741420edb8df38745215b83389669b489fb52ae0ed"
+        },
+        {
+          "path": "apps/app/web/test/question.test.tsx",
+          "kind": "file",
+          "sha256": "906563df3df0f7fdd166930d1d4e718fba1487ad54fe24587358d34136e37d84"
+        },
+        {
+          "path": "apps/app/test/question-entries.test.ts",
+          "kind": "file",
+          "sha256": "fd3b8419ca2f9eccc72ada76104c666c1fcefd4a164df3e06b75128db19b5501"
         }
       ],
       "gates": [
         "team_archive",
         "final_checkpoint_49"
       ],
-      "acceptance": "planned",
-      "evidence": null
+      "acceptance": "accepted",
+      "evidence": {
+        "task": "55.3",
+        "state": "accepted",
+        "reason": "Verified the Research_Question screens in the browser test project. The form submits and edits the question, introduction and Question_Groups: a group has a heading, entries are found by searching, only Research_Items and Attachments are offered, an entry already chosen is marked and cannot be added twice, and entries and groups are reordered with buttons (move up, move down, remove) and by dragging, including moving an entry to another group. The request carries group identifiers and entry targets only, an edit sends the groups only when they changed, and each invalid entry's rule is shown next to it. The page shows the question, the introduction and each group, with each entry's kind, Item_Identifier, title and status linked to the record or Attachment. The Worker returns only the entries the viewing Member can read, with their details, and refuses to let a Member who cannot read every entry rearrange the groups, so nothing is lost; a Member who can read only some entries sees only those, and an Administrator sees all. The kind is offered in the submit menus. The Public_Site rendering follows in 55.4. No deployment or production certification is claimed.",
+        "sourcePaths": [
+          "apps/app/web/src/items/question/groups-input.tsx",
+          "apps/app/web/src/items/question/entry-picker.tsx",
+          "apps/app/web/src/items/question/question-body.tsx",
+          "apps/app/web/src/items/question/model.ts",
+          "apps/app/web/src/items/forms/model.ts",
+          "apps/app/web/src/items/page.tsx",
+          "apps/app/src/records/kinds/question.ts"
+        ],
+        "testPaths": [
+          "apps/app/web/test/question.test.tsx",
+          "apps/app/test/question-entries.test.ts"
+        ],
+        "correctionTasks": [],
+        "checks": [
+          "docs/acceptance/checks/local-tests.json"
+        ]
+      }
     },
     {
       "id": "55.4",
@@ -21022,12 +21087,12 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "218bed997313dbbaeb223f9b639e8bed47a505a1f94d36148db8fa2fc72a2b09"
+          "sha256": "fdae0e7896f7f056cc0ecfa4c1a2ea191020ee8259295ff0529c699602ab628e"
         },
         {
           "path": "docs/acceptance/checks/local-tests.json",
           "kind": "file",
-          "sha256": "2267c6d334742042ecb62e9e9b340027b8de5dc83af60fc22508352c3b833ec9"
+          "sha256": "4fe4fd993d23a543b7765838253574d55579a14e060d3787da949b3982013054"
         },
         {
           "path": "tools/src/specs.ts",
@@ -21114,7 +21179,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "218bed997313dbbaeb223f9b639e8bed47a505a1f94d36148db8fa2fc72a2b09"
+          "sha256": "fdae0e7896f7f056cc0ecfa4c1a2ea191020ee8259295ff0529c699602ab628e"
         },
         {
           "path": "packages/domain/src/settings.ts",
@@ -21294,7 +21359,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "218bed997313dbbaeb223f9b639e8bed47a505a1f94d36148db8fa2fc72a2b09"
+          "sha256": "fdae0e7896f7f056cc0ecfa4c1a2ea191020ee8259295ff0529c699602ab628e"
         },
         {
           "path": "docs/storage/logical-fields.md",
@@ -21404,7 +21469,7 @@
         {
           "path": "apps/app/src/records/items.ts",
           "kind": "file",
-          "sha256": "e94536eb1dd8e1ca4c55423c0378b7e57e19c9168d7bf8e98a14a62a3123b216"
+          "sha256": "a2484b8074945cfba896c30f8c9fb2fd627d6d80b6f9533831e8f66b4c52c793"
         },
         {
           "path": "apps/app/src/records/history.ts",
@@ -21459,7 +21524,7 @@
         {
           "path": "infra/releases/development.json",
           "kind": "file",
-          "sha256": "5ad97c64fe1279f1ddf94b4c57cf449f0a8d281c09d82ce8dbe7a255110b5e39"
+          "sha256": "8a5a4db927393ce21c691869a422b33e78d0746fb5ce4b7ad82fb00c440adec8"
         },
         {
           "path": "infra/recovery/deployment.example.json",
@@ -21734,7 +21799,7 @@
         {
           "path": "infra/releases/development.json",
           "kind": "file",
-          "sha256": "5ad97c64fe1279f1ddf94b4c57cf449f0a8d281c09d82ce8dbe7a255110b5e39"
+          "sha256": "8a5a4db927393ce21c691869a422b33e78d0746fb5ce4b7ad82fb00c440adec8"
         },
         {
           "path": "apps/app/test/operations.test.ts",
@@ -22718,9 +22783,7 @@
         "60.1"
       ],
       "properties": [],
-      "prerequisites": [
-        "55.3"
-      ],
+      "prerequisites": [],
       "phase": "collaboration",
       "sourcePaths": [],
       "gates": [
@@ -23295,7 +23358,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "218bed997313dbbaeb223f9b639e8bed47a505a1f94d36148db8fa2fc72a2b09"
+          "sha256": "fdae0e7896f7f056cc0ecfa4c1a2ea191020ee8259295ff0529c699602ab628e"
         },
         {
           "path": "packages/domain/src/compatibility.ts",
@@ -23345,7 +23408,7 @@
         {
           "path": "infra/releases/development.json",
           "kind": "file",
-          "sha256": "5ad97c64fe1279f1ddf94b4c57cf449f0a8d281c09d82ce8dbe7a255110b5e39"
+          "sha256": "8a5a4db927393ce21c691869a422b33e78d0746fb5ce4b7ad82fb00c440adec8"
         },
         {
           "path": "infra/releases/README.md",
@@ -23674,7 +23737,7 @@
         {
           "path": "apps/app/web/src/routes.tsx",
           "kind": "file",
-          "sha256": "8569af67cf9eb3d2df998656feab71e377a85037a9a703804120c14f44a8a20b"
+          "sha256": "9a651378d3e7276504b5559692727284f048f736b61931dbe02eaeb046ae828f"
         },
         {
           "path": "apps/ops/src/index.ts",
@@ -23788,39 +23851,39 @@
   "phases": {
     "collaboration": {
       "firstWave": 0,
-      "lastWave": 28
+      "lastWave": 27
     },
     "privacy": {
-      "firstWave": 29,
-      "lastWave": 52
+      "firstWave": 28,
+      "lastWave": 51
     },
     "imports_and_log": {
-      "firstWave": 53,
-      "lastWave": 76
+      "firstWave": 52,
+      "lastWave": 75
     },
     "publication": {
-      "firstWave": 77,
-      "lastWave": 94
+      "firstWave": 76,
+      "lastWave": 93
     },
     "outside_and_ai": {
-      "firstWave": 95,
-      "lastWave": 142
+      "firstWave": 94,
+      "lastWave": 141
     },
     "recovery": {
-      "firstWave": 143,
-      "lastWave": 160
+      "firstWave": 142,
+      "lastWave": 159
     },
     "release_tooling": {
-      "firstWave": 161,
-      "lastWave": 190
+      "firstWave": 160,
+      "lastWave": 189
     },
     "staging_and_acceptance": {
-      "firstWave": 191,
-      "lastWave": 198
+      "firstWave": 190,
+      "lastWave": 197
     },
     "production_activation": {
-      "firstWave": 199,
-      "lastWave": 199
+      "firstWave": 198,
+      "lastWave": 198
     }
   },
   "gates": [

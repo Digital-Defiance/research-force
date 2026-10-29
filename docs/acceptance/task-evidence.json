@@ -821,6 +821,28 @@
       "checks": [
         "docs/acceptance/checks/local-tests.json"
       ]
+    },
+    {
+      "task": "55.3",
+      "state": "accepted",
+      "reason": "Verified the Research_Question screens in the browser test project. The form submits and edits the question, introduction and Question_Groups: a group has a heading, entries are found by searching, only Research_Items and Attachments are offered, an entry already chosen is marked and cannot be added twice, and entries and groups are reordered with buttons (move up, move down, remove) and by dragging, including moving an entry to another group. The request carries group identifiers and entry targets only, an edit sends the groups only when they changed, and each invalid entry's rule is shown next to it. The page shows the question, the introduction and each group, with each entry's kind, Item_Identifier, title and status linked to the record or Attachment. The Worker returns only the entries the viewing Member can read, with their details, and refuses to let a Member who cannot read every entry rearrange the groups, so nothing is lost; a Member who can read only some entries sees only those, and an Administrator sees all. The kind is offered in the submit menus. The Public_Site rendering follows in 55.4. No deployment or production certification is claimed.",
+      "sourcePaths": [
+        "apps/app/web/src/items/question/groups-input.tsx",
+        "apps/app/web/src/items/question/entry-picker.tsx",
+        "apps/app/web/src/items/question/question-body.tsx",
+        "apps/app/web/src/items/question/model.ts",
+        "apps/app/web/src/items/forms/model.ts",
+        "apps/app/web/src/items/page.tsx",
+        "apps/app/src/records/kinds/question.ts"
+      ],
+      "testPaths": [
+        "apps/app/web/test/question.test.tsx",
+        "apps/app/test/question-entries.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
     }
   ]
 }

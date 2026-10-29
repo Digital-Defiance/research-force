@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "command": "npm test -- --reporter=json --outputFile=<temporary report>",
-  "recordedAt": "2026-10-29T22:03:54.300Z",
+  "recordedAt": "2026-10-29T22:29:02.161Z",
   "scope": "local-synthetic",
   "success": true,
   "suites": [
@@ -385,13 +385,13 @@
     },
     {
       "path": "apps/app/test/question-entries.test.ts",
-      "passed": 7,
+      "passed": 8,
       "failed": 0,
       "skipped": 0
     },
     {
       "path": "apps/app/test/research-questions.test.ts",
-      "passed": 3,
+      "passed": 2,
       "failed": 0,
       "skipped": 0
     },
@@ -554,6 +554,12 @@
     {
       "path": "apps/app/web/test/properties/p46-preview-truncation.test.ts",
       "passed": 5,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/web/test/question.test.tsx",
+      "passed": 6,
       "failed": 0,
       "skipped": 0
     },
@@ -1124,9 +1130,9 @@
     "apps/app/src/records/access.ts": "2f1cc0e95a2e9d2acc436ece5f74323f62b82f41521bbf0d627f7011b40b0110",
     "apps/app/src/records/field-values.ts": "62544c7633894faf051160160a5bc53bfaef6fa539e39a8c232383887f75c993",
     "apps/app/src/records/history.ts": "7c4bd027ecc4fab1e571c5cef115baf81f42beb208f5c719566743bc38cfc764",
-    "apps/app/src/records/items.ts": "e94536eb1dd8e1ca4c55423c0378b7e57e19c9168d7bf8e98a14a62a3123b216",
+    "apps/app/src/records/items.ts": "a2484b8074945cfba896c30f8c9fb2fd627d6d80b6f9533831e8f66b4c52c793",
     "apps/app/src/records/kinds/journal.ts": "933c45dbd304eb1b6193cd2455d398e201116e16e622589b3498f892db457306",
-    "apps/app/src/records/kinds/question.ts": "b91fd65f4a72d7aaad2748befdcdcf8b2f688e89fb1d1aaafa3ab0b707f14e24",
+    "apps/app/src/records/kinds/question.ts": "227f6dd51e359891121b3d741420edb8df38745215b83389669b489fb52ae0ed",
     "apps/app/src/records/links.ts": "42b18e04780e17640e10ac8dd12e42351f3a913fbd860d24c15bd1f7467572d7",
     "apps/app/src/records/stages.ts": "da676138512638f05c562a22603e64af299e1209d16bb902bc13b11bfcd43d4a",
     "apps/app/src/records/submissions.ts": "9cf103427ff4be5d6cec10958db8f0f641c6ee06390a6c23d7513d9519ba7ef9",
@@ -1154,8 +1160,8 @@
     "apps/app/test/properties/p101-access-changes.test.ts": "6bc83a71a3e15b534caa1fd13605fc30ebffb3ded920a08351933634db823066",
     "apps/app/test/properties/p109-text-fragments.test.ts": "1b50e33dd4182f583bdc5d5bdb714099c68073a8ce671ccf2468373191cdaf72",
     "apps/app/test/properties/p110-idempotent-mutations.test.ts": "870ba98db23a944fee8488b263ad9985ab4a0a1037ab7bc8ff2e073d3b1ae539",
-    "apps/app/test/question-entries.test.ts": "d8c5a24843ba87a730f55a3a1c5a949873c79574361ef337da3e07dd79bff7f9",
-    "apps/app/test/research-questions.test.ts": "c1c0b2b16bc0dcf8ae345169748ff9fce8f89d7a5eb531220c99adfb5d761491",
+    "apps/app/test/question-entries.test.ts": "fd3b8419ca2f9eccc72ada76104c666c1fcefd4a164df3e06b75128db19b5501",
+    "apps/app/test/research-questions.test.ts": "964710e1e8b792494a9ed6aa2c05b8827e4fc2fb6f0e574c5e85921fddff2905",
     "apps/app/test/resource-profile.test.ts": "800884eb7c85819a7c94f78044f52cc91caf7f94dcd43d7ca848e0349beb51f6",
     "apps/app/test/search-indexer.test.ts": "5bbef95727bfa6b5e4e32e7f9a70ae38911372ca35f4848930a05890acfa7ab7",
     "apps/app/test/search.test.ts": "c29f3a3bb3503f8b47505097b32166042d2bc6dc7055da55bb34eabb19ce42e4",
@@ -1175,7 +1181,12 @@
     "apps/app/web/src/files/preview/truncate.ts": "151765638fb6dfd94f53480bfaa12861aed62d3083e4a31a31e5e7e780cf1017",
     "apps/app/web/src/files/upload.tsx": "e94daf2f1558a1a6466510f28f4c9d0317d7342b23e848e8319e4946234997de",
     "apps/app/web/src/items/forms/ItemForm.tsx": "7ba14bacec28eb5a195135c57d8f878cab6e153c89867051412c6d98ee4156ec",
-    "apps/app/web/src/items/page.tsx": "bfe1fd79a62a49e128b7f0658f5dc5baf2f1ce6ca2e576090191b04701e19363",
+    "apps/app/web/src/items/forms/model.ts": "556310b354a1c0f0a95776f55009480e03f768dc74a2e0b365e290d7fbcc87d4",
+    "apps/app/web/src/items/page.tsx": "df27c1da27ae94ccf6ce1aa0bcdde7783cd6216e804850f99959c4cfb05deb7e",
+    "apps/app/web/src/items/question/entry-picker.tsx": "ec0a59a5bc38bc17071d5af37c17c8fa7111a683fb81afe97e999284b630634a",
+    "apps/app/web/src/items/question/groups-input.tsx": "bbb2a45576ca456c39e89c189c129e04a65bcf0b4e22b4764b54cfc4a0b72b3a",
+    "apps/app/web/src/items/question/model.ts": "977f64940ea6121527308bfd14ed375dec6f6659d58b84af2f642d9517af2ae7",
+    "apps/app/web/src/items/question/question-body.tsx": "1fa09541830b42d4e09dee166a2a6295bf37e64360a789defd3d6c32343a8a32",
     "apps/app/web/src/local-development.tsx": "009a5fff4446a4263c434b75957eb618a17fb62bba4b396eacced5749fd8f367",
     "apps/app/web/src/main.tsx": "821678c0a320c0dd40ae7a35f68aa8fcc69561f05fb5d59641cc5d3e923bfa70",
     "apps/app/web/test/access.test.tsx": "72aedefe06b32fbe484d783851af616311c3ca14346506a6af7ff23157132d13",
@@ -1185,6 +1196,7 @@
     "apps/app/web/test/local-development.test.tsx": "5491ae081bcc8638596d3775549102d6b8f9cebc3cb6516eefaa1690ca329580",
     "apps/app/web/test/preview.test.tsx": "35e7bdfbd5696f64a75d749e8a4bbdba3a6a8ce6de5734ea01114630fe0ebbbb",
     "apps/app/web/test/properties/p46-preview-truncation.test.ts": "59d39b925d99eca4483052b8c3b559ec43d693258570303a9afee1eb1ac9c7e5",
+    "apps/app/web/test/question.test.tsx": "906563df3df0f7fdd166930d1d4e718fba1487ad54fe24587358d34136e37d84",
     "apps/app/web/test/resource-profile.test.ts": "81cde34191c258fb1d0effd526b32c747bb65597854774d63c3ecd9aa6341877",
     "apps/app/web/test/workflows.test.tsx": "0ce095f6aef44a1397e20b6221cffd0d4e1cbf3f2414c7827ebec96390d555ff",
     "apps/dl/src/index.ts": "8b2d47afd2d41e8a6837a78a4f6dfd2b182f211e113b3949e5fa87d6e25f1a4f",
@@ -1197,7 +1209,7 @@
     "infra/recovery/deployment.example.json": "f50e284de933da91b761d0b6293f62caef82e8aa0c8db7c83e31e7eca5398bec",
     "infra/recovery/restore-proof.example.json": "2c02a645aaa612d1dd4f0bc537433a5e58764b4244a02562523aabc6d6a31554",
     "infra/releases/README.md": "73919ce7f8cc7b532d520dbc250f4f16ccd28f84e70e32d21d556190afe50ade",
-    "infra/releases/development.json": "5ad97c64fe1279f1ddf94b4c57cf449f0a8d281c09d82ce8dbe7a255110b5e39",
+    "infra/releases/development.json": "8a5a4db927393ce21c691869a422b33e78d0746fb5ce4b7ad82fb00c440adec8",
     "package-lock.json": "46bb71e749eeb2b853d3113a54c6b75e0a3a610f1178687a73334d4114e099d5",
     "package.json": "a57669ad85b1bb5873507b1ef7021825127f5e1aaa49ab3f7101b42ef8857e36",
     "packages/db/migrations/core/0007_restricted_access.sql": "68d6acff93c939939932102ad9a767541a9181815f983c24ebdcfc18ce3518a1",

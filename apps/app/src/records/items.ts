@@ -111,6 +111,8 @@ export interface LoadedItem {
   readonly reviews: readonly ReviewView[];
   /** The viewer's New_Flag or Updated_Flag on the Item and its Group_Note as they stand now, before the page clears them (R18.10). */
   readonly flags: ReadonlyMap<ULID, 'new' | 'updated'>;
+  /** Further response data that the kind shows the viewer, such as a Research_Question's readable entries. */
+  readonly extra: Readonly<Record<string, unknown>>;
 }
 interface BaseQueryRow extends Omit<BaseRow, 'credit' | 'disclosureLine' | 'logSummary'> {
   credit: string; disclosureLine: string | null; logSummary: string | null; logSummarySpans: string; projectName: string; projectLevel: Level;
@@ -167,7 +169,9 @@ export async function loadItem(c: Context<ApiEnv>, id: string, readAttempt = 0):
   const kindResults = results.slice(0, -2);
   const read = adapter.read(kindResults, base);
   const hydrated = await resolveItemFields(db, id, { ...read.fields, ...(base.logSummary ? { logSummary: base.logSummary } : {}) });
-  const { logSummary: hydratedSummary, ...fields } = hydrated;
+  const { logSummary: hydratedSummary, ...hydratedFields } = hydrated;
+  const shown = await adapter.visible?.(c, hydratedFields);
+  const fields = shown?.fields ?? hydratedFields;
   if (hydratedSummary) Object.assign(base, { logSummary: hydratedSummary });
   const children = read.children ?? [];
   await resolveStoredRows(db, (noteRows?.results ?? []) as Record<string, unknown>[]);
@@ -179,7 +183,7 @@ export async function loadItem(c: Context<ApiEnv>, id: string, readAttempt = 0):
     throw new ApiError('conflict', { details: { rev: current.results[0].rev } });
   }
   return {
-    base, fields: normalized(fields), children,
+    base, fields: normalized(fields), children, extra: shown?.extra ?? {},
     groupNote: note ? { id: note.id, rev: note.rev, level: note.level, unclassified: note.classification === 'unclassified', ownerId: note.ownerId, withdrawn: note.withdrawnAt !== null, text: richText(note.text, note.spans)! } : null,
     project: { id: base.projectId, name: projectName, level: projectLevel },
     names: new Map(rowsOf<{ id: ULID; displayName: string }>(results.at(-2)).map((person) => [person.id, person.displayName])),
@@ -211,6 +215,7 @@ export function itemResponse(item: LoadedItem) {
     project: { id: item.project.id, name: item.project.name },
     title: base.title, ...(base.logSummary ? { logSummary: base.logSummary } : {}),
     ...item.fields,
+    ...item.extra,
     ...(sections === undefined ? {} : {
       sections: sections.map((section) => {
         const child = children.get(section.id)!;
