@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "command": "npm test -- --reporter=json --outputFile=<temporary report>",
-  "recordedAt": "2026-10-29T18:40:26.783Z",
+  "recordedAt": "2026-10-29T18:49:26.364Z",
   "scope": "local-synthetic",
   "success": true,
   "suites": [
@@ -546,6 +546,12 @@
       "skipped": 0
     },
     {
+      "path": "apps/dl/test/properties/p05-live-download-channel.test.ts",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
       "path": "apps/dl/test/properties/p45-download-links.test.ts",
       "passed": 3,
       "failed": 0,
@@ -871,7 +877,7 @@
     },
     {
       "path": "packages/testing/test/properties/p05-public-output-confinement.test.ts",
-      "passed": 3,
+      "passed": 5,
       "failed": 0,
       "skipped": 0
     },
@@ -1113,6 +1119,8 @@
     "apps/app/web/test/local-development.test.tsx": "5491ae081bcc8638596d3775549102d6b8f9cebc3cb6516eefaa1690ca329580",
     "apps/app/web/test/properties/p46-preview-truncation.test.ts": "38fb557827b3232d2f0aa0eaae7b69b14f87c68c7b43f4d6b5e4937d7dc43d8f",
     "apps/app/web/test/resource-profile.test.ts": "81cde34191c258fb1d0effd526b32c747bb65597854774d63c3ecd9aa6341877",
+    "apps/dl/src/index.ts": "8b2d47afd2d41e8a6837a78a4f6dfd2b182f211e113b3949e5fa87d6e25f1a4f",
+    "apps/dl/test/properties/p05-live-download-channel.test.ts": "8721adb272579599672be30a5c9071f7dca297ef9bf1a30d1376b1d4671e8262",
     "docs/api/operations.md": "6ee19d1bff78393de2535afc1fab17e5ff0c1a88f425bd09c6b3bf8a6af255fe",
     "docs/storage/logical-fields.md": "849c9d75569c73b91e77128ac672c5e59778c69ab9820af68c9aa2cb8cb33a3a",
     "infra/profiles/Free_Qualified.example.json": "aa95a018197ffa0c2c3d0749170546dc4ce3e95bb5d082f8de9c87c6061b4f28",
@@ -1173,7 +1181,10 @@
     "packages/public-render/src/continuations.ts": "e78dd4dd4bd14c69c8731bcda58d453f8247a2f19110715cbe3a59ea20eed58a",
     "packages/public-render/test/continuations.test.ts": "f7a029133c70ebeab0cc103f92625e35cb6423b2aec17c711e4cc65a8b65e303",
     "packages/testing/src/dev-members.ts": "a92626f3ae560125b27693e6c7fea3cec32a82fadfdaad62b358cdbbcbc952aa",
+    "packages/testing/src/live-channels.ts": "308a42fd98cb3357166f92d82f8781d6cf87d9b77ea3fb05944e71fb18140938",
+    "packages/testing/src/public-channels.ts": "98ecca7a9cc9d7cf6c257640ccc951a6b336111ead30c2ef43b1e7f3c2ced750",
     "packages/testing/src/resource-fixtures.ts": "e4a50f21e863d14113c086f2db4e1ef02e3a472ddd466f48f6cf1c341bedfd75",
+    "packages/testing/test/properties/p05-public-output-confinement.test.ts": "5725961554a1e573105d7b963b8a4dcd270bff6a8285c91f24d5ebb0ee2bab22",
     "scripts/backfill.ts": "c8388bb5a9442bf0bf81cc876e95cf06f7eb457275ef2e2b815aeddb9e8e8c61",
     "scripts/check-workers.mjs": "de6414495c80dd141f24cf52c7d4d5320841ec9681433896c84e753ce1a7caf8",
     "scripts/contract.ts": "54f3cb42829ae1c274d29478ca61bc74c83aa943934e45af7f1a0aa55cfcaf40",

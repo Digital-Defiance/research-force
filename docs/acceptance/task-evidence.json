@@ -692,6 +692,24 @@
       "checks": [
         "docs/acceptance/checks/local-tests.json"
       ]
+    },
+    {
+      "task": "57.5",
+      "state": "accepted",
+      "reason": "Verified that the rf-dl privacy channel is exercised through the production download handler rather than a constant: the registry no longer lists a hard-coded refusal, and a required live-channel contract (packages/testing/src/live-channels.ts) names each Worker-backed channel and its production module. The workerd property generates the shared canary workspace, seeds rf-core with canaries in Member emails, Project and Item titles, Attachment titles, file names and origins, and sends fourteen real requests (missing, malformed, tampered, expired and not-yet-issued tokens; an unknown, revoked and pending Member; a file token on the package path; a contributor asking for a backup; POST and unrelated paths; and an active Member with no current right to a Restricted Item, by GET, HEAD, bad Range and a foreign Origin). Every response, status, headers and body, is byte-identical to the unknown-path refusal and carries no canary. A positive control proves the detector sees a canary in an authorized response. The gate helper rejects a missing adapter, a mismatched source module, an unregistered adapter, and a stub whose invocation count shows it never reached the production handler. New fields, kinds and channels extend the same generator and register in live-channels.ts with their owning feature task; emitted HTML, index, email, export, release and containment channels remain with those tasks. No deployment or production certification is claimed.",
+      "sourcePaths": [
+        "packages/testing/src/live-channels.ts",
+        "packages/testing/src/public-channels.ts",
+        "apps/dl/src/index.ts"
+      ],
+      "testPaths": [
+        "apps/dl/test/properties/p05-live-download-channel.test.ts",
+        "packages/testing/test/properties/p05-public-output-confinement.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
     }
   ]
 }

@@ -1,6 +1,8 @@
 // Feature: research-collab-cms, Property 5: Public outputs contain only Public_View content
 import { expect, it } from 'vitest';
 import { fc } from '../../src/fc';
+import { liveChannelProblems, REQUIRED_LIVE_CHANNELS, responseArtifact } from '../../src/live-channels';
+import type { LiveChannel } from '../../src/live-channels';
 import { PUBLIC_CHANNELS } from '../../src/public-channels';
 import { allowedCanaries, canariesIn, workspaceStateArb } from '../../src/workspace';
 
@@ -29,4 +31,20 @@ it('the generator places a canary in every Member, Party, Project, unit, and Out
     for (const unit of state.input.units) expect(owners).toContain(`u:${unit.id}`);
     for (const submission of state.outsideSubmissions) expect(owners).toContain(`outside:${submission.id}`);
   }));
+});
+
+it('does not satisfy a Worker-backed channel with a constant: rf-dl is a required live adapter', () => {
+  expect(PUBLIC_CHANNELS.map((channel) => channel.name)).not.toContain('rf-dl refusals to non-Members');
+  expect(REQUIRED_LIVE_CHANNELS.map((channel) => channel.name)).toContain('rf-dl refusals to non-Members');
+});
+
+it('rejects a missing adapter, a mismatched source, an unregistered adapter, and a stub that never calls the production handler', async () => {
+  const [required] = REQUIRED_LIVE_CHANNELS;
+  const adapter = (over: Partial<LiveChannel> = {}): LiveChannel => ({ name: required!.name, source: required!.source, invocations: 1, artifacts: () => Promise.resolve([]), ...over });
+  expect(liveChannelProblems([])).toEqual([`Missing live adapter: ${required!.name}`]);
+  expect(liveChannelProblems([adapter()])).toEqual([]);
+  expect(liveChannelProblems([adapter({ invocations: 0 })])).toEqual([`Adapter ${required!.name} never called the production handler (stub)`]);
+  expect(liveChannelProblems([adapter({ source: 'apps/dl/test/fake.ts' })])[0]).toMatch(/exercises apps\/dl\/test\/fake\.ts/u);
+  expect(liveChannelProblems([adapter(), adapter({ name: 'extra' })])).toEqual(['Unregistered live adapter: extra']);
+  expect(await responseArtifact('x', { status: 404, headers: [['b', '2'], ['a', '1']], text: () => Promise.resolve('body') })).toEqual({ name: 'x', content: '404\na: 1\nb: 2\n\nbody' });
 });

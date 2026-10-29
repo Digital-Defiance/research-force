@@ -2,15 +2,14 @@
   "inputs": {
     ".kiro/specs/research-collab-cms/requirements.md": "9e2d7cee953f4aeece04bad4a7dfae273a908c0df65c95beea7a4e572b71b5df",
     ".kiro/specs/research-collab-cms/design.md": "85df571e6efad1205603dca7addcea9c16f68252023d5483a2fbe81d705c4d93",
-    ".kiro/specs/research-collab-cms/tasks.md": "8a11759e4466db3703ca492707183793969ad3a604c324b25e92bdd3533090da",
-    "docs/acceptance/task-evidence.json": "7e92d2a74df49b9905bc4e2500b01ac67bc8d5b6d6fd20302b140cd1d89c1dec"
+    ".kiro/specs/research-collab-cms/tasks.md": "5a6b459e2e1ff0ff359cb74f6035823e5857788d1067bd25fe756663827de9f1",
+    "docs/acceptance/task-evidence.json": "0bca45e8249038511bfbd87bf460241a6616dc344e6c3c0a213fa061aca935b8"
   },
   "schemaVersion": 1,
   "nextTasks": [
-    "57.5"
+    "30.6"
   ],
   "remainingBuildOrder": [
-    "57.5",
     "30.6",
     "30.7",
     "30.8",
@@ -226,11 +225,11 @@
     "criteria": 738,
     "properties": 126,
     "leafTasks": 406,
-    "checkedLeaves": 196,
+    "checkedLeaves": 197,
     "historicalUnverified": 182,
-    "acceptedWithLocalEvidence": 14,
-    "propertyFiles": 61,
-    "remainingWaves": 210,
+    "acceptedWithLocalEvidence": 15,
+    "propertyFiles": 62,
+    "remainingWaves": 209,
     "gates": 4
   },
   "structuralIssues": [],
@@ -8612,6 +8611,7 @@
       ],
       "task": "6.6",
       "testPaths": [
+        "apps/dl/test/properties/p05-live-download-channel.test.ts",
         "packages/testing/test/properties/p05-public-output-confinement.test.ts"
       ]
     },
@@ -11409,12 +11409,17 @@
         {
           "path": "packages/testing/src/public-channels.ts",
           "kind": "file",
-          "sha256": "b88e7fe728826548bcc08f32cb9d4be4039fd31ffef1bde3c9efdcd6ddaadb72"
+          "sha256": "98ecca7a9cc9d7cf6c257640ccc951a6b336111ead30c2ef43b1e7f3c2ced750"
+        },
+        {
+          "path": "apps/dl/test/properties/p05-live-download-channel.test.ts",
+          "kind": "file",
+          "sha256": "8721adb272579599672be30a5c9071f7dca297ef9bf1a30d1376b1d4671e8262"
         },
         {
           "path": "packages/testing/test/properties/p05-public-output-confinement.test.ts",
           "kind": "file",
-          "sha256": "c7ae3f975f360bdb437e5443c6f6b35cb3e348fdfef7bf0f71ecf7935fbd4ec7"
+          "sha256": "5725961554a1e573105d7b963b8a4dcd270bff6a8285c91f24d5ebb0ee2bab22"
         }
       ],
       "gates": [],
@@ -12069,7 +12074,7 @@
         {
           "path": "packages/testing/src/public-channels.ts",
           "kind": "file",
-          "sha256": "b88e7fe728826548bcc08f32cb9d4be4039fd31ffef1bde3c9efdcd6ddaadb72"
+          "sha256": "98ecca7a9cc9d7cf6c257640ccc951a6b336111ead30c2ef43b1e7f3c2ced750"
         }
       ],
       "gates": [],
@@ -12214,7 +12219,7 @@
         {
           "path": "packages/testing/src/public-channels.ts",
           "kind": "file",
-          "sha256": "b88e7fe728826548bcc08f32cb9d4be4039fd31ffef1bde3c9efdcd6ddaadb72"
+          "sha256": "98ecca7a9cc9d7cf6c257640ccc951a6b336111ead30c2ef43b1e7f3c2ced750"
         }
       ],
       "gates": [],
@@ -14675,7 +14680,7 @@
         {
           "path": "packages/testing/src/public-channels.ts",
           "kind": "file",
-          "sha256": "b88e7fe728826548bcc08f32cb9d4be4039fd31ffef1bde3c9efdcd6ddaadb72"
+          "sha256": "98ecca7a9cc9d7cf6c257640ccc951a6b336111ead30c2ef43b1e7f3c2ced750"
         },
         {
           "path": "apps/app/src/mail/compose.ts",
@@ -15222,7 +15227,7 @@
         {
           "path": "packages/testing/src/public-channels.ts",
           "kind": "file",
-          "sha256": "b88e7fe728826548bcc08f32cb9d4be4039fd31ffef1bde3c9efdcd6ddaadb72"
+          "sha256": "98ecca7a9cc9d7cf6c257640ccc951a6b336111ead30c2ef43b1e7f3c2ced750"
         }
       ],
       "gates": [],
@@ -15242,9 +15247,7 @@
         "60.2"
       ],
       "properties": [],
-      "prerequisites": [
-        "57.5"
-      ],
+      "prerequisites": [],
       "phase": "repair",
       "sourcePaths": [
         {
@@ -16305,7 +16308,7 @@
         {
           "path": "packages/testing/src/public-channels.ts",
           "kind": "file",
-          "sha256": "b88e7fe728826548bcc08f32cb9d4be4039fd31ffef1bde3c9efdcd6ddaadb72"
+          "sha256": "98ecca7a9cc9d7cf6c257640ccc951a6b336111ead30c2ef43b1e7f3c2ced750"
         }
       ],
       "gates": [
@@ -17194,7 +17197,7 @@
         {
           "path": "packages/testing/src/public-channels.ts",
           "kind": "file",
-          "sha256": "b88e7fe728826548bcc08f32cb9d4be4039fd31ffef1bde3c9efdcd6ddaadb72"
+          "sha256": "98ecca7a9cc9d7cf6c257640ccc951a6b336111ead30c2ef43b1e7f3c2ced750"
         }
       ],
       "gates": [
@@ -19124,7 +19127,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "7e92d2a74df49b9905bc4e2500b01ac67bc8d5b6d6fd20302b140cd1d89c1dec"
+          "sha256": "0bca45e8249038511bfbd87bf460241a6616dc344e6c3c0a213fa061aca935b8"
         },
         {
           "path": "README.md",
@@ -19213,7 +19216,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "7e92d2a74df49b9905bc4e2500b01ac67bc8d5b6d6fd20302b140cd1d89c1dec"
+          "sha256": "0bca45e8249038511bfbd87bf460241a6616dc344e6c3c0a213fa061aca935b8"
         },
         {
           "path": "apps/app/src/index.ts",
@@ -19352,7 +19355,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "7e92d2a74df49b9905bc4e2500b01ac67bc8d5b6d6fd20302b140cd1d89c1dec"
+          "sha256": "0bca45e8249038511bfbd87bf460241a6616dc344e6c3c0a213fa061aca935b8"
         },
         {
           "path": "apps/app/src/local/services.ts",
@@ -20586,7 +20589,7 @@
         {
           "path": "packages/testing/src/public-channels.ts",
           "kind": "file",
-          "sha256": "b88e7fe728826548bcc08f32cb9d4be4039fd31ffef1bde3c9efdcd6ddaadb72"
+          "sha256": "98ecca7a9cc9d7cf6c257640ccc951a6b336111ead30c2ef43b1e7f3c2ced750"
         }
       ],
       "gates": [
@@ -20625,7 +20628,7 @@
         {
           "path": "packages/testing/src/public-channels.ts",
           "kind": "file",
-          "sha256": "b88e7fe728826548bcc08f32cb9d4be4039fd31ffef1bde3c9efdcd6ddaadb72"
+          "sha256": "98ecca7a9cc9d7cf6c257640ccc951a6b336111ead30c2ef43b1e7f3c2ced750"
         }
       ],
       "gates": [
@@ -20829,12 +20832,12 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "7e92d2a74df49b9905bc4e2500b01ac67bc8d5b6d6fd20302b140cd1d89c1dec"
+          "sha256": "0bca45e8249038511bfbd87bf460241a6616dc344e6c3c0a213fa061aca935b8"
         },
         {
           "path": "docs/acceptance/checks/local-tests.json",
           "kind": "file",
-          "sha256": "2ade5a40b2905290fcfaa5ec45eade20ccd35795be6957b445a57122d3c85691"
+          "sha256": "603f5c90b839b442cf9900f522c354e8e4f444c2632c4c0980bb93bb4e083f35"
         },
         {
           "path": "tools/src/specs.ts",
@@ -20921,7 +20924,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "7e92d2a74df49b9905bc4e2500b01ac67bc8d5b6d6fd20302b140cd1d89c1dec"
+          "sha256": "0bca45e8249038511bfbd87bf460241a6616dc344e6c3c0a213fa061aca935b8"
         },
         {
           "path": "packages/domain/src/settings.ts",
@@ -21101,7 +21104,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "7e92d2a74df49b9905bc4e2500b01ac67bc8d5b6d6fd20302b140cd1d89c1dec"
+          "sha256": "0bca45e8249038511bfbd87bf460241a6616dc344e6c3c0a213fa061aca935b8"
         },
         {
           "path": "docs/storage/logical-fields.md",
@@ -21612,7 +21615,7 @@
     {
       "id": "57.5",
       "title": "Exercise actual public delivery channels in privacy tests",
-      "checked": false,
+      "checked": true,
       "requirements": [
         "14.6",
         "24.5",
@@ -21625,14 +21628,57 @@
       ],
       "properties": [],
       "prerequisites": [],
-      "phase": "repair",
-      "sourcePaths": [],
+      "phase": "completed_baseline",
+      "sourcePaths": [
+        {
+          "path": "packages/testing/src/live-channels.ts",
+          "kind": "file",
+          "sha256": "308a42fd98cb3357166f92d82f8781d6cf87d9b77ea3fb05944e71fb18140938"
+        },
+        {
+          "path": "packages/testing/src/public-channels.ts",
+          "kind": "file",
+          "sha256": "98ecca7a9cc9d7cf6c257640ccc951a6b336111ead30c2ef43b1e7f3c2ced750"
+        },
+        {
+          "path": "apps/dl/src/index.ts",
+          "kind": "file",
+          "sha256": "8b2d47afd2d41e8a6837a78a4f6dfd2b182f211e113b3949e5fa87d6e25f1a4f"
+        },
+        {
+          "path": "apps/dl/test/properties/p05-live-download-channel.test.ts",
+          "kind": "file",
+          "sha256": "8721adb272579599672be30a5c9071f7dca297ef9bf1a30d1376b1d4671e8262"
+        },
+        {
+          "path": "packages/testing/test/properties/p05-public-output-confinement.test.ts",
+          "kind": "file",
+          "sha256": "5725961554a1e573105d7b963b8a4dcd270bff6a8285c91f24d5ebb0ee2bab22"
+        }
+      ],
       "gates": [
         "team_archive",
         "final_checkpoint_49"
       ],
-      "acceptance": "planned",
-      "evidence": null
+      "acceptance": "accepted",
+      "evidence": {
+        "task": "57.5",
+        "state": "accepted",
+        "reason": "Verified that the rf-dl privacy channel is exercised through the production download handler rather than a constant: the registry no longer lists a hard-coded refusal, and a required live-channel contract (packages/testing/src/live-channels.ts) names each Worker-backed channel and its production module. The workerd property generates the shared canary workspace, seeds rf-core with canaries in Member emails, Project and Item titles, Attachment titles, file names and origins, and sends fourteen real requests (missing, malformed, tampered, expired and not-yet-issued tokens; an unknown, revoked and pending Member; a file token on the package path; a contributor asking for a backup; POST and unrelated paths; and an active Member with no current right to a Restricted Item, by GET, HEAD, bad Range and a foreign Origin). Every response, status, headers and body, is byte-identical to the unknown-path refusal and carries no canary. A positive control proves the detector sees a canary in an authorized response. The gate helper rejects a missing adapter, a mismatched source module, an unregistered adapter, and a stub whose invocation count shows it never reached the production handler. New fields, kinds and channels extend the same generator and register in live-channels.ts with their owning feature task; emitted HTML, index, email, export, release and containment channels remain with those tasks. No deployment or production certification is claimed.",
+        "sourcePaths": [
+          "packages/testing/src/live-channels.ts",
+          "packages/testing/src/public-channels.ts",
+          "apps/dl/src/index.ts"
+        ],
+        "testPaths": [
+          "apps/dl/test/properties/p05-live-download-channel.test.ts",
+          "packages/testing/test/properties/p05-public-output-confinement.test.ts"
+        ],
+        "correctionTasks": [],
+        "checks": [
+          "docs/acceptance/checks/local-tests.json"
+        ]
+      }
     },
     {
       "id": "57.6",
@@ -22922,7 +22968,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "7e92d2a74df49b9905bc4e2500b01ac67bc8d5b6d6fd20302b140cd1d89c1dec"
+          "sha256": "0bca45e8249038511bfbd87bf460241a6616dc344e6c3c0a213fa061aca935b8"
         },
         {
           "path": "packages/domain/src/compatibility.ts",
@@ -23271,7 +23317,7 @@
         {
           "path": "packages/testing/src/public-channels.ts",
           "kind": "file",
-          "sha256": "b88e7fe728826548bcc08f32cb9d4be4039fd31ffef1bde3c9efdcd6ddaadb72"
+          "sha256": "98ecca7a9cc9d7cf6c257640ccc951a6b336111ead30c2ef43b1e7f3c2ced750"
         },
         {
           "path": "apps/app/src/api/app.ts",
@@ -23483,43 +23529,43 @@
   "phases": {
     "repair": {
       "firstWave": 0,
-      "lastWave": 7
+      "lastWave": 6
     },
     "collaboration": {
-      "firstWave": 8,
-      "lastWave": 38
+      "firstWave": 7,
+      "lastWave": 37
     },
     "privacy": {
-      "firstWave": 39,
-      "lastWave": 62
+      "firstWave": 38,
+      "lastWave": 61
     },
     "imports_and_log": {
-      "firstWave": 63,
-      "lastWave": 86
+      "firstWave": 62,
+      "lastWave": 85
     },
     "publication": {
-      "firstWave": 87,
-      "lastWave": 104
+      "firstWave": 86,
+      "lastWave": 103
     },
     "outside_and_ai": {
-      "firstWave": 105,
-      "lastWave": 152
+      "firstWave": 104,
+      "lastWave": 151
     },
     "recovery": {
-      "firstWave": 153,
-      "lastWave": 170
+      "firstWave": 152,
+      "lastWave": 169
     },
     "release_tooling": {
-      "firstWave": 171,
-      "lastWave": 200
+      "firstWave": 170,
+      "lastWave": 199
     },
     "staging_and_acceptance": {
-      "firstWave": 201,
-      "lastWave": 208
+      "firstWave": 200,
+      "lastWave": 207
     },
     "production_activation": {
-      "firstWave": 209,
-      "lastWave": 209
+      "firstWave": 208,
+      "lastWave": 208
     }
   },
   "gates": [
