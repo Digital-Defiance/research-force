@@ -149,8 +149,8 @@ describe('check-secrets missing detection', () => {
     expect(byWorker['rf-app']!.missingSecrets.length).toBe(10);
     expect(byWorker['rf-submit']!.missingSecrets).toEqual(['TURNSTILE_SECRET']);
     expect(byWorker['rf-dl']!.missingSecrets).toEqual(['DOWNLOAD_HMAC_KEY']);
-    expect(byWorker['rf-ops']!.missingSecrets).toEqual([]);
-    expect(byWorker['rf-ops']!.missingVars).toEqual([]);
+    expect(byWorker['rf-ops']!.missingSecrets).toEqual(['CF_ACCESS_API_TOKEN']);
+    expect(byWorker['rf-ops']!.missingVars).toEqual(['CF_ACCOUNT_ID', 'ACCESS_MEMBER_LIST_ID']);
     expect(hasMissing(reports)).toBe(true);
   });
 

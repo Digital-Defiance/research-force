@@ -8,7 +8,7 @@
  *   - rf-app:    apps/app/src/env.ts and apps/app/src/mail/providers/graph.ts (GraphProvider.fromEnv);
  *   - rf-submit: apps/submit/src/index.ts (Env);
  *   - rf-dl:     apps/dl/src/index.ts (Env);
- *   - rf-ops:    apps/ops/src/index.ts (no env reads) and design.md line 131/155.
+ *   - rf-ops:    apps/ops/src/index.ts (OpsEnv) — the Access-sync credentials for the Cloudflare API.
  * A test asserts these exact lists, so drift from the source files is caught.
  *
  * Production and staging must use SEPARATE credentials/secrets (README: "Production and staging must
@@ -76,8 +76,11 @@ export const workerSecrets: readonly WorkerSecrets[] = freeze([
   },
   {
     worker: 'rf-ops',
-    note: 'No fetch route and no env reads (apps/ops/src/index.ts); Cloudflare API tokens are added as secrets only when tasks 48.4/68.4 provision the ops token. None are listed here today.',
-    secrets: [],
-    vars: [],
+    note: 'Access-sync Worker (no fetch route; reachable only via service bindings). Env from apps/ops/src/index.ts (OpsEnv); AccessSync throws "Access sync is not configured." when any is absent.',
+    secrets: [{ name: 'CF_ACCESS_API_TOKEN', note: 'Cloudflare API token (Access Apps/Policies Edit + Zero Trust list edit, this account only).' }],
+    vars: [
+      { name: 'CF_ACCOUNT_ID', note: 'Cloudflare account id the Access list/revoke calls target; installation input.' },
+      { name: 'ACCESS_MEMBER_LIST_ID', note: 'Zero Trust list id for the rf-members Access list; installation input.' },
+    ],
   },
 ]);
