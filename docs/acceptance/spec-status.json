@@ -2,15 +2,14 @@
   "inputs": {
     ".kiro/specs/research-collab-cms/requirements.md": "9e2d7cee953f4aeece04bad4a7dfae273a908c0df65c95beea7a4e572b71b5df",
     ".kiro/specs/research-collab-cms/design.md": "85df571e6efad1205603dca7addcea9c16f68252023d5483a2fbe81d705c4d93",
-    ".kiro/specs/research-collab-cms/tasks.md": "fc1da8013a4d9834a5e77279211e319be6af36681cf9fbaa496b5e9b7af70514",
-    "docs/acceptance/task-evidence.json": "7bef8895874001a5726ab3dc293e58e19426e7a7d2bed3d8e7a06c7e09fd77f0"
+    ".kiro/specs/research-collab-cms/tasks.md": "a5999609749175849d0d11e3464479498dc83dda5445e5ab29154f09cfddece1",
+    "docs/acceptance/task-evidence.json": "60d3bdf64082220bd85c2ea4654e79fa1ec01584983c2906a1a18c33eff89fdb"
   },
   "schemaVersion": 1,
   "nextTasks": [
-    "57.8"
+    "55.1"
   ],
   "remainingBuildOrder": [
-    "57.8",
     "55.1",
     "55.2",
     "55.3",
@@ -219,11 +218,11 @@
     "criteria": 738,
     "properties": 126,
     "leafTasks": 406,
-    "checkedLeaves": 203,
+    "checkedLeaves": 204,
     "historicalUnverified": 182,
-    "acceptedWithLocalEvidence": 21,
+    "acceptedWithLocalEvidence": 22,
     "propertyFiles": 64,
-    "remainingWaves": 203,
+    "remainingWaves": 202,
     "gates": 4
   },
   "structuralIssues": [],
@@ -19179,7 +19178,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "7bef8895874001a5726ab3dc293e58e19426e7a7d2bed3d8e7a06c7e09fd77f0"
+          "sha256": "60d3bdf64082220bd85c2ea4654e79fa1ec01584983c2906a1a18c33eff89fdb"
         },
         {
           "path": "README.md",
@@ -19268,7 +19267,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "7bef8895874001a5726ab3dc293e58e19426e7a7d2bed3d8e7a06c7e09fd77f0"
+          "sha256": "60d3bdf64082220bd85c2ea4654e79fa1ec01584983c2906a1a18c33eff89fdb"
         },
         {
           "path": "apps/app/src/index.ts",
@@ -19407,7 +19406,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "7bef8895874001a5726ab3dc293e58e19426e7a7d2bed3d8e7a06c7e09fd77f0"
+          "sha256": "60d3bdf64082220bd85c2ea4654e79fa1ec01584983c2906a1a18c33eff89fdb"
         },
         {
           "path": "apps/app/src/local/services.ts",
@@ -20460,9 +20459,7 @@
         "50.8"
       ],
       "properties": [],
-      "prerequisites": [
-        "57.8"
-      ],
+      "prerequisites": [],
       "phase": "collaboration",
       "sourcePaths": [
         {
@@ -20884,12 +20881,12 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "7bef8895874001a5726ab3dc293e58e19426e7a7d2bed3d8e7a06c7e09fd77f0"
+          "sha256": "60d3bdf64082220bd85c2ea4654e79fa1ec01584983c2906a1a18c33eff89fdb"
         },
         {
           "path": "docs/acceptance/checks/local-tests.json",
           "kind": "file",
-          "sha256": "3f7aaad3aca23c3af43c5e076238704e9582d083356f67420582f135d8db9210"
+          "sha256": "bc625edf747cbd29cb5f5be67022fe4f81e1cf6de85c950d6d89b878db532b69"
         },
         {
           "path": "tools/src/specs.ts",
@@ -20976,7 +20973,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "7bef8895874001a5726ab3dc293e58e19426e7a7d2bed3d8e7a06c7e09fd77f0"
+          "sha256": "60d3bdf64082220bd85c2ea4654e79fa1ec01584983c2906a1a18c33eff89fdb"
         },
         {
           "path": "packages/domain/src/settings.ts",
@@ -21156,7 +21153,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "7bef8895874001a5726ab3dc293e58e19426e7a7d2bed3d8e7a06c7e09fd77f0"
+          "sha256": "60d3bdf64082220bd85c2ea4654e79fa1ec01584983c2906a1a18c33eff89fdb"
         },
         {
           "path": "docs/storage/logical-fields.md",
@@ -21865,7 +21862,7 @@
     {
       "id": "57.8",
       "title": "Add browser regressions for the reopened file and large-text workflows",
-      "checked": false,
+      "checked": true,
       "requirements": [
         "4.10",
         "4.11",
@@ -21880,14 +21877,81 @@
       ],
       "properties": [],
       "prerequisites": [],
-      "phase": "repair",
-      "sourcePaths": [],
+      "phase": "completed_baseline",
+      "sourcePaths": [
+        {
+          "path": "apps/app/web/src/files/upload.tsx",
+          "kind": "file",
+          "sha256": "e94daf2f1558a1a6466510f28f4c9d0317d7342b23e848e8319e4946234997de"
+        },
+        {
+          "path": "apps/app/web/src/items/forms/ItemForm.tsx",
+          "kind": "file",
+          "sha256": "7ba14bacec28eb5a195135c57d8f878cab6e153c89867051412c6d98ee4156ec"
+        },
+        {
+          "path": "apps/app/web/src/discussion/thread.tsx",
+          "kind": "file",
+          "sha256": "bb739eb7d0e7c5228a1da7d769af9d53711503f97983570e787ea18226b05500"
+        },
+        {
+          "path": "apps/app/web/src/api.ts",
+          "kind": "file",
+          "sha256": "1b66d25b88888c8c1a30e83dc4c1492996e5e245a3aab41da40e4c1ab126f2ce"
+        },
+        {
+          "path": "apps/app/web/test/workflows.test.tsx",
+          "kind": "file",
+          "sha256": "0ce095f6aef44a1397e20b6221cffd0d4e1cbf3f2414c7827ebec96390d555ff"
+        },
+        {
+          "path": "apps/app/web/test/files.test.tsx",
+          "kind": "file",
+          "sha256": "c9dfcbbb311fcb4e2d906cbf4542a62ddc9f492c468231d58120fbf7d1e3efe2"
+        },
+        {
+          "path": "apps/app/web/test/preview.test.tsx",
+          "kind": "file",
+          "sha256": "35e7bdfbd5696f64a75d749e8a4bbdba3a6a8ce6de5734ea01114630fe0ebbbb"
+        },
+        {
+          "path": "apps/app/web/test/attachments.test.tsx",
+          "kind": "file",
+          "sha256": "58e2e8c558cf7f635274f1be06dd2ed66e44154643649869e68d91653290cdb9"
+        },
+        {
+          "path": "apps/app/web/test/api.test.ts",
+          "kind": "file",
+          "sha256": "348dc97bf1889f1183882cdabf035a3989b4394cfdf3103c40566b19fea853b7"
+        }
+      ],
       "gates": [
         "team_archive",
         "final_checkpoint_49"
       ],
-      "acceptance": "planned",
-      "evidence": null
+      "acceptance": "accepted",
+      "evidence": {
+        "task": "57.8",
+        "state": "accepted",
+        "reason": "Verified the reopened file and large-text workflows end to end in the browser test project, on the real forms rather than only on the upload hook. In a new Item form, a finished upload and its title, caption and Origin survive a reload and are revalidated against the server without the local File; submitting sends the retained upload ID once, and the form then forgets its uploads. A transfer cut off by a reload asks for the file again, keeps every other field, refuses a keyboard submit with a file-specific reason while the Submit control is disabled, deletes the abandoned upload and sends the new upload ID after reselection. A keyboard submit while a file is uploading sends nothing and moves focus to the reasons. A lost save response after files were attached is reconciled from the Worker’s operation record, opens the one Item and clears the retained uploads. A Reply composer keeps its files across a reload and removes an unused upload with its stored copy. A 600,000-character Entry_Section typed into the Journal form is sent as a stage whose fragments each stay within 128,000 encoded bytes, with the commit sent once under the stage’s key, a lost commit response reconciled from the record and nothing saved twice. These join the earlier regressions for reselection, independent retry and removal, bounded CSV streaming and oversized quoted rows, and listing-versus-open flags (30.6–30.8, 30.11), the Worker-side fragment and retry properties (57.6, 57.7), and the existing local checksum, multipart and sweep integration tests, and the item, history and search suites that now read through the logical field readers, all of which run in the same full suite. The real R2 and CORS rehearsal remains mandatory in 48.5; no deployment or production certification is claimed.",
+        "sourcePaths": [
+          "apps/app/web/src/files/upload.tsx",
+          "apps/app/web/src/items/forms/ItemForm.tsx",
+          "apps/app/web/src/discussion/thread.tsx",
+          "apps/app/web/src/api.ts"
+        ],
+        "testPaths": [
+          "apps/app/web/test/workflows.test.tsx",
+          "apps/app/web/test/files.test.tsx",
+          "apps/app/web/test/preview.test.tsx",
+          "apps/app/web/test/attachments.test.tsx",
+          "apps/app/web/test/api.test.ts"
+        ],
+        "correctionTasks": [],
+        "checks": [
+          "docs/acceptance/checks/local-tests.json"
+        ]
+      }
     },
     {
       "id": "58.1",
@@ -23090,7 +23154,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "7bef8895874001a5726ab3dc293e58e19426e7a7d2bed3d8e7a06c7e09fd77f0"
+          "sha256": "60d3bdf64082220bd85c2ea4654e79fa1ec01584983c2906a1a18c33eff89fdb"
         },
         {
           "path": "packages/domain/src/compatibility.ts",
@@ -23581,45 +23645,41 @@
     }
   ],
   "phases": {
-    "repair": {
-      "firstWave": 0,
-      "lastWave": 0
-    },
     "collaboration": {
-      "firstWave": 1,
-      "lastWave": 31
+      "firstWave": 0,
+      "lastWave": 30
     },
     "privacy": {
-      "firstWave": 32,
-      "lastWave": 55
+      "firstWave": 31,
+      "lastWave": 54
     },
     "imports_and_log": {
-      "firstWave": 56,
-      "lastWave": 79
+      "firstWave": 55,
+      "lastWave": 78
     },
     "publication": {
-      "firstWave": 80,
-      "lastWave": 97
+      "firstWave": 79,
+      "lastWave": 96
     },
     "outside_and_ai": {
-      "firstWave": 98,
-      "lastWave": 145
+      "firstWave": 97,
+      "lastWave": 144
     },
     "recovery": {
-      "firstWave": 146,
-      "lastWave": 163
+      "firstWave": 145,
+      "lastWave": 162
     },
     "release_tooling": {
-      "firstWave": 164,
-      "lastWave": 193
+      "firstWave": 163,
+      "lastWave": 192
     },
     "staging_and_acceptance": {
-      "firstWave": 194,
-      "lastWave": 201
+      "firstWave": 193,
+      "lastWave": 200
     },
     "production_activation": {
-      "firstWave": 202,
-      "lastWave": 202
+      "firstWave": 201,
+      "lastWave": 201
     }
   },
   "gates": [

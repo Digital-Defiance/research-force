@@ -751,6 +751,28 @@
       "checks": [
         "docs/acceptance/checks/local-tests.json"
       ]
+    },
+    {
+      "task": "57.8",
+      "state": "accepted",
+      "reason": "Verified the reopened file and large-text workflows end to end in the browser test project, on the real forms rather than only on the upload hook. In a new Item form, a finished upload and its title, caption and Origin survive a reload and are revalidated against the server without the local File; submitting sends the retained upload ID once, and the form then forgets its uploads. A transfer cut off by a reload asks for the file again, keeps every other field, refuses a keyboard submit with a file-specific reason while the Submit control is disabled, deletes the abandoned upload and sends the new upload ID after reselection. A keyboard submit while a file is uploading sends nothing and moves focus to the reasons. A lost save response after files were attached is reconciled from the Worker’s operation record, opens the one Item and clears the retained uploads. A Reply composer keeps its files across a reload and removes an unused upload with its stored copy. A 600,000-character Entry_Section typed into the Journal form is sent as a stage whose fragments each stay within 128,000 encoded bytes, with the commit sent once under the stage’s key, a lost commit response reconciled from the record and nothing saved twice. These join the earlier regressions for reselection, independent retry and removal, bounded CSV streaming and oversized quoted rows, and listing-versus-open flags (30.6–30.8, 30.11), the Worker-side fragment and retry properties (57.6, 57.7), and the existing local checksum, multipart and sweep integration tests, and the item, history and search suites that now read through the logical field readers, all of which run in the same full suite. The real R2 and CORS rehearsal remains mandatory in 48.5; no deployment or production certification is claimed.",
+      "sourcePaths": [
+        "apps/app/web/src/files/upload.tsx",
+        "apps/app/web/src/items/forms/ItemForm.tsx",
+        "apps/app/web/src/discussion/thread.tsx",
+        "apps/app/web/src/api.ts"
+      ],
+      "testPaths": [
+        "apps/app/web/test/workflows.test.tsx",
+        "apps/app/web/test/files.test.tsx",
+        "apps/app/web/test/preview.test.tsx",
+        "apps/app/web/test/attachments.test.tsx",
+        "apps/app/web/test/api.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
     }
   ]
 }
