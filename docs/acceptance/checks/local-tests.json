@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "command": "npm test -- --reporter=json --outputFile=<temporary report>",
-  "recordedAt": "2026-10-29T20:28:29.673Z",
+  "recordedAt": "2026-10-29T20:40:29.217Z",
   "scope": "local-synthetic",
   "success": true,
   "suites": [
@@ -206,6 +206,12 @@
     {
       "path": "apps/app/test/properties/p109-text-fragments.test.ts",
       "passed": 5,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p110-idempotent-mutations.test.ts",
+      "passed": 3,
       "failed": 0,
       "skipped": 0
     },
@@ -1117,6 +1123,7 @@
     "apps/app/test/properties/p100-restricted-reads.test.ts": "0eff8c88390c91899b0c3eb0f5e85a9dabcd85e0be6dbfca837cc588209526da",
     "apps/app/test/properties/p101-access-changes.test.ts": "6bc83a71a3e15b534caa1fd13605fc30ebffb3ded920a08351933634db823066",
     "apps/app/test/properties/p109-text-fragments.test.ts": "1b50e33dd4182f583bdc5d5bdb714099c68073a8ce671ccf2468373191cdaf72",
+    "apps/app/test/properties/p110-idempotent-mutations.test.ts": "e373898f45fe315f3b3286d1ad4b53495422062f873e68674f7e763892bda8f9",
     "apps/app/test/resource-profile.test.ts": "800884eb7c85819a7c94f78044f52cc91caf7f94dcd43d7ca848e0349beb51f6",
     "apps/app/test/search-indexer.test.ts": "5bbef95727bfa6b5e4e32e7f9a70ae38911372ca35f4848930a05890acfa7ab7",
     "apps/app/test/search.test.ts": "c29f3a3bb3503f8b47505097b32166042d2bc6dc7055da55bb34eabb19ce42e4",

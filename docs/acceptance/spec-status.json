@@ -2,15 +2,14 @@
   "inputs": {
     ".kiro/specs/research-collab-cms/requirements.md": "9e2d7cee953f4aeece04bad4a7dfae273a908c0df65c95beea7a4e572b71b5df",
     ".kiro/specs/research-collab-cms/design.md": "85df571e6efad1205603dca7addcea9c16f68252023d5483a2fbe81d705c4d93",
-    ".kiro/specs/research-collab-cms/tasks.md": "c25edf20bb3f7b458af6ab4b6d8591a6cac4c0100c1f724b7e21cd6bbb5753a2",
-    "docs/acceptance/task-evidence.json": "953ed7b3c154b1924e7dfa7526b2202085037d8954ea7c0bac0f0a71409b73a1"
+    ".kiro/specs/research-collab-cms/tasks.md": "fc1da8013a4d9834a5e77279211e319be6af36681cf9fbaa496b5e9b7af70514",
+    "docs/acceptance/task-evidence.json": "7bef8895874001a5726ab3dc293e58e19426e7a7d2bed3d8e7a06c7e09fd77f0"
   },
   "schemaVersion": 1,
   "nextTasks": [
-    "57.7"
+    "57.8"
   ],
   "remainingBuildOrder": [
-    "57.7",
     "57.8",
     "55.1",
     "55.2",
@@ -220,11 +219,11 @@
     "criteria": 738,
     "properties": 126,
     "leafTasks": 406,
-    "checkedLeaves": 202,
+    "checkedLeaves": 203,
     "historicalUnverified": 182,
-    "acceptedWithLocalEvidence": 20,
-    "propertyFiles": 63,
-    "remainingWaves": 204,
+    "acceptedWithLocalEvidence": 21,
+    "propertyFiles": 64,
+    "remainingWaves": 203,
     "gates": 4
   },
   "structuralIssues": [],
@@ -10080,7 +10079,9 @@
         "60.2"
       ],
       "task": "57.7",
-      "testPaths": []
+      "testPaths": [
+        "apps/app/test/properties/p110-idempotent-mutations.test.ts"
+      ]
     },
     {
       "id": 111,
@@ -19178,7 +19179,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "953ed7b3c154b1924e7dfa7526b2202085037d8954ea7c0bac0f0a71409b73a1"
+          "sha256": "7bef8895874001a5726ab3dc293e58e19426e7a7d2bed3d8e7a06c7e09fd77f0"
         },
         {
           "path": "README.md",
@@ -19267,7 +19268,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "953ed7b3c154b1924e7dfa7526b2202085037d8954ea7c0bac0f0a71409b73a1"
+          "sha256": "7bef8895874001a5726ab3dc293e58e19426e7a7d2bed3d8e7a06c7e09fd77f0"
         },
         {
           "path": "apps/app/src/index.ts",
@@ -19406,7 +19407,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "953ed7b3c154b1924e7dfa7526b2202085037d8954ea7c0bac0f0a71409b73a1"
+          "sha256": "7bef8895874001a5726ab3dc293e58e19426e7a7d2bed3d8e7a06c7e09fd77f0"
         },
         {
           "path": "apps/app/src/local/services.ts",
@@ -20883,12 +20884,12 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "953ed7b3c154b1924e7dfa7526b2202085037d8954ea7c0bac0f0a71409b73a1"
+          "sha256": "7bef8895874001a5726ab3dc293e58e19426e7a7d2bed3d8e7a06c7e09fd77f0"
         },
         {
           "path": "docs/acceptance/checks/local-tests.json",
           "kind": "file",
-          "sha256": "5d3ab5d2e57e5dd6fe04dfa90915ca00d2fea3dd5bb72fc7f730117604664d2d"
+          "sha256": "3f7aaad3aca23c3af43c5e076238704e9582d083356f67420582f135d8db9210"
         },
         {
           "path": "tools/src/specs.ts",
@@ -20975,7 +20976,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "953ed7b3c154b1924e7dfa7526b2202085037d8954ea7c0bac0f0a71409b73a1"
+          "sha256": "7bef8895874001a5726ab3dc293e58e19426e7a7d2bed3d8e7a06c7e09fd77f0"
         },
         {
           "path": "packages/domain/src/settings.ts",
@@ -21155,7 +21156,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "953ed7b3c154b1924e7dfa7526b2202085037d8954ea7c0bac0f0a71409b73a1"
+          "sha256": "7bef8895874001a5726ab3dc293e58e19426e7a7d2bed3d8e7a06c7e09fd77f0"
         },
         {
           "path": "docs/storage/logical-fields.md",
@@ -21799,7 +21800,7 @@
     {
       "id": "57.7",
       "title": "Write property and regression tests for mutation retries and lost responses",
-      "checked": false,
+      "checked": true,
       "requirements": [
         "28.10",
         "28.13",
@@ -21809,19 +21810,57 @@
         110
       ],
       "prerequisites": [],
-      "phase": "repair",
+      "phase": "completed_baseline",
       "sourcePaths": [
         {
           "path": "apps/app/test/properties/p110-idempotent-mutations.test.ts",
-          "kind": "missing"
+          "kind": "file",
+          "sha256": "e373898f45fe315f3b3286d1ad4b53495422062f873e68674f7e763892bda8f9"
+        },
+        {
+          "path": "apps/app/src/api/idempotency.ts",
+          "kind": "file",
+          "sha256": "5b80f5da9bb36815b5d222f26a779dbd8471f075419f6e71724ef00755a4e059"
+        },
+        {
+          "path": "packages/db/src/batch.ts",
+          "kind": "file",
+          "sha256": "01b38f45fed69618c6584f0faaa0baa91c044e93d16d7eb93e647fe69dc43770"
+        },
+        {
+          "path": "packages/db/src/accountant.ts",
+          "kind": "file",
+          "sha256": "b10cd6c3abe2c570d8cabf914cd689b334f54d6e8d35124ffba993dd6cdaec77"
+        },
+        {
+          "path": "apps/app/web/src/api.ts",
+          "kind": "file",
+          "sha256": "1b66d25b88888c8c1a30e83dc4c1492996e5e245a3aab41da40e4c1ab126f2ce"
         }
       ],
       "gates": [
         "team_archive",
         "final_checkpoint_49"
       ],
-      "acceptance": "planned",
-      "evidence": null
+      "acceptance": "accepted",
+      "evidence": {
+        "task": "57.7",
+        "state": "accepted",
+        "reason": "Verified Property 110 with a small table model written from the requirement sentences, over random sequences of keyed writes by three actors under three keys: sends and replays of valid and refused bodies, a changed body under a used key, two concurrent requests with the same or different bodies, writes cut off after they were recorded (fresh and old), status reads, and keyed Member invitations whose email is the external effect. After every step the number of Research_Items and of queued emails equals the model: one actor, key and body commits at most one domain result and one external effect, however many times it is sent or raced. A same-key replay returns the original status marked Idempotency-Replayed with the original result ID; a changed body conflicts with operation_key_reused and changes nothing; a fresh in-flight record answers operation_pending and runs nothing; an old one is reported unknown and is taken over by the same request exactly once; a refusal is recorded with its status and code and replayed. Another actor, including an Administrator, gets 404 for a key it never used, and an actor whose access is revoked can neither replay nor read the record. A pending or unknown write is never shown as refused or absent, and recorded resource lists hold identifiers only. Limits hold: 16-, 64- and 65-character keys, a body of about 460,000 bytes replayed rather than saved twice, and a one-character change to it conflicting. Browser and staging reconciliation remain with 57.8 and the staging tasks. No deployment or production certification is claimed.",
+        "sourcePaths": [
+          "apps/app/src/api/idempotency.ts",
+          "packages/db/src/batch.ts",
+          "packages/db/src/accountant.ts",
+          "apps/app/web/src/api.ts"
+        ],
+        "testPaths": [
+          "apps/app/test/properties/p110-idempotent-mutations.test.ts"
+        ],
+        "correctionTasks": [],
+        "checks": [
+          "docs/acceptance/checks/local-tests.json"
+        ]
+      }
     },
     {
       "id": "57.8",
@@ -21840,9 +21879,7 @@
         "60.9"
       ],
       "properties": [],
-      "prerequisites": [
-        "57.7"
-      ],
+      "prerequisites": [],
       "phase": "repair",
       "sourcePaths": [],
       "gates": [
@@ -23053,7 +23090,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "953ed7b3c154b1924e7dfa7526b2202085037d8954ea7c0bac0f0a71409b73a1"
+          "sha256": "7bef8895874001a5726ab3dc293e58e19426e7a7d2bed3d8e7a06c7e09fd77f0"
         },
         {
           "path": "packages/domain/src/compatibility.ts",
@@ -23546,43 +23583,43 @@
   "phases": {
     "repair": {
       "firstWave": 0,
-      "lastWave": 1
+      "lastWave": 0
     },
     "collaboration": {
-      "firstWave": 2,
-      "lastWave": 32
+      "firstWave": 1,
+      "lastWave": 31
     },
     "privacy": {
-      "firstWave": 33,
-      "lastWave": 56
+      "firstWave": 32,
+      "lastWave": 55
     },
     "imports_and_log": {
-      "firstWave": 57,
-      "lastWave": 80
+      "firstWave": 56,
+      "lastWave": 79
     },
     "publication": {
-      "firstWave": 81,
-      "lastWave": 98
+      "firstWave": 80,
+      "lastWave": 97
     },
     "outside_and_ai": {
-      "firstWave": 99,
-      "lastWave": 146
+      "firstWave": 98,
+      "lastWave": 145
     },
     "recovery": {
-      "firstWave": 147,
-      "lastWave": 164
+      "firstWave": 146,
+      "lastWave": 163
     },
     "release_tooling": {
-      "firstWave": 165,
-      "lastWave": 194
+      "firstWave": 164,
+      "lastWave": 193
     },
     "staging_and_acceptance": {
-      "firstWave": 195,
-      "lastWave": 202
+      "firstWave": 194,
+      "lastWave": 201
     },
     "production_activation": {
-      "firstWave": 203,
-      "lastWave": 203
+      "firstWave": 202,
+      "lastWave": 202
     }
   },
   "gates": [

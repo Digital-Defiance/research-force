@@ -733,6 +733,24 @@
       "checks": [
         "docs/acceptance/checks/local-tests.json"
       ]
+    },
+    {
+      "task": "57.7",
+      "state": "accepted",
+      "reason": "Verified Property 110 with a small table model written from the requirement sentences, over random sequences of keyed writes by three actors under three keys: sends and replays of valid and refused bodies, a changed body under a used key, two concurrent requests with the same or different bodies, writes cut off after they were recorded (fresh and old), status reads, and keyed Member invitations whose email is the external effect. After every step the number of Research_Items and of queued emails equals the model: one actor, key and body commits at most one domain result and one external effect, however many times it is sent or raced. A same-key replay returns the original status marked Idempotency-Replayed with the original result ID; a changed body conflicts with operation_key_reused and changes nothing; a fresh in-flight record answers operation_pending and runs nothing; an old one is reported unknown and is taken over by the same request exactly once; a refusal is recorded with its status and code and replayed. Another actor, including an Administrator, gets 404 for a key it never used, and an actor whose access is revoked can neither replay nor read the record. A pending or unknown write is never shown as refused or absent, and recorded resource lists hold identifiers only. Limits hold: 16-, 64- and 65-character keys, a body of about 460,000 bytes replayed rather than saved twice, and a one-character change to it conflicting. Browser and staging reconciliation remain with 57.8 and the staging tasks. No deployment or production certification is claimed.",
+      "sourcePaths": [
+        "apps/app/src/api/idempotency.ts",
+        "packages/db/src/batch.ts",
+        "packages/db/src/accountant.ts",
+        "apps/app/web/src/api.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/properties/p110-idempotent-mutations.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
     }
   ]
 }
