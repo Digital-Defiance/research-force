@@ -999,6 +999,33 @@
       "checks": [
         "docs/acceptance/checks/local-tests.json"
       ]
+    },
+    {
+      "task": "60.4",
+      "state": "accepted",
+      "reason": "Verified the work and Question screens and the integrated views. The Workspace shows a Work_Item's objective, priority, due date, state with its reason, blocked status, assignments, readable predecessors, outcomes and attributed history; an assignee accepts or declines for themselves (a decline needs a reason), and the responsible Member, an accepted assignee or an editor moves the work on the state they saw, with a reason to cancel or reopen and a result or no-result statement for Done. Predecessors are edited against the graph revision the page read. A Research_Question page shows its investigation state, current assessment, evidence marked when it has changed since, and earlier assessments, and records the next version on the revision the Member saw. My work and each Project's work are lists with the state, priority, responsible, assignee, Question and due-date filters combined, the personal views (assigned, waiting for my answer, due soon, overdue, blocked), and a cursor that never skips or repeats a row when the list changes between pages. Due and overdue use the viewer's Profile time zone and never change the stored date, and reading a list clears no flag. New work appears in the Activity_Feed and search and as a notification to its assignee. A restricted item's work, assessment, feed entry, search hit and notifications are invisible to a Member outside its list, every work endpoint answers 404 for them without the canary text, and an assignee who loses access, loses the Permission or is revoked can no longer act or be notified while the record of what they did stays.",
+      "sourcePaths": [
+        "apps/app/src/records/work-list.ts",
+        "apps/app/src/api/routes/work-lists.ts",
+        "apps/app/src/records/work.ts",
+        "apps/app/web/src/work/work-body.tsx",
+        "apps/app/web/src/work/work-list.tsx",
+        "apps/app/web/src/work/model.ts",
+        "apps/app/web/src/items/question/assessment.tsx",
+        "apps/app/web/src/items/page.tsx",
+        "apps/app/web/src/routes.tsx",
+        "apps/app/web/src/projects/list.tsx"
+      ],
+      "testPaths": [
+        "apps/app/test/work-lists.test.ts",
+        "apps/app/test/work-integration.test.ts",
+        "apps/app/web/test/work.test.tsx",
+        "apps/app/web/test/projects.test.tsx"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
     }
   ]
 }

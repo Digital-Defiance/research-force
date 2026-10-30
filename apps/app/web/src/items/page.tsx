@@ -20,7 +20,9 @@ import { useSession } from '../session';
 import { DisclosureStatus, formatDate, LoadState, Notice, PersonLink, useLoad } from '../ui';
 import { partyName } from './forms/inputs';
 import { KIND_FIELDS, SUBMITTABLE_KINDS } from './forms/model';
+import { AssessmentPanel } from './question/assessment';
 import { QuestionBody } from './question/question-body';
+import { WorkBody } from '../work/work-body';
 import type { CorrespondencePartyValue, CountValue, DateValue, DocumentDateValue, FieldSpec, PartyValue } from './forms/model';
 
 export interface ItemPageData {
@@ -243,6 +245,8 @@ export function ItemDetails({ data }: { readonly data: ItemPageData }) {
       </section>
       <Companions data={data} />
       {item.kind === 'research_question' && <QuestionBody item={item} />}
+      {item.kind === 'research_question' && <AssessmentPanel item={item} onChanged={onChanged} />}
+      {item.kind === 'work_item' && <WorkBody item={item} onChanged={onChanged} />}
       {fields.length > 0 && (
         <section className="rf-section" aria-label="Fields">
           <dl>{fields.map((spec) => <Entry key={spec.name} label={spec.label}><FieldValue spec={spec} value={item[spec.name]} data={data} /></Entry>)}</dl>

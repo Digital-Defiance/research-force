@@ -20,6 +20,7 @@ import { ProfilePage } from './people/view';
 import { EditProjectPage, ProjectForm } from './projects/form';
 import { ProjectHistoryPage } from './projects/history';
 import { ProjectsPage } from './projects/list';
+import { WorkListScreen } from './work/work-list';
 import { ReviewQueuePage } from './reviews/reviews';
 import { SearchScreen } from './search/search';
 import { SessionContext, sessionFor } from './session';
@@ -48,6 +49,7 @@ export function Header() {
         <nav aria-label="Workspace">
           <ul className="rf-nav__list">
             <li><Link className="rf-nav__link" to="/projects">Projects</Link></li>
+            <li><Link className="rf-nav__link" to="/me/work">My work</Link></li>
             <li><Link className="rf-nav__link" to="/search">Search</Link></li>
             <li><Link className="rf-nav__link" to="/members">Members</Link></li>
             <li><Link className="rf-nav__link" to="/reviews">Review queue</Link></li>
@@ -117,6 +119,10 @@ function ProjectHistoryRoute() {
   const { id = '' } = useParams();
   return <ProjectHistoryPage key={id} id={id} />;
 }
+function ProjectWorkRoute() {
+  const { id = '' } = useParams();
+  return <WorkListScreen key={id} projectId={id} />;
+}
 function SubmissionItemsRoute() {
   const { id = '' } = useParams();
   return <SubmissionItemsScreen key={id} id={id} />;
@@ -152,6 +158,8 @@ export function WorkspaceRoutes() {
       <Route path="/projects/new" element={<ProjectForm />} />
       <Route path="/projects/:id/edit" element={<EditProjectRoute />} />
       <Route path="/projects/:id/history" element={<ProjectHistoryRoute />} />
+      <Route path="/projects/:id/work" element={<ProjectWorkRoute />} />
+      <Route path="/me/work" element={<WorkListScreen />} />
       <Route path="/reviews" element={<ReviewQueuePage />} />
       <Route path="/search" element={<SearchScreen />} />
       <Route path="/go/:ref" element={<GoRoute />} />

@@ -101,7 +101,7 @@ describe('the Project_Order', () => {
     renderScreen(<ProjectsPage />, { client: fakeApi({ 'GET /projects': { projects: PROJECTS } }).client });
     const order = await screen.findByRole('list', { name: 'Project order' });
     expect(within(order).queryAllByRole('button')).toEqual([]);
-    expect(within(order).getAllByRole('link').map((link) => link.textContent)).toEqual(['History of Project 0', 'History of Project 1', 'History of Project 2']);
+    expect(within(order).getAllByRole('link').map((link) => link.textContent)).toEqual(['History of Project 0', 'Work in Project 0', 'History of Project 1', 'Work in Project 1', 'History of Project 2', 'Work in Project 2']);
     expect(screen.queryByRole('link', { name: 'Create a Project' })).toBeNull();
     expect(within(order).getAllByRole('listitem')[0]!.getAttribute('draggable')).toBe('false');
   });

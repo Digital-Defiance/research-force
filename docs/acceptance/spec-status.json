@@ -2,15 +2,14 @@
   "inputs": {
     ".kiro/specs/research-collab-cms/requirements.md": "9e2d7cee953f4aeece04bad4a7dfae273a908c0df65c95beea7a4e572b71b5df",
     ".kiro/specs/research-collab-cms/design.md": "85df571e6efad1205603dca7addcea9c16f68252023d5483a2fbe81d705c4d93",
-    ".kiro/specs/research-collab-cms/tasks.md": "603540b171cb5ed01f240644c91cb9b154b7eadc4c8aa0e25a80aa1eef0771b1",
-    "docs/acceptance/task-evidence.json": "8888b49ea2ee6fd19a123d482d7d088c0e6fc16aae771c143c469e30a9d5f337"
+    ".kiro/specs/research-collab-cms/tasks.md": "5d4521810fae9a06bcfed57675b0a1b74cc3602947070b29e67311cf4365e393",
+    "docs/acceptance/task-evidence.json": "2d27eb2a1780008356e5c23e1dca0b10c4ff401027c5473786479b788e7b1936"
   },
   "schemaVersion": 1,
   "nextTasks": [
-    "60.4"
+    "60.5"
   ],
   "remainingBuildOrder": [
-    "60.4",
     "60.5",
     "60.6",
     "62.2",
@@ -209,11 +208,11 @@
     "criteria": 738,
     "properties": 126,
     "leafTasks": 406,
-    "checkedLeaves": 213,
+    "checkedLeaves": 214,
     "historicalUnverified": 182,
-    "acceptedWithLocalEvidence": 31,
+    "acceptedWithLocalEvidence": 32,
     "propertyFiles": 64,
-    "remainingWaves": 193,
+    "remainingWaves": 192,
     "gates": 4
   },
   "structuralIssues": [],
@@ -12478,7 +12477,7 @@
         {
           "path": "apps/app/src/api/app.ts",
           "kind": "file",
-          "sha256": "fba92e7d71839a34a253036da67f28871832aeef894c36e7b3aabaf416d023c7"
+          "sha256": "30a09eaf138189315e999fa2c7a6afd551266b22854d287b498a344c34227331"
         },
         {
           "path": "apps/app/src/api/errors.ts",
@@ -13663,7 +13662,7 @@
         {
           "path": "apps/app/web/src/routes.tsx",
           "kind": "file",
-          "sha256": "1fc861f673892c2882c4ee68b4f8c51b1c4e5415c12d3f695b5bd69ad92a7f65"
+          "sha256": "6e1c0ee964c750b0e27448a15c7f9f65b3871952f4fd1dd17639f912e1b04d86"
         },
         {
           "path": "apps/app/web/src/api.ts",
@@ -13772,7 +13771,7 @@
         {
           "path": "apps/app/web/src/items/page.tsx",
           "kind": "file",
-          "sha256": "234339a5ca5e21839d10932a351a0b3c9d855981a6e7e64b987ae2c8911ecdc6"
+          "sha256": "66129e2ff6b3e64c16817258dff5d7f187c52d4bf1540266bb51782a141121fb"
         }
       ],
       "gates": [],
@@ -19169,7 +19168,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "8888b49ea2ee6fd19a123d482d7d088c0e6fc16aae771c143c469e30a9d5f337"
+          "sha256": "2d27eb2a1780008356e5c23e1dca0b10c4ff401027c5473786479b788e7b1936"
         },
         {
           "path": "README.md",
@@ -19258,7 +19257,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "8888b49ea2ee6fd19a123d482d7d088c0e6fc16aae771c143c469e30a9d5f337"
+          "sha256": "2d27eb2a1780008356e5c23e1dca0b10c4ff401027c5473786479b788e7b1936"
         },
         {
           "path": "apps/app/src/index.ts",
@@ -19397,7 +19396,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "8888b49ea2ee6fd19a123d482d7d088c0e6fc16aae771c143c469e30a9d5f337"
+          "sha256": "2d27eb2a1780008356e5c23e1dca0b10c4ff401027c5473786479b788e7b1936"
         },
         {
           "path": "apps/app/src/local/services.ts",
@@ -19437,7 +19436,7 @@
         {
           "path": "apps/app/src/api/app.ts",
           "kind": "file",
-          "sha256": "fba92e7d71839a34a253036da67f28871832aeef894c36e7b3aabaf416d023c7"
+          "sha256": "30a09eaf138189315e999fa2c7a6afd551266b22854d287b498a344c34227331"
         },
         {
           "path": "apps/app/src/do/mailer.ts",
@@ -19952,7 +19951,7 @@
         {
           "path": "apps/app/web/src/items/page.tsx",
           "kind": "file",
-          "sha256": "234339a5ca5e21839d10932a351a0b3c9d855981a6e7e64b987ae2c8911ecdc6"
+          "sha256": "66129e2ff6b3e64c16817258dff5d7f187c52d4bf1540266bb51782a141121fb"
         },
         {
           "path": "apps/app/web/test/access.test.tsx",
@@ -20688,7 +20687,7 @@
         {
           "path": "apps/app/web/src/items/page.tsx",
           "kind": "file",
-          "sha256": "234339a5ca5e21839d10932a351a0b3c9d855981a6e7e64b987ae2c8911ecdc6"
+          "sha256": "66129e2ff6b3e64c16817258dff5d7f187c52d4bf1540266bb51782a141121fb"
         },
         {
           "path": "apps/app/src/records/kinds/question.ts",
@@ -21081,12 +21080,12 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "8888b49ea2ee6fd19a123d482d7d088c0e6fc16aae771c143c469e30a9d5f337"
+          "sha256": "2d27eb2a1780008356e5c23e1dca0b10c4ff401027c5473786479b788e7b1936"
         },
         {
           "path": "docs/acceptance/checks/local-tests.json",
           "kind": "file",
-          "sha256": "9e2f9f15edc8d5adb9b6db549d9502050f25bc032dfaefb61034b2bb341afccb"
+          "sha256": "89279592d776f9c6c1dea7e1df842b4787d7cfea24d766b566272684e2436520"
         },
         {
           "path": "tools/src/specs.ts",
@@ -21173,7 +21172,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "8888b49ea2ee6fd19a123d482d7d088c0e6fc16aae771c143c469e30a9d5f337"
+          "sha256": "2d27eb2a1780008356e5c23e1dca0b10c4ff401027c5473786479b788e7b1936"
         },
         {
           "path": "packages/domain/src/settings.ts",
@@ -21208,7 +21207,7 @@
         {
           "path": "apps/app/src/api/app.ts",
           "kind": "file",
-          "sha256": "fba92e7d71839a34a253036da67f28871832aeef894c36e7b3aabaf416d023c7"
+          "sha256": "30a09eaf138189315e999fa2c7a6afd551266b22854d287b498a344c34227331"
         },
         {
           "path": "apps/app/src/env.ts",
@@ -21353,7 +21352,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "8888b49ea2ee6fd19a123d482d7d088c0e6fc16aae771c143c469e30a9d5f337"
+          "sha256": "2d27eb2a1780008356e5c23e1dca0b10c4ff401027c5473786479b788e7b1936"
         },
         {
           "path": "docs/storage/logical-fields.md",
@@ -21518,7 +21517,7 @@
         {
           "path": "infra/releases/development.json",
           "kind": "file",
-          "sha256": "2c66f5db1960a65a58ac23ee989a5e54a2cc5ee2e354dc88bfa98a2ec313664f"
+          "sha256": "230575de6e6a7cf57e947d67383f0e0fb8dd69fa40f99680c4b98cdb66518e3f"
         },
         {
           "path": "infra/recovery/deployment.example.json",
@@ -21723,7 +21722,7 @@
         {
           "path": "apps/app/src/api/app.ts",
           "kind": "file",
-          "sha256": "fba92e7d71839a34a253036da67f28871832aeef894c36e7b3aabaf416d023c7"
+          "sha256": "30a09eaf138189315e999fa2c7a6afd551266b22854d287b498a344c34227331"
         },
         {
           "path": "apps/app/src/api/csrf.ts",
@@ -21793,7 +21792,7 @@
         {
           "path": "infra/releases/development.json",
           "kind": "file",
-          "sha256": "2c66f5db1960a65a58ac23ee989a5e54a2cc5ee2e354dc88bfa98a2ec313664f"
+          "sha256": "230575de6e6a7cf57e947d67383f0e0fb8dd69fa40f99680c4b98cdb66518e3f"
         },
         {
           "path": "apps/app/test/operations.test.ts",
@@ -22693,7 +22692,7 @@
         {
           "path": "apps/app/src/records/work.ts",
           "kind": "file",
-          "sha256": "23431e3815e87bf9db2d3c0f9c1ae47b0c062594064a1da5049f4a87ffa3bbb3"
+          "sha256": "38a7a41c9619c007d037433a0f85d3e7c6209e52a93991703b9968a5825ae444"
         },
         {
           "path": "apps/app/src/records/work-history.ts",
@@ -22870,7 +22869,7 @@
     {
       "id": "60.4",
       "title": "Build work and Question screens and integrated record/search/export views",
-      "checked": false,
+      "checked": true,
       "requirements": [
         "50.11",
         "52.5",
@@ -22880,14 +22879,111 @@
       ],
       "properties": [],
       "prerequisites": [],
-      "phase": "collaboration",
-      "sourcePaths": [],
+      "phase": "completed_baseline",
+      "sourcePaths": [
+        {
+          "path": "apps/app/src/records/work-list.ts",
+          "kind": "file",
+          "sha256": "655c2dea3caefd29a4a05aa4159ee69712ab4629f0e1cd239edb058342a4d023"
+        },
+        {
+          "path": "apps/app/src/api/routes/work-lists.ts",
+          "kind": "file",
+          "sha256": "c9ca62594e0f446cea9f1a8cffe822f8b5424cb189b78cba5c8e86012a3a3b38"
+        },
+        {
+          "path": "apps/app/src/records/work.ts",
+          "kind": "file",
+          "sha256": "38a7a41c9619c007d037433a0f85d3e7c6209e52a93991703b9968a5825ae444"
+        },
+        {
+          "path": "apps/app/web/src/work/work-body.tsx",
+          "kind": "file",
+          "sha256": "23c9dd6af2be3c5bf9e1f86d16ccc3bdb496f75dbaae99f0af8bd1125ddf4b8c"
+        },
+        {
+          "path": "apps/app/web/src/work/work-list.tsx",
+          "kind": "file",
+          "sha256": "cc7c5e1b7f5ebf7be0e6c52603f6014773df46f733ac819a68f7a6538699405d"
+        },
+        {
+          "path": "apps/app/web/src/work/model.ts",
+          "kind": "file",
+          "sha256": "7ee955ffb842c9fbfaa827a1e459cd8489ac3c5dd52888879ed53eb6485aecb9"
+        },
+        {
+          "path": "apps/app/web/src/items/question/assessment.tsx",
+          "kind": "file",
+          "sha256": "2ff2dfb738f3fdc5e177804a1ecd62f14f04ddb699d6027b601f54660b215859"
+        },
+        {
+          "path": "apps/app/web/src/items/page.tsx",
+          "kind": "file",
+          "sha256": "66129e2ff6b3e64c16817258dff5d7f187c52d4bf1540266bb51782a141121fb"
+        },
+        {
+          "path": "apps/app/web/src/routes.tsx",
+          "kind": "file",
+          "sha256": "6e1c0ee964c750b0e27448a15c7f9f65b3871952f4fd1dd17639f912e1b04d86"
+        },
+        {
+          "path": "apps/app/web/src/projects/list.tsx",
+          "kind": "file",
+          "sha256": "e085241f3ea1dcee2bb9ba8f82f5b42c21e14c6869a8b2292a933aaceac42754"
+        },
+        {
+          "path": "apps/app/test/work-lists.test.ts",
+          "kind": "file",
+          "sha256": "66c788d60e8d9ddc595a2ed8c3823b4d7ad4cb1445fec247cbbdc33a8de2b5ac"
+        },
+        {
+          "path": "apps/app/test/work-integration.test.ts",
+          "kind": "file",
+          "sha256": "3dba2d7228e3258fbfa3685faa6de540cef01d3d2608a1009cc7cca7407bad2b"
+        },
+        {
+          "path": "apps/app/web/test/work.test.tsx",
+          "kind": "file",
+          "sha256": "50b56176f80cfaaf268dcc38f6200636fee0d38403ad7f8f1c0e4e0d6eb2f64b"
+        },
+        {
+          "path": "apps/app/web/test/projects.test.tsx",
+          "kind": "file",
+          "sha256": "cb55f9e615db824dd0e5fabee9e2110eaebb526dbf273f4f307389aab97f6e0d"
+        }
+      ],
       "gates": [
         "team_archive",
         "final_checkpoint_49"
       ],
-      "acceptance": "planned",
-      "evidence": null
+      "acceptance": "accepted",
+      "evidence": {
+        "task": "60.4",
+        "state": "accepted",
+        "reason": "Verified the work and Question screens and the integrated views. The Workspace shows a Work_Item's objective, priority, due date, state with its reason, blocked status, assignments, readable predecessors, outcomes and attributed history; an assignee accepts or declines for themselves (a decline needs a reason), and the responsible Member, an accepted assignee or an editor moves the work on the state they saw, with a reason to cancel or reopen and a result or no-result statement for Done. Predecessors are edited against the graph revision the page read. A Research_Question page shows its investigation state, current assessment, evidence marked when it has changed since, and earlier assessments, and records the next version on the revision the Member saw. My work and each Project's work are lists with the state, priority, responsible, assignee, Question and due-date filters combined, the personal views (assigned, waiting for my answer, due soon, overdue, blocked), and a cursor that never skips or repeats a row when the list changes between pages. Due and overdue use the viewer's Profile time zone and never change the stored date, and reading a list clears no flag. New work appears in the Activity_Feed and search and as a notification to its assignee. A restricted item's work, assessment, feed entry, search hit and notifications are invisible to a Member outside its list, every work endpoint answers 404 for them without the canary text, and an assignee who loses access, loses the Permission or is revoked can no longer act or be notified while the record of what they did stays.",
+        "sourcePaths": [
+          "apps/app/src/records/work-list.ts",
+          "apps/app/src/api/routes/work-lists.ts",
+          "apps/app/src/records/work.ts",
+          "apps/app/web/src/work/work-body.tsx",
+          "apps/app/web/src/work/work-list.tsx",
+          "apps/app/web/src/work/model.ts",
+          "apps/app/web/src/items/question/assessment.tsx",
+          "apps/app/web/src/items/page.tsx",
+          "apps/app/web/src/routes.tsx",
+          "apps/app/web/src/projects/list.tsx"
+        ],
+        "testPaths": [
+          "apps/app/test/work-lists.test.ts",
+          "apps/app/test/work-integration.test.ts",
+          "apps/app/web/test/work.test.tsx",
+          "apps/app/web/test/projects.test.tsx"
+        ],
+        "correctionTasks": [],
+        "checks": [
+          "docs/acceptance/checks/local-tests.json"
+        ]
+      }
     },
     {
       "id": "60.5",
@@ -22904,9 +23000,7 @@
       "properties": [
         115
       ],
-      "prerequisites": [
-        "60.4"
-      ],
+      "prerequisites": [],
       "phase": "collaboration",
       "sourcePaths": [
         {
@@ -23887,7 +23981,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "8888b49ea2ee6fd19a123d482d7d088c0e6fc16aae771c143c469e30a9d5f337"
+          "sha256": "2d27eb2a1780008356e5c23e1dca0b10c4ff401027c5473786479b788e7b1936"
         },
         {
           "path": "packages/domain/src/compatibility.ts",
@@ -23937,7 +24031,7 @@
         {
           "path": "infra/releases/development.json",
           "kind": "file",
-          "sha256": "2c66f5db1960a65a58ac23ee989a5e54a2cc5ee2e354dc88bfa98a2ec313664f"
+          "sha256": "230575de6e6a7cf57e947d67383f0e0fb8dd69fa40f99680c4b98cdb66518e3f"
         },
         {
           "path": "infra/releases/README.md",
@@ -24241,7 +24335,7 @@
         {
           "path": "apps/app/src/api/app.ts",
           "kind": "file",
-          "sha256": "fba92e7d71839a34a253036da67f28871832aeef894c36e7b3aabaf416d023c7"
+          "sha256": "30a09eaf138189315e999fa2c7a6afd551266b22854d287b498a344c34227331"
         },
         {
           "path": "apps/app/src/index.ts",
@@ -24266,7 +24360,7 @@
         {
           "path": "apps/app/web/src/routes.tsx",
           "kind": "file",
-          "sha256": "1fc861f673892c2882c4ee68b4f8c51b1c4e5415c12d3f695b5bd69ad92a7f65"
+          "sha256": "6e1c0ee964c750b0e27448a15c7f9f65b3871952f4fd1dd17639f912e1b04d86"
         },
         {
           "path": "apps/ops/src/index.ts",
@@ -24380,39 +24474,39 @@
   "phases": {
     "collaboration": {
       "firstWave": 0,
-      "lastWave": 21
+      "lastWave": 20
     },
     "privacy": {
-      "firstWave": 22,
-      "lastWave": 45
+      "firstWave": 21,
+      "lastWave": 44
     },
     "imports_and_log": {
-      "firstWave": 46,
-      "lastWave": 69
+      "firstWave": 45,
+      "lastWave": 68
     },
     "publication": {
-      "firstWave": 70,
-      "lastWave": 87
+      "firstWave": 69,
+      "lastWave": 86
     },
     "outside_and_ai": {
-      "firstWave": 88,
-      "lastWave": 135
+      "firstWave": 87,
+      "lastWave": 134
     },
     "recovery": {
-      "firstWave": 136,
-      "lastWave": 153
+      "firstWave": 135,
+      "lastWave": 152
     },
     "release_tooling": {
-      "firstWave": 154,
-      "lastWave": 183
+      "firstWave": 153,
+      "lastWave": 182
     },
     "staging_and_acceptance": {
-      "firstWave": 184,
-      "lastWave": 191
+      "firstWave": 183,
+      "lastWave": 190
     },
     "production_activation": {
-      "firstWave": 192,
-      "lastWave": 192
+      "firstWave": 191,
+      "lastWave": 191
     }
   },
   "gates": [

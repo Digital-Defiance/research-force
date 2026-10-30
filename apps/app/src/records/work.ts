@@ -57,6 +57,7 @@ export interface WorkView {
   readonly stateReason: string | null;
   readonly graphRev: number;
   readonly responsibleId: ULID;
+  readonly responsibleName: string | null;
   readonly assignments: readonly { memberId: ULID; displayName: string | null; state: AssigneeState; assignedAt: Timestamp; respondedAt: Timestamp | null; reason: string | null }[];
   /** Only the predecessors the viewer can read; an unreadable one shows no name, count or trace (R52.3). */
   readonly dependencies: readonly { predecessorId: ULID; title: string; kind: DependencyKind; state: WorkState; blocking: boolean }[];
@@ -73,8 +74,8 @@ export async function readWork(c: Context<ApiEnv>, id: string): Promise<WorkView
   const work = await loadWork(c, id);
   const db = c.env.RF_CORE;
   const viewer = actorId(c);
-  const [state, assignees, dependencies, outcomes, results, events] = await c.get('accountant').track(db.batch([
-    db.prepare('SELECT state_reason AS stateReason FROM work_items WHERE unit_id = ?1').bind(id),
+  const [header, assignees, dependencies, outcomes, results, events] = await c.get('accountant').track(db.batch([
+    db.prepare('SELECT w.state_reason AS stateReason, p.display_name AS responsibleName FROM work_items w LEFT JOIN profiles p ON p.member_id = w.responsible_id WHERE w.unit_id = ?1').bind(id),
     db.prepare(`SELECT a.member_id AS memberId, p.display_name AS displayName, a.state, a.assigned_at AS assignedAt, a.responded_at AS respondedAt, a.response_reason AS reason
       FROM work_assignees a LEFT JOIN profiles p ON p.member_id = a.member_id WHERE a.work_id = ?1 ORDER BY a.position`).bind(id),
     db.prepare(`SELECT d.predecessor_id AS predecessorId, ri.title, d.kind, w.state FROM work_dependencies d
@@ -94,7 +95,8 @@ export async function readWork(c: Context<ApiEnv>, id: string): Promise<WorkView
   }));
   const found = rowsOf<{ outcomeId: ULID; targetId: ULID; targetKind: string; targetRev: number | null; sha256: string | null }>(results);
   return {
-    id: work.id, state: work.state, stateReason: rowsOf<{ stateReason: string | null }>(state)[0]?.stateReason ?? null, graphRev: work.graphRev, responsibleId: work.responsibleId,
+    id: work.id, state: work.state, stateReason: rowsOf<{ stateReason: string | null; responsibleName: string | null }>(header)[0]?.stateReason ?? null, graphRev: work.graphRev, responsibleId: work.responsibleId,
+    responsibleName: rowsOf<{ responsibleName: string | null }>(header)[0]?.responsibleName ?? null,
     assignments: rowsOf<WorkView['assignments'][number]>(assignees), dependencies: deps, blocked: deps.some((dependency) => dependency.blocking),
     outcomes: rowsOf<Omit<WorkView['outcomes'][number], 'results'>>(outcomes).map((outcome) => ({
       ...outcome, results: found.filter((result) => result.outcomeId === outcome.id).map(({ outcomeId: _outcome, ...result }) => result),
