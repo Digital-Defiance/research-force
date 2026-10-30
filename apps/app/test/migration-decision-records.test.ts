@@ -32,7 +32,7 @@ describe('the decision record migration', () => {
   it('accepts the new kind and the new Permission, and still refuses others', async () => {
     const item = (id: string, kind: string) => core.prepare(`INSERT INTO research_items (unit_id, kind, item_identifier, project_id, title, item_date_key, log_date_key) VALUES (?1, ?2, ?3, 'P', 'T', '2026-10-27', '2026-10-27')`).bind(id, kind, `RF-${id}`);
     expect(await refused(item('D1', 'decision_record'))).toBe(false);
-    expect(await refused(item('D2', 'work_item'))).toBe(true);
+    expect(await refused(item('D2', 'bulk_item'))).toBe(true);
     const grant = (permission: string) => core.prepare("INSERT INTO role_permissions (role_id, permission, scope) VALUES ('R', ?1, 'own')").bind(permission);
     expect(await refused(grant('decision.acknowledge'))).toBe(false);
     expect(await refused(grant('decision.impersonate'))).toBe(true);

@@ -921,6 +921,35 @@
       "checks": [
         "docs/acceptance/checks/local-tests.json"
       ]
+    },
+    {
+      "task": "60.1",
+      "state": "accepted",
+      "reason": "Verified the Work_Item kind, the Question lifecycle storage and the four work Permissions. A Work_Item stores an objective of up to 10,000 characters, one responsible Member who is the submitter by default, up to 20 assignees each pending until they answer for themselves, an optional exact due date, a Low, Normal or High priority, and a state that starts Open and belongs to the work operations; its Log Summary is optional like a Topic's. Editing the assignees keeps the answer of one who stays, drops the answer of one who leaves, and starts one who is added again as pending. The responsible Member, every assignee and a Question's lead must be active Members who can currently read the item, and a save that names one who cannot is refused naming them. The tables for dependencies and outcomes are in place with their bounds, self-dependency is refused by the database, and outcomes and Question assessments are added rows that triggers never let change, so a later reopening or reassessment keeps every earlier conclusion. A Question now has a lead who is its author by default, up to 20 uncertainties and up to 20 next actions that may link to a readable Work_Item, and it starts Open with no assessment; a viewer who cannot read a linked Work_Item sees the action's text without the link. The new work.assign, work.edit, work.progress and work.accept Permissions give the Owner or an authorized editor assignment and editing, the responsible Member, an accepted assignee or an authorized editor progress, and each Member alone their own acceptance, with built-in Roles migrated and added Roles unable to widen them. Search indexes the objective and the lifecycle text, permanent deletion removes the work rows and the links to them, and Bulk_Import v1 has a shared rule that rejects the interactive-only kinds. The work APIs, dependency graph checks, outcomes, assessments, notifications and screens follow in 60.2 to 60.6, and Properties 115 and 116 are written later. No deployment or production certification is claimed.",
+      "sourcePaths": [
+        "packages/domain/src/work.ts",
+        "packages/domain/src/permissions.ts",
+        "packages/domain/src/schemas/items.ts",
+        "packages/db/src/schema/core/work-items.ts",
+        "packages/db/migrations/core/0016_work_items.sql",
+        "apps/app/src/records/kinds/work.ts",
+        "apps/app/src/records/kinds/question.ts",
+        "apps/app/src/records/items.ts",
+        "apps/app/src/jobs/deletion.ts",
+        "apps/app/src/search/read.ts"
+      ],
+      "testPaths": [
+        "packages/domain/test/work.test.ts",
+        "packages/domain/test/permissions.test.ts",
+        "apps/app/test/work-items.test.ts",
+        "apps/app/test/migration-work-items.test.ts",
+        "apps/app/test/properties/p23-permission-decisions.test.ts",
+        "tools/test/upgrade-store.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
     }
   ]
 }

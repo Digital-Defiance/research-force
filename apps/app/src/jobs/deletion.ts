@@ -27,7 +27,7 @@ interface Cursor {
 /** Tables holding a unit's fields and per-Member state, each keyed by `unit_id`. */
 const UNIT_TABLES = [
   'research_items', 'journal_entries', 'je_members', 'entry_sections', 'findings', 'sources', 'runs', 'run_counts', 'hypotheses', 'correspondences',
-  'correspondence_parties', 'archival_requests', 'topics', 'research_questions', 'decisions', 'source_bibliography', 'source_creators', 'source_identifiers', 'replies', 'attachments', 'dissent_notes', 'flags', 'views',
+  'correspondence_parties', 'archival_requests', 'topics', 'research_questions', 'decisions', 'work_items', 'source_bibliography', 'source_creators', 'source_identifiers', 'replies', 'attachments', 'dissent_notes', 'flags', 'views',
 ] as const;
 const SLICE_ROWS = OPERATIONS.jobSliceRows;
 
@@ -116,6 +116,13 @@ export const deletionJob: JobHandler = {
         db.prepare("UPDATE release_artifacts SET unavailable_at = ?2 WHERE unavailable_at IS NULL AND kind = 'citation' AND unit_id IN (SELECT id FROM evidence_citations WHERE citing_unit_id IN (SELECT value FROM json_each(?1)))").bind(list, now),
         // A citation belongs to the record that cites; one whose target is deleted stays, unreadable, as the record of what was cited (R54.3).
         db.prepare('DELETE FROM evidence_citations WHERE citing_unit_id IN (SELECT value FROM json_each(?1))').bind(list),
+        // A work item's rows go with it, and a link to it from another record's dependencies or next actions is dropped (R52.3).
+        db.prepare('DELETE FROM work_outcome_results WHERE outcome_id IN (SELECT id FROM work_outcomes WHERE work_id IN (SELECT value FROM json_each(?1)))').bind(list),
+        ...['work_outcomes', 'work_assignees', 'work_dependencies'].map((table) => db.prepare(`DELETE FROM ${table} WHERE work_id IN (SELECT value FROM json_each(?1))`).bind(list)),
+        db.prepare('DELETE FROM work_dependencies WHERE predecessor_id IN (SELECT value FROM json_each(?1))').bind(list),
+        db.prepare('UPDATE question_next_actions SET work_item_id = NULL WHERE work_item_id IN (SELECT value FROM json_each(?1))').bind(list),
+        // A Question's lifecycle rows go with it, including every assessment it recorded.
+        ...['question_assessment_evidence', 'question_assessments', 'question_uncertainties', 'question_next_actions'].map((table) => db.prepare(`DELETE FROM ${table} WHERE question_id IN (SELECT value FROM json_each(?1))`).bind(list)),
         // A decision's own rows go with it; a decision that it replaced, or that replaced it, only loses the pointer (R53.4).
         ...['decision_alternatives', 'decision_participants', 'decision_evidence', 'decision_acknowledgements'].map((table) => db.prepare(`DELETE FROM ${table} WHERE decision_id IN (SELECT value FROM json_each(?1))`).bind(list)),
         db.prepare('UPDATE decisions SET supersedes_id = NULL WHERE supersedes_id IN (SELECT value FROM json_each(?1))').bind(list),

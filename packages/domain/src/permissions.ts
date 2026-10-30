@@ -14,6 +14,7 @@ export const PERMISSIONS = [
   'role.add', 'role.edit', 'valueSet.manage', 'rights.markPublication', 'methods.describe', 'policy.edit', 'settings.edit',
   'import.run', 'export.manage', 'backup.manage', 'access.restrict', 'access.widen', 'hold.place', 'hold.lift', 'consent.give', 'consent.propose',
   'dual.propose', 'dual.approve', 'dual.decline', 'attachment.move', 'decision.acknowledge',
+  'work.assign', 'work.edit', 'work.progress', 'work.accept',
 ] as const;
 export type Permission = typeof PERMISSIONS[number];
 export type PermissionScope = 'any' | 'own' | 'other' | 'eligible';
@@ -29,10 +30,12 @@ const contributor: PermissionGrants = Object.freeze({
   'link.add': 'any', 'link.remove': 'own', 'review.request': 'any', 'review.complete': 'eligible',
   'party.doNotName.on': 'any', 'profile.edit': 'own', 'dissent.attach': 'other', 'dissent.edit': 'own', 'dissent.withdraw': 'own', 'ai.draft.logSummary': 'own',
   'access.restrict': 'own', 'access.widen': 'own', 'hold.place': 'any', 'hold.lift': 'own', 'consent.give': 'own', 'attachment.move': 'own', 'decision.acknowledge': 'own',
+  'work.assign': 'own', 'work.edit': 'own', 'work.progress': 'own', 'work.accept': 'own',
 });
 const administrator: PermissionGrants = Object.freeze({
   ...Object.fromEntries(PERMISSIONS.map((permission) => [permission, 'any'])), ...contributor,
   'item.edit': 'any', 'item.correct': 'any', 'item.withdraw': 'any', 'section.edit': 'any', 'link.remove': 'any', 'access.restrict': 'any', 'attachment.move': 'any',
+  'work.assign': 'any', 'work.edit': 'any', 'work.progress': 'any',
 });
 export const BUILT_IN_ROLES = Object.freeze({
   contributor: Object.freeze({ id: ROLE_IDS.contributor, name: 'Contributor', permissions: contributor }),
@@ -59,6 +62,8 @@ export type PermissionTarget =
   | { readonly type: 'hold'; readonly placedById: ULID; readonly itemOwnerId: ULID }
   | { readonly type: 'publication_proposal'; readonly consentingMemberId: ULID }
   | { readonly type: 'decision_response'; readonly memberId: ULID }
+  | { readonly type: 'work_item'; readonly ownerId: ULID; readonly responsibleId: ULID; readonly acceptedAssigneeIds: readonly ULID[] }
+  | { readonly type: 'work_assignment'; readonly memberId: ULID }
   | { readonly type: 'dual_approval'; readonly proposedById: ULID };
 
 function currentRole(ctx: PermissionContext): RoleDefinition | undefined {
@@ -119,6 +124,9 @@ export function can(ctx: PermissionContext, permission: Permission, target?: Per
     case 'access.widen': return ownScope && target?.type === 'research_item' && own(target.ownerId);
     case 'attachment.move': return target?.type === 'attachment' && (scope === 'any' || (scope === 'own' && own(target.ownerId)));
     case 'hold.lift': return ownScope && target?.type === 'hold' && (own(target.placedById) || own(target.itemOwnerId));
+    case 'work.assign': case 'work.edit': return target?.type === 'work_item' && (scope === 'any' || (scope === 'own' && own(target.ownerId)));
+    case 'work.progress': return target?.type === 'work_item' && (scope === 'any' || (scope === 'own' && (own(target.responsibleId) || target.acceptedAssigneeIds.includes(ctx.member.id))));
+    case 'work.accept': return ownScope && target?.type === 'work_assignment' && own(target.memberId);
     case 'decision.acknowledge': return ownScope && target?.type === 'decision_response' && own(target.memberId);
     case 'consent.give': return ownScope && target?.type === 'publication_proposal' && own(target.consentingMemberId);
     case 'dual.approve': case 'dual.decline': return scope === 'any' && target?.type === 'dual_approval' && !own(target.proposedById);
@@ -141,7 +149,7 @@ export function validateAddedRole(candidate: RoleDefinition, existing: RolePermi
       const permission = key as Permission;
       if (!Object.hasOwn(role.permissions, permission)) return false;
       const current = role.permissions[permission];
-      return current === scope || (current === 'any' && scope === 'own' && ['item.edit', 'item.correct', 'item.withdraw', 'item.delete', 'section.edit', 'link.remove', 'access.restrict', 'attachment.move'].includes(key));
+      return current === scope || (current === 'any' && scope === 'own' && ['item.edit', 'item.correct', 'item.withdraw', 'item.delete', 'section.edit', 'link.remove', 'access.restrict', 'attachment.move', 'work.assign', 'work.edit', 'work.progress'].includes(key));
     });
     if (!granted) return refused('scope_not_granted', `permissions.${key}`, 'The Permission and scope must be drawn from existing Roles.');
   }

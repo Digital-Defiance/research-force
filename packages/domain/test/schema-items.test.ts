@@ -16,7 +16,7 @@ describe('all Research Item kinds', () => {
 
   it.each(ITEM_KINDS)('applies submission, import, and existing-summary rules for %s', (kind) => {
     const input = itemFixture(kind);
-    const required = kind !== 'journal_entry' && kind !== 'topic' && kind !== 'research_question';
+    const required = kind !== 'journal_entry' && kind !== 'topic' && kind !== 'research_question' && kind !== 'work_item';
     for (const summary of [undefined, rt(' \u0085 ')]) expect(researchItemSchema(kind, context).safeParse({ ...input, logSummary: summary }).success).toBe(!required);
     expect(researchItemSchema(kind, context, { mode: 'import' }).safeParse({ ...input, logSummary: undefined }).success).toBe(true);
     const saved = researchItemSchema(kind, context).parse(input);

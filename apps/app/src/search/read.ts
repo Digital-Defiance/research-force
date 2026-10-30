@@ -25,7 +25,7 @@ interface UnitRow {
  */
 export async function readRootDocuments(db: D1Database, rootId: ULID): Promise<SearchDoc[]> {
   const one = (sqlText: string) => db.prepare(sqlText).bind(rootId);
-  const [units, item, journal, finding, source, run, runCounts, hypothesis, correspondence, parties, archival, topic, sections, replies, attachments, dissent, question, groups, decision, alternatives] = await db.batch<Row>([
+  const [units, item, journal, finding, source, run, runCounts, hypothesis, correspondence, parties, archival, topic, sections, replies, attachments, dissent, question, groups, decision, alternatives, work, lifecycle] = await db.batch<Row>([
     one(`SELECT u.id, u.unit_type AS type, u.parent_id AS parentId, u.position, u.created_at AS createdAt, u.disclosure_level AS level, u.withdrawn_at AS withdrawnAt,
         u.credit, (s.completed_at IS NOT NULL) AS completed, u.project_id AS projectId
       FROM units u JOIN submissions s ON s.id = u.submission_id
@@ -51,8 +51,10 @@ export async function readRootDocuments(db: D1Database, rootId: ULID): Promise<S
     one('SELECT heading FROM question_groups WHERE question_id = ?1 ORDER BY position'),
     one('SELECT * FROM decisions WHERE unit_id = ?1'),
     one('SELECT title, description FROM decision_alternatives WHERE decision_id = ?1 ORDER BY position'),
+    one('SELECT * FROM work_items WHERE unit_id = ?1'),
+    one(`SELECT text FROM question_uncertainties WHERE question_id = ?1 UNION ALL SELECT text FROM question_next_actions WHERE question_id = ?1`),
   ]);
-  await resolveStoredRows(db, [item, finding, source, run, hypothesis, correspondence, archival, topic, question, decision, sections, replies, dissent].flatMap((r) => r?.results ?? []));
+  await resolveStoredRows(db, [item, finding, source, run, hypothesis, correspondence, archival, topic, question, decision, work, sections, replies, dissent].flatMap((r) => r?.results ?? []));
   const unitRows = (units!.results as unknown as UnitRow[]);
   const root = unitRows.find((unit) => unit.id === rootId);
   const rootItem = item!.results[0];
@@ -101,6 +103,8 @@ export async function readRootDocuments(db: D1Database, rootId: ULID): Promise<S
   body.plain(text(question0, 'question'));
   rich(question0, 'introduction');
   for (const group of groups!.results) body.plain(text(group, 'heading'));
+  rich(work!.results[0], 'objective');
+  for (const line of lifecycle!.results) body.plain(text(line, 'text'));
   const decision0 = decision!.results[0];
   body.plain(text(decision0, 'question')).plain(text(decision0, 'outcome_reason')).plain(text(decision0, 'revisit_condition'));
   rich(decision0, 'context'); rich(decision0, 'rationale');

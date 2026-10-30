@@ -10,7 +10,7 @@ export const PAGE_SIZE = 50;
 /** Fixed path segments of the Project_Section listings (R29.1). */
 export const KIND_SEGMENTS: Readonly<Record<ItemKind, string>> = {
   journal_entry: 'journal', finding: 'findings', source: 'sources', run: 'runs', hypothesis: 'hypotheses',
-  correspondence: 'correspondence', archival_request: 'archival-requests', topic: 'topics', research_question: 'questions', decision_record: 'decision-records',
+  correspondence: 'correspondence', archival_request: 'archival-requests', topic: 'topics', research_question: 'questions', decision_record: 'decision-records', work_item: 'work-items',
 };
 
 /** Every page address outside the Project_Sections and the unit pages. */

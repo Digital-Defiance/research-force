@@ -32,7 +32,7 @@ describe('the Research_Question kind rows', () => {
     adapter.insert(batch, { id: item.id, projectId: place.projectId, ownerId: place.ownerId, credit: [{ member: place.ownerId }], submissionId: place.submissionId, now: at }, { question: 'What did the synthetic tiles show?', introduction });
     await batch.commit();
     const results = await core().batch(adapter.load(core(), item.id));
-    expect(adapter.read(results, {} as never).fields).toEqual({ question: 'What did the synthetic tiles show?', introduction, groups: [] });
+    expect(adapter.read(results, {} as never).fields).toEqual({ question: 'What did the synthetic tiles show?', introduction, groups: [], leadId: place.ownerId });
     expect(adapter.dates({})).toEqual({ kind: 'research_question' });
   });
 
@@ -41,11 +41,11 @@ describe('the Research_Question kind rows', () => {
     const created = new GuardedBatch(core(), { id: place.ownerId, now: at });
     adapter.insert(created, { id: item.id, projectId: place.projectId, ownerId: place.ownerId, credit: [{ member: place.ownerId }], submissionId: place.submissionId, now: at }, { question: 'First?' });
     await created.commit();
-    expect(adapter.read(await core().batch(adapter.load(core(), item.id)), {} as never).fields).toEqual({ question: 'First?', groups: [] });
+    expect(adapter.read(await core().batch(adapter.load(core(), item.id)), {} as never).fields).toEqual({ question: 'First?', groups: [], leadId: place.ownerId });
     const edited = new GuardedBatch(core(), { id: place.ownerId, now: at });
     adapter.update(edited, { id: item.id } as never, { question: 'First?' }, { question: 'Second?' }, new Set(['question']), at);
     await edited.commit();
-    expect(adapter.read(await core().batch(adapter.load(core(), item.id)), {} as never).fields).toEqual({ question: 'Second?', groups: [] });
+    expect(adapter.read(await core().batch(adapter.load(core(), item.id)), {} as never).fields).toEqual({ question: 'Second?', groups: [], leadId: place.ownerId });
   });
 
 });

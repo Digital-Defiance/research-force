@@ -37,6 +37,7 @@ export function buildDevSeed() {
     archival_request: { table: 'archival_requests', fields: { archive_kind: 'member', archive_id: DEV_MEMBERS[0].id, request_text: 'Locate synthetic box 1.', date_sent: '2026-01-01' }, status: V.archivalSent },
     topic: { table: 'topics', fields: { body: 'A restricted synthetic discussion.' }, status: null },
     research_question: { table: 'research_questions', fields: { question: 'Which synthetic keys remain untested?' }, status: null },
+    work_item: { table: 'work_items', fields: { objective: 'Test the synthetic key range.', responsible_id: DEV_MEMBERS[0].id }, status: null },
     decision_record: { table: 'decisions', fields: { question: 'Which synthetic key range is searched next?', wording_digest: '0'.repeat(64) }, status: null },
   };
   const unit = (id: string, root: string, type: string, submission: string, parent: string | null) => insert('units', {

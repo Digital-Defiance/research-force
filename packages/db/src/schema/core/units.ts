@@ -4,6 +4,7 @@ import { ACCESS_LEVELS, CONSENT_STATUSES, ITEM_KINDS, LEVELS, UNIT_TYPES } from 
 import type { CreditEntry, DisclosureLine } from '@researchforce/domain/types';
 import { FILE_KIND_EXTENSIONS } from '@researchforce/domain/file-kinds';
 import type { FileKind } from '@researchforce/domain/file-kinds';
+import { QUESTION_STATES } from '@researchforce/domain/work';
 import { flag, oneOf, spans, versioned } from '../columns';
 
 export const CLASSIFICATION_STATES = ['unclassified', 'classified'] as const;
@@ -267,7 +268,11 @@ export const researchQuestions = sqliteTable('research_questions', {
   question: text('question').notNull(),
   introduction: text('introduction'),
   introductionSpans: spans('introduction_spans'),
-});
+  /** The lead Member, the lifecycle state and the version of the current assessment (R50.9). Only the lifecycle operations change the state and version. */
+  leadId: text('lead_id'),
+  investigationState: text('investigation_state', { enum: QUESTION_STATES }).notNull().default('open'),
+  assessmentVersion: integer('assessment_version').notNull().default(0),
+}, (t) => [oneOf('research_questions_state_values', t.investigationState, QUESTION_STATES), index('research_questions_lead').on(t.leadId)]);
 
 export const questionGroups = sqliteTable('question_groups', {
   id: text('id').primaryKey(),

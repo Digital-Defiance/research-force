@@ -48,6 +48,7 @@ export const KIND_FIELDS: Readonly<Record<ItemKind, readonly FieldSpec[]>> = {
     logSummary(false), groupNote,
   ],
   decision_record: [],
+  work_item: [],
   research_question: [
     title,
     { name: 'question', label: 'Question', kind: 'longtext', max: 500, required: true },

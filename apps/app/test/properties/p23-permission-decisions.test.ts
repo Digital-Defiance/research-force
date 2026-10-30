@@ -61,6 +61,8 @@ function targetKinds(map: RolePermissionMap): fc.Arbitrary<PermissionTarget>[] {
     fc.record({ type: fc.constant('hold' as const), placedById: ownerArb, itemOwnerId: ownerArb }),
     fc.record({ type: fc.constant('publication_proposal' as const), consentingMemberId: ownerArb }),
     fc.record({ type: fc.constant('decision_response' as const), memberId: ownerArb }),
+    fc.record({ type: fc.constant('work_item' as const), ownerId: ownerArb, responsibleId: ownerArb, acceptedAssigneeIds: fc.array(ownerArb, { maxLength: 2 }) }),
+    fc.record({ type: fc.constant('work_assignment' as const), memberId: ownerArb }),
     fc.record({ type: fc.constant('dual_approval' as const), proposedById: ownerArb }),
   ];
 }
@@ -122,6 +124,9 @@ function reference(member: PermissionMember, map: RolePermissionMap, permission:
     case 'access.widen': return t?.type === 'research_item' && ownOnly(t.ownerId);
     case 'attachment.move': return t?.type === 'attachment' && scoped(t.ownerId);
     case 'hold.lift': return t?.type === 'hold' && (ownOnly(t.placedById) || ownOnly(t.itemOwnerId));
+    case 'work.assign': case 'work.edit': return t?.type === 'work_item' && scoped(t.ownerId);
+    case 'work.progress': return t?.type === 'work_item' && (scope === 'any' || (scope === 'own' && (mine(t.responsibleId) || t.acceptedAssigneeIds.includes(member.id))));
+    case 'work.accept': return t?.type === 'work_assignment' && ownOnly(t.memberId);
     case 'decision.acknowledge': return t?.type === 'decision_response' && ownOnly(t.memberId);
     case 'consent.give': return t?.type === 'publication_proposal' && ownOnly(t.consentingMemberId);
     case 'dual.approve': case 'dual.decline': return t?.type === 'dual_approval' && scope === 'any' && !mine(t.proposedById);

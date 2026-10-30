@@ -25,7 +25,7 @@ export const UNIT_TYPES = ['research_item', 'entry_section', 'attachment', 'repl
 export type UnitType = typeof UNIT_TYPES[number];
 // Projects are Disclosure_Units but live outside the units table.
 export type DisclosureUnitType = UnitType | 'project';
-export const ITEM_KINDS = ['journal_entry', 'finding', 'source', 'run', 'hypothesis', 'correspondence', 'archival_request', 'topic', 'research_question', 'decision_record'] as const;
+export const ITEM_KINDS = ['journal_entry', 'finding', 'source', 'run', 'hypothesis', 'correspondence', 'archival_request', 'topic', 'research_question', 'decision_record', 'work_item'] as const;
 export type ItemKind = typeof ITEM_KINDS[number];
 export const LEVELS = ['public', 'withheld', 'not_published'] as const;
 export type Level = typeof LEVELS[number];

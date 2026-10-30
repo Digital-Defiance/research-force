@@ -36,6 +36,7 @@ export function itemFixture(kind: ItemKind): Record<string, unknown> {
     case 'archival_request': return { ...common, archiveOrDesk: { kind: 'external', id: SCHEMA_IDS.external }, requestText: schemaText(), statusValueId: SCHEMA_IDS.planned };
     case 'topic': return { ...common, body: schemaText() };
     case 'research_question': return { ...common, question: 'What did the team learn from the synthetic tiles?', groups: [] };
+    case 'work_item': return { ...common, objective: schemaText('Test the synthetic key range.') };
     case 'decision_record': return { ...common, question: 'Which synthetic key range is searched next?', alternatives: [{ title: 'First half', description: 'Keys 0 to 49.' }] };
   }
 }

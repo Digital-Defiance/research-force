@@ -1,8 +1,9 @@
 import { eq, sql } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { chunks, GuardedBatch } from '@researchforce/db/batch';
-import { crossLinks, questionGroups, researchQuestions, units } from '@researchforce/db/schema/core';
+import { crossLinks, questionGroups, questionNextActions, questionUncertainties, researchQuestions, units } from '@researchforce/db/schema/core';
 import { newULID } from '@researchforce/domain/identifiers';
+import type { NextAction, QuestionState } from '@researchforce/domain/work';
 import type { ULID } from '@researchforce/domain/types';
 import type { ApiEnv } from '../../api/app';
 import type { FieldIssue } from '../../api/errors';
@@ -17,9 +18,24 @@ const targetsOf = (groups: readonly Group[]): string[] => groups.flatMap((group)
 const json = (values: readonly unknown[]) => JSON.stringify(values);
 
 /** The Research_Question's own columns (R50.1). */
-function row(fields: ItemFields) {
+function row(fields: ItemFields, fallbackLead: string) {
   const introduction = richColumns(fields['introduction']);
-  return { question: String(fields['question']), introduction: introduction.text, introductionSpans: introduction.spans };
+  return { question: String(fields['question']), introduction: introduction.text, introductionSpans: introduction.spans, leadId: (fields['leadId'] as string | undefined) ?? fallbackLead };
+}
+const uncertaintiesOf = (fields: ItemFields): readonly string[] => (fields['uncertainties'] ?? []) as readonly string[];
+const actionsOf = (fields: ItemFields): readonly NextAction[] => (fields['nextActions'] ?? []) as readonly NextAction[];
+/** The lifecycle lists are rewritten whole when they change; they are short and their order is what the Member set. */
+function writeLifecycle(batch: GuardedBatch, questionId: string, fields: ItemFields, which: { uncertainties: boolean; nextActions: boolean }): void {
+  if (which.uncertainties) {
+    batch.run(sql`DELETE FROM question_uncertainties WHERE question_id = ${questionId}`);
+    const lines = uncertaintiesOf(fields);
+    if (lines.length > 0) batch.insert(questionUncertainties, lines.map((text, position) => ({ questionId, position, text })));
+  }
+  if (which.nextActions) {
+    batch.run(sql`DELETE FROM question_next_actions WHERE question_id = ${questionId}`);
+    const actions = actionsOf(fields);
+    if (actions.length > 0) batch.insert(questionNextActions, actions.map((action, position) => ({ questionId, position, text: action.text, workItemId: action.workItemId ?? null })));
+  }
 }
 
 /**
@@ -51,16 +67,37 @@ function addresses(batch: GuardedBatch, questionId: string, targets: readonly st
   writeLinks(batch, targets.map((targetId) => ({ originId: questionId, targetId, relationValueId: ADDRESSES_LABEL })), { id: batch.actor.id!, now: batch.actor.now });
 }
 
+/**
+ * The lifecycle state and assessment version, which the editable fields do not carry, and the next actions with the links to work the viewer
+ * cannot read taken off: the action's own text stays, and nothing says what it pointed at (R50.9, R50.11).
+ */
+async function visibleLifecycle(c: Context<ApiEnv>, fields: ItemFields, id: string): Promise<{ fields: ItemFields; extra: Record<string, unknown> }> {
+  const stored = (await c.get('accountant').track(c.env.RF_CORE.prepare('SELECT investigation_state AS state, assessment_version AS version FROM research_questions WHERE unit_id = ?1').bind(id).all<{ state: QuestionState; version: number }>())).results[0];
+  const actions = actionsOf(fields);
+  const linked = [...new Set(actions.flatMap((action) => (action.workItemId === undefined ? [] : [action.workItemId])))];
+  let shown = actions;
+  if (linked.length > 0) {
+    const readable = new Set((await c.get('accountant').track(c.env.RF_CORE.prepare(
+      `SELECT u.id FROM units u WHERE u.id IN (SELECT value FROM json_each(?1)) AND ${visibleTo('u', '?2')} AND NOT EXISTS (SELECT 1 FROM deletions d WHERE d.unit_id = u.id)`,
+    ).bind(json(linked), c.get('session').member.id).all<{ id: string }>())).results.map((unit) => unit.id));
+    shown = actions.map((action) => (action.workItemId === undefined || readable.has(action.workItemId) ? action : { text: action.text }));
+  }
+  return { fields: actions.length === 0 ? fields : { ...fields, nextActions: shown }, extra: { investigationState: stored?.state ?? 'open', assessmentVersion: stored?.version ?? 0 } };
+}
+
 export const question: KindAdapter = {
   kind: 'research_question',
-  classes: () => ({ question: 'content', introduction: 'content', groups: 'content' }),
+  classes: () => ({ question: 'content', introduction: 'content', groups: 'content', leadId: 'detail', uncertainties: 'content', nextActions: 'content' }),
+  named: (fields) => (fields['leadId'] === undefined ? [] : [fields['leadId'] as string]),
   load: (db, id) => [
-    db.prepare('SELECT question, introduction, introduction_spans AS introductionSpans FROM research_questions WHERE unit_id = ?1').bind(id),
+    db.prepare('SELECT question, introduction, introduction_spans AS introductionSpans, lead_id AS leadId FROM research_questions WHERE unit_id = ?1').bind(id),
     db.prepare(`SELECT g.id, g.heading, e.target_id AS targetId FROM question_groups g LEFT JOIN question_entries e ON e.group_id = g.id
       WHERE g.question_id = ?1 ORDER BY g.position, e.position`).bind(id),
+    db.prepare('SELECT text FROM question_uncertainties WHERE question_id = ?1 ORDER BY position').bind(id),
+    db.prepare('SELECT text, work_item_id AS workItemId FROM question_next_actions WHERE question_id = ?1 ORDER BY position').bind(id),
   ],
-  read([result, entries]) {
-    const stored = rowsOf<{ question: string; introduction: string | null; introductionSpans: string }>(result)[0];
+  read([result, entries, uncertainties, actions]) {
+    const stored = rowsOf<{ question: string; introduction: string | null; introductionSpans: string; leadId: string | null }>(result)[0];
     if (!stored) return { fields: {} };
     const introduction = richText(stored.introduction, stored.introductionSpans);
     const groups: { id: string; heading: string; entries: { targetId: string }[] }[] = [];
@@ -69,11 +106,19 @@ export const question: KindAdapter = {
       if (group?.id !== entry.id) { group = { id: entry.id, heading: entry.heading, entries: [] }; groups.push(group); }
       if (entry.targetId !== null) group.entries.push({ targetId: entry.targetId });
     }
-    return { fields: { question: stored.question, ...(introduction === undefined ? {} : { introduction }), groups } };
+    const lines = rowsOf<{ text: string }>(uncertainties).map((line) => line.text);
+    const next = rowsOf<{ text: string; workItemId: string | null }>(actions).map((action) => ({ text: action.text, ...(action.workItemId === null ? {} : { workItemId: action.workItemId }) }));
+    return {
+      fields: {
+        question: stored.question, ...(introduction === undefined ? {} : { introduction }), groups, ...(stored.leadId === null ? {} : { leadId: stored.leadId }),
+        ...(lines.length === 0 ? {} : { uncertainties: lines }), ...(next.length === 0 ? {} : { nextActions: next }),
+      },
+    };
   },
   dates: () => ({ kind: 'research_question' }),
   insert(batch, item, fields) {
-    batch.insert(researchQuestions, { unitId: item.id, ...row(fields) });
+    batch.insert(researchQuestions, { unitId: item.id, ...row(fields, item.ownerId) });
+    writeLifecycle(batch, item.id, fields, { uncertainties: true, nextActions: true });
     const groups = groupsOf(fields);
     const targets = targetsOf(groups);
     guardTargets(batch, item.projectId, targets);
@@ -81,7 +126,8 @@ export const question: KindAdapter = {
     writeGroups(batch, item.id, groups, new Set());
   },
   update(batch, item, before, after, changed) {
-    if (changed.has('question') || changed.has('introduction')) batch.update(researchQuestions, row(after), eq(researchQuestions.unitId, item.id));
+    if (changed.has('question') || changed.has('introduction') || changed.has('leadId')) batch.update(researchQuestions, row(after, item.ownerId), eq(researchQuestions.unitId, item.id));
+    writeLifecycle(batch, item.id, after, { uncertainties: changed.has('uncertainties'), nextActions: changed.has('nextActions') });
     if (!changed.has('groups')) return;
     const previous = new Set(targetsOf(groupsOf(before)));
     const next = targetsOf(groupsOf(after));
@@ -98,10 +144,12 @@ export const question: KindAdapter = {
     writeGroups(batch, item.id, groupsOf(after), new Set(groupsOf(before).flatMap((group) => (group.id === undefined ? [] : [group.id]))));
   },
   /** The Question_Groups as the viewer sees them: entries whose targets the Member cannot read are omitted, and the others come with their kind, title, Item_Identifier and status (R50.3). */
-  async visible(c: Context<ApiEnv>, fields) {
-    const groups = groupsOf(fields);
+  async visible(c: Context<ApiEnv>, fields, id) {
+    const lifecycle = await visibleLifecycle(c, fields, id);
+    const groups = groupsOf(lifecycle.fields);
+    fields = lifecycle.fields;
     const wanted = [...new Set(targetsOf(groups))];
-    if (wanted.length === 0) return { fields, extra: { entryDetails: {} } };
+    if (wanted.length === 0) return { fields, extra: { ...lifecycle.extra, entryDetails: {} } };
     const found = await c.get('accountant').track(c.env.RF_CORE.prepare(
       `SELECT u.id, u.unit_type AS type, ri.kind, ri.title, ri.item_identifier AS identifier, v.name AS status, a.title AS attachmentTitle, a.item_identifier AS attachmentIdentifier
         FROM units u LEFT JOIN research_items ri ON ri.unit_id = u.id LEFT JOIN config_values v ON v.id = ri.status_value_id LEFT JOIN attachments a ON a.unit_id = u.id
@@ -114,13 +162,33 @@ export const question: KindAdapter = {
         : { kind: unit.kind ?? unit.type, title: unit.title ?? '', identifier: unit.identifier, ...(unit.status === null ? {} : { status: unit.status }) };
     }
     const shown = groups.map((group) => ({ ...group, entries: group.entries.filter((entry) => details[entry.targetId] !== undefined) }));
-    return { fields: { ...fields, groups: shown }, extra: { entryDetails: details } };
+    return { fields: { ...fields, groups: shown }, extra: { ...lifecycle.extra, entryDetails: details } };
   },
   /**
    * The entries a Research_Question may hold: live Research_Items and Attachments of its own Project that the Member can read (R50.6).
    * Entries an edit keeps are not checked again, so a Member who cannot read one can still edit the rest.
    */
   async rules(c: Context<ApiEnv>, save): Promise<KindRules> {
+    const linked = await linkIssues(c, save);
+    const grouped = await groupRules(c, save);
+    return { issues: [...linked, ...grouped.issues] };
+  },
+};
+
+/** A next action may link only to a Work_Item the Member can read; links an edit keeps are not checked again (R50.9, R50.11). */
+async function linkIssues(c: Context<ApiEnv>, save: Parameters<NonNullable<KindAdapter['rules']>>[1]): Promise<FieldIssue[]> {
+  const kept = new Set(actionsOf(save.before ?? {}).flatMap((action) => (action.workItemId === undefined ? [] : [action.workItemId])));
+  const wanted = [...new Set(actionsOf(save.after).flatMap((action) => (action.workItemId === undefined || kept.has(action.workItemId) ? [] : [action.workItemId])))];
+  if (wanted.length === 0) return [];
+  const found = new Set((await c.get('accountant').track(c.env.RF_CORE.prepare(
+    `SELECT u.id FROM units u JOIN work_items w ON w.unit_id = u.id WHERE u.id IN (SELECT value FROM json_each(?1)) AND ${visibleTo('u', '?2')} AND NOT EXISTS (SELECT 1 FROM deletions d WHERE d.unit_id = u.id)`,
+  ).bind(json(wanted), c.get('session').member.id).all<{ id: string }>())).results.map((unit) => unit.id));
+  return actionsOf(save.after).flatMap((action, index) => (action.workItemId === undefined || kept.has(action.workItemId) || found.has(action.workItemId) ? []
+    : [{ field: `nextActions.${index}.workItemId`, rule: 'This Work Item does not exist, has been permanently deleted, or cannot be read.' }]));
+}
+
+async function groupRules(c: Context<ApiEnv>, save: Parameters<NonNullable<KindAdapter['rules']>>[1]): Promise<KindRules> {
+  {
     const groups = groupsOf(save.after);
     const existing = new Set(targetsOf(groupsOf(save.before ?? {})));
     if (save.base !== undefined && JSON.stringify(groups) !== JSON.stringify(groupsOf(save.before ?? {}))) {
@@ -147,8 +215,8 @@ export const question: KindAdapter = {
       else if (target.projectId !== projectId) issues.push({ field, rule: 'This Research Item or Attachment belongs to another Project.' });
     }));
     return { issues };
-  },
-};
+  }
+}
 
 /**
  * Remove the Question_Group entries that name any of `targets` (a Research_Item or Attachment that moves to another Project or is

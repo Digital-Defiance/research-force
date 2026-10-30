@@ -171,7 +171,7 @@ export async function loadItem(c: Context<ApiEnv>, id: string, readAttempt = 0):
   const read = adapter.read(kindResults, base);
   const hydrated = await resolveItemFields(db, id, { ...read.fields, ...(base.logSummary ? { logSummary: base.logSummary } : {}) });
   const { logSummary: hydratedSummary, ...hydratedFields } = hydrated;
-  const shown = await adapter.visible?.(c, hydratedFields);
+  const shown = await adapter.visible?.(c, hydratedFields, id);
   const fields = shown?.fields ?? hydratedFields;
   if (hydratedSummary) Object.assign(base, { logSummary: hydratedSummary });
   const children = read.children ?? [];
@@ -305,7 +305,7 @@ export async function createItem(c: Context<ApiEnv>, kind: ItemKind, body: unkno
   if (chosen.issues.length === 0) {
     const known = new Set(context.members.map((member) => member.id as string));
     const addressed = (envelope.reviews ?? []).flatMap((review) => (Array.isArray(review['memberIds']) ? review['memberIds'].filter((member): member is string => known.has(member as string)) : []));
-    await refuseUnreadable(c, [...addedMentions(undefined, fields).members, ...addressed], scope);
+    await refuseUnreadable(c, [...addedMentions(undefined, fields).members, ...addressed, ...(KIND_ADAPTERS[kind].named?.(fields) ?? [])], scope);
   }
   const linked = await saveLinks(c, id, envelope, true);
   issues.push(...linked.issues);
@@ -413,7 +413,8 @@ export async function editItem(c: Context<ApiEnv>, current: LoadedItem, body: un
   const linked = await saveLinks(c, base.id, envelope, false);
   issues.push(...linked.issues);
   refuse(issues);
-  await refuseUnreadable(c, addedMentions(before, input).members, { rootId: base.id });
+  const namedBefore = new Set(KIND_ADAPTERS[base.kind].named?.(before) ?? []);
+  await refuseUnreadable(c, [...addedMentions(before, input).members, ...(KIND_ADAPTERS[base.kind].named?.(input) ?? []).filter((member) => !namedBefore.has(member))], { rootId: base.id });
 
   const { projectId: _project, kind: _kind, groupNote: _note, ...kept } = input;
   const after = normalized(kept);

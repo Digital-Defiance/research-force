@@ -17,7 +17,7 @@ describe('the built-in Role Permission Map', () => {
     expect(Object.keys(BUILT_IN_ROLES.contributor.permissions).sort()).toEqual([
       'item.create', 'attachment.upload', 'reply.post', 'topic.create', 'item.edit', 'item.correct', 'item.withdraw', 'section.edit', 'logSummary.write',
       'link.add', 'link.remove', 'review.request', 'review.complete', 'party.doNotName.on', 'profile.edit', 'dissent.attach', 'dissent.edit', 'dissent.withdraw', 'ai.draft.logSummary',
-      'access.restrict', 'access.widen', 'hold.place', 'hold.lift', 'consent.give', 'attachment.move', 'decision.acknowledge',
+      'access.restrict', 'access.widen', 'hold.place', 'hold.lift', 'consent.give', 'attachment.move', 'decision.acknowledge', 'work.assign', 'work.edit', 'work.progress', 'work.accept',
     ].sort());
     for (const permission of ['licence.withdraw', 'constructor', '__proto__']) expect(can(context(true), permission as Permission)).toBe(false);
   });
@@ -66,6 +66,18 @@ describe('the built-in Role Permission Map', () => {
     expect(can(ctx, 'decision.acknowledge', { type: 'decision_response', memberId: actor })).toBe(true);
     expect(can(ctx, 'decision.acknowledge', { type: 'decision_response', memberId: other })).toBe(false);
     expect(can(ctx, 'decision.acknowledge')).toBe(false);
+    const work = (ownerId = actor, responsibleId = other, acceptedAssigneeIds: ReturnType<typeof id>[] = []): PermissionTarget => ({ type: 'work_item', ownerId, responsibleId, acceptedAssigneeIds });
+    for (const permission of ['work.assign', 'work.edit'] as const) {
+      expect(can(ctx, permission, work())).toBe(true);
+      expect(can(ctx, permission, work(other))).toBe(admin);
+      expect(can(ctx, permission)).toBe(false);
+    }
+    expect(can(ctx, 'work.progress', work(other, actor))).toBe(true); // the responsible Member
+    expect(can(ctx, 'work.progress', work(other, other, [actor]))).toBe(true); // an accepted assignee
+    expect(can(ctx, 'work.progress', work(other, other, [other]))).toBe(admin); // anyone else needs to be an authorized editor
+    expect(can(ctx, 'work.progress', work(actor, other))).toBe(admin); // owning the work is not progressing it
+    expect(can(ctx, 'work.accept', { type: 'work_assignment', memberId: actor })).toBe(true);
+    expect(can(ctx, 'work.accept', { type: 'work_assignment', memberId: other })).toBe(false); // not even an Administrator accepts for someone else
     expect(can(ctx, 'consent.propose')).toBe(admin);
     expect(can(ctx, 'dual.propose')).toBe(admin);
     for (const permission of ['dual.approve', 'dual.decline'] as const) {

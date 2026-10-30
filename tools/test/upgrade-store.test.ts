@@ -47,7 +47,7 @@ describe('real migration and recovery rehearsals', () => {
     try {
       expect(output.report.productionCertified).toBe(false);
       expect(output.report.priorReleasedVersionsAvailable).toEqual([]);
-      expect(output.report.results.filter((r) => r.store === 'core').map((r) => r.checkpoint)).toEqual([15, 14, 13]);
+      expect(output.report.results.filter((r) => r.store === 'core').map((r) => r.checkpoint)).toEqual([16, 15, 14]);
       expect(output.report.results.every((r) => r.restoreReopened && r.seedVerified)).toBe(true);
       expect(output.report.results.every((r) => /^[a-f0-9]{64}$/.test(r.recoveryCopySha256))).toBe(true);
     } finally { rmSync(output.directory, { recursive: true, force: true }); }
@@ -58,12 +58,12 @@ describe('real migration and recovery rehearsals', () => {
     try {
       applyUpgrade(db, ROOT, manifest, 'search', { phase: 'expand' }); db.exec(buildDevSeed().search);
       const count = () => db.prepare("SELECT count(*) AS n FROM search_fts WHERE search_fts MATCH 'synthetic'").get()?.['n'];
-      expect(count()).toBe(10);
+      expect(count()).toBe(11);
       expect(() => searchIndexSlice(db, manifest, () => { throw new Error('crash'); })).toThrow(/crash/);
-      expect(count()).toBe(10); expect(db.prepare('SELECT count(*) AS n FROM _rf_release_checkpoints').get()?.['n']).toBe(0);
+      expect(count()).toBe(11); expect(db.prepare('SELECT count(*) AS n FROM _rf_release_checkpoints').get()?.['n']).toBe(0);
       let slices = 0; let result;
       do { result = searchIndexSlice(db, manifest); slices++; } while (!result.complete);
-      expect(slices).toBe(5); expect(result.processed).toBe(10); expect(count()).toBe(10);
+      expect(slices).toBe(6); expect(result.processed).toBe(11); expect(count()).toBe(11);
       expect(searchIndexSlice(db, manifest).generation).toBe(result.generation);
     } finally { db.close(); }
   });
@@ -75,7 +75,7 @@ describe('real migration and recovery rehearsals', () => {
       expect(() => adoptSchema(db, ROOT, manifest, 'core', 7)).toThrow(/DDL/);
       adoptSchema(db, ROOT, manifest, 'core', 8);
       expect(() => adoptSchema(db, ROOT, manifest, 'core', 8)).toThrow(/already/);
-      expect(applyUpgrade(db, ROOT, manifest, 'core', { phase: 'expand' }).applied).toEqual(['0009_files', '0010_logical_fields', '0011_operation_keys', '0012_research_questions', '0013_evidence_citations', '0014_decision_records', '0015_research_releases']);
+      expect(applyUpgrade(db, ROOT, manifest, 'core', { phase: 'expand' }).applied).toEqual(['0009_files', '0010_logical_fields', '0011_operation_keys', '0012_research_questions', '0013_evidence_citations', '0014_decision_records', '0015_research_releases', '0016_work_items']);
       expect(applyUpgrade(db, ROOT, manifest, 'core', { phase: 'expand' }).applied).toEqual([]);
       db.exec("UPDATE _rf_release_migrations SET sha256='changed' WHERE revision=8");
       expect(() => applyUpgrade(db, ROOT, manifest, 'core', { phase: 'expand' })).toThrow(/divergent/);

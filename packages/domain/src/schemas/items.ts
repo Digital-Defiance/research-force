@@ -6,6 +6,7 @@ import { CONSENT_STATUSES } from '../types';
 import type { ItemKind } from '../types';
 import type { RichText } from '../richtext';
 import { bibliographySchema } from '../bibliography';
+import { QUESTION_LIFECYCLE_LIMITS, WORK_LIMITS, WORK_PRIORITIES, nextActionSchema, uncertaintySchema } from '../work';
 import { DECISION_LIMITS, DECISION_SCOPES, alternativeSchema, outcomeSchema } from '../decisions';
 import { BUILT_IN_VALUE_IDS } from '../value-sets';
 import { distinctIds, documentDateSchema, enteredTimeSchema, fullDateSchema, idSchema, knownId, partialDateSchema, richTextSchema, selectedValue, textField, validDate, withChecks } from './common';
@@ -27,7 +28,7 @@ function missingRich(value: unknown): boolean {
   return value === undefined || (typeof value === 'object' && value !== null && 'text' in value && typeof value.text === 'string' && isBlank(value.text));
 }
 function summaryCheck(kind: ItemKind, options: ItemValidationOptions, raw: Record<string, unknown>, report: ReportIssue): void {
-  const requiredOnSubmit = options.mode === 'submit' && kind !== 'journal_entry' && kind !== 'topic' && kind !== 'research_question';
+  const requiredOnSubmit = options.mode === 'submit' && kind !== 'journal_entry' && kind !== 'topic' && kind !== 'research_question' && kind !== 'work_item';
   const hadSummary = options.mode === 'edit' && options.previous.logSummary !== undefined && !isBlank(options.previous.logSummary.text);
   if ((requiredOnSubmit || hadSummary) && missingRich(raw['logSummary'])) report(['logSummary'], hadSummary ? 'An existing Log Summary can be changed but not removed.' : 'This kind requires a Log Summary of 1 to 2000 Unicode code points.');
 }
@@ -62,6 +63,9 @@ function endBeforeStart(start: string, end: string): boolean {
   const width = Math.max(startFraction.length, endFraction.length);
   return endFraction.padEnd(width, '0') < startFraction.padEnd(width, '0');
 }
+
+/** Work, leads and decisions name only Members who can act now (R52.2). */
+const activeMembers = (context: ValidationContext) => context.members.filter((member) => member.status === 'active').map((member) => member.id);
 
 function buildResearchItemSchema(kind: ItemKind, context: ValidationContext, options: ItemValidationOptions) {
   const existing = options.mode === 'edit' || options.mode === 'restore';
@@ -199,7 +203,10 @@ function buildResearchItemSchema(kind: ItemKind, context: ValidationContext, opt
       });
     case 'research_question':
       return finish(z.strictObject({ ...common, kind: z.literal('research_question'), question: textField(QUESTION_LIMITS.questionCodePoints, true), introduction: richTextSchema(QUESTION_LIMITS.introductionCodePoints).optional(),
-        groups: z.array(questionGroupSchema).max(QUESTION_LIMITS.groups).prefault([]) }), (raw, report) => {
+        groups: z.array(questionGroupSchema).max(QUESTION_LIMITS.groups).prefault([]),
+        leadId: knownId(activeMembers(context), 'Member').optional(),
+        uncertainties: z.array(uncertaintySchema).max(QUESTION_LIFECYCLE_LIMITS.uncertainties).prefault([]),
+        nextActions: z.array(nextActionSchema).max(QUESTION_LIFECYCLE_LIMITS.nextActions).prefault([]) }), (raw, report) => {
         if (!Array.isArray(raw['groups'])) return;
         const seen = new Set<string>();
         for (const [groupIndex, group] of raw['groups'].entries()) {
@@ -213,12 +220,20 @@ function buildResearchItemSchema(kind: ItemKind, context: ValidationContext, opt
           }
         }
       });
+    case 'work_item':
+      return finish(z.strictObject({
+        ...common, kind: z.literal('work_item'), objective: richTextSchema(WORK_LIMITS.objectiveCodePoints, true),
+        responsibleId: knownId(activeMembers(context), 'Member').optional(),
+        assigneeIds: distinctIds(knownId(activeMembers(context), 'Member'), 0, WORK_LIMITS.assignees).prefault([]),
+        dueDate: fullDateSchema.refine((date) => !date.approx, { path: ['approx'], message: 'A due date is exact.' }).optional(),
+        priority: z.enum(WORK_PRIORITIES).prefault('normal'),
+      }));
     case 'decision_record':
       return finish(z.strictObject({
         ...common, kind: z.literal('decision_record'), question: textField(DECISION_LIMITS.questionCodePoints, true), context: richTextSchema(DECISION_LIMITS.contextCodePoints).optional(),
         rationale: richTextSchema(DECISION_LIMITS.rationaleCodePoints).optional(), alternatives: z.array(alternativeSchema).min(1).max(DECISION_LIMITS.alternatives),
         outcome: outcomeSchema.optional(), scope: z.enum(DECISION_SCOPES).prefault('individual'),
-        participantIds: distinctIds(knownId(context.members.map((member) => member.id), 'Member'), 0, DECISION_LIMITS.participants).prefault([]),
+        participantIds: distinctIds(knownId(activeMembers(context), 'Member'), 0, DECISION_LIMITS.participants).prefault([]),
         evidenceCitationIds: distinctIds(idSchema, 0, DECISION_LIMITS.evidence).prefault([]),
         revisitDate: fullDateSchema.refine((date) => !date.approx, { path: ['approx'], message: 'A revisit date is exact.' }).optional(), revisitCondition: textField(DECISION_LIMITS.revisitConditionCodePoints, true).optional(),
       }), (raw, report) => {

@@ -58,7 +58,7 @@ const CONSENTS: readonly ConsentStatus[] = ['granted', 'granted', 'granted', 'no
 const levelArb = fc.constantFrom<Level>('public', 'public', 'public', 'public', 'withheld', 'not_published');
 const unitPlanArb = fc.record({
   type: fc.constantFrom<UnitType>('research_item', 'research_item', 'entry_section', 'attachment', 'reply', 'dissent_note'),
-  kind: fc.constantFrom<ItemKind>(...ITEM_KINDS.filter((kind) => kind !== 'decision_record')),
+  kind: fc.constantFrom<ItemKind>(...ITEM_KINDS.filter((kind) => kind !== 'decision_record' && kind !== 'work_item')),
   level: levelArb,
   unclassified: fc.constantFrom(false, false, false, false, false, true),
   presentation: fc.constantFrom<PublicPresentation>('summary_only', 'full_content', 'full_content'),
@@ -214,7 +214,7 @@ function buildState(plan: StatePlan): WorkspaceState {
       });
       case 'topic': return { kind, body: b.rich(owner, 'body', seed) };
       case 'research_question': return strip({ kind, question: b.text(owner, 'question', seed), introduction: opt(0, () => b.rich(owner, 'introduction', seed + 1)) });
-      case 'decision_record': throw new Error('Decision records are not part of the public projection input yet.');
+      case 'decision_record': case 'work_item': throw new Error('This kind is not part of the public projection input yet.');
     }
   };
 
