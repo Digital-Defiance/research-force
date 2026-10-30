@@ -1,7 +1,7 @@
 import { and, eq, sql } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { GuardedBatch } from '@researchforce/db/batch';
-import { workAssignees, workDependencies, workItems } from '@researchforce/db/schema/core';
+import { workAssignees, workDependencies, workItems, workOutcomeResults } from '@researchforce/db/schema/core';
 import { newULID } from '@researchforce/domain/identifiers';
 import { isULID } from '@researchforce/domain/types';
 import type { Timestamp, ULID } from '@researchforce/domain/types';
@@ -19,7 +19,7 @@ import { editItem, loadItem } from './items';
 import type { LoadedItem } from './items';
 import { rowsOf } from './kinds/kind';
 import { visibleTo } from './submissions';
-import { recordWorkEvent } from './work-history';
+import { recordWorkEvent, recordWorkEvents } from './work-history';
 
 const RESULT_ITEM_KINDS: ReadonlySet<string> = new Set(['finding', 'run', 'source', 'decision_record']);
 const gone = (unit: string): string => `NOT EXISTS (SELECT 1 FROM deletions x WHERE x.unit_id IN (${unit}.id, ${unit}.root_id))`;
@@ -191,8 +191,7 @@ export async function moveWork(c: Context<ApiEnv>, id: string, body: unknown): P
     batch.run(sql`INSERT INTO work_outcomes (id, work_id, seq, transition, reason, no_result_statement, recorded_by, recorded_at)
       VALUES (${outcomeId}, ${id}, (SELECT COALESCE(MAX(seq), 0) + 1 FROM work_outcomes WHERE work_id = ${id}), ${transition}, ${input.reason ?? null},
         ${input.result?.kind === 'no_result' ? input.result.statement : null}, ${actorId(c)}, ${batch.actor.now})`);
-    results.forEach((result, position) => batch.run(sql`INSERT INTO work_outcome_results (outcome_id, position, target_id, target_kind, target_rev, sha256)
-      VALUES (${outcomeId}, ${position}, ${result.targetId}, ${result.targetKind}, ${result.targetRev}, ${result.sha256})`));
+    batch.bulkInsert(workOutcomeResults, results.map((result, position) => ({ outcomeId, position, targetId: result.targetId, targetKind: result.targetKind, targetRev: result.targetRev, sha256: result.sha256 })));
   }
   recordWorkEvent(batch, id, 'state', null, { from: work.state, to: input.state, ...(input.reason === undefined ? {} : { reason: input.reason }) });
   notifyWorkUpdate(batch, id, 'team', { change: 'state', to: input.state, name: WORK_STATE_NAMES[input.state] });
@@ -255,14 +254,14 @@ export async function setDependencies(c: Context<ApiEnv>, id: string, body: unkn
     }),
     ...hidden.map((dependency) => ({ predecessorId: dependency.predecessorId, kind: dependency.kind, addedBy: dependency.addedBy, addedAt: dependency.addedAt })),
   ];
-  if (rows.length > 0) batch.insert(workDependencies, rows.map((row, position) => ({ workId: id, position, ...row })));
+  if (rows.length > 0) batch.bulkInsert(workDependencies, rows.map((row, position) => ({ workId: id, position, ...row })));
   batch.update(workItems, { graphRev: work.graphRev + 1 }, eq(workItems.unitId, id));
-  for (const dependency of wanted) {
+  recordWorkEvents(batch, id, 'dependency_added', wanted.filter((dependency) => !before.has(dependency.predecessorId)).map((dependency) => ({ subjectId: dependency.predecessorId, detail: { kind: dependency.kind } })));
+  recordWorkEvents(batch, id, 'dependency_kind', wanted.flatMap((dependency) => {
     const earlier = before.get(dependency.predecessorId);
-    if (!earlier) recordWorkEvent(batch, id, 'dependency_added', dependency.predecessorId, { kind: dependency.kind });
-    else if (earlier.kind !== dependency.kind) recordWorkEvent(batch, id, 'dependency_kind', dependency.predecessorId, { from: earlier.kind, to: dependency.kind });
-  }
-  for (const [predecessorId] of before) if (!seen.has(predecessorId)) recordWorkEvent(batch, id, 'dependency_removed', predecessorId);
+    return earlier !== undefined && earlier.kind !== dependency.kind ? [{ subjectId: dependency.predecessorId, detail: { from: earlier.kind, to: dependency.kind } }] : [];
+  }));
+  recordWorkEvents(batch, id, 'dependency_removed', [...before.keys()].filter((predecessorId) => !seen.has(predecessorId)).map((subjectId) => ({ subjectId })));
   // After the writes, so the check sees the graph as this transaction leaves it: nothing may be reachable from itself.
   batch.guard('work_cycle', sql`NOT EXISTS (WITH RECURSIVE reach(id) AS (SELECT predecessor_id FROM work_dependencies WHERE work_id = ${id}
     UNION SELECT d.predecessor_id FROM work_dependencies d JOIN reach r ON d.work_id = r.id) SELECT 1 FROM reach WHERE id = ${id})`);

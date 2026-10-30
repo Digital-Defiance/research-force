@@ -2,15 +2,14 @@
   "inputs": {
     ".kiro/specs/research-collab-cms/requirements.md": "9e2d7cee953f4aeece04bad4a7dfae273a908c0df65c95beea7a4e572b71b5df",
     ".kiro/specs/research-collab-cms/design.md": "85df571e6efad1205603dca7addcea9c16f68252023d5483a2fbe81d705c4d93",
-    ".kiro/specs/research-collab-cms/tasks.md": "5d4521810fae9a06bcfed57675b0a1b74cc3602947070b29e67311cf4365e393",
-    "docs/acceptance/task-evidence.json": "2d27eb2a1780008356e5c23e1dca0b10c4ff401027c5473786479b788e7b1936"
+    ".kiro/specs/research-collab-cms/tasks.md": "344e5fb526e78d13eb16a66b5f9218d386c4f2d5121e7560e0c77dacdbba356a",
+    "docs/acceptance/task-evidence.json": "0641cf72123dc0e635e8f1bfc8e8929e14046848b0564a046a4e98f0d59966d8"
   },
   "schemaVersion": 1,
   "nextTasks": [
-    "60.5"
+    "60.6"
   ],
   "remainingBuildOrder": [
-    "60.5",
     "60.6",
     "62.2",
     "62.3",
@@ -208,11 +207,11 @@
     "criteria": 738,
     "properties": 126,
     "leafTasks": 406,
-    "checkedLeaves": 214,
+    "checkedLeaves": 215,
     "historicalUnverified": 182,
-    "acceptedWithLocalEvidence": 32,
-    "propertyFiles": 64,
-    "remainingWaves": 192,
+    "acceptedWithLocalEvidence": 33,
+    "propertyFiles": 65,
+    "remainingWaves": 191,
     "gates": 4
   },
   "structuralIssues": [],
@@ -10140,7 +10139,9 @@
         "52.6"
       ],
       "task": "60.5",
-      "testPaths": []
+      "testPaths": [
+        "apps/app/test/properties/p115-work-coordination.test.ts"
+      ]
     },
     {
       "id": 116,
@@ -19168,7 +19169,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "2d27eb2a1780008356e5c23e1dca0b10c4ff401027c5473786479b788e7b1936"
+          "sha256": "0641cf72123dc0e635e8f1bfc8e8929e14046848b0564a046a4e98f0d59966d8"
         },
         {
           "path": "README.md",
@@ -19257,7 +19258,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "2d27eb2a1780008356e5c23e1dca0b10c4ff401027c5473786479b788e7b1936"
+          "sha256": "0641cf72123dc0e635e8f1bfc8e8929e14046848b0564a046a4e98f0d59966d8"
         },
         {
           "path": "apps/app/src/index.ts",
@@ -19396,7 +19397,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "2d27eb2a1780008356e5c23e1dca0b10c4ff401027c5473786479b788e7b1936"
+          "sha256": "0641cf72123dc0e635e8f1bfc8e8929e14046848b0564a046a4e98f0d59966d8"
         },
         {
           "path": "apps/app/src/local/services.ts",
@@ -21080,12 +21081,12 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "2d27eb2a1780008356e5c23e1dca0b10c4ff401027c5473786479b788e7b1936"
+          "sha256": "0641cf72123dc0e635e8f1bfc8e8929e14046848b0564a046a4e98f0d59966d8"
         },
         {
           "path": "docs/acceptance/checks/local-tests.json",
           "kind": "file",
-          "sha256": "89279592d776f9c6c1dea7e1df842b4787d7cfea24d766b566272684e2436520"
+          "sha256": "95a46dd634cfed75024734f7e18507b59998d7b32b2a0aa22aeef050dc0f0d21"
         },
         {
           "path": "tools/src/specs.ts",
@@ -21172,7 +21173,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "2d27eb2a1780008356e5c23e1dca0b10c4ff401027c5473786479b788e7b1936"
+          "sha256": "0641cf72123dc0e635e8f1bfc8e8929e14046848b0564a046a4e98f0d59966d8"
         },
         {
           "path": "packages/domain/src/settings.ts",
@@ -21352,7 +21353,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "2d27eb2a1780008356e5c23e1dca0b10c4ff401027c5473786479b788e7b1936"
+          "sha256": "0641cf72123dc0e635e8f1bfc8e8929e14046848b0564a046a4e98f0d59966d8"
         },
         {
           "path": "docs/storage/logical-fields.md",
@@ -21517,7 +21518,7 @@
         {
           "path": "infra/releases/development.json",
           "kind": "file",
-          "sha256": "230575de6e6a7cf57e947d67383f0e0fb8dd69fa40f99680c4b98cdb66518e3f"
+          "sha256": "79bf8012d77ad94db224dd1cfc021d345acd40bb6aed373b6beeb9b66286ea7b"
         },
         {
           "path": "infra/recovery/deployment.example.json",
@@ -21792,7 +21793,7 @@
         {
           "path": "infra/releases/development.json",
           "kind": "file",
-          "sha256": "230575de6e6a7cf57e947d67383f0e0fb8dd69fa40f99680c4b98cdb66518e3f"
+          "sha256": "79bf8012d77ad94db224dd1cfc021d345acd40bb6aed373b6beeb9b66286ea7b"
         },
         {
           "path": "apps/app/test/operations.test.ts",
@@ -22568,7 +22569,7 @@
         {
           "path": "apps/app/src/records/kinds/work.ts",
           "kind": "file",
-          "sha256": "8bdf5593faa752fddf422a5afb79a34fccb02256ec8de821e2239b1b3bfc6bde"
+          "sha256": "8048a3420445b90dc1f3f132f027e1a0324e80390033c8a58c4b608408785656"
         },
         {
           "path": "apps/app/src/records/kinds/question.ts",
@@ -22692,17 +22693,17 @@
         {
           "path": "apps/app/src/records/work.ts",
           "kind": "file",
-          "sha256": "38a7a41c9619c007d037433a0f85d3e7c6209e52a93991703b9968a5825ae444"
+          "sha256": "09e5ca3d6f9f9010bb0de0c472db1e49d410346a967c864d28fe5fb880903c95"
         },
         {
           "path": "apps/app/src/records/work-history.ts",
           "kind": "file",
-          "sha256": "e6d7feb1032db9e158dc69362fa4cd836ca57567caf57519fecb0d7be8469f40"
+          "sha256": "503ede3a5b9e8ee72ec38763ce0dbedf358f2e4e8b6265007d25c8244c283f2f"
         },
         {
           "path": "apps/app/src/records/kinds/work.ts",
           "kind": "file",
-          "sha256": "8bdf5593faa752fddf422a5afb79a34fccb02256ec8de821e2239b1b3bfc6bde"
+          "sha256": "8048a3420445b90dc1f3f132f027e1a0324e80390033c8a58c4b608408785656"
         },
         {
           "path": "apps/app/src/api/routes/work.ts",
@@ -22894,7 +22895,7 @@
         {
           "path": "apps/app/src/records/work.ts",
           "kind": "file",
-          "sha256": "38a7a41c9619c007d037433a0f85d3e7c6209e52a93991703b9968a5825ae444"
+          "sha256": "09e5ca3d6f9f9010bb0de0c472db1e49d410346a967c864d28fe5fb880903c95"
         },
         {
           "path": "apps/app/web/src/work/work-body.tsx",
@@ -22988,7 +22989,7 @@
     {
       "id": "60.5",
       "title": "Write property and regression tests for work coordination",
-      "checked": false,
+      "checked": true,
       "requirements": [
         "52.1",
         "52.2",
@@ -23001,19 +23002,51 @@
         115
       ],
       "prerequisites": [],
-      "phase": "collaboration",
+      "phase": "completed_baseline",
       "sourcePaths": [
         {
           "path": "apps/app/test/properties/p115-work-coordination.test.ts",
-          "kind": "missing"
+          "kind": "file",
+          "sha256": "151a93c3fbfb0020b5f7d7594155a8d1058e4852e1028a5a512da2ac77d2abff"
+        },
+        {
+          "path": "apps/app/src/records/work-history.ts",
+          "kind": "file",
+          "sha256": "503ede3a5b9e8ee72ec38763ce0dbedf358f2e4e8b6265007d25c8244c283f2f"
+        },
+        {
+          "path": "apps/app/src/records/work.ts",
+          "kind": "file",
+          "sha256": "09e5ca3d6f9f9010bb0de0c472db1e49d410346a967c864d28fe5fb880903c95"
+        },
+        {
+          "path": "apps/app/src/records/kinds/work.ts",
+          "kind": "file",
+          "sha256": "8048a3420445b90dc1f3f132f027e1a0324e80390033c8a58c4b608408785656"
         }
       ],
       "gates": [
         "team_archive",
         "final_checkpoint_49"
       ],
-      "acceptance": "planned",
-      "evidence": null
+      "acceptance": "accepted",
+      "evidence": {
+        "task": "60.5",
+        "state": "accepted",
+        "reason": "Verified Property 115 against an independent model. Three Work_Items are driven through random sequences of assignments, answers, moves between states, dependency edits and loss of access, some made on a stale page and some repeated after they succeeded. After every step the work the Workspace shows equals the model's state, assignments with their answers, predecessors, graph revision and ordered outcomes; a refused step changes nothing at all; only the responsible Member, an accepted assignee or an editor moves work; a dependency that would form a loop is refused; and a Member who cannot read a work item gets a 404 and sees no id or title of it in the others. The maximum-input cases found and fixed a real defect: saving 20 assignees, 20 result records or 100 predecessors in one save exceeded the database's limit of 100 bound parameters, so those saves now insert their rows in bulk, and every case at its limit (a no-result statement of 2,000 astral code points, an objective of 10,000, 20 assignees, 20 results, 100 predecessors) is accepted while one more is refused.",
+        "sourcePaths": [
+          "apps/app/src/records/work-history.ts",
+          "apps/app/src/records/work.ts",
+          "apps/app/src/records/kinds/work.ts"
+        ],
+        "testPaths": [
+          "apps/app/test/properties/p115-work-coordination.test.ts"
+        ],
+        "correctionTasks": [],
+        "checks": [
+          "docs/acceptance/checks/local-tests.json"
+        ]
+      }
     },
     {
       "id": "60.6",
@@ -23027,9 +23060,7 @@
       "properties": [
         116
       ],
-      "prerequisites": [
-        "60.5"
-      ],
+      "prerequisites": [],
       "phase": "collaboration",
       "sourcePaths": [
         {
@@ -23981,7 +24012,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "2d27eb2a1780008356e5c23e1dca0b10c4ff401027c5473786479b788e7b1936"
+          "sha256": "0641cf72123dc0e635e8f1bfc8e8929e14046848b0564a046a4e98f0d59966d8"
         },
         {
           "path": "packages/domain/src/compatibility.ts",
@@ -24031,7 +24062,7 @@
         {
           "path": "infra/releases/development.json",
           "kind": "file",
-          "sha256": "230575de6e6a7cf57e947d67383f0e0fb8dd69fa40f99680c4b98cdb66518e3f"
+          "sha256": "79bf8012d77ad94db224dd1cfc021d345acd40bb6aed373b6beeb9b66286ea7b"
         },
         {
           "path": "infra/releases/README.md",
@@ -24474,39 +24505,39 @@
   "phases": {
     "collaboration": {
       "firstWave": 0,
-      "lastWave": 20
+      "lastWave": 19
     },
     "privacy": {
-      "firstWave": 21,
-      "lastWave": 44
+      "firstWave": 20,
+      "lastWave": 43
     },
     "imports_and_log": {
-      "firstWave": 45,
-      "lastWave": 68
+      "firstWave": 44,
+      "lastWave": 67
     },
     "publication": {
-      "firstWave": 69,
-      "lastWave": 86
+      "firstWave": 68,
+      "lastWave": 85
     },
     "outside_and_ai": {
-      "firstWave": 87,
-      "lastWave": 134
+      "firstWave": 86,
+      "lastWave": 133
     },
     "recovery": {
-      "firstWave": 135,
-      "lastWave": 152
+      "firstWave": 134,
+      "lastWave": 151
     },
     "release_tooling": {
-      "firstWave": 153,
-      "lastWave": 182
+      "firstWave": 152,
+      "lastWave": 181
     },
     "staging_and_acceptance": {
-      "firstWave": 183,
-      "lastWave": 190
+      "firstWave": 182,
+      "lastWave": 189
     },
     "production_activation": {
-      "firstWave": 191,
-      "lastWave": 191
+      "firstWave": 190,
+      "lastWave": 190
     }
   },
   "gates": [

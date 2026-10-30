@@ -1026,6 +1026,23 @@
       "checks": [
         "docs/acceptance/checks/local-tests.json"
       ]
+    },
+    {
+      "task": "60.5",
+      "state": "accepted",
+      "reason": "Verified Property 115 against an independent model. Three Work_Items are driven through random sequences of assignments, answers, moves between states, dependency edits and loss of access, some made on a stale page and some repeated after they succeeded. After every step the work the Workspace shows equals the model's state, assignments with their answers, predecessors, graph revision and ordered outcomes; a refused step changes nothing at all; only the responsible Member, an accepted assignee or an editor moves work; a dependency that would form a loop is refused; and a Member who cannot read a work item gets a 404 and sees no id or title of it in the others. The maximum-input cases found and fixed a real defect: saving 20 assignees, 20 result records or 100 predecessors in one save exceeded the database's limit of 100 bound parameters, so those saves now insert their rows in bulk, and every case at its limit (a no-result statement of 2,000 astral code points, an objective of 10,000, 20 assignees, 20 results, 100 predecessors) is accepted while one more is refused.",
+      "sourcePaths": [
+        "apps/app/src/records/work-history.ts",
+        "apps/app/src/records/work.ts",
+        "apps/app/src/records/kinds/work.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/properties/p115-work-coordination.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
     }
   ]
 }

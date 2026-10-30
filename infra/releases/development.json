@@ -663,7 +663,7 @@
     },
     {
       "path": "apps/app/src/records/kinds/work.ts",
-      "sha256": "8bdf5593faa752fddf422a5afb79a34fccb02256ec8de821e2239b1b3bfc6bde"
+      "sha256": "8048a3420445b90dc1f3f132f027e1a0324e80390033c8a58c4b608408785656"
     },
     {
       "path": "apps/app/src/records/links.ts",
@@ -703,7 +703,7 @@
     },
     {
       "path": "apps/app/src/records/work-history.ts",
-      "sha256": "e6d7feb1032db9e158dc69362fa4cd836ca57567caf57519fecb0d7be8469f40"
+      "sha256": "503ede3a5b9e8ee72ec38763ce0dbedf358f2e4e8b6265007d25c8244c283f2f"
     },
     {
       "path": "apps/app/src/records/work-list.ts",
@@ -711,7 +711,7 @@
     },
     {
       "path": "apps/app/src/records/work.ts",
-      "sha256": "38a7a41c9619c007d037433a0f85d3e7c6209e52a93991703b9968a5825ae444"
+      "sha256": "09e5ca3d6f9f9010bb0de0c472db1e49d410346a967c864d28fe5fb880903c95"
     },
     {
       "path": "apps/app/src/reviews/reviews.ts",

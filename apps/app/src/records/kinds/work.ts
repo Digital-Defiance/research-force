@@ -4,7 +4,7 @@ import { workAssignees, workItems } from '@researchforce/db/schema/core';
 import type { AssigneeState, WorkPriority, WorkState } from '@researchforce/domain/work';
 import type { ApiEnv } from '../../api/app';
 import { notifyWorkAssigned, notifyWorkUpdate } from '../../notifications/fanout';
-import { recordWorkEvent } from '../work-history';
+import { recordWorkEvent, recordWorkEvents } from '../work-history';
 import { authorize } from '../../auth/authorize';
 import { richColumns, richText, rowsOf } from './kind';
 import type { ItemFields, KindAdapter, KindRules } from './kind';
@@ -44,11 +44,11 @@ export const workItem: KindAdapter = {
   insert(batch, item, fields) {
     batch.insert(workItems, { unitId: item.id, ...row(fields, item.ownerId) });
     const people = assigneesOf(fields);
-    if (people.length > 0) batch.insert(workAssignees, people.map((memberId, position) => ({ workId: item.id, memberId, position, assignedBy: batch.actor.id!, assignedAt: batch.actor.now })));
+    if (people.length > 0) batch.bulkInsert(workAssignees, people.map((memberId, position) => ({ workId: item.id, memberId, position, assignedBy: batch.actor.id!, assignedAt: batch.actor.now })));
     // The submitting Member is responsible by default; naming someone else is an assignment the history and that Member are told about (R52.1, R52.6).
     const responsible = row(fields, item.ownerId).responsibleId;
     if (responsible !== batch.actor.id) recordWorkEvent(batch, item.id, 'responsible', responsible, { from: batch.actor.id });
-    for (const memberId of people) recordWorkEvent(batch, item.id, 'assigned', memberId);
+    recordWorkEvents(batch, item.id, 'assigned', people.map((memberId) => ({ subjectId: memberId })));
     notifyWorkAssigned(batch, item.id, [...people, ...(responsible === batch.actor.id ? [] : [responsible])]);
   },
   update(batch, item, before, after, changed) {
@@ -67,9 +67,9 @@ export const workItem: KindAdapter = {
     if (!changed.has('assigneeIds')) return;
     const previous = assigneesOf(before);
     const current = assigneesOf(after);
-    for (const memberId of previous.filter((member) => !current.includes(member))) recordWorkEvent(batch, item.id, 'unassigned', memberId);
+    recordWorkEvents(batch, item.id, 'unassigned', previous.filter((member) => !current.includes(member)).map((memberId) => ({ subjectId: memberId })));
     const newcomers = current.filter((member) => !previous.includes(member));
-    for (const memberId of newcomers) recordWorkEvent(batch, item.id, 'assigned', memberId);
+    recordWorkEvents(batch, item.id, 'assigned', newcomers.map((memberId) => ({ subjectId: memberId })));
     notifyWorkAssigned(batch, item.id, newcomers.filter((member) => member !== responsible || responsible === previousResponsible));
     // An assignee who stays keeps their answer; one who is dropped loses it, and one added later starts again as pending (R52.2).
     const next = assigneesOf(after);
@@ -79,7 +79,7 @@ export const workItem: KindAdapter = {
       if (kept.has(memberId)) batch.run(sql`UPDATE work_assignees SET position = ${position} WHERE work_id = ${item.id} AND member_id = ${memberId}`);
     });
     const added = next.map((memberId, position) => ({ memberId, position })).filter((entry) => !kept.has(entry.memberId));
-    if (added.length > 0) batch.insert(workAssignees, added.map((entry) => ({ workId: item.id, memberId: entry.memberId, position: entry.position, assignedBy: batch.actor.id!, assignedAt: batch.actor.now })));
+    if (added.length > 0) batch.bulkInsert(workAssignees, added.map((entry) => ({ workId: item.id, memberId: entry.memberId, position: entry.position, assignedBy: batch.actor.id!, assignedAt: batch.actor.now })));
   },
   /** The lifecycle state, and each assignee's answer, which the item's own fields do not carry. */
   async visible(c: Context<ApiEnv>, fields, id) {
