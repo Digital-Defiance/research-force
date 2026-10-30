@@ -65,3 +65,11 @@ and is checked again as the version is written. Deleting a Run deletes its packa
 `researchforce-compute-package` version 1 holds the Run, the package version, the manifest hash, the state, the missing ingredients and the
 manifest. The manifest recomputes to the manifest hash when `hashVerifiable` is true, and posting it, with a `rev` and `expectedVersion`, records
 the same package on another Run with the same hash. Unknown fields in a document are refused.
+
+## On the Run page, in search, and in retention
+
+- The Run page shows the latest package version, or any earlier one, with the ingredients still missing, the exact description, and each artifact marked held and verified, held but changed, or an external reference that the archive neither holds nor verifies. It offers the export as a download, a form for the next version (checked without recording by the same rules), the Run's scope, and its independent attempts. The Project's coverage screen (`/projects/:id/coverage`) shows schemas, the joined coverage, the Runs left out and why, and a comparison of two scopes.
+- Search finds a Run by its repository, command, entrypoint and method version, and by its current scope's written description and assumptions. Hashes, configuration values and environment values are not indexed. A Member who cannot read the Run finds nothing and gets 404 from every route.
+- History records each package version and each scope as an edit of the Run.
+- Package versions, artifacts, configuration, environment, scopes, scope entries and attempts are authoritative records kept with the Run and removed only when the Run is permanently deleted. Scope schemas belong to the Project and remain after a Run is deleted. These tables are among those the backup inventory must list before sole-copy research is ingested.
+- Application code never runs anything it is given. Reproducing a Run from an export is done by an operator with their own tool, then recorded as an attempt.

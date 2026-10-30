@@ -25,7 +25,7 @@ interface UnitRow {
  */
 export async function readRootDocuments(db: D1Database, rootId: ULID): Promise<SearchDoc[]> {
   const one = (sqlText: string) => db.prepare(sqlText).bind(rootId);
-  const [units, item, journal, finding, source, run, runCounts, hypothesis, correspondence, parties, archival, topic, sections, replies, attachments, dissent, question, groups, decision, alternatives, work, lifecycle] = await db.batch<Row>([
+  const [units, item, journal, finding, source, run, runCounts, hypothesis, correspondence, parties, archival, topic, sections, replies, attachments, dissent, question, groups, decision, alternatives, work, lifecycle, computePackage, computeScope] = await db.batch<Row>([
     one(`SELECT u.id, u.unit_type AS type, u.parent_id AS parentId, u.position, u.created_at AS createdAt, u.disclosure_level AS level, u.withdrawn_at AS withdrawnAt,
         u.credit, (s.completed_at IS NOT NULL) AS completed, u.project_id AS projectId
       FROM units u JOIN submissions s ON s.id = u.submission_id
@@ -55,6 +55,8 @@ export async function readRootDocuments(db: D1Database, rootId: ULID): Promise<S
     one('SELECT * FROM work_items WHERE unit_id = ?1'),
     one(`SELECT text FROM question_uncertainties WHERE question_id = ?1 UNION ALL SELECT text FROM question_next_actions WHERE question_id = ?1
       UNION ALL SELECT a.assessment FROM question_assessments a JOIN research_questions q ON q.unit_id = a.question_id AND q.assessment_version = a.version WHERE a.question_id = ?1 AND a.assessment IS NOT NULL`),
+    one('SELECT repository, command, entrypoint, method_version AS methodVersion FROM compute_packages WHERE run_id = ?1 ORDER BY package_version DESC LIMIT 1'),
+    one('SELECT generic_text AS genericText, assumptions FROM compute_scopes WHERE run_id = ?1 ORDER BY id DESC LIMIT 1'),
   ]);
   await resolveStoredRows(db, [item, finding, source, run, hypothesis, correspondence, archival, topic, question, decision, work, sections, replies, dissent].flatMap((r) => r?.results ?? []));
   const unitRows = (units!.results as unknown as UnitRow[]);
@@ -107,6 +109,12 @@ export async function readRootDocuments(db: D1Database, rootId: ULID): Promise<S
   for (const group of groups!.results) body.plain(text(group, 'heading'));
   rich(work!.results[0], 'objective');
   for (const line of lifecycle!.results) body.plain(text(line, 'text'));
+  // A Run's current package and scope are found by the words that describe them; the held files and hashes are not text (R56.1, R56.3).
+  const package0 = computePackage!.results[0];
+  body.plain(text(package0, 'repository')).plain(text(package0, 'command')).plain(text(package0, 'entrypoint')).plain(text(package0, 'methodVersion'));
+  const scope0 = computeScope!.results[0];
+  body.plain(text(scope0, 'genericText'));
+  if (scope0 !== undefined) for (const assumption of JSON.parse(String(scope0['assumptions'] ?? '[]')) as string[]) body.plain(assumption);
   const decision0 = decision!.results[0];
   body.plain(text(decision0, 'question')).plain(text(decision0, 'outcome_reason')).plain(text(decision0, 'revisit_condition'));
   rich(decision0, 'context'); rich(decision0, 'rationale');

@@ -807,7 +807,7 @@
     },
     {
       "path": "apps/app/src/search/read.ts",
-      "sha256": "586cbc5b105f7b5b0de9a1e27b34c27f0554b3564145345408f991373699f1ba"
+      "sha256": "45d83b428b60bf72b8185947bb430f7f8a042d7a4316999ed816a18b42fd1411"
     },
     {
       "path": "apps/app/web/src/access/access.tsx",
@@ -832,6 +832,30 @@
     {
       "path": "apps/app/web/src/citations/scope.tsx",
       "sha256": "6e8e0f30f42b470eecb0b827ad3034f26b9aaaeed25e6ac6a94e285462731dce"
+    },
+    {
+      "path": "apps/app/web/src/compute/coverage.tsx",
+      "sha256": "dffe2c2ffea606fd0d8c3836a881c358387c5194491416a07c505ce8de6c2295"
+    },
+    {
+      "path": "apps/app/web/src/compute/failure.tsx",
+      "sha256": "67f469e4c9d9377655e939d0bbf20dd3f05e7a28f3a1311c45cb4a86ebbdffcb"
+    },
+    {
+      "path": "apps/app/web/src/compute/model.ts",
+      "sha256": "18387431fb598e9ed39ff8328cc790a622af78137d110515b7a577233bb38a2c"
+    },
+    {
+      "path": "apps/app/web/src/compute/panel.tsx",
+      "sha256": "f1ef8ac897188b95be393e1fc18f19abfa47fb0df08ff89e3d417eb9973244a4"
+    },
+    {
+      "path": "apps/app/web/src/compute/reproductions.tsx",
+      "sha256": "68436e1ada1bee453c52ada37bd6e3704c7897464080dde29cf222e269a715dc"
+    },
+    {
+      "path": "apps/app/web/src/compute/scope.tsx",
+      "sha256": "2f21780caa3617d361e26abbf90d282bf2434b09318e4f54f8cdc4ee29e47ce1"
     },
     {
       "path": "apps/app/web/src/decisions/panel.tsx",
@@ -923,7 +947,7 @@
     },
     {
       "path": "apps/app/web/src/items/page.tsx",
-      "sha256": "60b740cc5535d7dc1a346d9d9988bc3cc7df7d4fe0a4a38fb7423b875fcbf85d"
+      "sha256": "b23be8fca147923391d5224b29c881bb13a002164dd6be68c700c5c26df43848"
     },
     {
       "path": "apps/app/web/src/items/question/assessment.tsx",
@@ -991,7 +1015,7 @@
     },
     {
       "path": "apps/app/web/src/projects/list.tsx",
-      "sha256": "3aa1686ca74f69a72ecf6b8d0dd397c8f908dfaefdc4ec8dd464bf0c132fba7d"
+      "sha256": "8e5f5df6ab3594cdc698ad22fe73f77536bd0904670e2966b87254a5eab220ad"
     },
     {
       "path": "apps/app/web/src/provenance/model.ts",
@@ -1007,7 +1031,7 @@
     },
     {
       "path": "apps/app/web/src/routes.tsx",
-      "sha256": "2908ad62418af387aadda8d302e3f8a4c72acf4de6a3b387995871429b55b7a8"
+      "sha256": "1a628cba5b504563927b74fb929080d8d8ef8d8b8ab56e81c40360bed610be45"
     },
     {
       "path": "apps/app/web/src/search/search.tsx",

@@ -50,6 +50,7 @@ export function ProjectOrder({ projects, canEdit, onMoved }: { readonly projects
               <Link to={`/projects/${project.id}/history`}>{`History of ${project.name}`}</Link>
               {' '}<Link to={`/projects/${project.id}/work`}>{`Work in ${project.name}`}</Link>
               {' '}<Link to={`/projects/${project.id}/citations`}>{`Citations in ${project.name}`}</Link>
+              {' '}<Link to={`/projects/${project.id}/coverage`}>{`Search coverage in ${project.name}`}</Link>
               {canEdit && (
                 <>
                   <Link className="rf-button" to={`/projects/${project.id}/edit`}>{`Edit ${project.name}`}</Link>

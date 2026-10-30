@@ -1231,6 +1231,32 @@
       "checks": [
         "docs/acceptance/checks/local-tests.json"
       ]
+    },
+    {
+      "task": "63.3",
+      "state": "accepted",
+      "reason": "Added the Run page sections and Project screen for Compute_Packages. The Run page shows the latest or any earlier package version with the ingredients still missing, the exact description and configuration, and each artifact marked held and verified, held but changed, or an external reference that is never called verified; it warns when the manifest hash cannot be recomputed from what the viewer can read or the stored configuration no longer matches its hash, offers the export, a form for the next version that can be checked without recording, scopes with the reasons a scope does not count, and independent attempts with differences and evidence. A Project coverage screen defines schema versions, shows joined coverage, the Runs left out and why, and compares two scopes, answering incomparable scopes with no numbers. Search finds a Run by its package and scope words but not hashes or configuration values. Walkthrough tests reproduce a synthetic Run from its export and held input in a harness the test itself operates, refuse a changed input, refuse secrets in keys, values, addresses and environment entries, show no elimination inferred from written or other-schema scopes, and follow current access and history.",
+      "sourcePaths": [
+        "apps/app/web/src/compute/model.ts",
+        "apps/app/web/src/compute/panel.tsx",
+        "apps/app/web/src/compute/scope.tsx",
+        "apps/app/web/src/compute/reproductions.tsx",
+        "apps/app/web/src/compute/coverage.tsx",
+        "apps/app/web/src/compute/failure.tsx",
+        "apps/app/web/src/items/page.tsx",
+        "apps/app/web/src/routes.tsx",
+        "apps/app/web/src/projects/list.tsx",
+        "apps/app/src/search/read.ts",
+        "docs/api/compute-packages.md"
+      ],
+      "testPaths": [
+        "apps/app/web/test/compute.test.tsx",
+        "apps/app/test/compute-walkthrough.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
     }
   ]
 }

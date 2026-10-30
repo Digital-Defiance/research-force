@@ -25,6 +25,7 @@ import { QuestionBody } from './question/question-body';
 import { WorkBody } from '../work/work-body';
 import { CitationsPanel } from '../citations/panel';
 import { CitationScope } from '../citations/scope';
+import { ComputePanel } from '../compute/panel';
 import { DecisionPanel } from '../decisions/panel';
 import { ProvenancePanel } from '../provenance/panel';
 import type { CorrespondencePartyValue, CountValue, DateValue, DocumentDateValue, FieldSpec, PartyValue } from './forms/model';
@@ -260,6 +261,7 @@ export function ItemDetails({ data }: { readonly data: ItemPageData }) {
       {item.kind === 'research_question' && <QuestionBody item={item} />}
       {item.kind === 'research_question' && <AssessmentPanel item={item} onChanged={onChanged} />}
       {item.kind === 'decision_record' && <DecisionPanel item={item} onChanged={onChanged} />}
+      {item.kind === 'run' && <ComputePanel item={item} onChanged={onChanged} />}
       {item.kind === 'work_item' && <WorkBody item={item} onChanged={onChanged} />}
       {fields.length > 0 && (
         <section className="rf-section" aria-label="Fields">

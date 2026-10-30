@@ -17,6 +17,7 @@ import { MembersPage } from './people/members';
 import { PreferencesPage } from './people/preferences';
 import { OwnProfilePage, ProfileForm } from './people/profile';
 import { ProfilePage } from './people/view';
+import { CoverageScreen } from './compute/coverage';
 import { EditProjectPage, ProjectForm } from './projects/form';
 import { ProjectHistoryPage } from './projects/history';
 import { ProjectsPage } from './projects/list';
@@ -128,6 +129,10 @@ function ProjectCitationsRoute() {
   const { id = '' } = useParams();
   return <CitationCurationScreen key={id} projectId={id} />;
 }
+function ProjectCoverageRoute() {
+  const { id = '' } = useParams();
+  return <CoverageScreen key={id} projectId={id} />;
+}
 function SubmissionItemsRoute() {
   const { id = '' } = useParams();
   return <SubmissionItemsScreen key={id} id={id} />;
@@ -165,6 +170,7 @@ export function WorkspaceRoutes() {
       <Route path="/projects/:id/history" element={<ProjectHistoryRoute />} />
       <Route path="/projects/:id/work" element={<ProjectWorkRoute />} />
       <Route path="/projects/:id/citations" element={<ProjectCitationsRoute />} />
+      <Route path="/projects/:id/coverage" element={<ProjectCoverageRoute />} />
       <Route path="/me/work" element={<WorkListScreen />} />
       <Route path="/reviews" element={<ReviewQueuePage />} />
       <Route path="/search" element={<SearchScreen />} />
