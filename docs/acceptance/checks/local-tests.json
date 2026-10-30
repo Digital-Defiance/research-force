@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "command": "npm test -- --reporter=json --outputFile=<temporary report>",
-  "recordedAt": "2026-10-30T00:46:10.962Z",
+  "recordedAt": "2026-10-30T01:37:21.389Z",
   "scope": "local-synthetic",
   "success": true,
   "suites": [
@@ -170,6 +170,12 @@
     {
       "path": "apps/app/test/migration-research-questions.test.ts",
       "passed": 4,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/migration-research-releases.test.ts",
+      "passed": 7,
       "failed": 0,
       "skipped": 0
     },
@@ -410,6 +416,12 @@
     {
       "path": "apps/app/test/question-entries.test.ts",
       "passed": 8,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/releases.test.ts",
+      "passed": 17,
       "failed": 0,
       "skipped": 0
     },
@@ -792,6 +804,12 @@
       "skipped": 0
     },
     {
+      "path": "packages/domain/test/releases.test.ts",
+      "passed": 13,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
       "path": "packages/domain/test/resource-profile.test.ts",
       "passed": 6,
       "failed": 0,
@@ -1156,7 +1174,7 @@
     "apps/app/src/env.ts": "8a2694fa3b3fcee04dbb3b8b91285284c20d7adcad59b5dc859ead9883a1cc9d",
     "apps/app/src/files/attachments.ts": "8d80d0ea45aea04341a0de12e29d6a6d31fddffda922da1825be6ad244fdb15f",
     "apps/app/src/index.ts": "74ba6f2607ae7e6d22162767623eacdd6974be7ee2800b501f863b4401bb0451",
-    "apps/app/src/jobs/deletion.ts": "6a9994117d534a57fb63f4038b7dbc87ea11c840b7d6979203378c0075d6ebd4",
+    "apps/app/src/jobs/deletion.ts": "327dd931a02b5c3126770d2a984a6e121491758cfda22ec577572c605e74230e",
     "apps/app/src/local.ts": "7f2726c7ad7069da6d06b84cdb624adb75b96a02dbb40c3e6a8a49eb9eded406",
     "apps/app/src/local/mailer.ts": "8407f4dbe617580d2222e9f0ff5f929e1789828a5b27d4563f08b388120abd35",
     "apps/app/src/local/runtime.ts": "4be8c5ece99dd676d3224c54f34779be717a6b081b70bf91808dfb816165b0d6",
@@ -1177,6 +1195,7 @@
     "apps/app/src/records/kinds/question.ts": "227f6dd51e359891121b3d741420edb8df38745215b83389669b489fb52ae0ed",
     "apps/app/src/records/kinds/source.ts": "310bc69cf19db2989e35500ce512d09840fa29cd213373ea4874e5ff0704660a",
     "apps/app/src/records/links.ts": "42b18e04780e17640e10ac8dd12e42351f3a913fbd860d24c15bd1f7467572d7",
+    "apps/app/src/records/releases.ts": "ffb3f84da2f0bc2c5a824d177d4bb3068056f9b7575c3e230fc2466eef69c586",
     "apps/app/src/records/stages.ts": "da676138512638f05c562a22603e64af299e1209d16bb902bc13b11bfcd43d4a",
     "apps/app/src/records/submissions.ts": "9cf103427ff4be5d6cec10958db8f0f641c6ee06390a6c23d7513d9519ba7ef9",
     "apps/app/src/reviews/reviews.ts": "8bbf2e3427f609b7ad0521d5f07772424390e18bf3cab6c06393f3e366e918f0",
@@ -1200,6 +1219,7 @@
     "apps/app/test/migration-decision-records.test.ts": "5a6844594169b6c034d334275ed92199d25ff7695a0bfebfd8b54280da1679b5",
     "apps/app/test/migration-evidence-citations.test.ts": "0d85462b7cfa6cc9cfbd33f65a827fce013a2ed270d76ae2d94b324c87e4ae30",
     "apps/app/test/migration-research-questions.test.ts": "f4d0a46874b6f778cfb71c13fcb5945ac41b2343ac9c89a055ae44c558cc4888",
+    "apps/app/test/migration-research-releases.test.ts": "769b473ee4b34e9d87c4dfd2c76c05236d2c422fed90fc434fad1d04448386b5",
     "apps/app/test/migration-restricted-access.test.ts": "a7282523c9baad92c284c4a880b8408911d53314731dd24d750376bde161a75a",
     "apps/app/test/notifications.test.ts": "e2216924c9fb9c34379dca53d89c831305201de160862d97273886ab9e92be04",
     "apps/app/test/operations.test.ts": "ce1b10cd65543a580adc510525b5be1efdf749f8ef6ac51a141c90a461ebf9bd",
@@ -1209,6 +1229,7 @@
     "apps/app/test/properties/p110-idempotent-mutations.test.ts": "870ba98db23a944fee8488b263ad9985ab4a0a1037ab7bc8ff2e073d3b1ae539",
     "apps/app/test/properties/p23-permission-decisions.test.ts": "54bf405f94f940da2325e1d2b23e788386af7db2c373ba01274754ac54929eca",
     "apps/app/test/question-entries.test.ts": "fd3b8419ca2f9eccc72ada76104c666c1fcefd4a164df3e06b75128db19b5501",
+    "apps/app/test/releases.test.ts": "9e8a84846e61ebdbcc903075aea26a93f2258cdc9411713df27a8fd7fa97c6d3",
     "apps/app/test/research-questions.test.ts": "964710e1e8b792494a9ed6aa2c05b8827e4fc2fb6f0e574c5e85921fddff2905",
     "apps/app/test/resource-profile.test.ts": "800884eb7c85819a7c94f78044f52cc91caf7f94dcd43d7ca848e0349beb51f6",
     "apps/app/test/search-indexer.test.ts": "5bbef95727bfa6b5e4e32e7f9a70ae38911372ca35f4848930a05890acfa7ab7",
@@ -1257,7 +1278,7 @@
     "infra/recovery/deployment.example.json": "f50e284de933da91b761d0b6293f62caef82e8aa0c8db7c83e31e7eca5398bec",
     "infra/recovery/restore-proof.example.json": "2c02a645aaa612d1dd4f0bc537433a5e58764b4244a02562523aabc6d6a31554",
     "infra/releases/README.md": "73919ce7f8cc7b532d520dbc250f4f16ccd28f84e70e32d21d556190afe50ade",
-    "infra/releases/development.json": "4bf65cad7d3da5a9a289ef0d9fa92acd252794d99e6ffab59647189e56d97eaa",
+    "infra/releases/development.json": "ec65763a47b2cee7191691fe72cb75a5c2e66b7475034e61152f4c6f73d8108a",
     "package-lock.json": "46bb71e749eeb2b853d3113a54c6b75e0a3a610f1178687a73334d4114e099d5",
     "package.json": "a57669ad85b1bb5873507b1ef7021825127f5e1aaa49ab3f7101b42ef8857e36",
     "packages/db/migrations/core/0007_restricted_access.sql": "68d6acff93c939939932102ad9a767541a9181815f983c24ebdcfc18ce3518a1",
@@ -1266,9 +1287,10 @@
     "packages/db/migrations/core/0012_research_questions.sql": "ebb3427426b142fa91dc0eed453a955a034ad242ebc1a01506d898e1c20e2a78",
     "packages/db/migrations/core/0013_evidence_citations.sql": "ecf4fbb2d91785b59cc9f0a1223256a38d77f80b50ca2eb1287a2a0a8fee0028",
     "packages/db/migrations/core/0014_decision_records.sql": "edf1e83299de39a3c1d541c6cf5a94e91b02c40b9ba21a04761cd4daf3aa76a4",
+    "packages/db/migrations/core/0015_research_releases.sql": "df6ab1209c6ed3799d63413611ab1af09696e6ad9650055770da04c15824c67a",
     "packages/db/migrations/core/meta/0010_snapshot.json": "cfcb5ae3332aca25c9591b3f5721a042b4671a1922d271da6eb37a34e407efdc",
     "packages/db/migrations/core/meta/0011_snapshot.json": "0b9b9389bb369a8101af72f38a11d1361abedb4a3dfc943fef8f9aa1f85d26b7",
-    "packages/db/migrations/core/meta/_journal.json": "b888965e8396d7715a820c6eae0e22472aaf8daccb4c1d3013a49dfa0b43692f",
+    "packages/db/migrations/core/meta/_journal.json": "5d68bd49ac8beadd917396b31fad19fe115d4c4d353a1484cc0021516a54f46c",
     "packages/db/migrations/search/0003_logical_search.sql": "54217825ac2bf02efa2a5cbfad558ec57f62f03b88a8398a6909d2615938b16b",
     "packages/db/migrations/search/meta/0003_snapshot.json": "9660b0ac8ff7cb06fb450a3b6ffcd1ce3e7ed919af3cd46e63cab6e91345d434",
     "packages/db/migrations/search/meta/_journal.json": "3ddae4a6d53af9ffb459f579988f2c3e98da7ddf51ad027ed3866211c410a4fb",
@@ -1278,11 +1300,12 @@
     "packages/db/src/field-backfill.ts": "6e3587cc2b4e6c446875948957328a19ed0499170b91a4afde509c8cd7deaf27",
     "packages/db/src/field-snapshots.ts": "0539cfb9c1aad0621f8a2831d16dce1922d1d38af3ff047de0b78bb1f414d36d",
     "packages/db/src/field-versions.ts": "de69c96656b7f0b91b6ee246a7353a654a35664cc11838b93a8fdb89aa00fed4",
-    "packages/db/src/schema/core.ts": "8f31fa302c10d4ba8183aa39e7cfcf55f49709bc4cac3ab9199046b168cb80a7",
+    "packages/db/src/schema/core.ts": "3cf3b471384be7dede19d1320c84f34ff9486cb81f59e7eeba6546de364a1cf1",
     "packages/db/src/schema/core/decisions.ts": "0ecdecc97381f107f4a51568c4c131b59841c391b372812bda33525ef44aa925",
     "packages/db/src/schema/core/evidence.ts": "2eefd30cba0e26da5995a0afe9f55db690006dd429bbefaebd47c1566f66e172",
     "packages/db/src/schema/core/fields.ts": "f479bb9fc2921c62e68d751173ca28a8dab528a1f867438ea712007d327748e8",
     "packages/db/src/schema/core/operations.ts": "8189f318b138b95dff4b158af87a558c2fc9466bad5bfcebfb3aaea30ba96885",
+    "packages/db/src/schema/core/releases.ts": "0fa97778e2ad294847caa2209537f79d97c0c536bdc2b9133feaed3b13e9dab9",
     "packages/db/src/schema/core/units.ts": "cd6afdc0f9783d6fb44647877f642753cfbcecb39b367d911813d12df29cd73c",
     "packages/db/src/schema/search.ts": "c315953c01578341e9522caaf9fced8660ce937dd4297e6e4ea0e5137df13e29",
     "packages/db/test/seed.test.ts": "6e80665fe028202d8f3488beaf74492ad689a4f58b380ef582f83c8aa4c9367c",
@@ -1296,6 +1319,7 @@
     "packages/domain/src/history.ts": "225cb01bea5bfb438a35b9126c9f487306f567eebd2723ae50473725f2862247",
     "packages/domain/src/logical-search.ts": "d8f1226d611fa3423e401f274ea84852f6e66f633fdf14cae2d7f350649511cd",
     "packages/domain/src/permissions.ts": "9e2fd4734164b76ff8150bb8c74a0ffc1bd33e923bb76d63508530cfeaa55d6d",
+    "packages/domain/src/releases.ts": "e1c7c3c81ad6a090dd092874b8c8dc6a7124c029ee80cf32cda3978aeaf4588b",
     "packages/domain/src/resource-profile.ts": "6e43159a5cd56c5c36cf5122a8adf0de7386b65258b5d67af77cb148a00c2d31",
     "packages/domain/src/richtext.ts": "8e8ae161d133fd870d6ff5edf68791fe1e7c88568f332b00347611d03ab7c4bc",
     "packages/domain/src/schemas/common.ts": "27415c63f985efab7c7eb02dfd783be932fae4c2e6d8046f2ddcb6ef9d87c3d4",
@@ -1308,6 +1332,7 @@
     "packages/domain/test/decisions.test.ts": "048d0909e65e1e75a002783aa7ef17496ee72aadbff1e004a0a5077f648b9a63",
     "packages/domain/test/logical-search.test.ts": "73d419e143066b9882ecdfc0cfe3384e9ed80b4b8ea50b146563e9dc13e86635",
     "packages/domain/test/permissions.test.ts": "2de1857e2218725b5753d7b8a6b02bd43fbe32ae881fa04927d417aee713ba79",
+    "packages/domain/test/releases.test.ts": "293fe05cd9441384096315503042587cb8e86594cb3f7d2e45caeb7692e589cf",
     "packages/domain/test/resource-profile.test.ts": "7b028413407d42fd06053b585c1d6782a1033d1d13556f1191684cc7b94c5803",
     "packages/domain/test/schema-items.test.ts": "0df8c526fb10511a303cac1478a5ee9ce4da35ff30dba60aa6f30634e3bf1dbb",
     "packages/domain/test/text-fragments.test.ts": "10b4df502952d3b672d72c60a6d5b83307754a3837be58ad1b047bda58e6b600",
@@ -1354,13 +1379,13 @@
     "tools/src/upgrade-store.ts": "c398f9330ce1b2474f914a7ff9c1546d32f350042819f43af513e4ab66133521",
     "tools/test/check-specs.test.ts": "b0b0a9c4e9b6afe7e0471d681ff979b0ab84690b966d3769907da121fcb41bc7",
     "tools/test/dev-config.test.ts": "eaa105ae1bd43d0b6082bfb7dcf5ba6925cd9a8b5f5891ea7b7ad210ae362dcf",
-    "tools/test/field-migration.test.ts": "b91bdde3166a78d1f3c028ee77fae51d1ec9e39fe1ad7fc7515f49bd47d5bbb0",
+    "tools/test/field-migration.test.ts": "d154159b6a47d234988178bfb3ff7cbf79019721a4b60a394691fd7f0fad2bfa",
     "tools/test/local-dev.test.ts": "7d1ab7c47ed14c6431a7965091c7d99516a30f8a0a61191f8747f0c320b84fd1",
     "tools/test/profile-certification.test.ts": "2c656d247375979d847975865a073277f19e9a1bf36f3249308206a672e5a22f",
     "tools/test/release-compatibility.test.ts": "c0190302da8efc74cd2fd681fd978cadeb1346df7925ae85de20f7977c3e77ee",
     "tools/test/release-fixtures.ts": "b577cd9f043e527ae56a3a12e1dd35c73941e8e2167bf92858c33118aebc310c",
-    "tools/test/release-tools.test.ts": "2d3039559301fea5bfd6b86ebf7dafacc890f49502efbd08d8968a21776eef24",
-    "tools/test/upgrade-store.test.ts": "db2071531b6b40746195772a50553ce289de8c4c713166e01df5a8cd05394b31",
+    "tools/test/release-tools.test.ts": "980cfefda074a50ffcf96fb9ec7fcf4c4a4725e5a8b5718f48b9db82454cb837",
+    "tools/test/upgrade-store.test.ts": "c182358b2b4ec1086d479ec5b3fef2ca190a684002138dce4a8435c78124a718",
     "tsconfig.tooling.json": "4b45be249bedb7fa23a041f2e71ad7849caeaab2485b9811e68c4273e34e9ecb",
     "vitest.config.ts": "b8633df9139ed21f4e9342f24deb5bd7c4e25e797734fbb3bb5e213a47375384"
   }

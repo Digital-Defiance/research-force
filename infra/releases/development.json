@@ -14,12 +14,12 @@
   ],
   "schemas": {
     "expanded": {
-      "core": 14,
+      "core": 15,
       "search": 3,
       "public": 0
     },
     "contracted": {
-      "core": 14,
+      "core": 15,
       "search": 3,
       "public": 0
     }
@@ -29,8 +29,8 @@
       "name": "app",
       "schemas": {
         "core": {
-          "min": 14,
-          "max": 14
+          "min": 15,
+          "max": 15
         },
         "search": {
           "min": 3,
@@ -46,8 +46,8 @@
       "name": "submit",
       "schemas": {
         "core": {
-          "min": 14,
-          "max": 14
+          "min": 15,
+          "max": 15
         }
       }
     },
@@ -55,8 +55,8 @@
       "name": "dl",
       "schemas": {
         "core": {
-          "min": 14,
-          "max": 14
+          "min": 15,
+          "max": 15
         }
       }
     },
@@ -173,6 +173,13 @@
       "revision": 14,
       "tag": "0014_decision_records",
       "sha256": "edf1e83299de39a3c1d541c6cf5a94e91b02c40b9ba21a04761cd4daf3aa76a4",
+      "phase": "baseline"
+    },
+    {
+      "store": "core",
+      "revision": 15,
+      "tag": "0015_research_releases",
+      "sha256": "df6ab1209c6ed3799d63413611ab1af09696e6ad9650055770da04c15824c67a",
       "phase": "baseline"
     },
     {
@@ -482,7 +489,7 @@
     },
     {
       "path": "apps/app/src/jobs/deletion.ts",
-      "sha256": "6a9994117d534a57fb63f4038b7dbc87ea11c840b7d6979203378c0075d6ebd4"
+      "sha256": "327dd931a02b5c3126770d2a984a6e121491758cfda22ec577572c605e74230e"
     },
     {
       "path": "apps/app/src/local/mailer.ts",
@@ -643,6 +650,10 @@
     {
       "path": "apps/app/src/records/projects.ts",
       "sha256": "e5364783bae3fea5620da6be02c4f0186c5dbf67b474d0d5a20dc819d45a63cb"
+    },
+    {
+      "path": "apps/app/src/records/releases.ts",
+      "sha256": "ffb3f84da2f0bc2c5a824d177d4bb3068056f9b7575c3e230fc2466eef69c586"
     },
     {
       "path": "apps/app/src/records/stages.ts",
@@ -969,6 +980,10 @@
       "sha256": "8189f318b138b95dff4b158af87a558c2fc9466bad5bfcebfb3aaea30ba96885"
     },
     {
+      "path": "packages/db/src/schema/core/releases.ts",
+      "sha256": "0fa97778e2ad294847caa2209537f79d97c0c536bdc2b9133feaed3b13e9dab9"
+    },
+    {
       "path": "packages/db/src/schema/core/units.ts",
       "sha256": "cd6afdc0f9783d6fb44647877f642753cfbcecb39b367d911813d12df29cd73c"
     },
@@ -978,7 +993,7 @@
     },
     {
       "path": "packages/db/src/schema/core.ts",
-      "sha256": "8f31fa302c10d4ba8183aa39e7cfcf55f49709bc4cac3ab9199046b168cb80a7"
+      "sha256": "3cf3b471384be7dede19d1320c84f34ff9486cb81f59e7eeba6546de364a1cf1"
     },
     {
       "path": "packages/db/src/schema/public.ts",
@@ -1139,6 +1154,10 @@
     {
       "path": "packages/domain/src/public-paths.ts",
       "sha256": "8dad7cf6d64838627f3b3e5c6b47ca54ef15d686e25b4da28ba78d70e68d5c06"
+    },
+    {
+      "path": "packages/domain/src/releases.ts",
+      "sha256": "e1c7c3c81ad6a090dd092874b8c8dc6a7124c029ee80cf32cda3978aeaf4588b"
     },
     {
       "path": "packages/domain/src/resource-profile.ts",

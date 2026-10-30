@@ -90,7 +90,7 @@ function step(cursor: Cursor, change: Partial<Cursor>, done = false) {
  * Every slice's writes are idempotent, so a slice that runs again changes nothing more.
  */
 export const deletionJob: JobHandler = {
-  async slice({ env, job }, cursorValue) {
+  async slice({ env, job, now }, cursorValue) {
     const params = job.params as unknown as DeletionParams;
     const cursor = (cursorValue as Cursor | null) ?? { phase: 'files', after: '', files: 0, units: 0, revisions: 0 };
     const db = env.RF_CORE;
@@ -111,6 +111,9 @@ export const deletionJob: JobHandler = {
       const list = JSON.stringify(params.scope === 'item' || last ? [...ids, params.unitId] : ids);
       await db.batch([
         ...UNIT_TABLES.map((table) => db.prepare(`DELETE FROM ${table} WHERE unit_id IN (SELECT value FROM json_each(?1))`).bind(list)),
+        // A release keeps the identity of what it held as a tombstone, marked as no longer available, and never serves it again (R59.3).
+        db.prepare('UPDATE release_artifacts SET unavailable_at = ?2 WHERE unavailable_at IS NULL AND unit_id IN (SELECT value FROM json_each(?1))').bind(list, now),
+        db.prepare("UPDATE release_artifacts SET unavailable_at = ?2 WHERE unavailable_at IS NULL AND kind = 'citation' AND unit_id IN (SELECT id FROM evidence_citations WHERE citing_unit_id IN (SELECT value FROM json_each(?1)))").bind(list, now),
         // A citation belongs to the record that cites; one whose target is deleted stays, unreadable, as the record of what was cited (R54.3).
         db.prepare('DELETE FROM evidence_citations WHERE citing_unit_id IN (SELECT value FROM json_each(?1))').bind(list),
         // A decision's own rows go with it; a decision that it replaced, or that replaced it, only loses the pointer (R53.4).

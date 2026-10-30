@@ -62,7 +62,7 @@ export interface ItemWorld {
 const KIND_PATH = (kind: ItemKind) => kind.replaceAll('_', '-');
 
 /** Three Members (author, colleague, Administrator) and one Project, fresh for each test. */
-export function itemWorld(t0 = new Date('2026-10-27T18:00:00.000Z')): ItemWorld {
+export function itemWorld(t0 = new Date('2026-10-27T18:00:00.000Z'), apiOptions: Parameters<typeof testApi>[3] = {}): ItemWorld {
   const at = asTimestamp(t0.toISOString());
   let access: TestAccess;
   let api: TestApi;
@@ -101,7 +101,7 @@ export function itemWorld(t0 = new Date('2026-10-27T18:00:00.000Z')): ItemWorld 
       colleague: await addMember(world.core(), 'colleague@example.test', 'active', at),
       admin: await addMember(world.core(), 'admin@example.test', 'active', at, ROLE_IDS.administrator),
     };
-    api = testApi(access, new KeyServer(access), t0);
+    api = testApi(access, new KeyServer(access), t0, apiOptions);
     tokens = Object.fromEntries(await Promise.all((['author', 'colleague', 'admin'] as const)
       .map(async (who) => [who, (await signAssertion(access, assertionSpec(`${who}@example.test`), t0))!]))) as Record<Who, string>;
     world.projectId = await addProject(world.core(), world.ids.admin, at);

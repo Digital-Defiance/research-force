@@ -39,7 +39,7 @@ export interface TestApi {
 }
 export function testApi(
   access: TestAccess, server: KeyServer, now: Date,
-  options: { readonly cache?: Cache | null; readonly ops?: FakeOps; readonly contentLicence?: string; readonly kick?: ApiConfig['kick'] } = {},
+  options: { readonly cache?: Cache | null; readonly ops?: FakeOps; readonly contentLicence?: string; readonly kick?: ApiConfig['kick']; readonly localRoutes?: ApiConfig['localRoutes'] } = {},
 ): TestApi {
   const clock = { now };
   const lines: string[] = [];
@@ -47,7 +47,7 @@ export function testApi(
   const keys = new AccessKeys(certsUrl(access), { fetch: server.fetch, cache: options.cache ?? null, now: () => clock.now.getTime() });
   const app = createApi({
     access, keys, workspaceOrigin: WORKSPACE, log: createLogger((line) => lines.push(line)), clock: () => clock.now, ops, contentLicence: options.contentLicence ?? '',
-    ...(options.kick ? { kick: options.kick } : {}),
+    ...(options.kick ? { kick: options.kick } : {}), ...(options.localRoutes ? { localRoutes: options.localRoutes } : {}),
   });
   return { app, keys, lines, clock, ops };
 }

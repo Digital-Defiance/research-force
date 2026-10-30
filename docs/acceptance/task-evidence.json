@@ -899,6 +899,28 @@
       "checks": [
         "docs/acceptance/checks/local-tests.json"
       ]
+    },
+    {
+      "task": "66.1",
+      "state": "accepted",
+      "reason": "Verified the Research_Release schema, its immutable manifests and its version-specific citations. A release has a stable ID, a name, scope, rationale, content-licence version, a snapshot sequence and time, and a state that only moves forward from Draft to Sealed, Published and Withdrawn. A draft holds up to 2,000 artifacts, each captured at its exact revision with a SHA-256 identity of its content (an Attachment by its bytes, a citation by what it cites), its Owner, and the rights evidence of that moment; an artifact the Member cannot read, a withdrawn one, and the not-yet-built package and provenance kinds are refused without revealing hidden detail. Approvals are bound to a digest of what was approved and the server works that digest out, so an Owner approves only their own artifact, only an Administrator approves rights and the release, and any change to an artifact makes its approvals lapse. Sealing rechecks every artifact against its capture, requires a rights status that permits publication for each public file and Source, and needs a current approval from the Owner, for rights and from an Administrator for exactly that manifest; it stores the manifest digest, an HMAC authentication of it and the digest of the approved public subset, which carries only kind, identifier, revision and hash of the artifacts proposed for publication. Database triggers keep a sealed release, its artifacts and approvals unchanged, allow the state to move forward one step, and let a permanent deletion mark an artifact unavailable once as a tombstone. Different contents are a successor release with the sealed one named as its predecessor, at most one per release. A Member reads a sealed release with the artifacts they can read, each with a citation naming the release, revision and full hash and whether it still reads as sealed, and a count of those they cannot see. The /releases routes, publication through the kernel, public suppression and the screens follow in 66.2 and 66.3, and Property 124 is written later. No deployment or production certification is claimed.",
+      "sourcePaths": [
+        "packages/domain/src/releases.ts",
+        "packages/db/src/schema/core/releases.ts",
+        "packages/db/migrations/core/0015_research_releases.sql",
+        "apps/app/src/records/releases.ts",
+        "apps/app/src/jobs/deletion.ts"
+      ],
+      "testPaths": [
+        "packages/domain/test/releases.test.ts",
+        "apps/app/test/releases.test.ts",
+        "apps/app/test/migration-research-releases.test.ts",
+        "tools/test/upgrade-store.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
     }
   ]
 }
