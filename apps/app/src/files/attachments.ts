@@ -16,6 +16,7 @@ import { ApiError } from '../api/errors';
 import { parse } from '../api/input';
 import { authorize } from '../auth/authorize';
 import { validationContext } from '../records/items';
+import { markEarlierVersions } from '../records/citations';
 import { commitSave, diffFields } from '../records/pipeline';
 import { addSubmission, commitWithIdentifiers, visibleTo } from '../records/submissions';
 import type { UploadRow } from './uploads';
@@ -78,6 +79,7 @@ export async function prepareAttachments(c: Context<ApiEnv>, raw: unknown, inher
     batch.bulkInsert(attachments, planned.map((p) => ({ unitId: p.id, itemIdentifier: issued.get(p.id)!, ...p.metadata,
       fileKind: fileKind(p.upload.fileName), originalName: p.upload.fileName, sizeBytes: p.upload.sizeBytes, sha256: p.upload.sha256,
       r2Key: p.upload.r2Key, uploadedAt: p.upload.completedAt!, chainId: version?.chainId ?? p.id, supersedesUnitId: version?.id ?? null })));
+    if (version) markEarlierVersions(batch, { type: 'attachment', unitId: version.id }, null);
     batch.run(sql`UPDATE uploads SET attached_at = ${now}, state = 'attached' WHERE id IN (SELECT value FROM json_each(${uploadIds}))`);
     batch.outbox('search', `root:${parent.rootId}`).outbox('publish', `root:${parent.rootId}`);
   } };

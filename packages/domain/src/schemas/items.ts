@@ -5,6 +5,7 @@ import { cpLength, isBlank } from '../text';
 import { CONSENT_STATUSES } from '../types';
 import type { ItemKind } from '../types';
 import type { RichText } from '../richtext';
+import { bibliographySchema } from '../bibliography';
 import { BUILT_IN_VALUE_IDS } from '../value-sets';
 import { distinctIds, documentDateSchema, enteredTimeSchema, fullDateSchema, idSchema, knownId, partialDateSchema, richTextSchema, selectedValue, textField, validDate, withChecks } from './common';
 import type { ReportIssue, ValidationContext } from './common';
@@ -141,7 +142,7 @@ function buildResearchItemSchema(kind: ItemKind, context: ValidationContext, opt
       });
     }
     case 'source':
-      return finish(z.strictObject({ ...common, kind: z.literal('source'), sourceKind: z.enum(['primary', 'secondary']), reliabilityId: selectedValue(context, 'reliability', 'reliabilityId'), documentDate: documentDateSchema.optional(), archiveOrCollection: z.string().optional(), archivalReference: z.string().optional(), recoverer: partySchema(context).optional(), reliabilityNote: richTextSchema().optional(), ...rightsFields(context, existing) }));
+      return finish(z.strictObject({ ...common, kind: z.literal('source'), sourceKind: z.enum(['primary', 'secondary']), reliabilityId: selectedValue(context, 'reliability', 'reliabilityId'), documentDate: documentDateSchema.optional(), archiveOrCollection: z.string().optional(), archivalReference: z.string().optional(), recoverer: partySchema(context).optional(), reliabilityNote: richTextSchema().optional(), bibliography: bibliographySchema.optional(), ...rightsFields(context, existing) }));
     case 'run':
       return finish(z.strictObject({
         ...common, kind: z.literal('run'), scope: richTextSchema(10_000, true), parameters: richTextSchema(10_000, true), toolName: textField(200, true), toolVersion: textField(200, true), computeResource: textField(200, true),

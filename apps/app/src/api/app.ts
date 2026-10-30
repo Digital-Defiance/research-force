@@ -34,6 +34,7 @@ import { searchRoutes } from './routes/search';
 import { discussionRoutes } from './routes/discussion';
 import { historyRoutes } from './routes/history';
 import { itemsRoutes } from './routes/items';
+import { citationsRoutes } from './routes/citations';
 import { linksRoutes } from './routes/links';
 import { partiesRoutes } from './routes/parties';
 import { projectsRoutes } from './routes/projects';
@@ -148,6 +149,7 @@ export function createApi(config: ApiConfig): Hono<ApiEnv> {
   v1.route('/members', memberProfileRoutes);
   v1.route('/projects', projectsRoutes);
   v1.route('/links', linksRoutes);
+  v1.route('/citations', citationsRoutes);
   v1.route('/parties', partiesRoutes);
   v1.route('/', discussionRoutes);
   v1.route('/', activityRoutes);

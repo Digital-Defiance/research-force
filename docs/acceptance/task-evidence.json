@@ -843,6 +843,32 @@
       "checks": [
         "docs/acceptance/checks/local-tests.json"
       ]
+    },
+    {
+      "task": "62.1",
+      "state": "accepted",
+      "reason": "Verified the Source bibliography and the version-bound citation model. A Source now carries ordered document creators with roles, a publication date at its entered precision with an approximate mark, edition, language tag, persistent identifiers, an external address and an access date, stored as entered and apart from the record's Owner and Credit; invalid roles, schemes, languages, addresses and dates, duplicates and counts over 50 creators or 20 identifiers are refused naming each field. An Evidence_Citation records its citing unit and field, one exact target (a Source, an Attachment by file hash, or a text field by the digest of its words with the revision it was read at), the role Supports, Contradicts, Background or Method, and a typed locator: page or range, folio with recto or verso, section and paragraph, a text range, an image region in normalized coordinates, or an unresolved locator marked as such. Validation covers page and folio order, range order, UTF-16 bounds and code point boundaries against the actual text, region bounds, what each target type can carry, the 1,000-character locator text bound and the 1,000-citation bound per record, an optional expected hash that refuses a target that changed, and the Permission to edit the citing record. Both ends must be readable now: a citation is created only for readable ends, and is returned only while both stay readable, with a 404 that reveals neither end. A change to the cited Source description, to a cited text, to an Entry_Section's text, or a newer version of an Attachment marks the citation as referring to an earlier version and never retargets it; an unrelated change leaves it current. A citation changes only by retiring it and recording its replacement, and database triggers keep everything it cites immutable. The citations of a permanently deleted record are removed with it, while a citation whose target is deleted stays unreadable. The /citations routes create, read, replace and remove; listing by record or target, editor references, exports and unresolved-reference curation follow in 62.2, and Property 118 is written later. No deployment or production certification is claimed.",
+      "sourcePaths": [
+        "packages/domain/src/citations.ts",
+        "packages/domain/src/bibliography.ts",
+        "packages/db/src/schema/core/evidence.ts",
+        "packages/db/migrations/core/0013_evidence_citations.sql",
+        "apps/app/src/records/citations.ts",
+        "apps/app/src/records/kinds/bibliography.ts",
+        "apps/app/src/records/kinds/source.ts",
+        "apps/app/src/api/routes/citations.ts",
+        "apps/app/src/files/attachments.ts"
+      ],
+      "testPaths": [
+        "packages/domain/test/citations.test.ts",
+        "apps/app/test/citations.test.ts",
+        "apps/app/test/migration-evidence-citations.test.ts",
+        "tools/test/upgrade-store.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
     }
   ]
 }

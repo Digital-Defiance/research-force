@@ -4,7 +4,7 @@
   "status": "development",
   "releasedAt": null,
   "build": {
-    "packageJsonSha256": "130382d22481985678f16064afea6e8f7106229258e370c1604d0448d2e8e83b",
+    "packageJsonSha256": "a57669ad85b1bb5873507b1ef7021825127f5e1aaa49ab3f7101b42ef8857e36",
     "packageLockSha256": "46bb71e749eeb2b853d3113a54c6b75e0a3a610f1178687a73334d4114e099d5"
   },
   "resourceProfileVersion": "resource-v1",
@@ -14,12 +14,12 @@
   ],
   "schemas": {
     "expanded": {
-      "core": 12,
+      "core": 13,
       "search": 3,
       "public": 0
     },
     "contracted": {
-      "core": 12,
+      "core": 13,
       "search": 3,
       "public": 0
     }
@@ -29,8 +29,8 @@
       "name": "app",
       "schemas": {
         "core": {
-          "min": 12,
-          "max": 12
+          "min": 13,
+          "max": 13
         },
         "search": {
           "min": 3,
@@ -46,8 +46,8 @@
       "name": "submit",
       "schemas": {
         "core": {
-          "min": 12,
-          "max": 12
+          "min": 13,
+          "max": 13
         }
       }
     },
@@ -55,8 +55,8 @@
       "name": "dl",
       "schemas": {
         "core": {
-          "min": 12,
-          "max": 12
+          "min": 13,
+          "max": 13
         }
       }
     },
@@ -159,6 +159,13 @@
       "revision": 12,
       "tag": "0012_research_questions",
       "sha256": "ebb3427426b142fa91dc0eed453a955a034ad242ebc1a01506d898e1c20e2a78",
+      "phase": "baseline"
+    },
+    {
+      "store": "core",
+      "revision": 13,
+      "tag": "0013_evidence_citations",
+      "sha256": "ecf4fbb2d91785b59cc9f0a1223256a38d77f80b50ca2eb1287a2a0a8fee0028",
       "phase": "baseline"
     },
     {
@@ -296,7 +303,7 @@
     },
     {
       "path": "apps/app/src/api/app.ts",
-      "sha256": "833be0236bf803fbb42618824651847550786209f6d562e5204a8c1324ae7587"
+      "sha256": "55fb12c122cd1fa64809d9d516caaa7324d06dc03481d304b6250dc84587d551"
     },
     {
       "path": "apps/app/src/api/csrf.ts",
@@ -321,6 +328,10 @@
     {
       "path": "apps/app/src/api/routes/activity.ts",
       "sha256": "396aaf7c2dd9b9775242918570b6d7c1f68b905d48b95c0cc9f83821718e83d8"
+    },
+    {
+      "path": "apps/app/src/api/routes/citations.ts",
+      "sha256": "a29684adbbaca8b2fc2814afc3085cafc77fd98a7c3bc0cfe659f0ae01e9a5d4"
     },
     {
       "path": "apps/app/src/api/routes/discussion.ts",
@@ -440,7 +451,7 @@
     },
     {
       "path": "apps/app/src/files/attachments.ts",
-      "sha256": "44654b5b736e79f910ddf46af3b909d7ee7d53b2ef4053bca690bc0f5911f3e0"
+      "sha256": "8d80d0ea45aea04341a0de12e29d6a6d31fddffda922da1825be6ad244fdb15f"
     },
     {
       "path": "apps/app/src/files/links.ts",
@@ -464,7 +475,7 @@
     },
     {
       "path": "apps/app/src/jobs/deletion.ts",
-      "sha256": "86250c5c6a2050a294434c9f1709c9526baf44755ee1b4ae9b7af9bc3c9847f9"
+      "sha256": "4c589b57ae9f8ec3061f2e6c36a365265564e0fe7c2cf37e4685c6ff3806d781"
     },
     {
       "path": "apps/app/src/local/mailer.ts",
@@ -535,6 +546,10 @@
       "sha256": "2f1cc0e95a2e9d2acc436ece5f74323f62b82f41521bbf0d627f7011b40b0110"
     },
     {
+      "path": "apps/app/src/records/citations.ts",
+      "sha256": "254620131ab5cac968f4556a450af5fe04845e86b27628f5f048a484da5f9e3e"
+    },
+    {
       "path": "apps/app/src/records/field-values.ts",
       "sha256": "62544c7633894faf051160160a5bc53bfaef6fa539e39a8c232383887f75c993"
     },
@@ -544,11 +559,15 @@
     },
     {
       "path": "apps/app/src/records/items.ts",
-      "sha256": "a2484b8074945cfba896c30f8c9fb2fd627d6d80b6f9533831e8f66b4c52c793"
+      "sha256": "535604b28f0b62461bc1f8c4249fb9af68cb1b3eb2346def54efafabf99d562b"
     },
     {
       "path": "apps/app/src/records/kinds/archival.ts",
       "sha256": "5434d13eed0a8ac2444d1f7ce42f48acafb0606842b7ecd6685502f2e485358a"
+    },
+    {
+      "path": "apps/app/src/records/kinds/bibliography.ts",
+      "sha256": "f8d67186918af9cfbfa7fcfe5670a44d4680765ce8f6a026e5fb4259819ec389"
     },
     {
       "path": "apps/app/src/records/kinds/correspondence.ts",
@@ -584,7 +603,7 @@
     },
     {
       "path": "apps/app/src/records/kinds/source.ts",
-      "sha256": "61f4fcd054bec03ec71e5e5ff058ac0dd62fe92c2651a275013070a57da5fb28"
+      "sha256": "310bc69cf19db2989e35500ce512d09840fa29cd213373ea4874e5ff0704660a"
     },
     {
       "path": "apps/app/src/records/kinds/topic.ts",
@@ -915,6 +934,10 @@
       "sha256": "eb68d2540efc00348c3abe56090a81fae66cc6c6d8d109d39651c14c20a7d761"
     },
     {
+      "path": "packages/db/src/schema/core/evidence.ts",
+      "sha256": "2eefd30cba0e26da5995a0afe9f55db690006dd429bbefaebd47c1566f66e172"
+    },
+    {
       "path": "packages/db/src/schema/core/fields.ts",
       "sha256": "f479bb9fc2921c62e68d751173ca28a8dab528a1f867438ea712007d327748e8"
     },
@@ -936,7 +959,7 @@
     },
     {
       "path": "packages/db/src/schema/core.ts",
-      "sha256": "138171b2894595531a51d50e6ba935812014ea3511791f8ae5e2ba3607919d73"
+      "sha256": "dda97c3b8456ce67a9aa2939bcb3cefd16c5edfd25a5e14db62b208db7b0a06f"
     },
     {
       "path": "packages/db/src/schema/public.ts",
@@ -1019,8 +1042,16 @@
       "sha256": "0b3f5626cab08ed8715d70d083e5de1fcec10327b9a5e70e1a2011d86ced186f"
     },
     {
+      "path": "packages/domain/src/bibliography.ts",
+      "sha256": "5d6178c0451a43e7c43fe88e9e676479bf85c935a1804a8a1b9269344141f169"
+    },
+    {
       "path": "packages/domain/src/bounded-json.ts",
       "sha256": "36aaecee5500df4b6caa606a9cc2f921e1a19bb90c1877efc3e9f30e1caf2139"
+    },
+    {
+      "path": "packages/domain/src/citations.ts",
+      "sha256": "694c68c14f6e23fe57e821865056ddf699208743fdfb8009009c489934929f23"
     },
     {
       "path": "packages/domain/src/compare.ts",
@@ -1112,7 +1143,7 @@
     },
     {
       "path": "packages/domain/src/schemas/items.ts",
-      "sha256": "91239702e8548f959ee02b6949561e30ff0066dc1120828b36dd0ba896eb7a95"
+      "sha256": "a09371cab60675414649da93a07244b0deb83192cdf7244e0c32f69e3431519a"
     },
     {
       "path": "packages/domain/src/schemas/other.ts",
@@ -1305,10 +1336,6 @@
     {
       "path": "tools/certify-profile.ts",
       "sha256": "2a34d62abe80cbd9b94184a1127179abc657158ec32f3f924bb1f3152d775167"
-    },
-    {
-      "path": "tools/check-secrets.ts",
-      "sha256": "9b089510b984a6a49b6a05b86d67be87b75b1a9b768effe366d6862002f312ff"
     },
     {
       "path": "tools/check-specs.ts",

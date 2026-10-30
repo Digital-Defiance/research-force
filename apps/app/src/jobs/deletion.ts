@@ -27,7 +27,7 @@ interface Cursor {
 /** Tables holding a unit's fields and per-Member state, each keyed by `unit_id`. */
 const UNIT_TABLES = [
   'research_items', 'journal_entries', 'je_members', 'entry_sections', 'findings', 'sources', 'runs', 'run_counts', 'hypotheses', 'correspondences',
-  'correspondence_parties', 'archival_requests', 'topics', 'research_questions', 'replies', 'attachments', 'dissent_notes', 'flags', 'views',
+  'correspondence_parties', 'archival_requests', 'topics', 'research_questions', 'source_bibliography', 'source_creators', 'source_identifiers', 'replies', 'attachments', 'dissent_notes', 'flags', 'views',
 ] as const;
 const SLICE_ROWS = OPERATIONS.jobSliceRows;
 
@@ -111,6 +111,8 @@ export const deletionJob: JobHandler = {
       const list = JSON.stringify(params.scope === 'item' || last ? [...ids, params.unitId] : ids);
       await db.batch([
         ...UNIT_TABLES.map((table) => db.prepare(`DELETE FROM ${table} WHERE unit_id IN (SELECT value FROM json_each(?1))`).bind(list)),
+        // A citation belongs to the record that cites; one whose target is deleted stays, unreadable, as the record of what was cited (R54.3).
+        db.prepare('DELETE FROM evidence_citations WHERE citing_unit_id IN (SELECT value FROM json_each(?1))').bind(list),
         db.prepare('DELETE FROM question_entries WHERE question_id IN (SELECT value FROM json_each(?1))').bind(list),
         db.prepare('DELETE FROM question_groups WHERE question_id IN (SELECT value FROM json_each(?1))').bind(list),
         db.prepare(`DELETE FROM revisions WHERE target_type = 'unit' AND target_id IN (SELECT value FROM json_each(?1)) AND NOT (kind = 'deletion' AND target_id = ?2)`).bind(list, params.unitId),

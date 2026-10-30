@@ -1,10 +1,12 @@
 import { eq } from 'drizzle-orm';
 import { sources } from '@researchforce/db/schema/core';
+import type { Bibliography } from '@researchforce/domain/bibliography';
 import type { DateRange, DocumentDate, PartialDate } from '@researchforce/domain/types';
+import { bibliographyStatements, readBibliography, writeBibliography } from './bibliography';
 import { classesOf, defined, richColumns, richText, rowsOf, storedDate } from './kind';
 import type { ItemFields, KindAdapter } from './kind';
 
-const FIELDS = ['sourceKind', 'reliabilityId', 'documentDate', 'archiveOrCollection', 'archivalReference', 'recoverer', 'reliabilityNote', 'rightsStatusId', 'rightsHolder', 'rightsTerms'];
+const FIELDS = ['sourceKind', 'reliabilityId', 'documentDate', 'archiveOrCollection', 'archivalReference', 'recoverer', 'reliabilityNote', 'rightsStatusId', 'rightsHolder', 'rightsTerms', 'bibliography'];
 type Party = { readonly kind: 'member' | 'external'; readonly id: string };
 interface SourceRow {
   sourceKind: 'primary' | 'secondary'; reliabilityId: string; docDate: string | null; docDateApprox: number; docDateEnd: string | null; docDateEndApprox: number;
@@ -34,8 +36,8 @@ export const source: KindAdapter = {
   load: (db, id) => [db.prepare(`SELECT source_kind AS sourceKind, reliability_id AS reliabilityId, doc_date AS docDate, doc_date_approx AS docDateApprox,
       doc_date_end AS docDateEnd, doc_date_end_approx AS docDateEndApprox, archive_or_collection AS archiveOrCollection, archival_reference AS archivalReference,
       recoverer_kind AS recovererKind, recoverer_id AS recovererId, reliability_note AS note, reliability_note_spans AS noteSpans,
-      rights_status_id AS rightsStatusId, rights_holder AS rightsHolder, rights_terms AS rightsTerms FROM sources WHERE unit_id = ?1`).bind(id)],
-  read([result]) {
+      rights_status_id AS rightsStatusId, rights_holder AS rightsHolder, rights_terms AS rightsTerms FROM sources WHERE unit_id = ?1`).bind(id), ...bibliographyStatements(db, id)],
+  read([result, ...bibliography]) {
     const stored = rowsOf<SourceRow>(result)[0];
     if (!stored) return { fields: {} };
     const start = storedDate(stored.docDate, stored.docDateApprox);
@@ -45,13 +47,17 @@ export const source: KindAdapter = {
       fields: defined({
         sourceKind: stored.sourceKind, reliabilityId: stored.reliabilityId, documentDate, archiveOrCollection: stored.archiveOrCollection ?? undefined,
         archivalReference: stored.archivalReference ?? undefined, recoverer: stored.recovererKind === null ? undefined : { kind: stored.recovererKind, id: stored.recovererId! },
-        reliabilityNote: richText(stored.note, stored.noteSpans), rightsStatusId: stored.rightsStatusId, rightsHolder: stored.rightsHolder ?? undefined, rightsTerms: stored.rightsTerms ?? undefined,
+        reliabilityNote: richText(stored.note, stored.noteSpans), bibliography: readBibliography(bibliography), rightsStatusId: stored.rightsStatusId, rightsHolder: stored.rightsHolder ?? undefined, rightsTerms: stored.rightsTerms ?? undefined,
       }),
     };
   },
   dates: (fields) => ({ kind: 'source', ...(fields['documentDate'] === undefined ? {} : { documentDate: fields['documentDate'] as DocumentDate }) }),
-  insert: (batch, item, fields) => { batch.insert(sources, { unitId: item.id, ...row(fields) }); },
+  insert(batch, item, fields) {
+    batch.insert(sources, { unitId: item.id, ...row(fields) });
+    writeBibliography(batch, item.id, fields['bibliography'] as Bibliography | undefined, false);
+  },
   update(batch, item, _before, after, changed) {
     if (FIELDS.some((field) => changed.has(field))) batch.update(sources, row(after), eq(sources.unitId, item.id));
+    if (changed.has('bibliography')) writeBibliography(batch, item.id, after['bibliography'] as Bibliography | undefined, true);
   },
 };

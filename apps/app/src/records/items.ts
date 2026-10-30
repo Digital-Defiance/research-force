@@ -37,6 +37,7 @@ import { insertStagedSections, prepareSections, stagedSectionChange, stagedSecti
 import type { Section, StagedSections } from './kinds/journal';
 import { richText, rowsOf } from './kinds/kind';
 import type { BaseRow, ChildUnit, ItemFields, KindRules } from './kinds/kind';
+import { markChangedSections, markChangedTargets } from './citations';
 import { evidenceLink, linkIssues, writeLinks } from './links';
 import type { LinkInput } from './links';
 import { addGroupNote, guardLogSummaryOwner, logSummaryColumns, present } from './log-summary';
@@ -454,6 +455,11 @@ export async function editItem(c: Context<ApiEnv>, current: LoadedItem, body: un
         ...dateKeys(base.kind, after, base.createdAt), ...logSummaryColumns(after['logSummary'] as RichText | undefined),
       }, eq(researchItems.unitId, base.id));
       adapter.update(batch, base, compared, after, changed, now);
+      markChangedTargets(batch, base, after, changed);
+      if (base.kind === 'journal_entry') {
+        if (staged) markChangedSections(batch, staged.entries.filter((entry) => entry.changed && !entry.added).map((entry) => ({ id: entry.id })));
+        else if (changed.has('sections')) markChangedSections(batch, ((after['sections'] ?? []) as readonly Section[]).flatMap((section) => (section.id === undefined ? [] : [{ id: section.id, text: section.content.text }])));
+      }
       if (staged) {
         if (sectionsChange) writeStagedSections(batch, base, sections, staged, now);
         staged.complete(batch, base.id, base.rev + 1);
