@@ -1080,6 +1080,27 @@
       "checks": [
         "docs/acceptance/checks/local-tests.json"
       ]
+    },
+    {
+      "task": "62.3",
+      "state": "accepted",
+      "reason": "Verified artifact derivation graphs. A derivation records an output (an exact Attachment or one text field) made from 1 to 100 inputs, with kind (scan, transcription, translation, OCR, extraction, other), method and version, language, an uncertainty note of at most 2,000 characters and, for an Attachment output, stored transcript, translation or OCR text that is searchable only to Members who can read the record. Recording needs the Permission to edit the output's record and read access to every input; the original hashes are kept, an output identical to an input is refused, and transactional guards over the graph epoch refuse cycles and a second active derivation of one output. A correction is a new derivation with a new output; the earlier derivation, method and output stay, and each derivation is corrected once. A Member other than the creator reviews a derivation as reviewed or disputed with passages checked against UTF-16 and code point bounds, through the self-only derivation.review Permission. Provenance walks only edges readable at both ends, and a derivation is absent unless its output and an input are readable. A deleted input leaves its edge as a tombstone and is never repointed; an Attachment move keeps its edges. The /derivations routes create, correct, read, list, review and walk provenance. Provenance screens, property tests, notifications and backup or public export of derivations follow in later tasks. No deployment or production certification is claimed.",
+      "sourcePaths": [
+        "apps/app/src/records/derivations.ts",
+        "apps/app/src/api/routes/derivations.ts",
+        "packages/domain/src/derivations.ts",
+        "packages/db/src/schema/core/derivations.ts",
+        "packages/db/migrations/core/0018_artifact_derivations.sql"
+      ],
+      "testPaths": [
+        "apps/app/test/derivations.test.ts",
+        "packages/domain/test/permissions.test.ts",
+        "tools/test/upgrade-store.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
     }
   ]
 }

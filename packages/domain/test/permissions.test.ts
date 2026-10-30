@@ -17,7 +17,7 @@ describe('the built-in Role Permission Map', () => {
     expect(Object.keys(BUILT_IN_ROLES.contributor.permissions).sort()).toEqual([
       'item.create', 'attachment.upload', 'reply.post', 'topic.create', 'item.edit', 'item.correct', 'item.withdraw', 'section.edit', 'logSummary.write',
       'link.add', 'link.remove', 'review.request', 'review.complete', 'party.doNotName.on', 'profile.edit', 'dissent.attach', 'dissent.edit', 'dissent.withdraw', 'ai.draft.logSummary',
-      'access.restrict', 'access.widen', 'hold.place', 'hold.lift', 'consent.give', 'attachment.move', 'decision.acknowledge', 'work.assign', 'work.edit', 'work.progress', 'work.accept',
+      'access.restrict', 'access.widen', 'hold.place', 'hold.lift', 'consent.give', 'attachment.move', 'decision.acknowledge', 'work.assign', 'work.edit', 'work.progress', 'work.accept', 'derivation.review',
     ].sort());
     for (const permission of ['licence.withdraw', 'constructor', '__proto__']) expect(can(context(true), permission as Permission)).toBe(false);
   });

@@ -116,6 +116,10 @@ export const deletionJob: JobHandler = {
         db.prepare("UPDATE release_artifacts SET unavailable_at = ?2 WHERE unavailable_at IS NULL AND kind = 'citation' AND unit_id IN (SELECT id FROM evidence_citations WHERE citing_unit_id IN (SELECT value FROM json_each(?1)))").bind(list, now),
         // A citation belongs to the record that cites; one whose target is deleted stays, unreadable, as the record of what was cited (R54.3).
         db.prepare('DELETE FROM evidence_citations WHERE citing_unit_id IN (SELECT value FROM json_each(?1))').bind(list),
+        // A derivation goes with its output; as an input, a deleted unit leaves its edge in place as a tombstone and is never repointed (R55.3).
+        ...['derivation_flags', 'derivation_reviews', 'artifact_derivation_inputs'].map((table) => db.prepare(`DELETE FROM ${table} WHERE derivation_id IN (SELECT id FROM artifact_derivations WHERE output_unit_id IN (SELECT value FROM json_each(?1)))`).bind(list)),
+        db.prepare('DELETE FROM artifact_derivations WHERE output_unit_id IN (SELECT value FROM json_each(?1))').bind(list),
+        db.prepare('UPDATE artifact_derivation_inputs SET gone_at = ?2 WHERE gone_at IS NULL AND input_unit_id IN (SELECT value FROM json_each(?1))').bind(list, now),
         // A work item's rows go with it, and a link to it from another record's dependencies or next actions is dropped (R52.3).
         db.prepare('DELETE FROM work_outcome_results WHERE outcome_id IN (SELECT id FROM work_outcomes WHERE work_id IN (SELECT value FROM json_each(?1)))').bind(list),
         ...['work_outcomes', 'work_assignees', 'work_dependencies', 'work_events'].map((table) => db.prepare(`DELETE FROM ${table} WHERE work_id IN (SELECT value FROM json_each(?1))`).bind(list)),

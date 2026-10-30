@@ -19,7 +19,7 @@ beforeAll(async () => {
 
 describe('error shape', () => {
   it('maps guard refusals to the design’s codes and statuses', () => {
-    const expected: Record<string, [string, number]> = { rev: ['conflict', 409], chain_tip: ['conflict', 409], decision_open: ['conflict', 409], work_state: ['conflict', 409], preview_fresh: ['preview_stale', 409], frozen: ['frozen', 503] };
+    const expected: Record<string, [string, number]> = { rev: ['conflict', 409], chain_tip: ['conflict', 409], decision_open: ['conflict', 409], work_state: ['conflict', 409], derivation_tip: ['conflict', 409], preview_fresh: ['preview_stale', 409], frozen: ['frozen', 503] };
     for (const code of GUARD_CODES) {
       const error = toApiError(new GuardViolation(code));
       expect([error.code, error.status]).toEqual(expected[code] ?? ['rule', 422]);

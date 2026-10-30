@@ -16,6 +16,7 @@ export const GUARD_CODES = [
   'rev', 'evidence', 'superseding', 'last_admin', 'chain_tip', 'decision_open', 'preview_fresh', 'log_summary_owner', 'dissent_unique', 'frozen',
   'upload_ready', 'upload_limit', 'reply_parent', 'review_eligible', 'reviewer_eligible', 'review_open', 'access_owner',
   'decision_participant', 'decision_wording', 'acknowledgement_version', 'work_state', 'work_cycle',
+  'derivation_cycle', 'derivation_tip',
 ] as const;
 export type GuardCode = typeof GUARD_CODES[number];
 /** HTTP status and the rule each guard enforces, for the API's refusal (design "Guards"). */
@@ -42,6 +43,8 @@ export const GUARD_RULES: Readonly<Record<GuardCode, { readonly status: 409 | 42
   acknowledgement_version: { status: 409, rule: 'Your response was changed after you opened it; read your latest response and try again (R53.3).' },
   work_state: { status: 409, rule: 'This work changed after you opened it; reload it and try again (R52).' },
   work_cycle: { status: 422, rule: 'A Work_Item cannot depend, directly or through others, on itself (R52.3).' },
+  derivation_cycle: { status: 422, rule: 'An artifact cannot be derived, directly or through others, from itself (R55.2).' },
+  derivation_tip: { status: 409, rule: 'This artifact already has a newer derivation, or was derived by someone else a moment ago; reload it and try again (R55.2).' },
 });
 
 /** The change sequence after the batch's second statement has incremented it. */

@@ -127,6 +127,13 @@
       "when": 1793327440249,
       "tag": "0017_work_assignment_history",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "6",
+      "when": 1793338069384,
+      "tag": "0018_artifact_derivations",
+      "breakpoints": true
     }
   ]
 }

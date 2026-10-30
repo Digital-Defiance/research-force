@@ -8,4 +8,5 @@ export * from './core/evidence';
 export * from './core/decisions';
 export * from './core/releases';
 export * from './core/work-items';
+export * from './core/derivations';
 export * from './core/operations';

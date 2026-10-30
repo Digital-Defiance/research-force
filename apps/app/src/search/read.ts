@@ -44,7 +44,8 @@ export async function readRootDocuments(db: D1Database, rootId: ULID): Promise<S
     one(`SELECT e.unit_id AS id, e.text, e.text_spans AS spans FROM entry_sections e JOIN units u ON u.id = e.unit_id WHERE u.root_id = ?1`),
     one(`SELECT r.unit_id AS id, r.text, r.text_spans AS spans FROM replies r JOIN units u ON u.id = r.unit_id WHERE u.root_id = ?1`),
     one(`SELECT a.unit_id AS id, a.title, a.item_identifier AS identifier, a.caption, a.origin, a.original_name AS fileName,
-        EXISTS (SELECT 1 FROM attachments n WHERE n.supersedes_unit_id = a.unit_id) AS superseded
+        EXISTS (SELECT 1 FROM attachments n WHERE n.supersedes_unit_id = a.unit_id) AS superseded,
+        (SELECT d.derived_text FROM artifact_derivations d WHERE d.output_unit_id = a.unit_id AND d.derived_text IS NOT NULL AND d.corrected_by IS NULL LIMIT 1) AS derived
       FROM attachments a JOIN units u ON u.id = a.unit_id WHERE u.root_id = ?1`),
     one(`SELECT d.unit_id AS id, d.text, d.text_spans AS spans FROM dissent_notes d JOIN units u ON u.id = d.unit_id WHERE u.root_id = ?1`),
     one('SELECT * FROM research_questions WHERE unit_id = ?1'),
@@ -132,9 +133,9 @@ export async function readRootDocuments(db: D1Database, rootId: ULID): Promise<S
   for (const [id, row] of byId<{ id: string; text: string; spans: string }>(replies!)) {
     const unit = own(id); if (unit) child(id, 'reply', { body: new Body().rich(row.text, row.spans) }, unit, id as ULID);
   }
-  for (const [id, row] of byId<{ id: string; title: string; identifier: string; caption: string | null; origin: string; fileName: string; superseded: number }>(attachments!)) {
+  for (const [id, row] of byId<{ id: string; title: string; identifier: string; caption: string | null; origin: string; fileName: string; superseded: number; derived: string | null }>(attachments!)) {
     const unit = own(id);
-    if (unit) child(id, 'attachment', { title: row.title, body: new Body().plain(row.identifier).plain(row.caption).plain(row.origin).plain(row.fileName), superseded: row.superseded === 1 }, unit, id as ULID);
+    if (unit) child(id, 'attachment', { title: row.title, body: new Body().plain(row.identifier).plain(row.caption).plain(row.origin).plain(row.fileName).plain(row.derived), superseded: row.superseded === 1 }, unit, id as ULID);
   }
   for (const [id, row] of byId<{ id: string; text: string; spans: string }>(dissent!)) {
     const unit = own(id); if (unit) child(id, 'dissent_note', { body: new Body().rich(row.text, row.spans) }, unit, id as ULID);

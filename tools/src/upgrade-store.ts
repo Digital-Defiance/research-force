@@ -17,7 +17,7 @@ export function initializeUpgradeStore(db: DatabaseSync): void {
 }
 const operational = (name: string): boolean => name.startsWith('_rf_release_') || name.startsWith('sqlite_');
 /** Tables an expansion may add rows to, such as the Permission grants of a new feature; their existing rows must not change. */
-const ADDITIVE_TABLES: ReadonlySet<string> = new Set(['role_permissions']);
+const ADDITIVE_TABLES: ReadonlySet<string> = new Set(['role_permissions', 'counters']);
 interface PreservedTable { name: string; definitions: Record<string, unknown>[]; columns: string[]; digest: string; count: number; rows?: ReadonlySet<string> }
 const rowText = (row: unknown): string => JSON.stringify(row, (_, v: unknown) => typeof v === 'bigint' ? { integer: String(v) } : v instanceof Uint8Array ? { blob: Buffer.from(v).toString('hex') } : v);
 function tableRows(db: DatabaseSync, name: string, columns: string[]): Set<string> {

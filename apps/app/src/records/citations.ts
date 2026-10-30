@@ -27,7 +27,7 @@ type Target = { type: 'source' | 'attachment' | 'text'; unitId: ULID; field?: st
 export const textDigest = (text: string): string => fragmentDigest({ version: 'cited-text-v1', text });
 
 /** What a target is right now, resolved for a Member who can read it (R54.2, R54.3). */
-interface Resolved {
+export interface Resolved {
   readonly type: Target['type'];
   readonly unitId: ULID;
   readonly rootId: ULID;
@@ -40,9 +40,9 @@ interface Resolved {
 
 const notReadable = (field: string): ApiError => new ApiError('validation', { fields: [{ field, rule: 'This record does not exist, has been permanently deleted, or cannot be read.' }] });
 
-interface UnitRow { id: ULID; unitType: string; rootId: ULID; ownerId: ULID; kind: string | null }
+export interface UnitRow { id: ULID; unitType: string; rootId: ULID; ownerId: ULID; kind: string | null }
 /** A unit the Member can read now, with its Root_Item's kind and Owner (R54.3). */
-async function readableUnit(c: Context<ApiEnv>, id: string, field: string): Promise<UnitRow> {
+export async function readableUnit(c: Context<ApiEnv>, id: string, field: string): Promise<UnitRow> {
   const found = isULID(id) ? await c.get('accountant').track(c.env.RF_CORE.prepare(
     `SELECT u.id, u.unit_type AS unitType, u.root_id AS rootId, r.owner_id AS ownerId, ri.kind
       FROM units u JOIN units r ON r.id = u.root_id JOIN research_items ri ON ri.unit_id = r.id
@@ -53,7 +53,7 @@ async function readableUnit(c: Context<ApiEnv>, id: string, field: string): Prom
   return unit;
 }
 
-async function resolveTarget(c: Context<ApiEnv>, target: Target): Promise<Resolved> {
+export async function resolveTarget(c: Context<ApiEnv>, target: Target): Promise<Resolved> {
   const unit = await readableUnit(c, target.unitId, 'target.unitId');
   const refuse = (rule: string): never => { throw new ApiError('validation', { fields: [{ field: 'target.unitId', rule }] }); };
   if (target.type === 'attachment') {
