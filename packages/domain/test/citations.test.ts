@@ -28,7 +28,9 @@ describe('typed locators (R54.2)', () => {
     expect(messages({ type: 'unresolved', text: ' ' })).not.toEqual([]);
     expect(messages({ type: 'unresolved', text: 'x'.repeat(1001) })).not.toEqual([]);
     expect(ok({ type: 'unresolved', text: 'x'.repeat(1000) }).success).toBe(true);
-    expect(ok({ type: 'unresolved', text: '😀'.repeat(1000) }).success).toBe(true);
+    // 1,000 astral characters would take more than the 4,000 bytes a stored locator may have, so they are refused here, not at the database.
+    expect(messages({ type: 'unresolved', text: '😀'.repeat(1000) })).toEqual(['text: The locator can take at most 4000 bytes when stored; shorten it.']);
+    expect(ok({ type: 'unresolved', text: '😀'.repeat(990) }).success).toBe(true);
     expect(ok({ type: 'poem', stanza: 1 }).success).toBe(false);
     expect(ok({ type: 'page', from: 1, extra: true }).success).toBe(false);
   });

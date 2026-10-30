@@ -2,15 +2,14 @@
   "inputs": {
     ".kiro/specs/research-collab-cms/requirements.md": "9e2d7cee953f4aeece04bad4a7dfae273a908c0df65c95beea7a4e572b71b5df",
     ".kiro/specs/research-collab-cms/design.md": "85df571e6efad1205603dca7addcea9c16f68252023d5483a2fbe81d705c4d93",
-    ".kiro/specs/research-collab-cms/tasks.md": "58b8bc4345aa323e0d7f8179aef12d3d91115ad2c334e00baa39aae95508ab53",
-    "docs/acceptance/task-evidence.json": "4321881ac774de7a68a154cd274cf529d61a0a4dea7b5df21c1b0644e350a437"
+    ".kiro/specs/research-collab-cms/tasks.md": "d2612efd01fdeb4059b1a3e06744be98b4fb397a4ba82d3af2afd9c04d7a838a",
+    "docs/acceptance/task-evidence.json": "09b91bf3f52a0e19224127c0ef3dcca8ca5f4d5a32709bbd860a16b70ff73801"
   },
   "schemaVersion": 1,
   "nextTasks": [
-    "62.5"
+    "62.6"
   ],
   "remainingBuildOrder": [
-    "62.5",
     "62.6",
     "61.2",
     "61.3",
@@ -203,11 +202,11 @@
     "criteria": 738,
     "properties": 126,
     "leafTasks": 406,
-    "checkedLeaves": 219,
+    "checkedLeaves": 220,
     "historicalUnverified": 182,
-    "acceptedWithLocalEvidence": 37,
-    "propertyFiles": 66,
-    "remainingWaves": 187,
+    "acceptedWithLocalEvidence": 38,
+    "propertyFiles": 67,
+    "remainingWaves": 186,
     "gates": 4
   },
   "structuralIssues": [],
@@ -10177,7 +10176,9 @@
         "54.6"
       ],
       "task": "62.5",
-      "testPaths": []
+      "testPaths": [
+        "apps/app/test/properties/p118-evidence-citations.test.ts"
+      ]
     },
     {
       "id": 119,
@@ -19167,7 +19168,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "4321881ac774de7a68a154cd274cf529d61a0a4dea7b5df21c1b0644e350a437"
+          "sha256": "09b91bf3f52a0e19224127c0ef3dcca8ca5f4d5a32709bbd860a16b70ff73801"
         },
         {
           "path": "README.md",
@@ -19256,7 +19257,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "4321881ac774de7a68a154cd274cf529d61a0a4dea7b5df21c1b0644e350a437"
+          "sha256": "09b91bf3f52a0e19224127c0ef3dcca8ca5f4d5a32709bbd860a16b70ff73801"
         },
         {
           "path": "apps/app/src/index.ts",
@@ -19395,7 +19396,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "4321881ac774de7a68a154cd274cf529d61a0a4dea7b5df21c1b0644e350a437"
+          "sha256": "09b91bf3f52a0e19224127c0ef3dcca8ca5f4d5a32709bbd860a16b70ff73801"
         },
         {
           "path": "apps/app/src/local/services.ts",
@@ -21079,12 +21080,12 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "4321881ac774de7a68a154cd274cf529d61a0a4dea7b5df21c1b0644e350a437"
+          "sha256": "09b91bf3f52a0e19224127c0ef3dcca8ca5f4d5a32709bbd860a16b70ff73801"
         },
         {
           "path": "docs/acceptance/checks/local-tests.json",
           "kind": "file",
-          "sha256": "4a0a2870ec4f128557859b1072288f67befb1d5032991d471530e1ed17d1a72d"
+          "sha256": "228c0508707fb8d6d8e5593ab35c1b4b3e39b29034b31a49c1d27bbf62703415"
         },
         {
           "path": "tools/src/specs.ts",
@@ -21171,7 +21172,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "4321881ac774de7a68a154cd274cf529d61a0a4dea7b5df21c1b0644e350a437"
+          "sha256": "09b91bf3f52a0e19224127c0ef3dcca8ca5f4d5a32709bbd860a16b70ff73801"
         },
         {
           "path": "packages/domain/src/settings.ts",
@@ -21351,7 +21352,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "4321881ac774de7a68a154cd274cf529d61a0a4dea7b5df21c1b0644e350a437"
+          "sha256": "09b91bf3f52a0e19224127c0ef3dcca8ca5f4d5a32709bbd860a16b70ff73801"
         },
         {
           "path": "docs/storage/logical-fields.md",
@@ -21516,7 +21517,7 @@
         {
           "path": "infra/releases/development.json",
           "kind": "file",
-          "sha256": "7ba410cdea5180efca89639ed3e28c5df4f5192bec17081ecef7c098f31b9ad3"
+          "sha256": "d9689e2d6a4fac92439ccd556069f85cbe57bbde886139c4ad9c7c27a5732a26"
         },
         {
           "path": "infra/recovery/deployment.example.json",
@@ -21791,7 +21792,7 @@
         {
           "path": "infra/releases/development.json",
           "kind": "file",
-          "sha256": "7ba410cdea5180efca89639ed3e28c5df4f5192bec17081ecef7c098f31b9ad3"
+          "sha256": "d9689e2d6a4fac92439ccd556069f85cbe57bbde886139c4ad9c7c27a5732a26"
         },
         {
           "path": "apps/app/test/operations.test.ts",
@@ -23305,7 +23306,7 @@
         {
           "path": "packages/domain/src/citations.ts",
           "kind": "file",
-          "sha256": "694c68c14f6e23fe57e821865056ddf699208743fdfb8009009c489934929f23"
+          "sha256": "f1f1e7cc3c14395998043ed862472c5a5d0cc30c931af86c01d6dbc985d4bbdf"
         },
         {
           "path": "packages/domain/src/bibliography.ts",
@@ -23350,7 +23351,7 @@
         {
           "path": "packages/domain/test/citations.test.ts",
           "kind": "file",
-          "sha256": "21491aea704edf17bebd20ce4689502c29f563de4f3c7b1686868c7427aed00b"
+          "sha256": "14bb344e86d0361c6872f206c03574220b9e7f7532ea3f85a4237430ed9b5848"
         },
         {
           "path": "apps/app/test/citations.test.ts",
@@ -23657,7 +23658,7 @@
     {
       "id": "62.5",
       "title": "Write property and regression tests for evidence citations",
-      "checked": false,
+      "checked": true,
       "requirements": [
         "54.1",
         "54.2",
@@ -23670,19 +23671,51 @@
         118
       ],
       "prerequisites": [],
-      "phase": "collaboration",
+      "phase": "completed_baseline",
       "sourcePaths": [
         {
           "path": "apps/app/test/properties/p118-evidence-citations.test.ts",
-          "kind": "missing"
+          "kind": "file",
+          "sha256": "5e639cd79486ddd12b38bfb2085ae530c2407293d5d2729c623b8498a4b7fc70"
+        },
+        {
+          "path": "packages/domain/src/citations.ts",
+          "kind": "file",
+          "sha256": "f1f1e7cc3c14395998043ed862472c5a5d0cc30c931af86c01d6dbc985d4bbdf"
+        },
+        {
+          "path": "apps/app/src/records/citations.ts",
+          "kind": "file",
+          "sha256": "cca17d7f85c59f48d7b324fde2118e456ed1009759eabb6b94e26b7ddacddcb8"
+        },
+        {
+          "path": "packages/domain/test/citations.test.ts",
+          "kind": "file",
+          "sha256": "14bb344e86d0361c6872f206c03574220b9e7f7532ea3f85a4237430ed9b5848"
         }
       ],
       "gates": [
         "team_archive",
         "final_checkpoint_49"
       ],
-      "acceptance": "planned",
-      "evidence": null
+      "acceptance": "accepted",
+      "evidence": {
+        "task": "62.5",
+        "state": "accepted",
+        "reason": "Verified Property 118 against an independent model. One record cites a Source and a text through random sequences of citations with locators that are valid, reversed, out of range, cutting a character in two or of the wrong type for the target, edits of the cited Source and text, removals, attempts by a Member who may not edit, and loss of read access to the Source. After every step the citations each Member lists and exports are exactly the model's, each with the locator and content hash it was made with and the predicted current or earlier-version state, a refused step changes nothing, and a Member who cannot read the Source sees no trace of its identity. The model's locator rules are written out again and a deliberately broken code point rule is caught. Legacy label text without a mapping stays as written and unresolved, and a citation never rewrites it. Maximum encoded inputs are covered: an unresolved locator of 1,000 code points and a section of 200, a text range at the end of a 10,000 unit text, and the 1,001st citation of a record. This found that 1,000 astral characters exceeded the 4,000 byte limit of a stored locator and failed with a server error; a locator is now refused with a 422 naming its field when its stored form exceeds 4,000 bytes. Moves and restore are not tested because their callers are built in later tasks. No deployment or production certification is claimed.",
+        "sourcePaths": [
+          "packages/domain/src/citations.ts",
+          "apps/app/src/records/citations.ts"
+        ],
+        "testPaths": [
+          "apps/app/test/properties/p118-evidence-citations.test.ts",
+          "packages/domain/test/citations.test.ts"
+        ],
+        "correctionTasks": [],
+        "checks": [
+          "docs/acceptance/checks/local-tests.json"
+        ]
+      }
     },
     {
       "id": "62.6",
@@ -23698,9 +23731,7 @@
       "properties": [
         119
       ],
-      "prerequisites": [
-        "62.5"
-      ],
+      "prerequisites": [],
       "phase": "collaboration",
       "sourcePaths": [
         {
@@ -24211,7 +24242,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "4321881ac774de7a68a154cd274cf529d61a0a4dea7b5df21c1b0644e350a437"
+          "sha256": "09b91bf3f52a0e19224127c0ef3dcca8ca5f4d5a32709bbd860a16b70ff73801"
         },
         {
           "path": "packages/domain/src/compatibility.ts",
@@ -24261,7 +24292,7 @@
         {
           "path": "infra/releases/development.json",
           "kind": "file",
-          "sha256": "7ba410cdea5180efca89639ed3e28c5df4f5192bec17081ecef7c098f31b9ad3"
+          "sha256": "d9689e2d6a4fac92439ccd556069f85cbe57bbde886139c4ad9c7c27a5732a26"
         },
         {
           "path": "infra/releases/README.md",
@@ -24704,39 +24735,39 @@
   "phases": {
     "collaboration": {
       "firstWave": 0,
-      "lastWave": 15
+      "lastWave": 14
     },
     "privacy": {
-      "firstWave": 16,
-      "lastWave": 39
+      "firstWave": 15,
+      "lastWave": 38
     },
     "imports_and_log": {
-      "firstWave": 40,
-      "lastWave": 63
+      "firstWave": 39,
+      "lastWave": 62
     },
     "publication": {
-      "firstWave": 64,
-      "lastWave": 81
+      "firstWave": 63,
+      "lastWave": 80
     },
     "outside_and_ai": {
-      "firstWave": 82,
-      "lastWave": 129
+      "firstWave": 81,
+      "lastWave": 128
     },
     "recovery": {
-      "firstWave": 130,
-      "lastWave": 147
+      "firstWave": 129,
+      "lastWave": 146
     },
     "release_tooling": {
-      "firstWave": 148,
-      "lastWave": 177
+      "firstWave": 147,
+      "lastWave": 176
     },
     "staging_and_acceptance": {
-      "firstWave": 178,
-      "lastWave": 185
+      "firstWave": 177,
+      "lastWave": 184
     },
     "production_activation": {
-      "firstWave": 186,
-      "lastWave": 186
+      "firstWave": 185,
+      "lastWave": 185
     }
   },
   "gates": [

@@ -1122,6 +1122,23 @@
       "checks": [
         "docs/acceptance/checks/local-tests.json"
       ]
+    },
+    {
+      "task": "62.5",
+      "state": "accepted",
+      "reason": "Verified Property 118 against an independent model. One record cites a Source and a text through random sequences of citations with locators that are valid, reversed, out of range, cutting a character in two or of the wrong type for the target, edits of the cited Source and text, removals, attempts by a Member who may not edit, and loss of read access to the Source. After every step the citations each Member lists and exports are exactly the model's, each with the locator and content hash it was made with and the predicted current or earlier-version state, a refused step changes nothing, and a Member who cannot read the Source sees no trace of its identity. The model's locator rules are written out again and a deliberately broken code point rule is caught. Legacy label text without a mapping stays as written and unresolved, and a citation never rewrites it. Maximum encoded inputs are covered: an unresolved locator of 1,000 code points and a section of 200, a text range at the end of a 10,000 unit text, and the 1,001st citation of a record. This found that 1,000 astral characters exceeded the 4,000 byte limit of a stored locator and failed with a server error; a locator is now refused with a 422 naming its field when its stored form exceeds 4,000 bytes. Moves and restore are not tested because their callers are built in later tasks. No deployment or production certification is claimed.",
+      "sourcePaths": [
+        "packages/domain/src/citations.ts",
+        "apps/app/src/records/citations.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/properties/p118-evidence-citations.test.ts",
+        "packages/domain/test/citations.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
     }
   ]
 }

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "command": "npm test -- --reporter=json --outputFile=<temporary report>",
-  "recordedAt": "2026-10-30T17:44:20.120Z",
+  "recordedAt": "2026-10-30T17:57:32.671Z",
   "scope": "local-synthetic",
   "success": true,
   "suites": [
@@ -284,6 +284,12 @@
     {
       "path": "apps/app/test/properties/p116-question-lifecycle.test.ts",
       "passed": 5,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p118-evidence-citations.test.ts",
+      "passed": 6,
       "failed": 0,
       "skipped": 0
     },
@@ -1337,6 +1343,7 @@
     "apps/app/test/properties/p110-idempotent-mutations.test.ts": "870ba98db23a944fee8488b263ad9985ab4a0a1037ab7bc8ff2e073d3b1ae539",
     "apps/app/test/properties/p115-work-coordination.test.ts": "151a93c3fbfb0020b5f7d7594155a8d1058e4852e1028a5a512da2ac77d2abff",
     "apps/app/test/properties/p116-question-lifecycle.test.ts": "52e2ef3d6ccef465241d086c3a0af87527c361aa67639b8ca3a848fe349035b8",
+    "apps/app/test/properties/p118-evidence-citations.test.ts": "5e639cd79486ddd12b38bfb2085ae530c2407293d5d2729c623b8498a4b7fc70",
     "apps/app/test/properties/p23-permission-decisions.test.ts": "9e36301d1a8c79d20156d698207be8de30884abd016414f36551348286ffd27f",
     "apps/app/test/question-assessments.test.ts": "3b91777a6addf32187ab37921e14ef4c14eaa0b39e1d58380ed21174543768fa",
     "apps/app/test/question-entries.test.ts": "fd3b8419ca2f9eccc72ada76104c666c1fcefd4a164df3e06b75128db19b5501",
@@ -1406,7 +1413,7 @@
     "infra/recovery/deployment.example.json": "f50e284de933da91b761d0b6293f62caef82e8aa0c8db7c83e31e7eca5398bec",
     "infra/recovery/restore-proof.example.json": "2c02a645aaa612d1dd4f0bc537433a5e58764b4244a02562523aabc6d6a31554",
     "infra/releases/README.md": "73919ce7f8cc7b532d520dbc250f4f16ccd28f84e70e32d21d556190afe50ade",
-    "infra/releases/development.json": "7ba410cdea5180efca89639ed3e28c5df4f5192bec17081ecef7c098f31b9ad3",
+    "infra/releases/development.json": "d9689e2d6a4fac92439ccd556069f85cbe57bbde886139c4ad9c7c27a5732a26",
     "package-lock.json": "46bb71e749eeb2b853d3113a54c6b75e0a3a610f1178687a73334d4114e099d5",
     "package.json": "a57669ad85b1bb5873507b1ef7021825127f5e1aaa49ab3f7101b42ef8857e36",
     "packages/db/migrations/core/0007_restricted_access.sql": "68d6acff93c939939932102ad9a767541a9181815f983c24ebdcfc18ce3518a1",
@@ -1446,7 +1453,7 @@
     "packages/domain/src/bibliography.ts": "5d6178c0451a43e7c43fe88e9e676479bf85c935a1804a8a1b9269344141f169",
     "packages/domain/src/bounded-json.ts": "36aaecee5500df4b6caa606a9cc2f921e1a19bb90c1877efc3e9f30e1caf2139",
     "packages/domain/src/citation-export.ts": "d2f371de82c2d921a584c770f42db977300130b9b2a5998228cbb028c98c9c31",
-    "packages/domain/src/citations.ts": "694c68c14f6e23fe57e821865056ddf699208743fdfb8009009c489934929f23",
+    "packages/domain/src/citations.ts": "f1f1e7cc3c14395998043ed862472c5a5d0cc30c931af86c01d6dbc985d4bbdf",
     "packages/domain/src/compatibility.ts": "f669247a5a5cf3c4c95255c14ff5e2c4a679dd7af9896298700158b18d74cd38",
     "packages/domain/src/decisions.ts": "0734cbc503778cd53d4786fcae7dd56d6015cd206e2dc0f9acf9a32cb78e9bfd",
     "packages/domain/src/derivation-export.ts": "7869c29958f8966386254795b408e8de631a70822ca8b13eab3f11ce2c7c1a79",
@@ -1465,7 +1472,7 @@
     "packages/domain/src/value-sets.ts": "55a670695e02b02462b67eeb9288ee7ebb932e6e8c5640ace697a100fe1ff6f9",
     "packages/domain/src/work.ts": "0b19084e2a9b4663b33649c8bec82c9325be97ed45ef6bab470ee44924a4c5d7",
     "packages/domain/test/bounded-json.test.ts": "0693f415158d64adb06cedeb79d4bdd17569c3bde8681be03f315d0e386c7a8b",
-    "packages/domain/test/citations.test.ts": "21491aea704edf17bebd20ce4689502c29f563de4f3c7b1686868c7427aed00b",
+    "packages/domain/test/citations.test.ts": "14bb344e86d0361c6872f206c03574220b9e7f7532ea3f85a4237430ed9b5848",
     "packages/domain/test/decisions.test.ts": "048d0909e65e1e75a002783aa7ef17496ee72aadbff1e004a0a5077f648b9a63",
     "packages/domain/test/logical-search.test.ts": "73d419e143066b9882ecdfc0cfe3384e9ed80b4b8ea50b146563e9dc13e86635",
     "packages/domain/test/permissions.test.ts": "eac90b61da602579ed272cef565a05f57a785111ef03938e5df94c75161a8cd5",

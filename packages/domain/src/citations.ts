@@ -1,10 +1,11 @@
 import { z } from 'zod';
 import type { FileKind } from './file-kinds';
+import { utf8Bytes } from './resource-profile';
 import { cpLength } from './text';
 import { idSchema, textField } from './schemas/common';
 
 /** R54.2: at most 1,000 Evidence_Citations in a record, locator text of at most 1,000 characters, and bounded numbers. */
-export const CITATION_LIMITS = Object.freeze({ perRecord: 1000, locatorCodePoints: 1000, sectionCodePoints: 200, pageMax: 100_000, fieldKeyCodePoints: 100 });
+export const CITATION_LIMITS = Object.freeze({ perRecord: 1000, locatorCodePoints: 1000, sectionCodePoints: 200, locatorBytes: 4000, pageMax: 100_000, fieldKeyCodePoints: 100 });
 export const CITATION_ROLES = ['supports', 'contradicts', 'background', 'method'] as const;
 export type CitationRole = typeof CITATION_ROLES[number];
 export const CITATION_ROLE_NAMES: Readonly<Record<CitationRole, string>> = Object.freeze({ supports: 'Supports', contradicts: 'Contradicts', background: 'Background', method: 'Method' });
@@ -42,6 +43,10 @@ export const locatorSchema = z.discriminatedUnion('type', [
       if (locator.y + locator.height > 1 + 1e-9) report(['height'], 'The region extends beyond the bottom edge.');
       break;
     default:
+  }
+  // The stored form is capped at 4,000 bytes, so a locator of astral characters near the code point limit is refused here, never at the database.
+  if (utf8Bytes(JSON.stringify(locator), CITATION_LIMITS.locatorBytes) > CITATION_LIMITS.locatorBytes) {
+    report(locator.type === 'unresolved' ? ['text'] : locator.type === 'section' ? ['section'] : [], `The locator can take at most ${CITATION_LIMITS.locatorBytes} bytes when stored; shorten it.`);
   }
 });
 export type Locator = z.output<typeof locatorSchema>;
