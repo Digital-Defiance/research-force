@@ -15,6 +15,7 @@ import type { AiProvenance, REVISION_TARGET_TYPES } from './schema/core';
 export const GUARD_CODES = [
   'rev', 'evidence', 'superseding', 'last_admin', 'chain_tip', 'decision_open', 'preview_fresh', 'log_summary_owner', 'dissent_unique', 'frozen',
   'upload_ready', 'upload_limit', 'reply_parent', 'review_eligible', 'reviewer_eligible', 'review_open', 'access_owner',
+  'decision_participant', 'decision_wording', 'acknowledgement_version',
 ] as const;
 export type GuardCode = typeof GUARD_CODES[number];
 /** HTTP status and the rule each guard enforces, for the API's refusal (design "Guards"). */
@@ -36,6 +37,9 @@ export const GUARD_RULES: Readonly<Record<GuardCode, { readonly status: 409 | 42
   reviewer_eligible: { status: 422, rule: 'You are no longer an Eligible_Reviewer of this Review_Request (R17.10).' },
   review_open: { status: 422, rule: 'This Review_Request is already Reviewed (R17.3, R17.10).' },
   access_owner: { status: 422, rule: 'Only the Owner of a Research_Item can widen who reads it (R47.7).' },
+  decision_participant: { status: 422, rule: 'Only a named participant of a Team decision can record a response to it (R53.2, R53.3).' },
+  decision_wording: { status: 409, rule: 'The decision changed after you read it; read its current wording and respond again (R53.3).' },
+  acknowledgement_version: { status: 409, rule: 'Your response was changed after you opened it; read your latest response and try again (R53.3).' },
 });
 
 /** The change sequence after the batch's second statement has incremented it. */

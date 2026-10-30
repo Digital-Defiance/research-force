@@ -35,7 +35,7 @@ function insert<T extends SQLiteTable>(table: T, rows: readonly SeedRow<T>[]): s
 const SEEDED_SETTINGS = (Object.keys(SETTINGS) as SettingKey[]).filter((key) => key !== 'responsiblePerson');
 /** Permissions added after the seed migration; the migration that adds each one grants it to the built-in Roles. */
 export const PERMISSIONS_AFTER_SEED: ReadonlySet<string> = new Set([
-  'access.restrict', 'access.widen', 'hold.place', 'hold.lift', 'consent.give', 'consent.propose', 'dual.propose', 'dual.approve', 'dual.decline', 'attachment.move',
+  'access.restrict', 'access.widen', 'hold.place', 'hold.lift', 'consent.give', 'consent.propose', 'dual.propose', 'dual.approve', 'dual.decline', 'attachment.move', 'decision.acknowledge',
 ]);
 
 /**

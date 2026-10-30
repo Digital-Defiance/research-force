@@ -29,7 +29,7 @@ describe('the Research_Question migration', () => {
   it('accepts the new kind and no other unknown kind', async () => {
     const insert = (kind: string, id: string) => core.prepare(`INSERT INTO research_items (unit_id, kind, item_identifier, project_id, title, item_date_key, log_date_key) VALUES (?1,?2,?3,?4,'T','2026-10-27','2026-10-27')`).bind(id, kind, `RF-${id}`, PROJECT);
     expect(await refused(insert('research_question', '01J00000000000000000QUES01'))).toBe(false);
-    expect(await refused(insert('decision_record', '01J00000000000000000QUES02'))).toBe(true);
+    expect(await refused(insert('work_item', '01J00000000000000000QUES02'))).toBe(true);
   });
 
   it('stores groups and entries with one entry per target, ordered positions, and bounded counts', async () => {

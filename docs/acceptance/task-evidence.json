@@ -869,6 +869,36 @@
       "checks": [
         "docs/acceptance/checks/local-tests.json"
       ]
+    },
+    {
+      "task": "61.1",
+      "state": "accepted",
+      "reason": "Verified the Decision_Record kind, its storage and its personal acknowledgement guards. A decision stores a question of up to 2,000 characters, context and rationale of up to 20,000 each, 1 to 20 alternatives with descriptions, a selected-alternative or explicit deferred outcome, an Individual or Team scope, up to 50 named participants, up to 50 evidence citations, and a revisit date or condition; the state, adoption, supersession and wording-digest columns belong to the server and are not input fields. A digest of the question, context, rationale, alternatives and outcome identifies the wording, and a change to any of it starts a new wording version, while a change to participants, evidence, scope or the revisit fields does not. A personal response is a new version of the acting Member's own row, bound to the digest and wording version it answered, and never changes once written; the writer takes the Member from the batch, and three guards refuse it unless the Member is a named active participant of a live Team decision, the wording is still the one read, and the Member's latest response is the one replaced. A response to older wording reads as earlier wording and a missing response stays no response, so agreement is never inferred. The new self-only decision.acknowledge Permission is granted to both built-in Roles for the Member's own response alone. Evidence must be citations recorded from the decision, so it is added after the decision is saved; a Member sees only the evidence whose Source they can read and cannot rearrange evidence they cannot see; a superseded or withdrawn decision is kept as it was. Search indexes the decision text, permanent deletion removes its rows and only clears the pointers that named it, and the workspace does not offer a form for the kind until 61.2 builds the screens. Adoption, supersession and withdrawal operations, the response routes, notifications and public views follow in 61.2, and Property 117 is written in 61.3. The release tooling now lets an expansion add Permission grants while still refusing to change an existing one. No deployment or production certification is claimed.",
+      "sourcePaths": [
+        "packages/domain/src/decisions.ts",
+        "packages/domain/src/permissions.ts",
+        "packages/domain/src/schemas/items.ts",
+        "packages/db/src/schema/core/decisions.ts",
+        "packages/db/migrations/core/0014_decision_records.sql",
+        "packages/db/src/batch.ts",
+        "apps/app/src/records/decisions.ts",
+        "apps/app/src/records/kinds/decision.ts",
+        "apps/app/src/jobs/deletion.ts",
+        "apps/app/src/search/read.ts",
+        "tools/src/upgrade-store.ts"
+      ],
+      "testPaths": [
+        "packages/domain/test/decisions.test.ts",
+        "packages/domain/test/permissions.test.ts",
+        "apps/app/test/decision-records.test.ts",
+        "apps/app/test/migration-decision-records.test.ts",
+        "apps/app/test/properties/p23-permission-decisions.test.ts",
+        "tools/test/upgrade-store.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
     }
   ]
 }

@@ -4,6 +4,7 @@ import { Link, Navigate, Route, Routes, useParams, useSearchParams } from 'react
 import { ITEM_KIND_NAMES } from '@researchforce/domain/kind-names';
 import { ITEM_KINDS } from '@researchforce/domain/types';
 import type { ItemKind } from '@researchforce/domain/types';
+import { SUBMITTABLE_KINDS } from './items/forms/model';
 import { ActivityBadges, FeedScreen, SubmissionItemsScreen } from './activity/activity';
 import { useApiStatus } from './api';
 import { NotificationCentre } from './notifications/centre';
@@ -67,7 +68,7 @@ function StartPage() {
       <section aria-label="Submit">
         <h2>Submit a new record</h2>
         <ul className="rf-list">
-          {ITEM_KINDS.map((kind) => <li key={kind}><Link to={`/items/new/${kind}`}>{ITEM_KIND_NAMES[kind]}</Link></li>)}
+          {SUBMITTABLE_KINDS.map((kind) => <li key={kind}><Link to={`/items/new/${kind}`}>{ITEM_KIND_NAMES[kind]}</Link></li>)}
         </ul>
       </section>
     </div>

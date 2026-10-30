@@ -6,6 +6,7 @@ import { CONSENT_STATUSES } from '../types';
 import type { ItemKind } from '../types';
 import type { RichText } from '../richtext';
 import { bibliographySchema } from '../bibliography';
+import { DECISION_LIMITS, DECISION_SCOPES, alternativeSchema, outcomeSchema } from '../decisions';
 import { BUILT_IN_VALUE_IDS } from '../value-sets';
 import { distinctIds, documentDateSchema, enteredTimeSchema, fullDateSchema, idSchema, knownId, partialDateSchema, richTextSchema, selectedValue, textField, validDate, withChecks } from './common';
 import type { ReportIssue, ValidationContext } from './common';
@@ -211,6 +212,20 @@ function buildResearchItemSchema(kind: ItemKind, context: ValidationContext, opt
             seen.add(target);
           }
         }
+      });
+    case 'decision_record':
+      return finish(z.strictObject({
+        ...common, kind: z.literal('decision_record'), question: textField(DECISION_LIMITS.questionCodePoints, true), context: richTextSchema(DECISION_LIMITS.contextCodePoints).optional(),
+        rationale: richTextSchema(DECISION_LIMITS.rationaleCodePoints).optional(), alternatives: z.array(alternativeSchema).min(1).max(DECISION_LIMITS.alternatives),
+        outcome: outcomeSchema.optional(), scope: z.enum(DECISION_SCOPES).prefault('individual'),
+        participantIds: distinctIds(knownId(context.members.map((member) => member.id), 'Member'), 0, DECISION_LIMITS.participants).prefault([]),
+        evidenceCitationIds: distinctIds(idSchema, 0, DECISION_LIMITS.evidence).prefault([]),
+        revisitDate: fullDateSchema.refine((date) => !date.approx, { path: ['approx'], message: 'A revisit date is exact.' }).optional(), revisitCondition: textField(DECISION_LIMITS.revisitConditionCodePoints, true).optional(),
+      }), (raw, report) => {
+        const alternatives = Array.isArray(raw['alternatives']) ? raw['alternatives'].length : 0;
+        const outcome = raw['outcome'] as { kind?: unknown; alternative?: unknown } | undefined;
+        if (outcome?.kind === 'selected' && typeof outcome.alternative === 'number' && outcome.alternative >= alternatives) report(['outcome', 'alternative'], 'Choose one of the listed alternatives.');
+        if (raw['scope'] === 'team' && (!Array.isArray(raw['participantIds']) || raw['participantIds'].length === 0)) report(['participantIds'], 'A Team decision names the participants whose responses it lists.');
       });
     case 'topic': return finish(z.strictObject({ ...common, kind: z.literal('topic'), body: richTextSchema(50_000, true) }));
   }

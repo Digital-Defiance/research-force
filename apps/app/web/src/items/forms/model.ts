@@ -1,4 +1,5 @@
 import type { RichText } from '@researchforce/domain/richtext';
+import { ITEM_KINDS } from '@researchforce/domain/types';
 import type { ItemKind } from '@researchforce/domain/types';
 import type { ValueSetKind } from '@researchforce/domain/value-sets';
 import { EMPTY_RICH_TEXT } from '../../editor/spans';
@@ -46,6 +47,7 @@ export const KIND_FIELDS: Readonly<Record<ItemKind, readonly FieldSpec[]>> = {
     { name: 'sections', label: 'Entry Sections', kind: 'sections', required: true },
     logSummary(false), groupNote,
   ],
+  decision_record: [],
   research_question: [
     title,
     { name: 'question', label: 'Question', kind: 'longtext', max: 500, required: true },
@@ -246,3 +248,6 @@ export function needsMark(body: Record<string, unknown>): boolean {
     return !(key === 'eliminationScope' && Object.hasOwn(body, 'statusValueId'));
   });
 }
+
+/** The kinds the workspace offers a form for; a kind without one is reachable through its API only. */
+export const SUBMITTABLE_KINDS: readonly ItemKind[] = ITEM_KINDS.filter((kind) => KIND_FIELDS[kind].length > 0);

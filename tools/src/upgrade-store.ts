@@ -16,12 +16,19 @@ export function initializeUpgradeStore(db: DatabaseSync): void {
     CREATE TABLE IF NOT EXISTS _rf_release_checkpoints (release_id TEXT NOT NULL, job_id TEXT NOT NULL, definition_hash TEXT NOT NULL, specification_hash TEXT NOT NULL, cursor TEXT NOT NULL, generation INTEGER NOT NULL, processed INTEGER NOT NULL, complete INTEGER NOT NULL, PRIMARY KEY(release_id,job_id));`);
 }
 const operational = (name: string): boolean => name.startsWith('_rf_release_') || name.startsWith('sqlite_');
-interface PreservedTable { name: string; definitions: Record<string, unknown>[]; columns: string[]; digest: string; count: number }
+/** Tables an expansion may add rows to, such as the Permission grants of a new feature; their existing rows must not change. */
+const ADDITIVE_TABLES: ReadonlySet<string> = new Set(['role_permissions']);
+interface PreservedTable { name: string; definitions: Record<string, unknown>[]; columns: string[]; digest: string; count: number; rows?: ReadonlySet<string> }
+const rowText = (row: unknown): string => JSON.stringify(row, (_, v: unknown) => typeof v === 'bigint' ? { integer: String(v) } : v instanceof Uint8Array ? { blob: Buffer.from(v).toString('hex') } : v);
+function tableRows(db: DatabaseSync, name: string, columns: string[]): Set<string> {
+  const fields = columns.map(quote).join(',');
+  return new Set([...db.prepare(`SELECT ${fields} FROM ${quote(name)}`).iterate()].map(rowText));
+}
 function tableDigest(db: DatabaseSync, name: string, columns: string[]): { digest: string; count: number } {
   const hash = createHash('sha256'); let count = 0;
   const fields = columns.map(quote).join(',');
   for (const row of db.prepare(`SELECT ${fields} FROM ${quote(name)} ORDER BY ${fields}`).iterate()) {
-    const text = JSON.stringify(row, (_, v: unknown) => typeof v === 'bigint' ? { integer: String(v) } : v instanceof Uint8Array ? { blob: Buffer.from(v).toString('hex') } : v);
+    const text = rowText(row);
     hash.update(String(Buffer.byteLength(text))).update(':').update(text); count++;
   }
   return { digest: hash.digest('hex'), count };
@@ -33,7 +40,7 @@ export function preservationSnapshot(db: DatabaseSync) {
     if (operational(name) || table['type'] !== 'table') continue;
     const definitions = db.prepare(`PRAGMA table_info(${quote(name)})`).all();
     const columns = definitions.map((c) => String(c['name']));
-    tables.push({ name, definitions, columns, ...tableDigest(db, name, columns) });
+    tables.push({ name, definitions, columns, ...tableDigest(db, name, columns), ...(ADDITIVE_TABLES.has(name) ? { rows: tableRows(db, name, columns) } : {}) });
   }
   const objects = db.prepare("SELECT type,name,sql FROM sqlite_master WHERE type IN ('index','trigger') AND sql IS NOT NULL ORDER BY type,name").all().filter((o) => !operational(String(o['name'])));
   return { tables, objects };
@@ -42,6 +49,11 @@ export function assertPreserved(db: DatabaseSync, before: ReturnType<typeof pres
   for (const table of before.tables) {
     const definitions = db.prepare(`PRAGMA table_info(${quote(table.name)})`).all();
     for (const column of table.definitions) if (!definitions.some((c) => ['name', 'type', 'notnull', 'dflt_value', 'pk'].every((key) => c[key] === column[key]))) throw new Error(`Expansion changed an existing column: ${table.name}.`);
+    if (table.rows) {
+      const current = tableRows(db, table.name, table.columns);
+      if ([...table.rows].some((row) => !current.has(row))) throw new Error(`Expansion changed existing rows: ${table.name}.`);
+      continue;
+    }
     const now = tableDigest(db, table.name, table.columns);
     if (now.count !== table.count || now.digest !== table.digest) throw new Error(`Expansion changed existing rows: ${table.name}.`);
   }

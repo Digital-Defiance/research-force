@@ -13,6 +13,7 @@ export const LEGACY_RICH_FIELDS = [
   ['runs', 'scope', 'scope'], ['runs', 'parameters', 'parameters'], ['runs', 'notes', 'notes'],
   ['hypotheses', 'statement', 'statement'], ['hypotheses', 'elimination_scope', 'eliminationScope'], ['correspondences', 'content', 'content'],
   ['archival_requests', 'request_text', 'requestText'], ['archival_requests', 'reply_content', 'replyContent'], ['topics', 'body', 'body'], ['research_questions', 'introduction', 'introduction'],
+  ['decisions', 'context', 'context'], ['decisions', 'rationale', 'rationale'],
   ['replies', 'text', 'text'], ['dissent_notes', 'text', 'text'], ['dissent_notes', 'concerned_summary', 'concernedSummary'],
 ] as const;
 interface Cursor { readonly source: number; readonly after: string; readonly done: boolean }

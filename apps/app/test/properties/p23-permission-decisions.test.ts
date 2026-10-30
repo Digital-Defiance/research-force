@@ -60,6 +60,7 @@ function targetKinds(map: RolePermissionMap): fc.Arbitrary<PermissionTarget>[] {
       .map(({ nextRoleId, ...target }) => (nextRoleId === undefined ? target : { ...target, nextRoleId })),
     fc.record({ type: fc.constant('hold' as const), placedById: ownerArb, itemOwnerId: ownerArb }),
     fc.record({ type: fc.constant('publication_proposal' as const), consentingMemberId: ownerArb }),
+    fc.record({ type: fc.constant('decision_response' as const), memberId: ownerArb }),
     fc.record({ type: fc.constant('dual_approval' as const), proposedById: ownerArb }),
   ];
 }
@@ -121,6 +122,7 @@ function reference(member: PermissionMember, map: RolePermissionMap, permission:
     case 'access.widen': return t?.type === 'research_item' && ownOnly(t.ownerId);
     case 'attachment.move': return t?.type === 'attachment' && scoped(t.ownerId);
     case 'hold.lift': return t?.type === 'hold' && (ownOnly(t.placedById) || ownOnly(t.itemOwnerId));
+    case 'decision.acknowledge': return t?.type === 'decision_response' && ownOnly(t.memberId);
     case 'consent.give': return t?.type === 'publication_proposal' && ownOnly(t.consentingMemberId);
     case 'dual.approve': case 'dual.decline': return t?.type === 'dual_approval' && scope === 'any' && !mine(t.proposedById);
     default: return scope === 'any';

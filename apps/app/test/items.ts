@@ -38,6 +38,7 @@ export function itemBody(kind: ItemKind, projectId: ULID, overrides: Record<stri
     archival_request: { archiveOrDesk: { kind: 'member', id: '' }, requestText: rich('A synthetic request.'), statusValueId: asULID('0000000000000000000000A001') },
     topic: { body: rich('A synthetic topic body.') },
     research_question: { question: 'What did the synthetic tiles show?', groups: [] },
+    decision_record: { question: 'Which synthetic key range is searched next?', alternatives: [{ title: 'The first half', description: 'Search keys 0 through 49.' }, { title: 'The second half', description: 'Search keys 50 through 99.' }] },
   };
   return { ...common, ...fields[kind], ...overrides };
 }

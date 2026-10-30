@@ -47,7 +47,7 @@ describe('real migration and recovery rehearsals', () => {
     try {
       expect(output.report.productionCertified).toBe(false);
       expect(output.report.priorReleasedVersionsAvailable).toEqual([]);
-      expect(output.report.results.filter((r) => r.store === 'core').map((r) => r.checkpoint)).toEqual([13, 12, 11]);
+      expect(output.report.results.filter((r) => r.store === 'core').map((r) => r.checkpoint)).toEqual([14, 13, 12]);
       expect(output.report.results.every((r) => r.restoreReopened && r.seedVerified)).toBe(true);
       expect(output.report.results.every((r) => /^[a-f0-9]{64}$/.test(r.recoveryCopySha256))).toBe(true);
     } finally { rmSync(output.directory, { recursive: true, force: true }); }
@@ -58,12 +58,12 @@ describe('real migration and recovery rehearsals', () => {
     try {
       applyUpgrade(db, ROOT, manifest, 'search', { phase: 'expand' }); db.exec(buildDevSeed().search);
       const count = () => db.prepare("SELECT count(*) AS n FROM search_fts WHERE search_fts MATCH 'synthetic'").get()?.['n'];
-      expect(count()).toBe(9);
+      expect(count()).toBe(10);
       expect(() => searchIndexSlice(db, manifest, () => { throw new Error('crash'); })).toThrow(/crash/);
-      expect(count()).toBe(9); expect(db.prepare('SELECT count(*) AS n FROM _rf_release_checkpoints').get()?.['n']).toBe(0);
+      expect(count()).toBe(10); expect(db.prepare('SELECT count(*) AS n FROM _rf_release_checkpoints').get()?.['n']).toBe(0);
       let slices = 0; let result;
       do { result = searchIndexSlice(db, manifest); slices++; } while (!result.complete);
-      expect(slices).toBe(5); expect(result.processed).toBe(9); expect(count()).toBe(9);
+      expect(slices).toBe(5); expect(result.processed).toBe(10); expect(count()).toBe(10);
       expect(searchIndexSlice(db, manifest).generation).toBe(result.generation);
     } finally { db.close(); }
   });
@@ -75,7 +75,7 @@ describe('real migration and recovery rehearsals', () => {
       expect(() => adoptSchema(db, ROOT, manifest, 'core', 7)).toThrow(/DDL/);
       adoptSchema(db, ROOT, manifest, 'core', 8);
       expect(() => adoptSchema(db, ROOT, manifest, 'core', 8)).toThrow(/already/);
-      expect(applyUpgrade(db, ROOT, manifest, 'core', { phase: 'expand' }).applied).toEqual(['0009_files', '0010_logical_fields', '0011_operation_keys', '0012_research_questions', '0013_evidence_citations']);
+      expect(applyUpgrade(db, ROOT, manifest, 'core', { phase: 'expand' }).applied).toEqual(['0009_files', '0010_logical_fields', '0011_operation_keys', '0012_research_questions', '0013_evidence_citations', '0014_decision_records']);
       expect(applyUpgrade(db, ROOT, manifest, 'core', { phase: 'expand' }).applied).toEqual([]);
       db.exec("UPDATE _rf_release_migrations SET sha256='changed' WHERE revision=8");
       expect(() => applyUpgrade(db, ROOT, manifest, 'core', { phase: 'expand' })).toThrow(/divergent/);
@@ -151,5 +151,36 @@ describe('bounded restartable backfills and contraction', () => {
         [{ id: 'preserved', email: 'other@example.test' }, members, 'preserved'],
       ] as const) expect(() => reconcileBootstrapIdentity(bootstrap, backedUp, verified)).toThrow(/reconciled/);
     } finally { f.close(); }
+  });
+});
+
+describe('preserving rows through an expansion', () => {
+  const database = () => {
+    const db = new DatabaseSync(':memory:');
+    db.exec("CREATE TABLE role_permissions (role_id TEXT NOT NULL, permission TEXT NOT NULL, scope TEXT NOT NULL, PRIMARY KEY(role_id, permission)); CREATE TABLE notes (id TEXT PRIMARY KEY, text TEXT);");
+    db.exec("INSERT INTO role_permissions VALUES ('R', 'item.edit', 'own'); INSERT INTO notes VALUES ('N', 'kept');");
+    return db;
+  };
+
+  it('lets an expansion grant a new Permission but not change or remove an existing grant', () => {
+    const db = database();
+    try {
+      const before = preservationSnapshot(db);
+      db.exec("INSERT INTO role_permissions VALUES ('R', 'decision.acknowledge', 'own')");
+      expect(() => assertPreserved(db, before)).not.toThrow();
+      db.exec("UPDATE role_permissions SET scope = 'any' WHERE permission = 'item.edit'");
+      expect(() => assertPreserved(db, before)).toThrow(/existing rows: role_permissions/);
+      db.exec("UPDATE role_permissions SET scope = 'own' WHERE permission = 'item.edit'; DELETE FROM role_permissions WHERE permission = 'item.edit'");
+      expect(() => assertPreserved(db, before)).toThrow(/existing rows: role_permissions/);
+    } finally { db.close(); }
+  });
+
+  it('still refuses any added row in a table that is not a grant table', () => {
+    const db = database();
+    try {
+      const before = preservationSnapshot(db);
+      db.exec("INSERT INTO notes VALUES ('M', 'added')");
+      expect(() => assertPreserved(db, before)).toThrow(/existing rows: notes/);
+    } finally { db.close(); }
   });
 });

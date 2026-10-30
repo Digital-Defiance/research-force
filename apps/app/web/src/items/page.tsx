@@ -19,7 +19,7 @@ import { useApi } from '../api';
 import { useSession } from '../session';
 import { DisclosureStatus, formatDate, LoadState, Notice, PersonLink, useLoad } from '../ui';
 import { partyName } from './forms/inputs';
-import { KIND_FIELDS } from './forms/model';
+import { KIND_FIELDS, SUBMITTABLE_KINDS } from './forms/model';
 import { QuestionBody } from './question/question-body';
 import type { CorrespondencePartyValue, CountValue, DateValue, DocumentDateValue, FieldSpec, PartyValue } from './forms/model';
 
@@ -282,7 +282,7 @@ export function ItemDetails({ data }: { readonly data: ItemPageData }) {
       <section className="rf-section" aria-label="Submit from here">
         <h2>Submit a new record in this Project</h2>
         <ul className="rf-actions rf-list">
-          {ITEM_KINDS.map((kind) => <li key={kind}><Link to={`/items/new/${kind}?unit=${item.id}`}>{ITEM_KIND_NAMES[kind]}</Link></li>)}
+          {SUBMITTABLE_KINDS.map((kind) => <li key={kind}><Link to={`/items/new/${kind}?unit=${item.id}`}>{ITEM_KIND_NAMES[kind]}</Link></li>)}
         </ul>
       </section>
     </article>

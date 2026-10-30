@@ -13,7 +13,7 @@ export const PERMISSIONS = [
   'project.create', 'project.edit', 'item.move', 'moderation.decide', 'member.invite', 'member.role', 'member.revoke',
   'role.add', 'role.edit', 'valueSet.manage', 'rights.markPublication', 'methods.describe', 'policy.edit', 'settings.edit',
   'import.run', 'export.manage', 'backup.manage', 'access.restrict', 'access.widen', 'hold.place', 'hold.lift', 'consent.give', 'consent.propose',
-  'dual.propose', 'dual.approve', 'dual.decline', 'attachment.move',
+  'dual.propose', 'dual.approve', 'dual.decline', 'attachment.move', 'decision.acknowledge',
 ] as const;
 export type Permission = typeof PERMISSIONS[number];
 export type PermissionScope = 'any' | 'own' | 'other' | 'eligible';
@@ -28,7 +28,7 @@ const contributor: PermissionGrants = Object.freeze({
   'item.edit': 'own', 'item.correct': 'own', 'item.withdraw': 'own', 'section.edit': 'own', 'logSummary.write': 'own',
   'link.add': 'any', 'link.remove': 'own', 'review.request': 'any', 'review.complete': 'eligible',
   'party.doNotName.on': 'any', 'profile.edit': 'own', 'dissent.attach': 'other', 'dissent.edit': 'own', 'dissent.withdraw': 'own', 'ai.draft.logSummary': 'own',
-  'access.restrict': 'own', 'access.widen': 'own', 'hold.place': 'any', 'hold.lift': 'own', 'consent.give': 'own', 'attachment.move': 'own',
+  'access.restrict': 'own', 'access.widen': 'own', 'hold.place': 'any', 'hold.lift': 'own', 'consent.give': 'own', 'attachment.move': 'own', 'decision.acknowledge': 'own',
 });
 const administrator: PermissionGrants = Object.freeze({
   ...Object.fromEntries(PERMISSIONS.map((permission) => [permission, 'any'])), ...contributor,
@@ -58,6 +58,7 @@ export type PermissionTarget =
   | { readonly type: 'member'; readonly member: PermissionMember; readonly activeAdministratorCount: number; readonly nextRoleId?: ULID }
   | { readonly type: 'hold'; readonly placedById: ULID; readonly itemOwnerId: ULID }
   | { readonly type: 'publication_proposal'; readonly consentingMemberId: ULID }
+  | { readonly type: 'decision_response'; readonly memberId: ULID }
   | { readonly type: 'dual_approval'; readonly proposedById: ULID };
 
 function currentRole(ctx: PermissionContext): RoleDefinition | undefined {
@@ -118,6 +119,7 @@ export function can(ctx: PermissionContext, permission: Permission, target?: Per
     case 'access.widen': return ownScope && target?.type === 'research_item' && own(target.ownerId);
     case 'attachment.move': return target?.type === 'attachment' && (scope === 'any' || (scope === 'own' && own(target.ownerId)));
     case 'hold.lift': return ownScope && target?.type === 'hold' && (own(target.placedById) || own(target.itemOwnerId));
+    case 'decision.acknowledge': return ownScope && target?.type === 'decision_response' && own(target.memberId);
     case 'consent.give': return ownScope && target?.type === 'publication_proposal' && own(target.consentingMemberId);
     case 'dual.approve': case 'dual.decline': return scope === 'any' && target?.type === 'dual_approval' && !own(target.proposedById);
     case 'backup.manage': case 'party.doNotName.off': return scope === 'any' && isAdministrator(ctx);

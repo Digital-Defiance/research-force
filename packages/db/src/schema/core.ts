@@ -5,4 +5,5 @@ export * from './core/activity';
 export * from './core/work';
 export * from './core/fields';
 export * from './core/evidence';
+export * from './core/decisions';
 export * from './core/operations';
