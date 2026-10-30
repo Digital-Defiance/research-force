@@ -14,12 +14,12 @@
   ],
   "schemas": {
     "expanded": {
-      "core": 19,
+      "core": 20,
       "search": 3,
       "public": 0
     },
     "contracted": {
-      "core": 19,
+      "core": 20,
       "search": 3,
       "public": 0
     }
@@ -29,8 +29,8 @@
       "name": "app",
       "schemas": {
         "core": {
-          "min": 19,
-          "max": 19
+          "min": 20,
+          "max": 20
         },
         "search": {
           "min": 3,
@@ -46,8 +46,8 @@
       "name": "submit",
       "schemas": {
         "core": {
-          "min": 19,
-          "max": 19
+          "min": 20,
+          "max": 20
         }
       }
     },
@@ -55,8 +55,8 @@
       "name": "dl",
       "schemas": {
         "core": {
-          "min": 19,
-          "max": 19
+          "min": 20,
+          "max": 20
         }
       }
     },
@@ -211,6 +211,13 @@
       "phase": "baseline"
     },
     {
+      "store": "core",
+      "revision": 20,
+      "tag": "0020_compute_packages",
+      "sha256": "e97daf77029ee390b5580542b412992169cd67240bce9c351ea538b3024497e6",
+      "phase": "baseline"
+    },
+    {
       "store": "search",
       "revision": 0,
       "tag": "0000_schema",
@@ -345,7 +352,7 @@
     },
     {
       "path": "apps/app/src/api/app.ts",
-      "sha256": "e54812cf8a4ed36ffd18c160a3e8732b8662e1db668824d2da2941d1fde2d5af"
+      "sha256": "408691934b96ee3ff69230008f0b978d4029608abc9699f370c99aab7b9864fe"
     },
     {
       "path": "apps/app/src/api/csrf.ts",
@@ -374,6 +381,10 @@
     {
       "path": "apps/app/src/api/routes/citations.ts",
       "sha256": "bbc31959823629d54825d9f7b1e4f2692edc58935e83f1c650c5cd1c337fa860"
+    },
+    {
+      "path": "apps/app/src/api/routes/compute.ts",
+      "sha256": "67306ad936da87a0606a2453ff5d63d03f9c7f92dc654a726b53478cbfb463e9"
     },
     {
       "path": "apps/app/src/api/routes/decisions.ts",
@@ -537,7 +548,7 @@
     },
     {
       "path": "apps/app/src/jobs/deletion.ts",
-      "sha256": "135b1da48313011f1b60e6e64def084d2ba663d310ebbe1daf7abdfba780b50e"
+      "sha256": "8d1dec2e461e61b310a0c971e310ec71a42f9bfe48b36398ac70f81073898ec1"
     },
     {
       "path": "apps/app/src/local/mailer.ts",
@@ -618,6 +629,10 @@
     {
       "path": "apps/app/src/records/citations.ts",
       "sha256": "cca17d7f85c59f48d7b324fde2118e456ed1009759eabb6b94e26b7ddacddcb8"
+    },
+    {
+      "path": "apps/app/src/records/compute-packages.ts",
+      "sha256": "2da1544c50e99c08a09839bc7174d03d87952615dd6cc0d832ee3e3b1b604210"
     },
     {
       "path": "apps/app/src/records/decision-operations.ts",
@@ -1084,6 +1099,10 @@
       "sha256": "eb68d2540efc00348c3abe56090a81fae66cc6c6d8d109d39651c14c20a7d761"
     },
     {
+      "path": "packages/db/src/schema/core/compute.ts",
+      "sha256": "1cd42ed26da56042e72913a48ea5d170f174873544c8192d8b19a495dd301425"
+    },
+    {
       "path": "packages/db/src/schema/core/decisions.ts",
       "sha256": "0edb7f32bf1d112cc1e0d24af3b0215c4352ff8d1dcb8510b04482da18416ddf"
     },
@@ -1125,7 +1144,7 @@
     },
     {
       "path": "packages/db/src/schema/core.ts",
-      "sha256": "398590d6261b09d76bab9f85aec9513c812978e59dc236583fbfaab7fe6d2320"
+      "sha256": "34ee4639c08095b16ecaf692fb2cde21a2988377b0fc95428a1dfddb545b33f8"
     },
     {
       "path": "packages/db/src/schema/public.ts",
@@ -1230,6 +1249,10 @@
     {
       "path": "packages/domain/src/compatibility.ts",
       "sha256": "f669247a5a5cf3c4c95255c14ff5e2c4a679dd7af9896298700158b18d74cd38"
+    },
+    {
+      "path": "packages/domain/src/compute.ts",
+      "sha256": "eb85ac007dcf659a0f551ba10ecea05fb51129a3c977ff780b2dd12783f51ba6"
     },
     {
       "path": "packages/domain/src/dates.ts",

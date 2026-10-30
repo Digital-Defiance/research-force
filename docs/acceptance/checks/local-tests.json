@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "command": "npm test -- --reporter=json --outputFile=<temporary report>",
-  "recordedAt": "2026-10-30T19:32:28.708Z",
+  "recordedAt": "2026-10-30T19:57:33.623Z",
   "scope": "local-synthetic",
   "success": true,
   "suites": [
@@ -38,6 +38,12 @@
     {
       "path": "apps/app/test/citations.test.ts",
       "passed": 13,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/compute-packages.test.ts",
+      "passed": 18,
       "failed": 0,
       "skipped": 0
     },
@@ -828,6 +834,12 @@
       "skipped": 0
     },
     {
+      "path": "packages/domain/test/compute.test.ts",
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
       "path": "packages/domain/test/dates.test.ts",
       "passed": 34,
       "failed": 0,
@@ -1281,10 +1293,11 @@
   "files": {
     "README.md": "5586119f3717b609a4ec434dc2df22976d2d199f22f3b899111a94b2fe734884",
     "apps/app/src/activity/feed.ts": "9b74f0a76f927852265149a64fc2931155214083cc9d4a2294dfa0371c9bc5c0",
-    "apps/app/src/api/app.ts": "e54812cf8a4ed36ffd18c160a3e8732b8662e1db668824d2da2941d1fde2d5af",
+    "apps/app/src/api/app.ts": "408691934b96ee3ff69230008f0b978d4029608abc9699f370c99aab7b9864fe",
     "apps/app/src/api/csrf.ts": "15e77070ae956446846623fadb946e8d763749b039f1342d0df65b90ad660516",
     "apps/app/src/api/idempotency.ts": "5b80f5da9bb36815b5d222f26a779dbd8471f075419f6e71724ef00755a4e059",
     "apps/app/src/api/routes/citations.ts": "bbc31959823629d54825d9f7b1e4f2692edc58935e83f1c650c5cd1c337fa860",
+    "apps/app/src/api/routes/compute.ts": "67306ad936da87a0606a2453ff5d63d03f9c7f92dc654a726b53478cbfb463e9",
     "apps/app/src/api/routes/decisions.ts": "2ebccc140ade1adab9ad6094d5a5f72e67c61263459f438717bea424db3aa7b9",
     "apps/app/src/api/routes/derivations.ts": "a320791bd7416c26a08d7eb690903460885d68c2b5266fa27042b3495fcdd692",
     "apps/app/src/api/routes/items.ts": "4ea6b42052f132ecdfba7f31af3d47f6637a47a83f8a54d3f0556747de1baf28",
@@ -1299,7 +1312,7 @@
     "apps/app/src/env.ts": "8a2694fa3b3fcee04dbb3b8b91285284c20d7adcad59b5dc859ead9883a1cc9d",
     "apps/app/src/files/attachments.ts": "8d80d0ea45aea04341a0de12e29d6a6d31fddffda922da1825be6ad244fdb15f",
     "apps/app/src/index.ts": "74ba6f2607ae7e6d22162767623eacdd6974be7ee2800b501f863b4401bb0451",
-    "apps/app/src/jobs/deletion.ts": "135b1da48313011f1b60e6e64def084d2ba663d310ebbe1daf7abdfba780b50e",
+    "apps/app/src/jobs/deletion.ts": "8d1dec2e461e61b310a0c971e310ec71a42f9bfe48b36398ac70f81073898ec1",
     "apps/app/src/local.ts": "7f2726c7ad7069da6d06b84cdb624adb75b96a02dbb40c3e6a8a49eb9eded406",
     "apps/app/src/local/mailer.ts": "8407f4dbe617580d2222e9f0ff5f929e1789828a5b27d4563f08b388120abd35",
     "apps/app/src/local/runtime.ts": "4be8c5ece99dd676d3224c54f34779be717a6b081b70bf91808dfb816165b0d6",
@@ -1313,6 +1326,7 @@
     "apps/app/src/records/assessments.ts": "1df8c50ae78f5f8213928b8a89f7fe579252085a32206ff84e0ab09effe1ebd5",
     "apps/app/src/records/citation-navigation.ts": "17423dce670669eb073036cb13ea83771fc33411344789cb557eed7fd2fe871e",
     "apps/app/src/records/citations.ts": "cca17d7f85c59f48d7b324fde2118e456ed1009759eabb6b94e26b7ddacddcb8",
+    "apps/app/src/records/compute-packages.ts": "2da1544c50e99c08a09839bc7174d03d87952615dd6cc0d832ee3e3b1b604210",
     "apps/app/src/records/decision-operations.ts": "9ef2e6d23853f2ee8b34d6b90c2122e6ab58ceebac90258b985c489cb038f20c",
     "apps/app/src/records/decisions.ts": "443d872865231e98885e561a2d0abacc692009317e9f55b21fe6cdb9af10331c",
     "apps/app/src/records/derivation-export.ts": "11e3496b199489b2bce7c25019f5c7d052e629ef810008b12bc925d94c4b82ec",
@@ -1343,6 +1357,7 @@
     "apps/app/test/api-foundation.test.ts": "84bc0dbd53d1e47615b6dd5f46fe7646380061b83bdcb7a0c2cf3a502f14ec8a",
     "apps/app/test/citation-navigation.test.ts": "70ce81262ee7bebf997945d51c48e41f003c861a8e3e92c17705601fa5c4261a",
     "apps/app/test/citations.test.ts": "e9fe4442491cd9dcee8457b57455d618a1d7ca9c1b932aeaa1d33fdd55524ccd",
+    "apps/app/test/compute-packages.test.ts": "f499772f07fd3bb3a3ed40923e599d3754c53da3d3493427d6bbf1e6db6841cf",
     "apps/app/test/decision-operations.test.ts": "a141cf5dcff5728df2d79f43c66d5e389421d3697bfa98b832e2dc9180f3c5b5",
     "apps/app/test/decision-records.test.ts": "cc85264564417bf5f2eff2189ad4f6121b95e6ea9b8410d981be961daeac6def",
     "apps/app/test/derivation-interchange.test.ts": "c256c5239e340763bf0dc39715dd99dfb58d48e9e68f26c1b122af588ac48676",
@@ -1444,7 +1459,7 @@
     "infra/recovery/deployment.example.json": "f50e284de933da91b761d0b6293f62caef82e8aa0c8db7c83e31e7eca5398bec",
     "infra/recovery/restore-proof.example.json": "2c02a645aaa612d1dd4f0bc537433a5e58764b4244a02562523aabc6d6a31554",
     "infra/releases/README.md": "73919ce7f8cc7b532d520dbc250f4f16ccd28f84e70e32d21d556190afe50ade",
-    "infra/releases/development.json": "4595d6e7c455c8155a32b524d300691a967c03412b8557142042a408f033e497",
+    "infra/releases/development.json": "0a1af6558e0792f2943d77fae50d21d76bcaf6ae288b4fe423558bcfe885a92f",
     "package-lock.json": "46bb71e749eeb2b853d3113a54c6b75e0a3a610f1178687a73334d4114e099d5",
     "package.json": "a57669ad85b1bb5873507b1ef7021825127f5e1aaa49ab3f7101b42ef8857e36",
     "packages/db/migrations/core/0007_restricted_access.sql": "68d6acff93c939939932102ad9a767541a9181815f983c24ebdcfc18ce3518a1",
@@ -1459,7 +1474,7 @@
     "packages/db/migrations/core/0018_artifact_derivations.sql": "54590d599583ed976a36fd721e38eefe08f99bf7918ae4e122bdd92cae8e803d",
     "packages/db/migrations/core/meta/0010_snapshot.json": "cfcb5ae3332aca25c9591b3f5721a042b4671a1922d271da6eb37a34e407efdc",
     "packages/db/migrations/core/meta/0011_snapshot.json": "0b9b9389bb369a8101af72f38a11d1361abedb4a3dfc943fef8f9aa1f85d26b7",
-    "packages/db/migrations/core/meta/_journal.json": "d014075d49d4fe27b06339a18d85c6f637b848ba12b1ffa27c3dda7bde3adaa0",
+    "packages/db/migrations/core/meta/_journal.json": "10d44ed2943a3175a11438815ce50cc51ed6df04908de049e885161d623f141b",
     "packages/db/migrations/search/0003_logical_search.sql": "54217825ac2bf02efa2a5cbfad558ec57f62f03b88a8398a6909d2615938b16b",
     "packages/db/migrations/search/meta/0003_snapshot.json": "9660b0ac8ff7cb06fb450a3b6ffcd1ce3e7ed919af3cd46e63cab6e91345d434",
     "packages/db/migrations/search/meta/_journal.json": "3ddae4a6d53af9ffb459f579988f2c3e98da7ddf51ad027ed3866211c410a4fb",
@@ -1469,7 +1484,8 @@
     "packages/db/src/field-backfill.ts": "80b12b528f4b011e541fa17ac702e934b1922a0b85fedc1e211204248c5c3ee0",
     "packages/db/src/field-snapshots.ts": "0539cfb9c1aad0621f8a2831d16dce1922d1d38af3ff047de0b78bb1f414d36d",
     "packages/db/src/field-versions.ts": "de69c96656b7f0b91b6ee246a7353a654a35664cc11838b93a8fdb89aa00fed4",
-    "packages/db/src/schema/core.ts": "398590d6261b09d76bab9f85aec9513c812978e59dc236583fbfaab7fe6d2320",
+    "packages/db/src/schema/core.ts": "34ee4639c08095b16ecaf692fb2cde21a2988377b0fc95428a1dfddb545b33f8",
+    "packages/db/src/schema/core/compute.ts": "1cd42ed26da56042e72913a48ea5d170f174873544c8192d8b19a495dd301425",
     "packages/db/src/schema/core/decisions.ts": "0edb7f32bf1d112cc1e0d24af3b0215c4352ff8d1dcb8510b04482da18416ddf",
     "packages/db/src/schema/core/derivations.ts": "f364ad3a79811c01ff8fe304e3dfbcd8fa5b956f5ceabc4d74b2df3f19c9c318",
     "packages/db/src/schema/core/evidence.ts": "2eefd30cba0e26da5995a0afe9f55db690006dd429bbefaebd47c1566f66e172",
@@ -1486,6 +1502,7 @@
     "packages/domain/src/citation-export.ts": "d2f371de82c2d921a584c770f42db977300130b9b2a5998228cbb028c98c9c31",
     "packages/domain/src/citations.ts": "f1f1e7cc3c14395998043ed862472c5a5d0cc30c931af86c01d6dbc985d4bbdf",
     "packages/domain/src/compatibility.ts": "f669247a5a5cf3c4c95255c14ff5e2c4a679dd7af9896298700158b18d74cd38",
+    "packages/domain/src/compute.ts": "eb85ac007dcf659a0f551ba10ecea05fb51129a3c977ff780b2dd12783f51ba6",
     "packages/domain/src/decisions.ts": "21720370fefd2a383ee3d5076f3d10f66bb1bbf329d9015dbaab4998565816cf",
     "packages/domain/src/derivation-export.ts": "7869c29958f8966386254795b408e8de631a70822ca8b13eab3f11ce2c7c1a79",
     "packages/domain/src/derivations.ts": "953d3abc8b0a9baaf3fdd372a32962c10ec1b9c0d40ac0801cfe193585eca8a3",
@@ -1504,6 +1521,7 @@
     "packages/domain/src/work.ts": "0b19084e2a9b4663b33649c8bec82c9325be97ed45ef6bab470ee44924a4c5d7",
     "packages/domain/test/bounded-json.test.ts": "0693f415158d64adb06cedeb79d4bdd17569c3bde8681be03f315d0e386c7a8b",
     "packages/domain/test/citations.test.ts": "14bb344e86d0361c6872f206c03574220b9e7f7532ea3f85a4237430ed9b5848",
+    "packages/domain/test/compute.test.ts": "d7becc413c96f852f6e5fa52afa1797d98bc210193a5f887845bb1cbcda1754f",
     "packages/domain/test/decisions.test.ts": "9f33ec53aac5464424e1d039a36a84bfaa1573376bbc5bc2e9d1002048cf51bd",
     "packages/domain/test/logical-search.test.ts": "73d419e143066b9882ecdfc0cfe3384e9ed80b4b8ea50b146563e9dc13e86635",
     "packages/domain/test/permissions.test.ts": "eac90b61da602579ed272cef565a05f57a785111ef03938e5df94c75161a8cd5",
@@ -1560,13 +1578,13 @@
     "tools/src/upgrade-store.ts": "b3ef2bb76403c81c7e93086be6e72a2179bca06c5aa15c51943ffc8efc7db855",
     "tools/test/check-specs.test.ts": "b0b0a9c4e9b6afe7e0471d681ff979b0ab84690b966d3769907da121fcb41bc7",
     "tools/test/dev-config.test.ts": "eaa105ae1bd43d0b6082bfb7dcf5ba6925cd9a8b5f5891ea7b7ad210ae362dcf",
-    "tools/test/field-migration.test.ts": "d88e9e7bcfd9182da6c0e567f989a1569c03b5b0a726a719ec431d03e4a9b327",
+    "tools/test/field-migration.test.ts": "ea03b426abf26fe590f9243cb06fab961eb83373e6347e01b12cba05fba546a2",
     "tools/test/local-dev.test.ts": "7d1ab7c47ed14c6431a7965091c7d99516a30f8a0a61191f8747f0c320b84fd1",
     "tools/test/profile-certification.test.ts": "2c656d247375979d847975865a073277f19e9a1bf36f3249308206a672e5a22f",
     "tools/test/release-compatibility.test.ts": "c0190302da8efc74cd2fd681fd978cadeb1346df7925ae85de20f7977c3e77ee",
     "tools/test/release-fixtures.ts": "b577cd9f043e527ae56a3a12e1dd35c73941e8e2167bf92858c33118aebc310c",
-    "tools/test/release-tools.test.ts": "7aa75c29e763314566160ac6e95d430a90df5f83d59aa78513ee9fab08517f25",
-    "tools/test/upgrade-store.test.ts": "87b80602a2173d05ba9bf551707014bde8e37bf707c996ecd31eac196ef5d567",
+    "tools/test/release-tools.test.ts": "6117961d50f05ce8fba1f79b0d0ac97c403a5972d993342dab67200b501b20c5",
+    "tools/test/upgrade-store.test.ts": "58b7a6a43043893d2db1391490ee59b9249165a3b972d10cf077ea1468ef28cb",
     "tsconfig.tooling.json": "4b45be249bedb7fa23a041f2e71ad7849caeaab2485b9811e68c4273e34e9ecb",
     "vitest.config.ts": "b8633df9139ed21f4e9342f24deb5bd7c4e25e797734fbb3bb5e213a47375384"
   }

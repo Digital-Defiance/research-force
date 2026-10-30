@@ -1188,6 +1188,25 @@
       "checks": [
         "docs/acceptance/checks/local-tests.json"
       ]
+    },
+    {
+      "task": "63.1",
+      "state": "accepted",
+      "reason": "Added versioned Compute_Packages for Runs. A package version is written as an ordinary edit of the Run (its Permission, revision check and history) and is never changed afterwards; triggers refuse any change to a stored version except the reproducibility state. The description holds the code repository with an exact commit or release, command or entrypoint, method version, structured configuration, environment, toolchain, hardware, dependencies, seeds, and input, output and checkpoint references. Values are stored as given: a configuration number is accepted only as a safe integer, so seeds and decimals are written as text and keep every digit, and a configuration of 262,144 bytes is stored in pieces of at most 20,000 characters. An Attachment is held by the archive and verified while its hash is the one recorded; an external reference is never held or verified, and is only stored, never fetched. Each missing ingredient is listed by name and sets Incomplete, none sets Specified, and Reproduced and Disputed are reserved for the independent attempts of 63.2. Secrets are refused by key name, by value shape and in addresses. An unreadable Attachment is left out of the list, the manifest and the export without a count, and the hash is then marked not recomputable. Validation writes nothing; the export is strict JSON whose manifest recomputes to the hash and records as the same package on another Run. Bounds are covered: 1,000 artifacts, 200 environment entries, a command of 2,000 characters, a repository of 500, and a configuration of 262,144 bytes, each with one more refused. Not done here: the scope and reproduction-attempt tables belong to 63.2, the screens to 63.3, and rights and disclosure gates on a published package wait for the Publisher and Research_Releases. No deployment or production certification is claimed.",
+      "sourcePaths": [
+        "apps/app/src/records/compute-packages.ts",
+        "apps/app/src/api/routes/compute.ts",
+        "packages/domain/src/compute.ts",
+        "packages/db/src/schema/core/compute.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/compute-packages.test.ts",
+        "packages/domain/test/compute.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
     }
   ]
 }

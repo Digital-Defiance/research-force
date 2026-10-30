@@ -131,6 +131,8 @@ export const deletionJob: JobHandler = {
         ...['decision_alternatives', 'decision_participants', 'decision_evidence', 'decision_acknowledgements', 'decision_events'].map((table) => db.prepare(`DELETE FROM ${table} WHERE decision_id IN (SELECT value FROM json_each(?1))`).bind(list)),
         db.prepare('UPDATE decisions SET supersedes_id = NULL WHERE supersedes_id IN (SELECT value FROM json_each(?1))').bind(list),
         db.prepare('UPDATE decisions SET superseded_by_id = NULL WHERE superseded_by_id IN (SELECT value FROM json_each(?1))').bind(list),
+        // A Run's package versions go with it; an Attachment that a package named stays named by the package, and is no longer readable through it.
+        ...['compute_configuration', 'compute_environment', 'compute_artifacts', 'compute_packages'].map((table) => db.prepare(`DELETE FROM ${table} WHERE run_id IN (SELECT value FROM json_each(?1))`).bind(list)),
         db.prepare('DELETE FROM question_entries WHERE question_id IN (SELECT value FROM json_each(?1))').bind(list),
         db.prepare('DELETE FROM question_groups WHERE question_id IN (SELECT value FROM json_each(?1))').bind(list),
         db.prepare(`DELETE FROM revisions WHERE target_type = 'unit' AND target_id IN (SELECT value FROM json_each(?1)) AND NOT (kind = 'deletion' AND target_id = ?2)`).bind(list, params.unitId),
