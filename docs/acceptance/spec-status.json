@@ -2,15 +2,14 @@
   "inputs": {
     ".kiro/specs/research-collab-cms/requirements.md": "9e2d7cee953f4aeece04bad4a7dfae273a908c0df65c95beea7a4e572b71b5df",
     ".kiro/specs/research-collab-cms/design.md": "85df571e6efad1205603dca7addcea9c16f68252023d5483a2fbe81d705c4d93",
-    ".kiro/specs/research-collab-cms/tasks.md": "344e5fb526e78d13eb16a66b5f9218d386c4f2d5121e7560e0c77dacdbba356a",
-    "docs/acceptance/task-evidence.json": "0641cf72123dc0e635e8f1bfc8e8929e14046848b0564a046a4e98f0d59966d8"
+    ".kiro/specs/research-collab-cms/tasks.md": "a5a5e27baed8e91f149f457d5a000ae0d68f6457c5188743c47112a9024698f1",
+    "docs/acceptance/task-evidence.json": "b1f6e1c75f28bd2ff5925974e86164a5cc476a63f9690dba20ab4ca10410e304"
   },
   "schemaVersion": 1,
   "nextTasks": [
-    "60.6"
+    "62.2"
   ],
   "remainingBuildOrder": [
-    "60.6",
     "62.2",
     "62.3",
     "62.4",
@@ -207,11 +206,11 @@
     "criteria": 738,
     "properties": 126,
     "leafTasks": 406,
-    "checkedLeaves": 215,
+    "checkedLeaves": 216,
     "historicalUnverified": 182,
-    "acceptedWithLocalEvidence": 33,
-    "propertyFiles": 65,
-    "remainingWaves": 191,
+    "acceptedWithLocalEvidence": 34,
+    "propertyFiles": 66,
+    "remainingWaves": 190,
     "gates": 4
   },
   "structuralIssues": [],
@@ -10152,7 +10151,9 @@
         "50.11"
       ],
       "task": "60.6",
-      "testPaths": []
+      "testPaths": [
+        "apps/app/test/properties/p116-question-lifecycle.test.ts"
+      ]
     },
     {
       "id": 117,
@@ -19169,7 +19170,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "0641cf72123dc0e635e8f1bfc8e8929e14046848b0564a046a4e98f0d59966d8"
+          "sha256": "b1f6e1c75f28bd2ff5925974e86164a5cc476a63f9690dba20ab4ca10410e304"
         },
         {
           "path": "README.md",
@@ -19258,7 +19259,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "0641cf72123dc0e635e8f1bfc8e8929e14046848b0564a046a4e98f0d59966d8"
+          "sha256": "b1f6e1c75f28bd2ff5925974e86164a5cc476a63f9690dba20ab4ca10410e304"
         },
         {
           "path": "apps/app/src/index.ts",
@@ -19397,7 +19398,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "0641cf72123dc0e635e8f1bfc8e8929e14046848b0564a046a4e98f0d59966d8"
+          "sha256": "b1f6e1c75f28bd2ff5925974e86164a5cc476a63f9690dba20ab4ca10410e304"
         },
         {
           "path": "apps/app/src/local/services.ts",
@@ -21081,12 +21082,12 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "0641cf72123dc0e635e8f1bfc8e8929e14046848b0564a046a4e98f0d59966d8"
+          "sha256": "b1f6e1c75f28bd2ff5925974e86164a5cc476a63f9690dba20ab4ca10410e304"
         },
         {
           "path": "docs/acceptance/checks/local-tests.json",
           "kind": "file",
-          "sha256": "95a46dd634cfed75024734f7e18507b59998d7b32b2a0aa22aeef050dc0f0d21"
+          "sha256": "b4859a0ab995081de2c82fa30c95a0ae3928c8fdd5a8d20d2ec28db965ce056f"
         },
         {
           "path": "tools/src/specs.ts",
@@ -21173,7 +21174,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "0641cf72123dc0e635e8f1bfc8e8929e14046848b0564a046a4e98f0d59966d8"
+          "sha256": "b1f6e1c75f28bd2ff5925974e86164a5cc476a63f9690dba20ab4ca10410e304"
         },
         {
           "path": "packages/domain/src/settings.ts",
@@ -21353,7 +21354,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "0641cf72123dc0e635e8f1bfc8e8929e14046848b0564a046a4e98f0d59966d8"
+          "sha256": "b1f6e1c75f28bd2ff5925974e86164a5cc476a63f9690dba20ab4ca10410e304"
         },
         {
           "path": "docs/storage/logical-fields.md",
@@ -21518,7 +21519,7 @@
         {
           "path": "infra/releases/development.json",
           "kind": "file",
-          "sha256": "79bf8012d77ad94db224dd1cfc021d345acd40bb6aed373b6beeb9b66286ea7b"
+          "sha256": "2cc373c0818a56a54f6fbd3fef6dbc89d8b094bf6a5e890530bd2291a1261f62"
         },
         {
           "path": "infra/recovery/deployment.example.json",
@@ -21793,7 +21794,7 @@
         {
           "path": "infra/releases/development.json",
           "kind": "file",
-          "sha256": "79bf8012d77ad94db224dd1cfc021d345acd40bb6aed373b6beeb9b66286ea7b"
+          "sha256": "2cc373c0818a56a54f6fbd3fef6dbc89d8b094bf6a5e890530bd2291a1261f62"
         },
         {
           "path": "apps/app/test/operations.test.ts",
@@ -22789,7 +22790,7 @@
         {
           "path": "apps/app/src/records/assessments.ts",
           "kind": "file",
-          "sha256": "43e01665982303134cd52921762ea607887ab889ebb6e29c3783bfa6c548e349"
+          "sha256": "1df8c50ae78f5f8213928b8a89f7fe579252085a32206ff84e0ab09effe1ebd5"
         },
         {
           "path": "apps/app/src/api/routes/questions.ts",
@@ -23051,7 +23052,7 @@
     {
       "id": "60.6",
       "title": "Write property and regression tests for Question assessments",
-      "checked": false,
+      "checked": true,
       "requirements": [
         "50.9",
         "50.10",
@@ -23061,19 +23062,39 @@
         116
       ],
       "prerequisites": [],
-      "phase": "collaboration",
+      "phase": "completed_baseline",
       "sourcePaths": [
         {
           "path": "apps/app/test/properties/p116-question-lifecycle.test.ts",
-          "kind": "missing"
+          "kind": "file",
+          "sha256": "78a6a032d1fe30311136dc18b80e90efe0f7cf0147e3aad190b725a9620b6747"
+        },
+        {
+          "path": "apps/app/src/records/assessments.ts",
+          "kind": "file",
+          "sha256": "1df8c50ae78f5f8213928b8a89f7fe579252085a32206ff84e0ab09effe1ebd5"
         }
       ],
       "gates": [
         "team_archive",
         "final_checkpoint_49"
       ],
-      "acceptance": "planned",
-      "evidence": null
+      "acceptance": "accepted",
+      "evidence": {
+        "task": "60.6",
+        "state": "accepted",
+        "reason": "Verified Property 116 against an independent model. One Question is driven through random sequences of assessments (some on a stale page, some without the reason parking or reopening needs, some naming a record that is not evidence), lead reassignments, edits of the supporting records and loss of access. After every step the recorded versions, their states, reasons, responsible Members and evidence equal the model's; Answered needs a non-blank assessment and supporting evidence; earlier conclusions persist when a Question is parked or reopened; a refused step changes nothing at all; reassigning the lead never moves the Owner or widens anyone's read access; and a Member who cannot read a record sees no id of it in the evidence. The maximum-input cases found and fixed a real defect: recording the 50 supporting records the form allows exceeded the per-save statement limit, so the evidence rows now insert in one statement, and every case at its limit (an assessment of 10,000 astral code points, a reason of 1,000, 50 evidence records, 20 uncertainties, 20 next actions) is accepted while one more is refused.",
+        "sourcePaths": [
+          "apps/app/src/records/assessments.ts"
+        ],
+        "testPaths": [
+          "apps/app/test/properties/p116-question-lifecycle.test.ts"
+        ],
+        "correctionTasks": [],
+        "checks": [
+          "docs/acceptance/checks/local-tests.json"
+        ]
+      }
     },
     {
       "id": "61.1",
@@ -23394,9 +23415,7 @@
         "60.1"
       ],
       "properties": [],
-      "prerequisites": [
-        "60.6"
-      ],
+      "prerequisites": [],
       "phase": "collaboration",
       "sourcePaths": [],
       "gates": [
@@ -24012,7 +24031,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "0641cf72123dc0e635e8f1bfc8e8929e14046848b0564a046a4e98f0d59966d8"
+          "sha256": "b1f6e1c75f28bd2ff5925974e86164a5cc476a63f9690dba20ab4ca10410e304"
         },
         {
           "path": "packages/domain/src/compatibility.ts",
@@ -24062,7 +24081,7 @@
         {
           "path": "infra/releases/development.json",
           "kind": "file",
-          "sha256": "79bf8012d77ad94db224dd1cfc021d345acd40bb6aed373b6beeb9b66286ea7b"
+          "sha256": "2cc373c0818a56a54f6fbd3fef6dbc89d8b094bf6a5e890530bd2291a1261f62"
         },
         {
           "path": "infra/releases/README.md",
@@ -24505,39 +24524,39 @@
   "phases": {
     "collaboration": {
       "firstWave": 0,
-      "lastWave": 19
+      "lastWave": 18
     },
     "privacy": {
-      "firstWave": 20,
-      "lastWave": 43
+      "firstWave": 19,
+      "lastWave": 42
     },
     "imports_and_log": {
-      "firstWave": 44,
-      "lastWave": 67
+      "firstWave": 43,
+      "lastWave": 66
     },
     "publication": {
-      "firstWave": 68,
-      "lastWave": 85
+      "firstWave": 67,
+      "lastWave": 84
     },
     "outside_and_ai": {
-      "firstWave": 86,
-      "lastWave": 133
+      "firstWave": 85,
+      "lastWave": 132
     },
     "recovery": {
-      "firstWave": 134,
-      "lastWave": 151
+      "firstWave": 133,
+      "lastWave": 150
     },
     "release_tooling": {
-      "firstWave": 152,
-      "lastWave": 181
+      "firstWave": 151,
+      "lastWave": 180
     },
     "staging_and_acceptance": {
-      "firstWave": 182,
-      "lastWave": 189
+      "firstWave": 181,
+      "lastWave": 188
     },
     "production_activation": {
-      "firstWave": 190,
-      "lastWave": 190
+      "firstWave": 189,
+      "lastWave": 189
     }
   },
   "gates": [

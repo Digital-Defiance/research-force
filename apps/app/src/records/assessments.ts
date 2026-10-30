@@ -152,9 +152,11 @@ export async function recordAssessment(c: Context<ApiEnv>, id: string, body: unk
         batch.run(sql`INSERT INTO question_assessment_evidence (question_id, version, position, target_id, target_kind, target_rev, sha256)
           SELECT question_id, ${next}, position, target_id, target_kind, target_rev, sha256 FROM question_assessment_evidence WHERE question_id = ${id} AND version = ${version}`);
       } else {
-        for (const [position, row] of fresh.entries()) {
+        // One statement however many records are named, so the most the form allows (50) never reaches the per-save statement limit.
+        if (fresh.length > 0) {
           batch.run(sql`INSERT INTO question_assessment_evidence (question_id, version, position, target_id, target_kind, target_rev, sha256)
-            VALUES (${id}, ${next}, ${position}, ${row.targetId}, ${row.targetKind}, ${row.targetRev}, ${row.sha256})`);
+            SELECT ${id}, ${next}, j.key, j.value ->> '$.targetId', j.value ->> '$.targetKind', j.value ->> '$.targetRev', j.value ->> '$.sha256'
+            FROM json_each(${JSON.stringify(fresh)}) j`);
         }
       }
     },
