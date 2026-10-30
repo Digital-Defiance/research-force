@@ -975,6 +975,30 @@
       "checks": [
         "docs/acceptance/checks/local-tests.json"
       ]
+    },
+    {
+      "task": "60.3",
+      "state": "accepted",
+      "reason": "Verified the Question assessment and investigation-state operations. A Question records each assessment as the next numbered version with its state, the responsible Member, the time and a reason, and every earlier version and its evidence stays. The change is an ordinary edit of the Question: it needs the edit Permission, the revision the Member saw, and leaves a status-change or minor-edit Revision that tells the Owner and thread participants. Answered needs a non-blank assessment and at least one readable supporting Finding, Run, Source or Decision Record, recorded at the exact revision it had; parking needs a reason and reopening an answered Question needs a reason, and both carry the previous conclusion and evidence forward unchanged. A viewer sees only the evidence they can read, with no title, count or trace of the rest, and sees when evidence has changed since the assessment. The lead is a role and changes neither Owner nor access. The current assessment is searchable and is a Full_Content field, with the investigation state, in the public projection; summary views carry neither.",
+      "sourcePaths": [
+        "packages/domain/src/work.ts",
+        "apps/app/src/records/assessments.ts",
+        "apps/app/src/api/routes/questions.ts",
+        "apps/app/src/records/kinds/question.ts",
+        "apps/app/src/search/read.ts",
+        "packages/kernel/src/project.ts",
+        "packages/kernel/src/input.ts",
+        "packages/kernel/src/views.ts",
+        "packages/public-render/src/format.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/question-assessments.test.ts",
+        "packages/kernel/test/project.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
     }
   ]
 }

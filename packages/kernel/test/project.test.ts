@@ -25,6 +25,17 @@ describe('project', () => {
     expect(projection.levels.get('u:s')).toBe('not_published');
   });
 
+  it('shows a Research_Question’s state and assessment only under Full_Content', () => {
+    const question = { kind: 'research_question' as const, question: 'Who wrote it?', investigationState: 'answered', assessment: rich('The clerk wrote it.') };
+    const full = projectDetailed(state([item('q', question)])).views.get('u:q');
+    expect(full).toMatchObject({ tag: 'research_item', full: { fields: expect.arrayContaining([
+      { key: 'investigationState', value: { t: 'text', value: 'answered' } }, { key: 'assessment', value: { t: 'rich', value: expect.objectContaining({ text: 'The clerk wrote it.' }) } },
+    ]) } });
+    const summary = projectDetailed(state([item('q', { ...question, presentation: 'summary_only', publicSummary: rich('Shown') } as never)])).views.get('u:q');
+    expect(JSON.stringify(summary)).not.toContain('The clerk wrote it.');
+    expect(JSON.stringify(summary)).not.toContain('answered');
+  });
+
   it('shows only the Disclosure_Line for a Withheld unit, and makes its descendants Not_Published', () => {
     const projection = projectDetailed(state([item('a', { kind: 'topic', body: rich('Body') }, { level: 'withheld', disclosureLine: { ...LINE, partyIds: [id('party-2')] } }), section('s', 'a', 'Text')]));
     expect(projection.views.get('u:a')).toEqual({

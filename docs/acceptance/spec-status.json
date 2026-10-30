@@ -2,15 +2,14 @@
   "inputs": {
     ".kiro/specs/research-collab-cms/requirements.md": "9e2d7cee953f4aeece04bad4a7dfae273a908c0df65c95beea7a4e572b71b5df",
     ".kiro/specs/research-collab-cms/design.md": "85df571e6efad1205603dca7addcea9c16f68252023d5483a2fbe81d705c4d93",
-    ".kiro/specs/research-collab-cms/tasks.md": "2df30a2350558adae922a9f12ca1794370370fdb8603af910feaba14ec2368a7",
-    "docs/acceptance/task-evidence.json": "20978ec922cc1a3653a330f4d35f1917a2a5483e984465e3d69742f01cf3fece"
+    ".kiro/specs/research-collab-cms/tasks.md": "603540b171cb5ed01f240644c91cb9b154b7eadc4c8aa0e25a80aa1eef0771b1",
+    "docs/acceptance/task-evidence.json": "8888b49ea2ee6fd19a123d482d7d088c0e6fc16aae771c143c469e30a9d5f337"
   },
   "schemaVersion": 1,
   "nextTasks": [
-    "60.3"
+    "60.4"
   ],
   "remainingBuildOrder": [
-    "60.3",
     "60.4",
     "60.5",
     "60.6",
@@ -210,11 +209,11 @@
     "criteria": 738,
     "properties": 126,
     "leafTasks": 406,
-    "checkedLeaves": 212,
+    "checkedLeaves": 213,
     "historicalUnverified": 182,
-    "acceptedWithLocalEvidence": 30,
+    "acceptedWithLocalEvidence": 31,
     "propertyFiles": 64,
-    "remainingWaves": 194,
+    "remainingWaves": 193,
     "gates": 4
   },
   "structuralIssues": [],
@@ -11273,7 +11272,7 @@
         {
           "path": "packages/kernel/src/project.ts",
           "kind": "file",
-          "sha256": "3eddd94c412a77c0ed5f15034be2621086e4b1c81f7220fd7fcd5b00265b0957"
+          "sha256": "8dabc373c82547b80b5b850750065c0d738d474a40864496488d83466daa2fea"
         }
       ],
       "gates": [],
@@ -12479,7 +12478,7 @@
         {
           "path": "apps/app/src/api/app.ts",
           "kind": "file",
-          "sha256": "a2d9f275bb8119288f6a3560710299b852fcc2ce9aabd99c457f35c6854864cc"
+          "sha256": "fba92e7d71839a34a253036da67f28871832aeef894c36e7b3aabaf416d023c7"
         },
         {
           "path": "apps/app/src/api/errors.ts",
@@ -19170,7 +19169,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "20978ec922cc1a3653a330f4d35f1917a2a5483e984465e3d69742f01cf3fece"
+          "sha256": "8888b49ea2ee6fd19a123d482d7d088c0e6fc16aae771c143c469e30a9d5f337"
         },
         {
           "path": "README.md",
@@ -19259,7 +19258,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "20978ec922cc1a3653a330f4d35f1917a2a5483e984465e3d69742f01cf3fece"
+          "sha256": "8888b49ea2ee6fd19a123d482d7d088c0e6fc16aae771c143c469e30a9d5f337"
         },
         {
           "path": "apps/app/src/index.ts",
@@ -19398,7 +19397,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "20978ec922cc1a3653a330f4d35f1917a2a5483e984465e3d69742f01cf3fece"
+          "sha256": "8888b49ea2ee6fd19a123d482d7d088c0e6fc16aae771c143c469e30a9d5f337"
         },
         {
           "path": "apps/app/src/local/services.ts",
@@ -19438,7 +19437,7 @@
         {
           "path": "apps/app/src/api/app.ts",
           "kind": "file",
-          "sha256": "a2d9f275bb8119288f6a3560710299b852fcc2ce9aabd99c457f35c6854864cc"
+          "sha256": "fba92e7d71839a34a253036da67f28871832aeef894c36e7b3aabaf416d023c7"
         },
         {
           "path": "apps/app/src/do/mailer.ts",
@@ -19882,7 +19881,7 @@
         {
           "path": "packages/kernel/src/input.ts",
           "kind": "file",
-          "sha256": "233e54704439a4f736f26e6b9138724456c8de88ec2924f34e6144a0736b7421"
+          "sha256": "5e7fbd10596bc28135cba6edfc1a8092bef860c2509e048f616dc770af1682c9"
         },
         {
           "path": "packages/kernel/src/preview.ts",
@@ -20486,7 +20485,7 @@
         {
           "path": "apps/app/src/records/kinds/question.ts",
           "kind": "file",
-          "sha256": "44887217733388e22558a38342fc965e53d0829d873f94ee19f549982cabbacc"
+          "sha256": "b40b3ad130b40168bf74d4c99af53bfb21e99d432d1eaf87aece9d6af360408d"
         },
         {
           "path": "packages/domain/test/schema-items.test.ts",
@@ -20568,7 +20567,7 @@
         {
           "path": "apps/app/src/records/kinds/question.ts",
           "kind": "file",
-          "sha256": "44887217733388e22558a38342fc965e53d0829d873f94ee19f549982cabbacc"
+          "sha256": "b40b3ad130b40168bf74d4c99af53bfb21e99d432d1eaf87aece9d6af360408d"
         },
         {
           "path": "apps/app/src/records/items.ts",
@@ -20588,7 +20587,7 @@
         {
           "path": "apps/app/src/search/read.ts",
           "kind": "file",
-          "sha256": "0c07d551f60242931aaca3ee7dfa55bf8ae2bb971f5403c2f7d15a5d84e57819"
+          "sha256": "b48229d697f3ff0437c144157ba9750a0a4d93ce90e8e65a74018a3e4a073fd8"
         },
         {
           "path": "packages/db/src/field-backfill.ts",
@@ -20694,7 +20693,7 @@
         {
           "path": "apps/app/src/records/kinds/question.ts",
           "kind": "file",
-          "sha256": "44887217733388e22558a38342fc965e53d0829d873f94ee19f549982cabbacc"
+          "sha256": "b40b3ad130b40168bf74d4c99af53bfb21e99d432d1eaf87aece9d6af360408d"
         },
         {
           "path": "apps/app/web/test/question.test.tsx",
@@ -21082,12 +21081,12 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "20978ec922cc1a3653a330f4d35f1917a2a5483e984465e3d69742f01cf3fece"
+          "sha256": "8888b49ea2ee6fd19a123d482d7d088c0e6fc16aae771c143c469e30a9d5f337"
         },
         {
           "path": "docs/acceptance/checks/local-tests.json",
           "kind": "file",
-          "sha256": "a21d098e9f2fb0da6a56bae9227b51bf59a4a04aa82b4fda4d866f3ba5106715"
+          "sha256": "9e2f9f15edc8d5adb9b6db549d9502050f25bc032dfaefb61034b2bb341afccb"
         },
         {
           "path": "tools/src/specs.ts",
@@ -21174,7 +21173,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "20978ec922cc1a3653a330f4d35f1917a2a5483e984465e3d69742f01cf3fece"
+          "sha256": "8888b49ea2ee6fd19a123d482d7d088c0e6fc16aae771c143c469e30a9d5f337"
         },
         {
           "path": "packages/domain/src/settings.ts",
@@ -21209,7 +21208,7 @@
         {
           "path": "apps/app/src/api/app.ts",
           "kind": "file",
-          "sha256": "a2d9f275bb8119288f6a3560710299b852fcc2ce9aabd99c457f35c6854864cc"
+          "sha256": "fba92e7d71839a34a253036da67f28871832aeef894c36e7b3aabaf416d023c7"
         },
         {
           "path": "apps/app/src/env.ts",
@@ -21354,7 +21353,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "20978ec922cc1a3653a330f4d35f1917a2a5483e984465e3d69742f01cf3fece"
+          "sha256": "8888b49ea2ee6fd19a123d482d7d088c0e6fc16aae771c143c469e30a9d5f337"
         },
         {
           "path": "docs/storage/logical-fields.md",
@@ -21479,7 +21478,7 @@
         {
           "path": "apps/app/src/search/read.ts",
           "kind": "file",
-          "sha256": "0c07d551f60242931aaca3ee7dfa55bf8ae2bb971f5403c2f7d15a5d84e57819"
+          "sha256": "b48229d697f3ff0437c144157ba9750a0a4d93ce90e8e65a74018a3e4a073fd8"
         },
         {
           "path": "apps/app/src/search/logical.ts",
@@ -21519,7 +21518,7 @@
         {
           "path": "infra/releases/development.json",
           "kind": "file",
-          "sha256": "9edc14c3e095507e275073331ca175caa488552bb28de401a6d589ab64523264"
+          "sha256": "2c66f5db1960a65a58ac23ee989a5e54a2cc5ee2e354dc88bfa98a2ec313664f"
         },
         {
           "path": "infra/recovery/deployment.example.json",
@@ -21724,7 +21723,7 @@
         {
           "path": "apps/app/src/api/app.ts",
           "kind": "file",
-          "sha256": "a2d9f275bb8119288f6a3560710299b852fcc2ce9aabd99c457f35c6854864cc"
+          "sha256": "fba92e7d71839a34a253036da67f28871832aeef894c36e7b3aabaf416d023c7"
         },
         {
           "path": "apps/app/src/api/csrf.ts",
@@ -21794,7 +21793,7 @@
         {
           "path": "infra/releases/development.json",
           "kind": "file",
-          "sha256": "9edc14c3e095507e275073331ca175caa488552bb28de401a6d589ab64523264"
+          "sha256": "2c66f5db1960a65a58ac23ee989a5e54a2cc5ee2e354dc88bfa98a2ec313664f"
         },
         {
           "path": "apps/app/test/operations.test.ts",
@@ -22545,7 +22544,7 @@
         {
           "path": "packages/domain/src/work.ts",
           "kind": "file",
-          "sha256": "993098b7be08155363c284e27a4db8fbe491c8ac647acde9941f138dfae13a51"
+          "sha256": "0b19084e2a9b4663b33649c8bec82c9325be97ed45ef6bab470ee44924a4c5d7"
         },
         {
           "path": "packages/domain/src/permissions.ts",
@@ -22575,7 +22574,7 @@
         {
           "path": "apps/app/src/records/kinds/question.ts",
           "kind": "file",
-          "sha256": "44887217733388e22558a38342fc965e53d0829d873f94ee19f549982cabbacc"
+          "sha256": "b40b3ad130b40168bf74d4c99af53bfb21e99d432d1eaf87aece9d6af360408d"
         },
         {
           "path": "apps/app/src/records/items.ts",
@@ -22590,7 +22589,7 @@
         {
           "path": "apps/app/src/search/read.ts",
           "kind": "file",
-          "sha256": "0c07d551f60242931aaca3ee7dfa55bf8ae2bb971f5403c2f7d15a5d84e57819"
+          "sha256": "b48229d697f3ff0437c144157ba9750a0a4d93ce90e8e65a74018a3e4a073fd8"
         },
         {
           "path": "packages/domain/test/work.test.ts",
@@ -22679,7 +22678,7 @@
         {
           "path": "packages/domain/src/work.ts",
           "kind": "file",
-          "sha256": "993098b7be08155363c284e27a4db8fbe491c8ac647acde9941f138dfae13a51"
+          "sha256": "0b19084e2a9b4663b33649c8bec82c9325be97ed45ef6bab470ee44924a4c5d7"
         },
         {
           "path": "packages/db/src/schema/core/work-items.ts",
@@ -22771,7 +22770,7 @@
     {
       "id": "60.3",
       "title": "Implement versioned Question assessments and investigation state",
-      "checked": false,
+      "checked": true,
       "requirements": [
         "50.9",
         "50.10",
@@ -22780,14 +22779,93 @@
       ],
       "properties": [],
       "prerequisites": [],
-      "phase": "collaboration",
-      "sourcePaths": [],
+      "phase": "completed_baseline",
+      "sourcePaths": [
+        {
+          "path": "packages/domain/src/work.ts",
+          "kind": "file",
+          "sha256": "0b19084e2a9b4663b33649c8bec82c9325be97ed45ef6bab470ee44924a4c5d7"
+        },
+        {
+          "path": "apps/app/src/records/assessments.ts",
+          "kind": "file",
+          "sha256": "43e01665982303134cd52921762ea607887ab889ebb6e29c3783bfa6c548e349"
+        },
+        {
+          "path": "apps/app/src/api/routes/questions.ts",
+          "kind": "file",
+          "sha256": "0bfae944448d46097c187a466085e0385b23d39d2e490013ddb657acc97c735c"
+        },
+        {
+          "path": "apps/app/src/records/kinds/question.ts",
+          "kind": "file",
+          "sha256": "b40b3ad130b40168bf74d4c99af53bfb21e99d432d1eaf87aece9d6af360408d"
+        },
+        {
+          "path": "apps/app/src/search/read.ts",
+          "kind": "file",
+          "sha256": "b48229d697f3ff0437c144157ba9750a0a4d93ce90e8e65a74018a3e4a073fd8"
+        },
+        {
+          "path": "packages/kernel/src/project.ts",
+          "kind": "file",
+          "sha256": "8dabc373c82547b80b5b850750065c0d738d474a40864496488d83466daa2fea"
+        },
+        {
+          "path": "packages/kernel/src/input.ts",
+          "kind": "file",
+          "sha256": "5e7fbd10596bc28135cba6edfc1a8092bef860c2509e048f616dc770af1682c9"
+        },
+        {
+          "path": "packages/kernel/src/views.ts",
+          "kind": "file",
+          "sha256": "ef5ea5fe00a2fa25ed9896cbd2e7c3b7f115a82a76514cdc058099a8cac125a3"
+        },
+        {
+          "path": "packages/public-render/src/format.ts",
+          "kind": "file",
+          "sha256": "19b27fe706a0a62a589a20eeb3c511a9756ecb5b2474bb7f53b618f3aff10419"
+        },
+        {
+          "path": "apps/app/test/question-assessments.test.ts",
+          "kind": "file",
+          "sha256": "3b91777a6addf32187ab37921e14ef4c14eaa0b39e1d58380ed21174543768fa"
+        },
+        {
+          "path": "packages/kernel/test/project.test.ts",
+          "kind": "file",
+          "sha256": "97d0d221d8e243cdab0231ccb55e216326b74e1ea4644bc3e0b5e1f63eba24bc"
+        }
+      ],
       "gates": [
         "team_archive",
         "final_checkpoint_49"
       ],
-      "acceptance": "planned",
-      "evidence": null
+      "acceptance": "accepted",
+      "evidence": {
+        "task": "60.3",
+        "state": "accepted",
+        "reason": "Verified the Question assessment and investigation-state operations. A Question records each assessment as the next numbered version with its state, the responsible Member, the time and a reason, and every earlier version and its evidence stays. The change is an ordinary edit of the Question: it needs the edit Permission, the revision the Member saw, and leaves a status-change or minor-edit Revision that tells the Owner and thread participants. Answered needs a non-blank assessment and at least one readable supporting Finding, Run, Source or Decision Record, recorded at the exact revision it had; parking needs a reason and reopening an answered Question needs a reason, and both carry the previous conclusion and evidence forward unchanged. A viewer sees only the evidence they can read, with no title, count or trace of the rest, and sees when evidence has changed since the assessment. The lead is a role and changes neither Owner nor access. The current assessment is searchable and is a Full_Content field, with the investigation state, in the public projection; summary views carry neither.",
+        "sourcePaths": [
+          "packages/domain/src/work.ts",
+          "apps/app/src/records/assessments.ts",
+          "apps/app/src/api/routes/questions.ts",
+          "apps/app/src/records/kinds/question.ts",
+          "apps/app/src/search/read.ts",
+          "packages/kernel/src/project.ts",
+          "packages/kernel/src/input.ts",
+          "packages/kernel/src/views.ts",
+          "packages/public-render/src/format.ts"
+        ],
+        "testPaths": [
+          "apps/app/test/question-assessments.test.ts",
+          "packages/kernel/test/project.test.ts"
+        ],
+        "correctionTasks": [],
+        "checks": [
+          "docs/acceptance/checks/local-tests.json"
+        ]
+      }
     },
     {
       "id": "60.4",
@@ -22801,9 +22879,7 @@
         "60.9"
       ],
       "properties": [],
-      "prerequisites": [
-        "60.3"
-      ],
+      "prerequisites": [],
       "phase": "collaboration",
       "sourcePaths": [],
       "gates": [
@@ -22937,7 +23013,7 @@
         {
           "path": "apps/app/src/search/read.ts",
           "kind": "file",
-          "sha256": "0c07d551f60242931aaca3ee7dfa55bf8ae2bb971f5403c2f7d15a5d84e57819"
+          "sha256": "b48229d697f3ff0437c144157ba9750a0a4d93ce90e8e65a74018a3e4a073fd8"
         },
         {
           "path": "tools/src/upgrade-store.ts",
@@ -23811,7 +23887,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "20978ec922cc1a3653a330f4d35f1917a2a5483e984465e3d69742f01cf3fece"
+          "sha256": "8888b49ea2ee6fd19a123d482d7d088c0e6fc16aae771c143c469e30a9d5f337"
         },
         {
           "path": "packages/domain/src/compatibility.ts",
@@ -23861,7 +23937,7 @@
         {
           "path": "infra/releases/development.json",
           "kind": "file",
-          "sha256": "9edc14c3e095507e275073331ca175caa488552bb28de401a6d589ab64523264"
+          "sha256": "2c66f5db1960a65a58ac23ee989a5e54a2cc5ee2e354dc88bfa98a2ec313664f"
         },
         {
           "path": "infra/releases/README.md",
@@ -24165,7 +24241,7 @@
         {
           "path": "apps/app/src/api/app.ts",
           "kind": "file",
-          "sha256": "a2d9f275bb8119288f6a3560710299b852fcc2ce9aabd99c457f35c6854864cc"
+          "sha256": "fba92e7d71839a34a253036da67f28871832aeef894c36e7b3aabaf416d023c7"
         },
         {
           "path": "apps/app/src/index.ts",
@@ -24304,39 +24380,39 @@
   "phases": {
     "collaboration": {
       "firstWave": 0,
-      "lastWave": 22
+      "lastWave": 21
     },
     "privacy": {
-      "firstWave": 23,
-      "lastWave": 46
+      "firstWave": 22,
+      "lastWave": 45
     },
     "imports_and_log": {
-      "firstWave": 47,
-      "lastWave": 70
+      "firstWave": 46,
+      "lastWave": 69
     },
     "publication": {
-      "firstWave": 71,
-      "lastWave": 88
+      "firstWave": 70,
+      "lastWave": 87
     },
     "outside_and_ai": {
-      "firstWave": 89,
-      "lastWave": 136
+      "firstWave": 88,
+      "lastWave": 135
     },
     "recovery": {
-      "firstWave": 137,
-      "lastWave": 154
+      "firstWave": 136,
+      "lastWave": 153
     },
     "release_tooling": {
-      "firstWave": 155,
-      "lastWave": 184
+      "firstWave": 154,
+      "lastWave": 183
     },
     "staging_and_acceptance": {
-      "firstWave": 185,
-      "lastWave": 192
+      "firstWave": 184,
+      "lastWave": 191
     },
     "production_activation": {
-      "firstWave": 193,
-      "lastWave": 193
+      "firstWave": 192,
+      "lastWave": 192
     }
   },
   "gates": [

@@ -24,7 +24,7 @@ export const FIELD_LABELS: Readonly<Record<FieldKey, string>> = {
   statement: 'Statement',
   date: 'Date', channel: 'Channel', direction: 'Direction', content: 'Content', parties: 'Parties',
   archiveOrDesk: 'Archive or desk', contact: 'Contact', requestText: 'Request', dateSent: 'Date sent', replyDate: 'Reply date', replyContent: 'Reply',
-  body: 'Text', question: 'Question', introduction: 'Introduction',
+  body: 'Text', question: 'Question', introduction: 'Introduction', investigationState: 'Investigation state', assessment: 'Assessment',
 };
 
 /** A UTC calendar date the system recorded, written as on every page (R45.12). */

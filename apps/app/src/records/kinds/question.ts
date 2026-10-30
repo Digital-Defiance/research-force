@@ -72,7 +72,11 @@ function addresses(batch: GuardedBatch, questionId: string, targets: readonly st
  * cannot read taken off: the action's own text stays, and nothing says what it pointed at (R50.9, R50.11).
  */
 async function visibleLifecycle(c: Context<ApiEnv>, fields: ItemFields, id: string): Promise<{ fields: ItemFields; extra: Record<string, unknown> }> {
-  const stored = (await c.get('accountant').track(c.env.RF_CORE.prepare('SELECT investigation_state AS state, assessment_version AS version FROM research_questions WHERE unit_id = ?1').bind(id).all<{ state: QuestionState; version: number }>())).results[0];
+  const stored = (await c.get('accountant').track(c.env.RF_CORE.prepare(
+    `SELECT q.investigation_state AS state, q.assessment_version AS version, a.assessment, a.assessment_spans AS assessmentSpans, a.reason
+      FROM research_questions q LEFT JOIN question_assessments a ON a.question_id = q.unit_id AND a.version = q.assessment_version WHERE q.unit_id = ?1`,
+  ).bind(id).all<{ state: QuestionState; version: number; assessment: string | null; assessmentSpans: string | null; reason: string | null }>())).results[0];
+  const assessment = stored?.assessment == null ? undefined : richText(stored.assessment, stored.assessmentSpans ?? '[]');
   const actions = actionsOf(fields);
   const linked = [...new Set(actions.flatMap((action) => (action.workItemId === undefined ? [] : [action.workItemId])))];
   let shown = actions;
@@ -82,7 +86,9 @@ async function visibleLifecycle(c: Context<ApiEnv>, fields: ItemFields, id: stri
     ).bind(json(linked), c.get('session').member.id).all<{ id: string }>())).results.map((unit) => unit.id));
     shown = actions.map((action) => (action.workItemId === undefined || readable.has(action.workItemId) ? action : { text: action.text }));
   }
-  return { fields: actions.length === 0 ? fields : { ...fields, nextActions: shown }, extra: { investigationState: stored?.state ?? 'open', assessmentVersion: stored?.version ?? 0 } };
+  return { fields: actions.length === 0 ? fields : { ...fields, nextActions: shown }, extra: {
+    investigationState: stored?.state ?? 'open', assessmentVersion: stored?.version ?? 0, ...(assessment === undefined ? {} : { assessment }), ...(stored?.reason ? { assessmentReason: stored.reason } : {}),
+  } };
 }
 
 export const question: KindAdapter = {

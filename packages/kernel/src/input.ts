@@ -57,7 +57,7 @@ export type KindRecord =
     readonly statusValueId: string; readonly dateSent?: PartialDate; readonly replyDate?: PartialDate; readonly replyContent?: RichText;
   }
   | { readonly kind: 'topic'; readonly body: RichText }
-  | { readonly kind: 'research_question'; readonly question: string; readonly introduction?: RichText };
+  | { readonly kind: 'research_question'; readonly question: string; readonly introduction?: RichText; readonly investigationState?: string; readonly assessment?: RichText };
 
 export type ResearchItemRecord = KindRecord & {
   readonly projectId: string; readonly identifier: string; readonly title: string; readonly presentation: PublicPresentation;

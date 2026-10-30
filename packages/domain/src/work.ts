@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { idSchema, textField } from './schemas/common';
+import { idSchema, richTextSchema, textField } from './schemas/common';
 import type { ItemKind } from './types';
 
 /** R52.1, R52.3, R52.4 bounds. The forms and manifests show these rather than leaving them to a D1 row limit. */
@@ -95,6 +95,33 @@ export function answeredIssues(input: { readonly assessment: string | undefined;
   if (input.evidence < 1) issues.push({ field: 'evidence', rule: 'A Question needs at least one supporting Finding, Run, Source, or Decision Record before it is Answered.' });
   return issues;
 }
+/** What may support an assessment (R50.10). */
+export const ASSESSMENT_EVIDENCE_KINDS = ['finding', 'run', 'source', 'decision_record'] as const;
+/**
+ * Record a new version of a Question's assessment and investigation state. `rev` is the Question's revision the Member saw; an omitted
+ * assessment or evidence list carries the current one forward, so parking or reopening never loses an earlier conclusion (R50.10).
+ */
+export const assessmentInputSchema = z.strictObject({
+  rev: z.number().int().min(1),
+  state: z.enum(QUESTION_STATES),
+  assessment: richTextSchema(QUESTION_LIFECYCLE_LIMITS.assessmentCodePoints).optional(),
+  evidence: z.array(z.strictObject({ targetId: idSchema })).max(QUESTION_LIFECYCLE_LIMITS.evidence).optional(),
+  reason: textField(QUESTION_LIFECYCLE_LIMITS.reasonCodePoints, true).optional(),
+});
+export type AssessmentInput = z.output<typeof assessmentInputSchema>;
+/** What stops a new assessment version, or nothing: the version must change something, and Answered, parking and reopening have their own needs. */
+export function assessmentIssues(
+  from: QuestionState, input: AssessmentInput, result: { readonly assessment: string | undefined; readonly evidence: number; readonly changesContent: boolean },
+): { field: string; rule: string }[] {
+  const issues: { field: string; rule: string }[] = [];
+  if (input.state === from && !result.changesContent) issues.push({ field: 'state', rule: 'Nothing changes: choose another state or give a new assessment or evidence.' });
+  if (input.state === 'answered') issues.push(...answeredIssues({ assessment: result.assessment, evidence: result.evidence }));
+  if (input.state !== from && questionTransitionNeedsReason(from, input.state) && input.reason === undefined) {
+    issues.push({ field: 'reason', rule: input.state === 'parked' ? 'Parking a Question needs a reason.' : 'Reopening an answered Question needs a reason.' });
+  }
+  return issues;
+}
+
 /** Reopening or parking needs a reason, and never deletes an earlier conclusion (R50.10). */
 export const questionTransitionNeedsReason = (from: QuestionState, to: QuestionState): boolean => to === 'parked' || (from === 'answered' && to !== 'answered');
 

@@ -67,7 +67,7 @@ export type FieldKey =
   | 'statement'
   | 'date' | 'channel' | 'direction' | 'content' | 'parties'
   | 'archiveOrDesk' | 'contact' | 'requestText' | 'dateSent' | 'replyDate' | 'replyContent'
-  | 'body' | 'question' | 'introduction';
+  | 'body' | 'question' | 'introduction' | 'investigationState' | 'assessment';
 export interface FieldView { readonly key: FieldKey; readonly value: FieldValue; }
 
 /** The other end of a Cross_Link, a supersession, or a superseding Finding, by that unit's own view (R24.8). */

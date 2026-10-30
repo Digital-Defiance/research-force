@@ -52,7 +52,8 @@ export async function readRootDocuments(db: D1Database, rootId: ULID): Promise<S
     one('SELECT * FROM decisions WHERE unit_id = ?1'),
     one('SELECT title, description FROM decision_alternatives WHERE decision_id = ?1 ORDER BY position'),
     one('SELECT * FROM work_items WHERE unit_id = ?1'),
-    one(`SELECT text FROM question_uncertainties WHERE question_id = ?1 UNION ALL SELECT text FROM question_next_actions WHERE question_id = ?1`),
+    one(`SELECT text FROM question_uncertainties WHERE question_id = ?1 UNION ALL SELECT text FROM question_next_actions WHERE question_id = ?1
+      UNION ALL SELECT a.assessment FROM question_assessments a JOIN research_questions q ON q.unit_id = a.question_id AND q.assessment_version = a.version WHERE a.question_id = ?1 AND a.assessment IS NOT NULL`),
   ]);
   await resolveStoredRows(db, [item, finding, source, run, hypothesis, correspondence, archival, topic, question, decision, work, sections, replies, dissent].flatMap((r) => r?.results ?? []));
   const unitRows = (units!.results as unknown as UnitRow[]);
