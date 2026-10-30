@@ -647,7 +647,7 @@
     },
     {
       "path": "apps/app/src/records/coverage.ts",
-      "sha256": "3db7ee6407994a094cad352ef539c3354d58a06e629be2120183592efea9bef1"
+      "sha256": "301c08ecb5856c56b88ca227610ad997251a3c5d60951a796549ca9d12875d4a"
     },
     {
       "path": "apps/app/src/records/decision-operations.ts",

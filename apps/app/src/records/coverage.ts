@@ -257,7 +257,7 @@ export async function projectCoverage(c: Context<ApiEnv>, projectId: string, sch
   const newest = (await c.get('accountant').track(c.env.RF_CORE.prepare(
     `SELECT ${SCOPE_COLUMNS.split(', ').map((column) => `s.${column}`).join(', ')} FROM compute_scopes s JOIN units u ON u.id = s.run_id
       WHERE u.project_id = ?1 AND u.withdrawn_at IS NULL AND s.id = (SELECT MAX(id) FROM compute_scopes x WHERE x.run_id = s.run_id) AND ${visibleTo('u', '?2')} AND ${gone('u')}
-      ORDER BY s.id LIMIT ${PAGE + 1}`,
+      ORDER BY s.id DESC LIMIT ${PAGE + 1}`,
   ).bind(projectId, viewer).all<ScopeRow>())).results;
   const truncated = newest.length > PAGE;
   const rows = newest.slice(0, PAGE);

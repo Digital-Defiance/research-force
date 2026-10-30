@@ -1257,6 +1257,24 @@
       "checks": [
         "docs/acceptance/checks/local-tests.json"
       ]
+    },
+    {
+      "task": "63.4",
+      "state": "accepted",
+      "reason": "Added Property 120 in apps/app/test/properties/p120-compute-packages.test.ts. An independent model that counts points one by one drives random scope recordings (under the Project schema, another schema, written text, and malformed regions that must be refused), outcome changes, output tampering and restoration, and independent attempts including refused ones, across three Runs per case. After every step it checks that coverage is exactly the points completed by finished Runs whose package is not disputed and whose outputs keep their recorded hashes, that written and other-schema scopes are listed and never counted, that full elimination is stated only when every point is covered, that a refused step changes nothing, that no step alters a package, its manifest hash or the first Run outcome, and that comparisons give exact overlap and union only for scopes under the same schema. A second property stores permitted configurations digit for digit with a hash that recomputes, and refuses unsafe numbers and secret keys at any depth without storing anything; a third accepts the largest encoded package and refuses one more of each bounded part. Three deliberate breakages of the counting rules were each caught. The design table for compute packages now lists the scope tables and routes.",
+      "sourcePaths": [
+        "apps/app/src/records/coverage.ts",
+        "apps/app/src/records/reproductions.ts",
+        "packages/domain/src/coverage.ts",
+        ".kiro/specs/research-collab-cms/design.md"
+      ],
+      "testPaths": [
+        "apps/app/test/properties/p120-compute-packages.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
     }
   ]
 }

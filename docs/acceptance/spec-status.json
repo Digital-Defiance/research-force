@@ -1,16 +1,15 @@
 {
   "inputs": {
     ".kiro/specs/research-collab-cms/requirements.md": "9e2d7cee953f4aeece04bad4a7dfae273a908c0df65c95beea7a4e572b71b5df",
-    ".kiro/specs/research-collab-cms/design.md": "85df571e6efad1205603dca7addcea9c16f68252023d5483a2fbe81d705c4d93",
-    ".kiro/specs/research-collab-cms/tasks.md": "43e0717ea1395d719aedd74b312eb3af569f7e586d44b3f31cd9dfb364525add",
-    "docs/acceptance/task-evidence.json": "cf88710e3f7987d65401c6f9f007cafe32344648c3a64e9d57ea9e5ee26e4d5c"
+    ".kiro/specs/research-collab-cms/design.md": "adc795f679153a41ea670012e93dfc256f13f8be2d12327b3520c0780e9a4539",
+    ".kiro/specs/research-collab-cms/tasks.md": "9fd7df753714a1daee9d9c897768e76439b21af075bcd8a288cb9d8120b87cad",
+    "docs/acceptance/task-evidence.json": "1fec7285fd32b8deaf120d61e206e8571cbfa166ffddde389fe12ee3fb39bc18"
   },
   "schemaVersion": 1,
   "nextTasks": [
-    "63.4"
+    "64.1"
   ],
   "remainingBuildOrder": [
-    "63.4",
     "64.1",
     "64.2",
     "64.3",
@@ -196,11 +195,11 @@
     "criteria": 738,
     "properties": 126,
     "leafTasks": 406,
-    "checkedLeaves": 226,
+    "checkedLeaves": 227,
     "historicalUnverified": 182,
-    "acceptedWithLocalEvidence": 44,
-    "propertyFiles": 69,
-    "remainingWaves": 180,
+    "acceptedWithLocalEvidence": 45,
+    "propertyFiles": 70,
+    "remainingWaves": 179,
     "gates": 4
   },
   "structuralIssues": [],
@@ -10203,7 +10202,9 @@
         "56.6"
       ],
       "task": "63.4",
-      "testPaths": []
+      "testPaths": [
+        "apps/app/test/properties/p120-compute-packages.test.ts"
+      ]
     },
     {
       "id": 121,
@@ -19166,7 +19167,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "cf88710e3f7987d65401c6f9f007cafe32344648c3a64e9d57ea9e5ee26e4d5c"
+          "sha256": "1fec7285fd32b8deaf120d61e206e8571cbfa166ffddde389fe12ee3fb39bc18"
         },
         {
           "path": "README.md",
@@ -19255,7 +19256,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "cf88710e3f7987d65401c6f9f007cafe32344648c3a64e9d57ea9e5ee26e4d5c"
+          "sha256": "1fec7285fd32b8deaf120d61e206e8571cbfa166ffddde389fe12ee3fb39bc18"
         },
         {
           "path": "apps/app/src/index.ts",
@@ -19394,7 +19395,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "cf88710e3f7987d65401c6f9f007cafe32344648c3a64e9d57ea9e5ee26e4d5c"
+          "sha256": "1fec7285fd32b8deaf120d61e206e8571cbfa166ffddde389fe12ee3fb39bc18"
         },
         {
           "path": "apps/app/src/local/services.ts",
@@ -21078,12 +21079,12 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "cf88710e3f7987d65401c6f9f007cafe32344648c3a64e9d57ea9e5ee26e4d5c"
+          "sha256": "1fec7285fd32b8deaf120d61e206e8571cbfa166ffddde389fe12ee3fb39bc18"
         },
         {
           "path": "docs/acceptance/checks/local-tests.json",
           "kind": "file",
-          "sha256": "39848213455a71f7c90af4c53b28ccc877c0b1a9eebccb7950e31720538d6dbc"
+          "sha256": "0f1b89caa8e7c6b342e9be0cdb18f07288de98677adea80c6ad5f91d6073310f"
         },
         {
           "path": "tools/src/specs.ts",
@@ -21170,7 +21171,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "cf88710e3f7987d65401c6f9f007cafe32344648c3a64e9d57ea9e5ee26e4d5c"
+          "sha256": "1fec7285fd32b8deaf120d61e206e8571cbfa166ffddde389fe12ee3fb39bc18"
         },
         {
           "path": "packages/domain/src/settings.ts",
@@ -21350,7 +21351,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "cf88710e3f7987d65401c6f9f007cafe32344648c3a64e9d57ea9e5ee26e4d5c"
+          "sha256": "1fec7285fd32b8deaf120d61e206e8571cbfa166ffddde389fe12ee3fb39bc18"
         },
         {
           "path": "docs/storage/logical-fields.md",
@@ -21515,7 +21516,7 @@
         {
           "path": "infra/releases/development.json",
           "kind": "file",
-          "sha256": "446f2e37c2015bc3e51472f5efaf6732c5076a83439208d2ebb980b30f61b1d5"
+          "sha256": "11ff68d0afafdaf373eff93b93eb241068f764dad40de475b8e174550b1837e3"
         },
         {
           "path": "infra/recovery/deployment.example.json",
@@ -21790,7 +21791,7 @@
         {
           "path": "infra/releases/development.json",
           "kind": "file",
-          "sha256": "446f2e37c2015bc3e51472f5efaf6732c5076a83439208d2ebb980b30f61b1d5"
+          "sha256": "11ff68d0afafdaf373eff93b93eb241068f764dad40de475b8e174550b1837e3"
         },
         {
           "path": "apps/app/test/operations.test.ts",
@@ -23936,7 +23937,7 @@
         {
           "path": "apps/app/src/records/coverage.ts",
           "kind": "file",
-          "sha256": "3db7ee6407994a094cad352ef539c3354d58a06e629be2120183592efea9bef1"
+          "sha256": "301c08ecb5856c56b88ca227610ad997251a3c5d60951a796549ca9d12875d4a"
         },
         {
           "path": "apps/app/src/records/reproductions.ts",
@@ -24116,7 +24117,7 @@
     {
       "id": "63.4",
       "title": "Write property and regression tests for compute reproducibility and coverage",
-      "checked": false,
+      "checked": true,
       "requirements": [
         "56.1",
         "56.2",
@@ -24129,19 +24130,57 @@
         120
       ],
       "prerequisites": [],
-      "phase": "collaboration",
+      "phase": "completed_baseline",
       "sourcePaths": [
         {
           "path": "apps/app/test/properties/p120-compute-packages.test.ts",
-          "kind": "missing"
+          "kind": "file",
+          "sha256": "dc285a36e52cf2559eb1b3529aa252ee161aa1bc92b5b1734d59c6192b8c5f60"
+        },
+        {
+          "path": "apps/app/src/records/coverage.ts",
+          "kind": "file",
+          "sha256": "301c08ecb5856c56b88ca227610ad997251a3c5d60951a796549ca9d12875d4a"
+        },
+        {
+          "path": "apps/app/src/records/reproductions.ts",
+          "kind": "file",
+          "sha256": "1b06184fbdba2dab62cd51a3caaf7c82fc7f8feef51c49c07485d2664f3852ab"
+        },
+        {
+          "path": "packages/domain/src/coverage.ts",
+          "kind": "file",
+          "sha256": "a3bc89b46d1435466417fe5106e67c8f4018717db9e628711b6e12606e6d8f6e"
+        },
+        {
+          "path": ".kiro/specs/research-collab-cms/design.md",
+          "kind": "file",
+          "sha256": "adc795f679153a41ea670012e93dfc256f13f8be2d12327b3520c0780e9a4539"
         }
       ],
       "gates": [
         "team_archive",
         "final_checkpoint_49"
       ],
-      "acceptance": "planned",
-      "evidence": null
+      "acceptance": "accepted",
+      "evidence": {
+        "task": "63.4",
+        "state": "accepted",
+        "reason": "Added Property 120 in apps/app/test/properties/p120-compute-packages.test.ts. An independent model that counts points one by one drives random scope recordings (under the Project schema, another schema, written text, and malformed regions that must be refused), outcome changes, output tampering and restoration, and independent attempts including refused ones, across three Runs per case. After every step it checks that coverage is exactly the points completed by finished Runs whose package is not disputed and whose outputs keep their recorded hashes, that written and other-schema scopes are listed and never counted, that full elimination is stated only when every point is covered, that a refused step changes nothing, that no step alters a package, its manifest hash or the first Run outcome, and that comparisons give exact overlap and union only for scopes under the same schema. A second property stores permitted configurations digit for digit with a hash that recomputes, and refuses unsafe numbers and secret keys at any depth without storing anything; a third accepts the largest encoded package and refuses one more of each bounded part. Three deliberate breakages of the counting rules were each caught. The design table for compute packages now lists the scope tables and routes.",
+        "sourcePaths": [
+          "apps/app/src/records/coverage.ts",
+          "apps/app/src/records/reproductions.ts",
+          "packages/domain/src/coverage.ts",
+          ".kiro/specs/research-collab-cms/design.md"
+        ],
+        "testPaths": [
+          "apps/app/test/properties/p120-compute-packages.test.ts"
+        ],
+        "correctionTasks": [],
+        "checks": [
+          "docs/acceptance/checks/local-tests.json"
+        ]
+      }
     },
     {
       "id": "64.1",
@@ -24159,7 +24198,6 @@
       ],
       "properties": [],
       "prerequisites": [
-        "63.4",
         "57.4"
       ],
       "phase": "collaboration",
@@ -24537,7 +24575,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "cf88710e3f7987d65401c6f9f007cafe32344648c3a64e9d57ea9e5ee26e4d5c"
+          "sha256": "1fec7285fd32b8deaf120d61e206e8571cbfa166ffddde389fe12ee3fb39bc18"
         },
         {
           "path": "packages/domain/src/compatibility.ts",
@@ -24587,7 +24625,7 @@
         {
           "path": "infra/releases/development.json",
           "kind": "file",
-          "sha256": "446f2e37c2015bc3e51472f5efaf6732c5076a83439208d2ebb980b30f61b1d5"
+          "sha256": "11ff68d0afafdaf373eff93b93eb241068f764dad40de475b8e174550b1837e3"
         },
         {
           "path": "infra/releases/README.md",
@@ -25030,39 +25068,39 @@
   "phases": {
     "collaboration": {
       "firstWave": 0,
-      "lastWave": 8
+      "lastWave": 7
     },
     "privacy": {
-      "firstWave": 9,
-      "lastWave": 32
+      "firstWave": 8,
+      "lastWave": 31
     },
     "imports_and_log": {
-      "firstWave": 33,
-      "lastWave": 56
+      "firstWave": 32,
+      "lastWave": 55
     },
     "publication": {
-      "firstWave": 57,
-      "lastWave": 74
+      "firstWave": 56,
+      "lastWave": 73
     },
     "outside_and_ai": {
-      "firstWave": 75,
-      "lastWave": 122
+      "firstWave": 74,
+      "lastWave": 121
     },
     "recovery": {
-      "firstWave": 123,
-      "lastWave": 140
+      "firstWave": 122,
+      "lastWave": 139
     },
     "release_tooling": {
-      "firstWave": 141,
-      "lastWave": 170
+      "firstWave": 140,
+      "lastWave": 169
     },
     "staging_and_acceptance": {
-      "firstWave": 171,
-      "lastWave": 178
+      "firstWave": 170,
+      "lastWave": 177
     },
     "production_activation": {
-      "firstWave": 179,
-      "lastWave": 179
+      "firstWave": 178,
+      "lastWave": 178
     }
   },
   "gates": [
