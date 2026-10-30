@@ -25,6 +25,7 @@ import { QuestionBody } from './question/question-body';
 import { WorkBody } from '../work/work-body';
 import { CitationsPanel } from '../citations/panel';
 import { CitationScope } from '../citations/scope';
+import { ProvenancePanel } from '../provenance/panel';
 import type { CorrespondencePartyValue, CountValue, DateValue, DocumentDateValue, FieldSpec, PartyValue } from './forms/model';
 
 export interface ItemPageData {
@@ -277,6 +278,7 @@ export function ItemDetails({ data }: { readonly data: ItemPageData }) {
       <LinkList title="Cross-links" entries={data.links} empty="No Cross-links from this record." />
       <LinkList title="Backlinks" entries={data.backlinks} empty="No Backlinks to this record." />
       <CitationsPanel item={item} />
+      <ProvenancePanel item={item} />
       <section className="rf-section" aria-label="Review requests">
         <h2>Review requests</h2>
         <ReviewList reviews={item.reviews} sectionNumber={sectionNumber} onChanged={onChanged} />

@@ -370,7 +370,7 @@
     },
     {
       "path": "apps/app/src/api/routes/derivations.ts",
-      "sha256": "33eb0b34019bd4043c2ae8d79c5ca1a554baed83ef90571955b88538d112302e"
+      "sha256": "a320791bd7416c26a08d7eb690903460885d68c2b5266fa27042b3495fcdd692"
     },
     {
       "path": "apps/app/src/api/routes/discussion.ts",
@@ -613,8 +613,12 @@
       "sha256": "443d872865231e98885e561a2d0abacc692009317e9f55b21fe6cdb9af10331c"
     },
     {
+      "path": "apps/app/src/records/derivation-export.ts",
+      "sha256": "11e3496b199489b2bce7c25019f5c7d052e629ef810008b12bc925d94c4b82ec"
+    },
+    {
       "path": "apps/app/src/records/derivations.ts",
-      "sha256": "5c5410cb8d3410b49221fd7383d291f6cb9d28b063f615517cb14e936dd29979"
+      "sha256": "4ed50bea9b8720da6e3a5c3abf4e926f195c893aa5b92625ef54adaa1f64df11"
     },
     {
       "path": "apps/app/src/records/field-values.ts",
@@ -866,7 +870,7 @@
     },
     {
       "path": "apps/app/web/src/items/page.tsx",
-      "sha256": "63d085911e4ed9f8ed891fb723ae453bd589f857e8ed53bd5d6f442834b6533b"
+      "sha256": "600a539f903f00d3629b8c89d117b05303609ac4527bf9fb2238b9d098b70e85"
     },
     {
       "path": "apps/app/web/src/items/question/assessment.tsx",
@@ -935,6 +939,14 @@
     {
       "path": "apps/app/web/src/projects/list.tsx",
       "sha256": "3aa1686ca74f69a72ecf6b8d0dd397c8f908dfaefdc4ec8dd464bf0c132fba7d"
+    },
+    {
+      "path": "apps/app/web/src/provenance/model.ts",
+      "sha256": "e0760b3af324078f69ad9144d4066d5f00e37715d1dfffabaa4aba5a65efd152"
+    },
+    {
+      "path": "apps/app/web/src/provenance/panel.tsx",
+      "sha256": "44ed7f8ded8dbb9ad8ebd201d3526fe8f6c0a076a4f2e7ce85298c7b466bcbf2"
     },
     {
       "path": "apps/app/web/src/reviews/reviews.tsx",
@@ -1207,6 +1219,10 @@
     {
       "path": "packages/domain/src/decisions.ts",
       "sha256": "0734cbc503778cd53d4786fcae7dd56d6015cd206e2dc0f9acf9a32cb78e9bfd"
+    },
+    {
+      "path": "packages/domain/src/derivation-export.ts",
+      "sha256": "7869c29958f8966386254795b408e8de631a70822ca8b13eab3f11ce2c7c1a79"
     },
     {
       "path": "packages/domain/src/derivations.ts",

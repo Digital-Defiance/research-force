@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 import { idSchema } from '@researchforce/domain/schemas/common';
 import { authorizeRead } from '../../auth/authorize';
+import { exportDerivations } from '../../records/derivation-export';
 import { createDerivation, listDerivations, provenance, readDerivation, reviewDerivation } from '../../records/derivations';
 import type { ApiEnv } from '../app';
 import { parse, readJson } from '../input';
@@ -10,8 +11,9 @@ import { parse, readJson } from '../input';
 export const derivationsRoutes = new Hono<ApiEnv>();
 
 const listSchema = z.strictObject({
-  outputUnitId: idSchema.optional(), inputUnitId: idSchema.optional(), after: idSchema.optional(), limit: z.coerce.number().int().min(1).max(100).optional(),
-}).refine((query) => (query.outputUnitId === undefined) !== (query.inputUnitId === undefined), { message: 'Name either an output or an input.', path: ['outputUnitId'] });
+  outputUnitId: idSchema.optional(), inputUnitId: idSchema.optional(), outputRootId: idSchema.optional(), inputRootId: idSchema.optional(),
+  after: idSchema.optional(), limit: z.coerce.number().int().min(1).max(100).optional(),
+}).refine((query) => [query.outputUnitId, query.inputUnitId, query.outputRootId, query.inputRootId].filter((value) => value !== undefined).length === 1, { message: 'Name one output, input or record.', path: ['outputUnitId'] });
 const provenanceSchema = z.strictObject({ field: z.string().max(100).default(''), direction: z.enum(['sources', 'derivatives']).default('sources') });
 
 derivationsRoutes.get('/', async (c) => {
@@ -19,8 +21,14 @@ derivationsRoutes.get('/', async (c) => {
   const query = parse(listSchema, c.req.query());
   return c.json(await listDerivations(c, {
     ...(query.outputUnitId === undefined ? {} : { outputUnitId: query.outputUnitId }), ...(query.inputUnitId === undefined ? {} : { inputUnitId: query.inputUnitId }),
+    ...(query.outputRootId === undefined ? {} : { outputRootId: query.outputRootId }), ...(query.inputRootId === undefined ? {} : { inputRootId: query.inputRootId }),
     ...(query.after === undefined ? {} : { after: query.after }), ...(query.limit === undefined ? {} : { limit: query.limit }),
   }));
+});
+derivationsRoutes.get('/export', async (c) => {
+  await authorizeRead(c);
+  const exported = await exportDerivations(c, c.req.query());
+  return c.json(exported.body, 200, { 'content-disposition': 'attachment; filename="derivations.json"', ...(exported.next === null ? {} : { 'x-next-after': exported.next }) });
 });
 derivationsRoutes.get('/provenance/:unitId', async (c) => {
   await authorizeRead(c);

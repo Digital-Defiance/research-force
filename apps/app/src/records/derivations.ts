@@ -147,7 +147,7 @@ export interface DerivationPage { readonly derivations: readonly DerivationView[
  * The derivations of one output (with every earlier version of it), or made from one input, or recorded in one Project, a page at a time.
  * A derivation the Member cannot see on both ends is absent, and no total is given (R55.3, R55.4).
  */
-export async function listDerivations(c: Context<ApiEnv>, query: { readonly outputUnitId?: string; readonly inputUnitId?: string; readonly after?: string; readonly limit?: number }): Promise<DerivationPage> {
+export async function listDerivations(c: Context<ApiEnv>, query: { readonly outputUnitId?: string; readonly inputUnitId?: string; readonly outputRootId?: string; readonly inputRootId?: string; readonly after?: string; readonly limit?: number }): Promise<DerivationPage> {
   const limit = Math.min(Math.max(1, query.limit ?? DERIVATION_LIMITS.page), DERIVATION_LIMITS.page);
   const viewer = c.get('session').member.id;
   const conditions = ['1 = 1'];
@@ -158,7 +158,12 @@ export async function listDerivations(c: Context<ApiEnv>, query: { readonly outp
     if (!isULID(query.inputUnitId)) throw new ApiError('not_found');
     add('d.corrected_by IS NULL AND EXISTS (SELECT 1 FROM artifact_derivation_inputs i WHERE i.derivation_id = d.id AND i.input_unit_id = ? AND i.gone_at IS NULL)', query.inputUnitId);
   }
-  if (query.outputUnitId === undefined && query.inputUnitId === undefined) throw new ApiError('validation', { fields: [{ field: 'outputUnitId', rule: 'Name the output or an input.' }] });
+  if (query.outputRootId !== undefined) { if (!isULID(query.outputRootId)) throw new ApiError('not_found'); add('o.root_id = ?', query.outputRootId); }
+  if (query.inputRootId !== undefined) {
+    if (!isULID(query.inputRootId)) throw new ApiError('not_found');
+    add('d.corrected_by IS NULL AND EXISTS (SELECT 1 FROM artifact_derivation_inputs i JOIN units iu ON iu.id = i.input_unit_id WHERE i.derivation_id = d.id AND iu.root_id = ? AND i.gone_at IS NULL)', query.inputRootId);
+  }
+  if (query.outputUnitId === undefined && query.inputUnitId === undefined && query.outputRootId === undefined && query.inputRootId === undefined) throw new ApiError('validation', { fields: [{ field: 'outputUnitId', rule: 'Name an output, an input or a record.' }] });
   if (query.after !== undefined) add('d.id > ?', query.after);
   const rows = (await c.get('accountant').track(c.env.RF_CORE.prepare(
     `SELECT ${DERIVATION_COLUMNS} FROM artifact_derivations d JOIN units o ON o.id = d.output_unit_id
@@ -345,7 +350,7 @@ export async function provenance(c: Context<ApiEnv>, unitId: string, field: stri
       `SELECT d.id, d.kind, d.method, d.review_state AS reviewState, d.output_type AS outputType, d.output_unit_id AS outputUnitId, d.output_field AS outputField, d.output_sha256 AS outputSha256,
           i.input_type AS inputType, i.input_unit_id AS inputUnitId, i.input_field AS inputField, i.input_sha256 AS inputSha256
         FROM artifact_derivations d JOIN artifact_derivation_inputs i ON i.derivation_id = d.id JOIN units o ON o.id = d.output_unit_id JOIN units n ON n.id = i.input_unit_id
-        WHERE d.corrected_by IS NULL AND i.gone_at IS NULL AND ${from} IN (SELECT value FROM json_each(?1))
+        WHERE i.gone_at IS NULL AND ${from} IN (SELECT value FROM json_each(?1))
           AND ${visibleTo('o', '?2')} AND ${gone('o')} AND ${visibleTo('n', '?2')} AND ${gone('n')} ORDER BY d.id, i.position`,
     ).bind(JSON.stringify(frontier), viewer).all<{
       id: ULID; kind: DerivationKind; method: string; reviewState: ReviewState; outputType: 'attachment' | 'text'; outputUnitId: ULID; outputField: string; outputSha256: string;

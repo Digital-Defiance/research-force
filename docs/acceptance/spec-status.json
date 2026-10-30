@@ -2,15 +2,14 @@
   "inputs": {
     ".kiro/specs/research-collab-cms/requirements.md": "9e2d7cee953f4aeece04bad4a7dfae273a908c0df65c95beea7a4e572b71b5df",
     ".kiro/specs/research-collab-cms/design.md": "85df571e6efad1205603dca7addcea9c16f68252023d5483a2fbe81d705c4d93",
-    ".kiro/specs/research-collab-cms/tasks.md": "423f59ea772394d30469d7cb7738821ce5c8ada92ccae1403b58d434b5d4cd83",
-    "docs/acceptance/task-evidence.json": "88d12188fca765dc5674f87f9a8592de826d272a2ae11c3eba646eca9e4a978c"
+    ".kiro/specs/research-collab-cms/tasks.md": "58b8bc4345aa323e0d7f8179aef12d3d91115ad2c334e00baa39aae95508ab53",
+    "docs/acceptance/task-evidence.json": "4321881ac774de7a68a154cd274cf529d61a0a4dea7b5df21c1b0644e350a437"
   },
   "schemaVersion": 1,
   "nextTasks": [
-    "62.4"
+    "62.5"
   ],
   "remainingBuildOrder": [
-    "62.4",
     "62.5",
     "62.6",
     "61.2",
@@ -204,11 +203,11 @@
     "criteria": 738,
     "properties": 126,
     "leafTasks": 406,
-    "checkedLeaves": 218,
+    "checkedLeaves": 219,
     "historicalUnverified": 182,
-    "acceptedWithLocalEvidence": 36,
+    "acceptedWithLocalEvidence": 37,
     "propertyFiles": 66,
-    "remainingWaves": 188,
+    "remainingWaves": 187,
     "gates": 4
   },
   "structuralIssues": [],
@@ -13771,7 +13770,7 @@
         {
           "path": "apps/app/web/src/items/page.tsx",
           "kind": "file",
-          "sha256": "63d085911e4ed9f8ed891fb723ae453bd589f857e8ed53bd5d6f442834b6533b"
+          "sha256": "600a539f903f00d3629b8c89d117b05303609ac4527bf9fb2238b9d098b70e85"
         }
       ],
       "gates": [],
@@ -19168,7 +19167,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "88d12188fca765dc5674f87f9a8592de826d272a2ae11c3eba646eca9e4a978c"
+          "sha256": "4321881ac774de7a68a154cd274cf529d61a0a4dea7b5df21c1b0644e350a437"
         },
         {
           "path": "README.md",
@@ -19257,7 +19256,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "88d12188fca765dc5674f87f9a8592de826d272a2ae11c3eba646eca9e4a978c"
+          "sha256": "4321881ac774de7a68a154cd274cf529d61a0a4dea7b5df21c1b0644e350a437"
         },
         {
           "path": "apps/app/src/index.ts",
@@ -19396,7 +19395,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "88d12188fca765dc5674f87f9a8592de826d272a2ae11c3eba646eca9e4a978c"
+          "sha256": "4321881ac774de7a68a154cd274cf529d61a0a4dea7b5df21c1b0644e350a437"
         },
         {
           "path": "apps/app/src/local/services.ts",
@@ -19951,7 +19950,7 @@
         {
           "path": "apps/app/web/src/items/page.tsx",
           "kind": "file",
-          "sha256": "63d085911e4ed9f8ed891fb723ae453bd589f857e8ed53bd5d6f442834b6533b"
+          "sha256": "600a539f903f00d3629b8c89d117b05303609ac4527bf9fb2238b9d098b70e85"
         },
         {
           "path": "apps/app/web/test/access.test.tsx",
@@ -20687,7 +20686,7 @@
         {
           "path": "apps/app/web/src/items/page.tsx",
           "kind": "file",
-          "sha256": "63d085911e4ed9f8ed891fb723ae453bd589f857e8ed53bd5d6f442834b6533b"
+          "sha256": "600a539f903f00d3629b8c89d117b05303609ac4527bf9fb2238b9d098b70e85"
         },
         {
           "path": "apps/app/src/records/kinds/question.ts",
@@ -21080,12 +21079,12 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "88d12188fca765dc5674f87f9a8592de826d272a2ae11c3eba646eca9e4a978c"
+          "sha256": "4321881ac774de7a68a154cd274cf529d61a0a4dea7b5df21c1b0644e350a437"
         },
         {
           "path": "docs/acceptance/checks/local-tests.json",
           "kind": "file",
-          "sha256": "5a4ce7b7139602dad735349769590175b58a4fb346456c55e4cce1903812d77d"
+          "sha256": "4a0a2870ec4f128557859b1072288f67befb1d5032991d471530e1ed17d1a72d"
         },
         {
           "path": "tools/src/specs.ts",
@@ -21172,7 +21171,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "88d12188fca765dc5674f87f9a8592de826d272a2ae11c3eba646eca9e4a978c"
+          "sha256": "4321881ac774de7a68a154cd274cf529d61a0a4dea7b5df21c1b0644e350a437"
         },
         {
           "path": "packages/domain/src/settings.ts",
@@ -21352,7 +21351,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "88d12188fca765dc5674f87f9a8592de826d272a2ae11c3eba646eca9e4a978c"
+          "sha256": "4321881ac774de7a68a154cd274cf529d61a0a4dea7b5df21c1b0644e350a437"
         },
         {
           "path": "docs/storage/logical-fields.md",
@@ -21517,7 +21516,7 @@
         {
           "path": "infra/releases/development.json",
           "kind": "file",
-          "sha256": "7939355e4ace820420ce68351c819604b50907170b25ff0dd35f1b76761929b7"
+          "sha256": "7ba410cdea5180efca89639ed3e28c5df4f5192bec17081ecef7c098f31b9ad3"
         },
         {
           "path": "infra/recovery/deployment.example.json",
@@ -21792,7 +21791,7 @@
         {
           "path": "infra/releases/development.json",
           "kind": "file",
-          "sha256": "7939355e4ace820420ce68351c819604b50907170b25ff0dd35f1b76761929b7"
+          "sha256": "7ba410cdea5180efca89639ed3e28c5df4f5192bec17081ecef7c098f31b9ad3"
         },
         {
           "path": "apps/app/test/operations.test.ts",
@@ -22919,7 +22918,7 @@
         {
           "path": "apps/app/web/src/items/page.tsx",
           "kind": "file",
-          "sha256": "63d085911e4ed9f8ed891fb723ae453bd589f857e8ed53bd5d6f442834b6533b"
+          "sha256": "600a539f903f00d3629b8c89d117b05303609ac4527bf9fb2238b9d098b70e85"
         },
         {
           "path": "apps/app/web/src/routes.tsx",
@@ -23065,7 +23064,7 @@
         {
           "path": "apps/app/test/properties/p116-question-lifecycle.test.ts",
           "kind": "file",
-          "sha256": "78a6a032d1fe30311136dc18b80e90efe0f7cf0147e3aad190b725a9620b6747"
+          "sha256": "52e2ef3d6ccef465241d086c3a0af87527c361aa67639b8ca3a848fe349035b8"
         },
         {
           "path": "apps/app/src/records/assessments.ts",
@@ -23507,12 +23506,12 @@
         {
           "path": "apps/app/src/records/derivations.ts",
           "kind": "file",
-          "sha256": "5c5410cb8d3410b49221fd7383d291f6cb9d28b063f615517cb14e936dd29979"
+          "sha256": "4ed50bea9b8720da6e3a5c3abf4e926f195c893aa5b92625ef54adaa1f64df11"
         },
         {
           "path": "apps/app/src/api/routes/derivations.ts",
           "kind": "file",
-          "sha256": "33eb0b34019bd4043c2ae8d79c5ca1a554baed83ef90571955b88538d112302e"
+          "sha256": "a320791bd7416c26a08d7eb690903460885d68c2b5266fa27042b3495fcdd692"
         },
         {
           "path": "packages/domain/src/derivations.ts",
@@ -23575,7 +23574,7 @@
     {
       "id": "62.4",
       "title": "Build provenance screens and verify preservation/interchange",
-      "checked": false,
+      "checked": true,
       "requirements": [
         "55.3",
         "55.4",
@@ -23585,14 +23584,75 @@
       ],
       "properties": [],
       "prerequisites": [],
-      "phase": "collaboration",
-      "sourcePaths": [],
+      "phase": "completed_baseline",
+      "sourcePaths": [
+        {
+          "path": "apps/app/web/src/provenance/panel.tsx",
+          "kind": "file",
+          "sha256": "44ed7f8ded8dbb9ad8ebd201d3526fe8f6c0a076a4f2e7ce85298c7b466bcbf2"
+        },
+        {
+          "path": "apps/app/web/src/provenance/model.ts",
+          "kind": "file",
+          "sha256": "e0760b3af324078f69ad9144d4066d5f00e37715d1dfffabaa4aba5a65efd152"
+        },
+        {
+          "path": "apps/app/src/records/derivation-export.ts",
+          "kind": "file",
+          "sha256": "11e3496b199489b2bce7c25019f5c7d052e629ef810008b12bc925d94c4b82ec"
+        },
+        {
+          "path": "packages/domain/src/derivation-export.ts",
+          "kind": "file",
+          "sha256": "7869c29958f8966386254795b408e8de631a70822ca8b13eab3f11ce2c7c1a79"
+        },
+        {
+          "path": "apps/app/src/records/derivations.ts",
+          "kind": "file",
+          "sha256": "4ed50bea9b8720da6e3a5c3abf4e926f195c893aa5b92625ef54adaa1f64df11"
+        },
+        {
+          "path": "apps/app/web/test/provenance.test.tsx",
+          "kind": "file",
+          "sha256": "2cceb23ba43bcb5ad4486f983529bb63ccad37cb7ff8e76a0ca126434f04998a"
+        },
+        {
+          "path": "apps/app/test/derivation-interchange.test.ts",
+          "kind": "file",
+          "sha256": "c256c5239e340763bf0dc39715dd99dfb58d48e9e68f26c1b122af588ac48676"
+        },
+        {
+          "path": "apps/app/test/derivations.test.ts",
+          "kind": "file",
+          "sha256": "8a35080424ec063209890133609ce38517c680ed2ae90396c117bf8a678cf59d"
+        }
+      ],
       "gates": [
         "team_archive",
         "final_checkpoint_49"
       ],
-      "acceptance": "planned",
-      "evidence": null
+      "acceptance": "accepted",
+      "evidence": {
+        "task": "62.4",
+        "state": "accepted",
+        "reason": "Verified provenance screens and derivation interchange. A record's page shows how its artifacts were made: the originals each was made from with their content hashes and a mark when a text was edited since, the kind, method and version, language, uncertainty, the stored text, each independent review with its flagged passages cut from the exact text, and the earlier versions that were corrected, kept with their method and reviews. A corrected text is compared with the one it corrects, word by word. A Member other than the creator can record a review from the page, with an uncertain passage, and the creator is offered none. It also lists what was made from the record. Only derivations readable at both ends appear, and nothing says another exists. The manuscript walkthrough of a scan, its transcription, a translation and a corrected transcription is covered, and provenance now follows corrected derivations so a later derivative keeps its path to the original. GET /derivations/export gives the graph, identities, hashes, exact text, uncertainty, reviews and passage offsets as a strict researchforce-derivations document that is read back and compared without loss, and that leaves out any derivation with an unreadable end. Backup, restore and public release of derivations are not implemented here because their gates are built in the recovery and publication phases, and automatic OCR is not provisioned. No deployment or production certification is claimed.",
+        "sourcePaths": [
+          "apps/app/web/src/provenance/panel.tsx",
+          "apps/app/web/src/provenance/model.ts",
+          "apps/app/src/records/derivation-export.ts",
+          "packages/domain/src/derivation-export.ts",
+          "apps/app/src/records/derivations.ts"
+        ],
+        "testPaths": [
+          "apps/app/web/test/provenance.test.tsx",
+          "apps/app/test/derivation-interchange.test.ts",
+          "apps/app/test/derivations.test.ts"
+        ],
+        "correctionTasks": [],
+        "checks": [
+          "docs/acceptance/checks/local-tests.json"
+        ]
+      }
     },
     {
       "id": "62.5",
@@ -23609,9 +23669,7 @@
       "properties": [
         118
       ],
-      "prerequisites": [
-        "62.4"
-      ],
+      "prerequisites": [],
       "phase": "collaboration",
       "sourcePaths": [
         {
@@ -24153,7 +24211,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "88d12188fca765dc5674f87f9a8592de826d272a2ae11c3eba646eca9e4a978c"
+          "sha256": "4321881ac774de7a68a154cd274cf529d61a0a4dea7b5df21c1b0644e350a437"
         },
         {
           "path": "packages/domain/src/compatibility.ts",
@@ -24203,7 +24261,7 @@
         {
           "path": "infra/releases/development.json",
           "kind": "file",
-          "sha256": "7939355e4ace820420ce68351c819604b50907170b25ff0dd35f1b76761929b7"
+          "sha256": "7ba410cdea5180efca89639ed3e28c5df4f5192bec17081ecef7c098f31b9ad3"
         },
         {
           "path": "infra/releases/README.md",
@@ -24646,39 +24704,39 @@
   "phases": {
     "collaboration": {
       "firstWave": 0,
-      "lastWave": 16
+      "lastWave": 15
     },
     "privacy": {
-      "firstWave": 17,
-      "lastWave": 40
+      "firstWave": 16,
+      "lastWave": 39
     },
     "imports_and_log": {
-      "firstWave": 41,
-      "lastWave": 64
+      "firstWave": 40,
+      "lastWave": 63
     },
     "publication": {
-      "firstWave": 65,
-      "lastWave": 82
+      "firstWave": 64,
+      "lastWave": 81
     },
     "outside_and_ai": {
-      "firstWave": 83,
-      "lastWave": 130
+      "firstWave": 82,
+      "lastWave": 129
     },
     "recovery": {
-      "firstWave": 131,
-      "lastWave": 148
+      "firstWave": 130,
+      "lastWave": 147
     },
     "release_tooling": {
-      "firstWave": 149,
-      "lastWave": 178
+      "firstWave": 148,
+      "lastWave": 177
     },
     "staging_and_acceptance": {
-      "firstWave": 179,
-      "lastWave": 186
+      "firstWave": 178,
+      "lastWave": 185
     },
     "production_activation": {
-      "firstWave": 187,
-      "lastWave": 187
+      "firstWave": 186,
+      "lastWave": 186
     }
   },
   "gates": [

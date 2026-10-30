@@ -143,8 +143,8 @@ describe('Property 116: Question assessments retain versioned evidence and acces
         } else {
           const lead = op.lead;
           response = await send(op.who, 'PATCH', `/items/${qid}`, { rev: op.stale ? rev - 1 : rev, mark: { mark: 'minor_edit', reason: 'Synthetic.' }, leadId: world.ids[lead] });
-          // A lead who cannot read the Question is refused.
-          allowed = mayEdit && !op.stale && !(model.restricted && lead === 'colleague');
+          // A lead who cannot read the Question is refused; naming the lead it already has changes nothing, so even an out-of-date revision is accepted.
+          allowed = mayEdit && (!op.stale || (lead === model.lead && rev > 1)) && !(model.restricted && lead === 'colleague');
           apply = () => { model.lead = lead; };
         }
         expect(response.status === 200, `${label} -> ${response.status}`).toBe(allowed);
