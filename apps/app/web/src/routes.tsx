@@ -21,6 +21,7 @@ import { EditProjectPage, ProjectForm } from './projects/form';
 import { ProjectHistoryPage } from './projects/history';
 import { ProjectsPage } from './projects/list';
 import { WorkListScreen } from './work/work-list';
+import { CitationCurationScreen } from './citations/panel';
 import { ReviewQueuePage } from './reviews/reviews';
 import { SearchScreen } from './search/search';
 import { SessionContext, sessionFor } from './session';
@@ -123,6 +124,10 @@ function ProjectWorkRoute() {
   const { id = '' } = useParams();
   return <WorkListScreen key={id} projectId={id} />;
 }
+function ProjectCitationsRoute() {
+  const { id = '' } = useParams();
+  return <CitationCurationScreen key={id} projectId={id} />;
+}
 function SubmissionItemsRoute() {
   const { id = '' } = useParams();
   return <SubmissionItemsScreen key={id} id={id} />;
@@ -159,6 +164,7 @@ export function WorkspaceRoutes() {
       <Route path="/projects/:id/edit" element={<EditProjectRoute />} />
       <Route path="/projects/:id/history" element={<ProjectHistoryRoute />} />
       <Route path="/projects/:id/work" element={<ProjectWorkRoute />} />
+      <Route path="/projects/:id/citations" element={<ProjectCitationsRoute />} />
       <Route path="/me/work" element={<WorkListScreen />} />
       <Route path="/reviews" element={<ReviewQueuePage />} />
       <Route path="/search" element={<SearchScreen />} />

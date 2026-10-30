@@ -37,7 +37,7 @@ import { insertStagedSections, prepareSections, stagedSectionChange, stagedSecti
 import type { Section, StagedSections } from './kinds/journal';
 import { richText, rowsOf } from './kinds/kind';
 import type { BaseRow, ChildUnit, ItemFields, KindRules } from './kinds/kind';
-import { markChangedSections, markChangedTargets } from './citations';
+import { citationIssues, markChangedSections, markChangedTargets } from './citations';
 import { evidenceLink, linkIssues, writeLinks } from './links';
 import type { LinkInput } from './links';
 import { addGroupNote, guardLogSummaryOwner, logSummaryColumns, present } from './log-summary';
@@ -309,6 +309,7 @@ export async function createItem(c: Context<ApiEnv>, kind: ItemKind, body: unkno
   }
   const linked = await saveLinks(c, id, envelope, true);
   issues.push(...linked.issues);
+  issues.push(...await citationIssues(c, undefined, undefined, fields));
   const reviews = await submissionReviews(c, context, { id, actor, now, fields, staged: staged !== undefined, scope }, envelope.reviews ?? []);
   issues.push(...reviews.issues);
   refuse(issues);
@@ -412,6 +413,7 @@ export async function editItem(c: Context<ApiEnv>, current: LoadedItem, body: un
   if (staged) issues.push(...stagedSectionIssues(staged));
   const linked = await saveLinks(c, base.id, envelope, false);
   issues.push(...linked.issues);
+  if (!staged) issues.push(...await citationIssues(c, base.id, before, input));
   refuse(issues);
   const namedBefore = new Set(KIND_ADAPTERS[base.kind].named?.(before) ?? []);
   await refuseUnreadable(c, [...addedMentions(before, input).members, ...(KIND_ADAPTERS[base.kind].named?.(input) ?? []).filter((member) => !namedBefore.has(member))], { rootId: base.id });

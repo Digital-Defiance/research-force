@@ -1,6 +1,7 @@
 import { DEFAULT_RESOURCE_PROFILE } from './resource-profile';
 import { isLanguageCode } from './languages';
 import { cpLength, isBlank, isCodePointBoundary } from './text';
+import { isULID } from './types';
 
 interface Range { readonly s: number; readonly e: number; }
 export type MentionSpan = Range & { readonly k: 'mention' } & (
@@ -8,13 +9,13 @@ export type MentionSpan = Range & { readonly k: 'mention' } & (
   | { readonly specialty: string; readonly member?: never }
 );
 export type Span =
-  | (Range & { readonly k: 'quote'; readonly source: string })
-  | (Range & { readonly k: 'paraphrase'; readonly source: string })
-  | (Range & { readonly k: 'source_reported'; readonly source?: string })
+  | (Range & { readonly k: 'quote'; readonly source: string; readonly citation?: string })
+  | (Range & { readonly k: 'paraphrase'; readonly source: string; readonly citation?: string })
+  | (Range & { readonly k: 'source_reported'; readonly source?: string; readonly citation?: string })
   | (Range & { readonly k: 'lang'; readonly lang: string })
   | MentionSpan;
 export interface RichText { readonly text: string; readonly spans: readonly Span[]; }
-export type SpanIssueCode = 'range' | 'boundary' | 'order' | 'source_required' | 'source_too_long' | 'quote_paraphrase_overlap' | 'language' | 'language_overlap' | 'mention_target';
+export type SpanIssueCode = 'range' | 'boundary' | 'order' | 'source_required' | 'source_too_long' | 'quote_paraphrase_overlap' | 'language' | 'language_overlap' | 'mention_target' | 'citation';
 export interface SpanIssue {
   readonly spanIndex: number;
   readonly code: SpanIssueCode;
@@ -32,6 +33,7 @@ const REASONS: Record<SpanIssueCode, string> = {
   language: 'Choose a current two-letter ISO 639-1 language code.',
   language_overlap: 'A character cannot carry two language marks.',
   mention_target: 'A Mention must name exactly one Member or Specialty.',
+  citation: 'A citation reference must be the identifier of an Evidence Citation.',
 };
 interface IndexedSpan { span: Span; index: number; }
 
@@ -73,6 +75,7 @@ export function validateSpans(richText: RichText): SpanIssue[] {
     if (index > 0 && span.s < richText.spans[index - 1]!.s) add(index, 'order');
     if ((span.k === 'quote' || span.k === 'paraphrase') && isBlank(span.source)) add(index, 'source_required');
     if ('source' in span && span.source !== undefined && cpLength(span.source) > DEFAULT_RESOURCE_PROFILE.chosen.logical.sourceCodePoints) add(index, 'source_too_long');
+    if ('citation' in span && span.citation !== undefined && !isULID(span.citation)) add(index, 'citation');
     if (span.k === 'lang' && !isLanguageCode(span.lang)) add(index, 'language');
     if (span.k === 'mention') {
       const targets = [span.member, span.specialty].filter((value) => value !== undefined);

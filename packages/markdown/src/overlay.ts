@@ -17,17 +17,18 @@ export type Leaf =
 /** Spans of at least this many code points show their label as a numbered footnote on the same page (R11.5). */
 export const FOOTNOTE_FROM = 200;
 
-export interface LabelNote { readonly number: number; readonly id: string; readonly kind: LabelKind; readonly source?: string; readonly label: string; }
+export interface LabelNote { readonly number: number; readonly id: string; readonly kind: LabelKind; readonly source?: string; readonly locator?: string; readonly label: string; }
 /**
  * Collects footnoted labels for one page so numbering runs across every field on it. `kindHref` links each label kind to its Methods
  * page entry on public pages (R46.14).
  */
 export class LabelNotes {
   readonly items: LabelNote[] = [];
-  constructor(readonly kindHref?: (kind: LabelKind) => string) {}
-  add(kind: LabelKind, source: string | undefined): LabelNote {
+  /** `locators` maps an Evidence_Citation id to the locator it shows; only citations the viewer can read are in it (R54.4, R54.5). */
+  constructor(readonly kindHref?: (kind: LabelKind) => string, readonly locators?: ReadonlyMap<string, string>) {}
+  add(kind: LabelKind, source: string | undefined, locator?: string): LabelNote {
     const number = this.items.length + 1;
-    const note = { number, id: `label-note-${number}`, kind, ...(source === undefined ? {} : { source }), label: labelTextFor(kind, source) };
+    const note = { number, id: `label-note-${number}`, kind, ...(source === undefined ? {} : { source }), ...(locator === undefined ? {} : { locator }), label: labelTextFor(kind, source, locator) };
     this.items.push(note);
     return note;
   }
@@ -103,11 +104,12 @@ export function buildInline(leaves: readonly Leaf[], context: OverlayContext): V
     if (!entry || !context.labelHere.has(entry.index) || !isLabelSpan(entry.span)) return [];
     const { k: kind } = entry.span;
     const source = 'source' in entry.span ? entry.span.source : undefined;
+    const locator = entry.span.citation === undefined ? undefined : context.notes.locators?.get(entry.span.citation);
     if (cpLength(context.source.slice(entry.span.s, entry.span.e)) >= FOOTNOTE_FROM) {
-      const note = context.notes.add(kind, source);
+      const note = context.notes.add(kind, source, locator);
       return [labelNoteReference(note.number, note.id)];
     }
-    return [labelCaption(kind, source, context.notes.kindHref?.(kind))];
+    return [labelCaption(kind, source, context.notes.kindHref?.(kind), locator)];
   };
 
   const build = (from: number, to: number, depth: number): ViewNode[] => {
@@ -136,7 +138,7 @@ export function buildInline(leaves: readonly Leaf[], context: OverlayContext): V
 export function renderNotes(notes: LabelNotes): ViewNode | undefined {
   if (!notes.items.length) return undefined;
   return element('ol', { class: 'label-notes' }, notes.items.map((note) => element('li', { id: note.id }, [
-    ...labelContent(note.kind, note.source, notes.kindHref?.(note.kind)), text(' '),
+    ...labelContent(note.kind, note.source, notes.kindHref?.(note.kind), note.locator), text(' '),
     element('a', { href: `#${note.id}-ref`, 'aria-label': `Back to reference ${note.number}` }, [text('↩')]),
   ])));
 }

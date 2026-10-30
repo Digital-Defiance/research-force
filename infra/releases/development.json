@@ -359,7 +359,7 @@
     },
     {
       "path": "apps/app/src/api/routes/citations.ts",
-      "sha256": "a29684adbbaca8b2fc2814afc3085cafc77fd98a7c3bc0cfe659f0ae01e9a5d4"
+      "sha256": "bbc31959823629d54825d9f7b1e4f2692edc58935e83f1c650c5cd1c337fa860"
     },
     {
       "path": "apps/app/src/api/routes/discussion.ts",
@@ -590,8 +590,12 @@
       "sha256": "1df8c50ae78f5f8213928b8a89f7fe579252085a32206ff84e0ab09effe1ebd5"
     },
     {
+      "path": "apps/app/src/records/citation-navigation.ts",
+      "sha256": "17423dce670669eb073036cb13ea83771fc33411344789cb557eed7fd2fe871e"
+    },
+    {
       "path": "apps/app/src/records/citations.ts",
-      "sha256": "254620131ab5cac968f4556a450af5fe04845e86b27628f5f048a484da5f9e3e"
+      "sha256": "ef7c7b60079b816cb5b7f7646f67724e74d396f03f4eb53c0c5f944ba3c64325"
     },
     {
       "path": "apps/app/src/records/decisions.ts",
@@ -607,7 +611,7 @@
     },
     {
       "path": "apps/app/src/records/items.ts",
-      "sha256": "7de7110c94b10118f616cde4dda2f7bee5ef604116975ca46d444fd6be6568e9"
+      "sha256": "ee447c796720b2bdb1c47704b5b13d2f2cd061a65c29ed3ff53109241062a723"
     },
     {
       "path": "apps/app/src/records/kinds/archival.ts",
@@ -750,20 +754,32 @@
       "sha256": "1b66d25b88888c8c1a30e83dc4c1492996e5e245a3aab41da40e4c1ab126f2ce"
     },
     {
+      "path": "apps/app/web/src/citations/model.ts",
+      "sha256": "0c348774f1303970f779b7a8eb691e44aeb815ab6b0d5ac601f494fc41055bc0"
+    },
+    {
+      "path": "apps/app/web/src/citations/panel.tsx",
+      "sha256": "13c3779e5072ca30f18728a17f48bf69245bc2e193a983272418132b0b901138"
+    },
+    {
+      "path": "apps/app/web/src/citations/scope.tsx",
+      "sha256": "6e8e0f30f42b470eecb0b827ad3034f26b9aaaeed25e6ac6a94e285462731dce"
+    },
+    {
       "path": "apps/app/web/src/discussion/thread.tsx",
       "sha256": "bb739eb7d0e7c5228a1da7d769af9d53711503f97983570e787ea18226b05500"
     },
     {
       "path": "apps/app/web/src/editor/RichTextEditor.tsx",
-      "sha256": "121e90da117244babab926e460bb96309900aa894fa4559345cc243dda507541"
+      "sha256": "c687929b28342117b349a30a0790f09a7af605f9f13bf9dfe64bbaf32b29ae57"
     },
     {
       "path": "apps/app/web/src/editor/RichTextView.tsx",
-      "sha256": "d53130504bd458ec072947f3c3a32f444bb749c792f2640fcff7e28595a752e0"
+      "sha256": "1a5cc17585d6988750067f946282bea1f65d752796dae951221e92ceef85d178"
     },
     {
       "path": "apps/app/web/src/editor/spans.ts",
-      "sha256": "85db818437f34c7d84b1b361debbc2c4afcda458efd946cd48647357621f7f02"
+      "sha256": "8c102ca8efa751238a38a7ea6af0f27a57a3552f5c1388c7e07af7c620ad4437"
     },
     {
       "path": "apps/app/web/src/files/attachment-page.tsx",
@@ -827,7 +843,7 @@
     },
     {
       "path": "apps/app/web/src/items/forms/ItemForm.tsx",
-      "sha256": "7ba14bacec28eb5a195135c57d8f878cab6e153c89867051412c6d98ee4156ec"
+      "sha256": "c151fe99355e01e73510572afde157dedda4fd6df07c584710f29bb348c9293f"
     },
     {
       "path": "apps/app/web/src/items/forms/model.ts",
@@ -835,7 +851,7 @@
     },
     {
       "path": "apps/app/web/src/items/page.tsx",
-      "sha256": "66129e2ff6b3e64c16817258dff5d7f187c52d4bf1540266bb51782a141121fb"
+      "sha256": "63d085911e4ed9f8ed891fb723ae453bd589f857e8ed53bd5d6f442834b6533b"
     },
     {
       "path": "apps/app/web/src/items/question/assessment.tsx",
@@ -903,7 +919,7 @@
     },
     {
       "path": "apps/app/web/src/projects/list.tsx",
-      "sha256": "e085241f3ea1dcee2bb9ba8f82f5b42c21e14c6869a8b2292a933aaceac42754"
+      "sha256": "3aa1686ca74f69a72ecf6b8d0dd397c8f908dfaefdc4ec8dd464bf0c132fba7d"
     },
     {
       "path": "apps/app/web/src/reviews/reviews.tsx",
@@ -911,7 +927,7 @@
     },
     {
       "path": "apps/app/web/src/routes.tsx",
-      "sha256": "6e1c0ee964c750b0e27448a15c7f9f65b3871952f4fd1dd17639f912e1b04d86"
+      "sha256": "2908ad62418af387aadda8d302e3f8a4c72acf4de6a3b387995871429b55b7a8"
     },
     {
       "path": "apps/app/web/src/search/search.tsx",
@@ -1150,6 +1166,10 @@
       "sha256": "36aaecee5500df4b6caa606a9cc2f921e1a19bb90c1877efc3e9f30e1caf2139"
     },
     {
+      "path": "packages/domain/src/citation-export.ts",
+      "sha256": "d2f371de82c2d921a584c770f42db977300130b9b2a5998228cbb028c98c9c31"
+    },
+    {
       "path": "packages/domain/src/citations.ts",
       "sha256": "694c68c14f6e23fe57e821865056ddf699208743fdfb8009009c489934929f23"
     },
@@ -1191,7 +1211,7 @@
     },
     {
       "path": "packages/domain/src/label-marks.ts",
-      "sha256": "023ae9e4538c69c93df2169774e47ea8274fd0ba3e08d443de31a4f07e866731"
+      "sha256": "2c8ef91e28fb623fc602df41c00bc15f74a3dfad6238e160ca0b0857da0f8e1a"
     },
     {
       "path": "packages/domain/src/languages.ts",
@@ -1239,7 +1259,7 @@
     },
     {
       "path": "packages/domain/src/richtext.ts",
-      "sha256": "8e8ae161d133fd870d6ff5edf68791fe1e7c88568f332b00347611d03ab7c4bc"
+      "sha256": "790984ffd214b81b93c22ac49d5680e764371d2dd87d808f2516395309a6436b"
     },
     {
       "path": "packages/domain/src/rules.ts",
@@ -1247,7 +1267,7 @@
     },
     {
       "path": "packages/domain/src/schemas/common.ts",
-      "sha256": "27415c63f985efab7c7eb02dfd783be932fae4c2e6d8046f2ddcb6ef9d87c3d4"
+      "sha256": "554dba33d009b0b34f5a6a3db2fb892ea8eb3f6ec7267c2c016c0286368165c7"
     },
     {
       "path": "packages/domain/src/schemas/items.ts",
@@ -1271,7 +1291,7 @@
     },
     {
       "path": "packages/domain/src/text-fragments.ts",
-      "sha256": "d7ba82822f7db3a70a35d6799a8935edd25715f3d1f1fda82f454004da6d1fdc"
+      "sha256": "03d1b2e514213f58d3b95be6695f600675ab9cd33bee796205b0910ee4e2dd37"
     },
     {
       "path": "packages/domain/src/text.ts",
@@ -1315,7 +1335,7 @@
     },
     {
       "path": "packages/kernel/src/project.ts",
-      "sha256": "8dabc373c82547b80b5b850750065c0d738d474a40864496488d83466daa2fea"
+      "sha256": "fbcd9ce06cb14fde05b47e1c64ab195b8daef85141201dd8179edd7ed82ab259"
     },
     {
       "path": "packages/kernel/src/substitute.ts",
@@ -1351,7 +1371,7 @@
     },
     {
       "path": "packages/markdown/src/overlay.ts",
-      "sha256": "b2c514b774ec17bcce12b61dcbf2db9e8e5aa28b5e4941a3f1d3092d43c11b0c"
+      "sha256": "8ac777ae4706552be1cc5b9aa9e16ba9e2b8cf0d22ec0ccf12c8b9176826ebfa"
     },
     {
       "path": "packages/markdown/src/render.ts",

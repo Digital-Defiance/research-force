@@ -70,6 +70,16 @@ describe('project', () => {
     expect(projection.emailMarks.get('u:s')).toEqual([{ path: ['text', 'text'], start: 9, end: placeholderEnd }]);
   });
 
+  it('keeps a label on the same characters but drops the Evidence_Citation it names, so no internal id or locator is public (R54.5)', () => {
+    const text = 'Cited words here';
+    const projection = projectDetailed(state([
+      item('a', { kind: 'journal_entry', logSummary: rich('Log') }),
+      section('s', 'a', text, { text: { text, spans: [{ k: 'quote', s: 0, e: 5, source: 'Müller 1944', citation: '01JCITATIONAAAAAAAAAAAAAAA' }, { k: 'source_reported', s: 6, e: 11, citation: '01JCITATIONBBBBBBBBBBBBBBB' }] } }),
+    ]));
+    expect(projection.views.get('u:s')).toMatchObject({ text: { text, spans: [{ k: 'quote', s: 0, e: 5, source: 'Müller 1944' }, { k: 'source_reported', s: 6, e: 11 }] } });
+    expect(JSON.stringify([...projection.views.values()])).not.toContain('01JCITATION');
+  });
+
   it('points a superseded Attachment at the last later Public version', () => {
     const projection = projectDetailed(state([
       item('a', { kind: 'topic', body: rich('Body') }),

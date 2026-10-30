@@ -23,6 +23,8 @@ import { KIND_FIELDS, SUBMITTABLE_KINDS } from './forms/model';
 import { AssessmentPanel } from './question/assessment';
 import { QuestionBody } from './question/question-body';
 import { WorkBody } from '../work/work-body';
+import { CitationsPanel } from '../citations/panel';
+import { CitationScope } from '../citations/scope';
 import type { CorrespondencePartyValue, CountValue, DateValue, DocumentDateValue, FieldSpec, PartyValue } from './forms/model';
 
 export interface ItemPageData {
@@ -209,6 +211,7 @@ export function ItemDetails({ data }: { readonly data: ItemPageData }) {
   const companions = new Set([...(COMPANION_FIELDS[item.kind] ?? []), ...(OWN_BLOCK[item.kind] ?? [])]);
   const fields = KIND_FIELDS[item.kind].filter((spec) => !HIDDEN_FIELDS.has(spec.name) && !companions.has(spec.name) && item[spec.name] !== undefined && item[spec.name] !== null);
   return (
+    <CitationScope rootId={item.id}>
     <article className="rf-stack">
       <header>
         <p className="rf-meta">{`${ITEM_KIND_NAMES[item.kind]} ${item.identifier}`}</p>
@@ -273,6 +276,7 @@ export function ItemDetails({ data }: { readonly data: ItemPageData }) {
       <AttachmentList parentId={item.id} />
       <LinkList title="Cross-links" entries={data.links} empty="No Cross-links from this record." />
       <LinkList title="Backlinks" entries={data.backlinks} empty="No Backlinks to this record." />
+      <CitationsPanel item={item} />
       <section className="rf-section" aria-label="Review requests">
         <h2>Review requests</h2>
         <ReviewList reviews={item.reviews} sectionNumber={sectionNumber} onChanged={onChanged} />
@@ -290,6 +294,7 @@ export function ItemDetails({ data }: { readonly data: ItemPageData }) {
         </ul>
       </section>
     </article>
+    </CitationScope>
   );
 }
 

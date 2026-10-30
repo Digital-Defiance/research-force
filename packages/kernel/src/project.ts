@@ -44,7 +44,16 @@ const byAttachment = (a: UnitRecord, b: UnitRecord): number => (a.type === 'diss
 
 /** Mentions name internal Member and Specialty ids; public text keeps their characters without the reference. */
 function publicRich(rich: RichText): RichText {
-  return rich.spans.some((span) => span.k === 'mention') ? { text: rich.text, spans: rich.spans.filter((span) => span.k !== 'mention') } : rich;
+  // A citation reference names an internal Evidence_Citation; its locator is public only through the citation's own two-ended projection (R54.5).
+  if (!rich.spans.some((span) => span.k === 'mention' || ('citation' in span && span.citation !== undefined))) return rich;
+  return {
+    text: rich.text,
+    spans: rich.spans.filter((span) => span.k !== 'mention').map((span) => {
+      if (!('citation' in span) || span.citation === undefined) return span;
+      const { citation: _citation, ...rest } = span;
+      return rest as typeof span;
+    }),
+  };
 }
 function sameRich(a: RichText | undefined, b: RichText | undefined): boolean {
   return a !== undefined && b !== undefined && a.text === b.text && canonicalJson(a.spans) === canonicalJson(b.spans);

@@ -17,6 +17,7 @@ import { ApiError } from '../api/errors';
 import type { FieldIssue } from '../api/errors';
 import { parse } from '../api/input';
 import { authorize } from '../auth/authorize';
+import { textsOf } from '../discussion/mentions';
 import { loadItem } from './items';
 import { visibleTo } from './submissions';
 
@@ -87,6 +88,9 @@ async function resolveTarget(c: Context<ApiEnv>, target: Target): Promise<Resolv
 export interface CitationView {
   readonly id: ULID;
   readonly citingUnitId: ULID;
+  /** The Research_Items that hold the two ends, for navigation. */
+  readonly citingRootId: ULID;
+  readonly targetRootId: ULID;
   readonly citingField: string;
   readonly target: { readonly type: Target['type']; readonly unitId: ULID; readonly field?: string };
   readonly role: CitationRole;
@@ -114,7 +118,7 @@ const COLUMNS = `c.id, c.citing_unit_id AS citingUnitId, c.citing_root_id AS cit
 function view(row: CitationRow): CitationView {
   const locator = locatorSchema.parse(JSON.parse(row.locatorJson));
   return {
-    id: row.id, citingUnitId: row.citingUnitId, citingField: row.citingField,
+    id: row.id, citingUnitId: row.citingUnitId, citingRootId: row.citingRootId, targetRootId: row.targetRootId, citingField: row.citingField,
     target: { type: row.targetType, unitId: row.targetUnitId, ...(row.targetField === null ? {} : { field: row.targetField }) },
     role: row.role, locator, locatorLabel: locatorLabel(locator), contentHash: row.contentHash, targetRev: row.targetRev,
     state: row.earlierVersionAt === null ? 'current' : 'earlier_version', earlierVersionAt: row.earlierVersionAt,
@@ -126,19 +130,29 @@ function view(row: CitationRow): CitationView {
  * The citations among `ids` whose citing and cited units the Member can read now. A citation with an end the Member cannot read is not
  * returned, and nothing about it, its locator, or its count is revealed (R54.5).
  */
-export async function readableCitations(c: Context<ApiEnv>, where: { readonly ids?: readonly string[]; readonly citingRootId?: string; readonly targetUnitId?: string; readonly includeRetired?: boolean }): Promise<CitationView[]> {
+export async function readableCitations(c: Context<ApiEnv>, where: {
+  readonly ids?: readonly string[]; readonly citingRootId?: string; readonly targetUnitId?: string; readonly includeRetired?: boolean;
+  /** Citations whose citing record belongs to this Project. */
+  readonly projectId?: string; readonly targetRootId?: string; readonly unresolved?: boolean;
+  /** The page after this citation id, and its size (at most 1,001 rows). */
+  readonly after?: string; readonly limit?: number;
+}): Promise<CitationView[]> {
   const conditions = ['1 = 1'];
   const params: unknown[] = [c.get('session').member.id];
   const add = (condition: string, value: unknown) => { params.push(value); conditions.push(condition.replace('?', `?${params.length}`)); };
   if (where.ids !== undefined) add('c.id IN (SELECT value FROM json_each(?))', JSON.stringify(where.ids));
   if (where.citingRootId !== undefined) add('c.citing_root_id = ?', where.citingRootId);
   if (where.targetUnitId !== undefined) add('c.target_unit_id = ?', where.targetUnitId);
+  if (where.projectId !== undefined) add('cu.project_id = ?', where.projectId);
+  if (where.targetRootId !== undefined) add('c.target_root_id = ?', where.targetRootId);
+  if (where.unresolved === true) conditions.push("c.locator_type = 'unresolved'");
+  if (where.after !== undefined) add('c.id > ?', where.after);
   if (where.includeRetired !== true) conditions.push('c.retired_at IS NULL');
   const result = await c.get('accountant').track(c.env.RF_CORE.prepare(
     `SELECT ${COLUMNS} FROM evidence_citations c JOIN units cu ON cu.id = c.citing_unit_id JOIN units tu ON tu.id = c.target_unit_id
       WHERE ${conditions.join(' AND ')} AND ${visibleTo('cu', '?1')} AND ${visibleTo('tu', '?1')}
         AND NOT EXISTS (SELECT 1 FROM deletions d WHERE d.unit_id IN (c.citing_unit_id, c.citing_root_id, c.target_unit_id, c.target_root_id))
-      ORDER BY c.id LIMIT 1001`,
+      ORDER BY c.id LIMIT ${Math.min(Math.max(1, Math.trunc(where.limit ?? 1001)), 1001)}`,
   ).bind(...params).all<CitationRow>());
   return result.results.map(view);
 }
@@ -270,4 +284,28 @@ export function markChangedTargets(batch: GuardedBatch, item: { readonly id: ULI
       markEarlierVersions(batch, { type: 'text', unitId: item.id, field }, textDigest(value?.text as string | undefined ?? ''));
     }
   }
+}
+
+/** Every citation reference of the label spans in a saved value, with the field path of its span. */
+function referencesOf(value: unknown): { readonly field: string; readonly citation: string }[] {
+  return textsOf(value).flatMap(({ path, text }) => text.spans.flatMap((span, index) => (
+    'citation' in span && span.citation !== undefined ? [{ field: `${path === '' ? '' : `${path}.`}spans.${index}`, citation: span.citation }] : [])));
+}
+
+/**
+ * A label that newly names an Evidence_Citation names a current one of the record being saved, with both ends readable by the editor, so
+ * that a label never invents a target or shows a locator the editor cannot see. References the earlier text already had stay valid after
+ * the citation is replaced or its ends become unreadable; they are shown only while both ends are readable (R54.4, R54.5).
+ */
+export async function citationIssues(c: Context<ApiEnv>, rootId: string | undefined, before: unknown, after: unknown): Promise<FieldIssue[]> {
+  const kept = new Set(referencesOf(before).map((reference) => reference.citation));
+  const added = referencesOf(after).filter((reference) => !kept.has(reference.citation));
+  if (added.length === 0) return [];
+  const ids = [...new Set(added.map((reference) => reference.citation))];
+  const usable = new Set<string>();
+  if (rootId !== undefined) {
+    for (const citation of await readableCitations(c, { ids, citingRootId: rootId })) usable.add(citation.id);
+  }
+  return added.filter((reference) => !usable.has(reference.citation))
+    .map((reference) => ({ field: reference.field, rule: 'A citation reference names a current Evidence Citation of this record that you can read.' }));
 }

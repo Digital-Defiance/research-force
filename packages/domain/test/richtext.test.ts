@@ -99,3 +99,26 @@ describe('explicit mentions', () => {
     }
   });
 });
+
+describe('citation references on labels (R54.4)', () => {
+  const text = 'Cited words.';
+  it('accepts a label that names an Evidence_Citation, alone or with a legacy source, and refuses a malformed reference', () => {
+    const id = '01J0000000000000000000CT01';
+    expect(validateSpans({ text, spans: [{ s: 0, e: 5, k: 'quote', source: 'Müller 1944', citation: id }, { s: 6, e: 11, k: 'source_reported', citation: id }] })).toEqual([]);
+    expect(validateSpans({ text, spans: [{ s: 0, e: 5, k: 'paraphrase', source: 'Doe', citation: 'not-an-id' }] }).map((issue) => issue.code)).toEqual(['citation']);
+  });
+  it('keeps a citation reference on its characters through edits, like the label it belongs to', () => {
+    const id = '01J0000000000000000000CT01';
+    const edited = applyEdit({ text, spans: [{ s: 6, e: 11, k: 'quote', source: 'A', citation: id }] }, { from: 0, to: 0, insert: 'XX' });
+    expect(edited.spans).toEqual([{ s: 8, e: 13, k: 'quote', source: 'A', citation: id }]);
+  });
+  it('writes the cited locator after the named source in a label, and only when it is given', async () => {
+    const { labelTextFor } = await import('../src/label-marks');
+    expect(labelTextFor('quote', 'Müller 1944', 'p. 12')).toBe('Quote · Müller 1944, p. 12');
+    expect(labelTextFor('paraphrase', 'Doe', 'fol. 4v')).toBe('Paraphrase · Doe, fol. 4v');
+    expect(labelTextFor('source_reported', undefined, 'p. 3')).toBe('Source-reported · p. 3');
+    expect(labelTextFor('source_reported', 'Hearsay', 'p. 3')).toBe('Source-reported · Hearsay, p. 3');
+    expect(labelTextFor('source_reported', undefined)).toBe('Source-reported');
+    expect(labelTextFor('quote', 'Müller 1944')).toBe('Quote · Müller 1944');
+  });
+});

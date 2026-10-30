@@ -68,9 +68,9 @@ export const enteredTimeSchema = z.string().refine((value) => { try { enteredTim
 
 const range = { s: z.number(), e: z.number() };
 const spanSchema = z.discriminatedUnion('k', [
-  z.strictObject({ k: z.literal('quote'), ...range, source: z.string() }),
-  z.strictObject({ k: z.literal('paraphrase'), ...range, source: z.string() }),
-  z.strictObject({ k: z.literal('source_reported'), ...range, source: z.string().optional() }),
+  z.strictObject({ k: z.literal('quote'), ...range, source: z.string(), citation: z.string().optional() }),
+  z.strictObject({ k: z.literal('paraphrase'), ...range, source: z.string(), citation: z.string().optional() }),
+  z.strictObject({ k: z.literal('source_reported'), ...range, source: z.string().optional(), citation: z.string().optional() }),
   z.strictObject({ k: z.literal('lang'), ...range, lang: z.string() }),
   z.strictObject({ k: z.literal('mention'), ...range, member: idSchema.optional(), specialty: idSchema.optional() }),
 ]);

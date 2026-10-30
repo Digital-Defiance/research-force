@@ -1058,6 +1058,28 @@
       "checks": [
         "docs/acceptance/checks/local-tests.json"
       ]
+    },
+    {
+      "task": "62.2",
+      "state": "accepted",
+      "reason": "Verified citation editing, labels, navigation and export. A Quote, Paraphrase or Source-reported label can name an Evidence_Citation of its own record that the editor can read, beside or instead of a source named in words; legacy labels stay exactly as written and are listed for curation, never mapped on their own. A label shows the cited locator wherever the citation is readable to the viewer, and the public projection drops the reference so no internal id or locator reaches a public page. The Workspace lists a record's citations and who cites it with both ends' titles, pages them, shows nothing and counts nothing for an end the Member cannot read, exports citations as researchforce-citations JSON with typed locators, hashes and identifiers and the cited records as CSL-JSON keeping every creator, identifier and date precision as entered, lists unresolved locators for curation, and warns about unresolved locators, earlier versions and cited records whose rights status does not permit publication, stating that a citation is not permission. The maximum-input case of 100 citations per export page and the web panel, label picker and curation screen are covered. Interchange is documented in docs/api/citation-interchange.md. Backup and restore of citation rows and the publication preview that shows these warnings follow in the recovery and publication tasks.",
+      "sourcePaths": [
+        "apps/app/src/records/citation-navigation.ts",
+        "apps/app/src/records/citations.ts",
+        "apps/app/src/api/routes/citations.ts",
+        "packages/domain/src/citation-export.ts",
+        "apps/app/web/src/citations/panel.tsx"
+      ],
+      "testPaths": [
+        "apps/app/test/citation-navigation.test.ts",
+        "apps/app/web/test/citations.test.tsx",
+        "packages/kernel/test/project.test.ts",
+        "packages/domain/test/richtext.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
     }
   ]
 }

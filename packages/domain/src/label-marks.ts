@@ -12,18 +12,22 @@ type LabelSpan = Extract<Span, { readonly k: LabelKind }>;
 export const LABEL_KIND_NAMES: Readonly<Record<LabelKind, string>> = { quote: 'Quote', paraphrase: 'Paraphrase', source_reported: 'Source-reported' };
 
 /** The visible label text for a label kind and its named source, if any. */
-export function labelTextFor(kind: LabelKind, source: string | undefined): string {
+export function labelTextFor(kind: LabelKind, source: string | undefined, locator?: string): string {
+  // The locator of a cited passage follows the named source, wherever the label is shown (R54.4).
+  const where = locator === undefined || locator === '' ? '' : `, ${locator}`;
   switch (kind) {
-    case 'quote': return `Quote · ${source ?? ''}`;
-    case 'paraphrase': return `Paraphrase · ${source ?? ''}`;
-    case 'source_reported': return source === undefined || source.trim() === '' ? 'Source-reported' : `Source-reported · ${source}`;
+    case 'quote': return `Quote · ${source ?? ''}${where}`;
+    case 'paraphrase': return `Paraphrase · ${source ?? ''}${where}`;
+    case 'source_reported':
+      if (source === undefined || source.trim() === '') return where === '' ? 'Source-reported' : `Source-reported · ${where.slice(2)}`;
+      return `Source-reported · ${source}${where}`;
   }
 }
 
 /** The label text with the kind name as a link to its Methods page entry when `kindHref` is given (R46.14). */
-export function labelContent(kind: LabelKind, source: string | undefined, kindHref?: string): ViewNode[] {
+export function labelContent(kind: LabelKind, source: string | undefined, kindHref?: string, locator?: string): ViewNode[] {
   const name = LABEL_KIND_NAMES[kind];
-  const rest = labelTextFor(kind, source).slice(name.length);
+  const rest = labelTextFor(kind, source, locator).slice(name.length);
   return [kindHref === undefined ? text(name) : element('a', { href: kindHref }, [text(name)]), ...(rest === '' ? [] : [text(rest)])];
 }
 
@@ -42,8 +46,8 @@ export function labelledElement(kind: LabelKind, children: readonly ViewNode[]):
 }
 
 /** The label shown next to the marked characters. */
-export function labelCaption(kind: LabelKind, source: string | undefined, kindHref?: string): ElementNode {
-  return element('span', { class: 'label' }, labelContent(kind, source, kindHref));
+export function labelCaption(kind: LabelKind, source: string | undefined, kindHref?: string, locator?: string): ElementNode {
+  return element('span', { class: 'label' }, labelContent(kind, source, kindHref, locator));
 }
 
 /** A numbered reference to a label shown as a footnote on the same page. */

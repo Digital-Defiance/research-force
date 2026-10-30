@@ -1,3 +1,4 @@
+import { CitationScope } from '../../citations/scope';
 import { UploadFields, useUploads } from '../../files/upload';
 import { useId, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
@@ -237,5 +238,5 @@ export function EditItemPage({ id }: { readonly id: string }) {
   const item = useLoad<{ item: ItemView }>(`/items/${id}`);
   const { data, error } = useFormData();
   if (!item.data || !data) return <LoadState error={item.error ?? error} />;
-  return <EditItemForm key={item.data.item.rev} item={item.data.item} data={data} onReload={item.reload} />;
+  return <CitationScope rootId={id}><EditItemForm key={item.data.item.rev} item={item.data.item} data={data} onReload={item.reload} /></CitationScope>;
 }

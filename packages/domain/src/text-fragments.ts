@@ -52,7 +52,7 @@ export function* fragmentText(text: string): Generator<TextFragment> {
 }
 function checkedSpan(value: Span): Span {
   const span = Object.fromEntries(Object.entries(value).filter(([, v]) => v !== undefined)) as unknown as Span;
-  const extras: Record<Span['k'], readonly string[]> = { quote: ['source'], paraphrase: ['source'], source_reported: ['source'], lang: ['lang'], mention: ['member', 'specialty'] };
+  const extras: Record<Span['k'], readonly string[]> = { quote: ['source', 'citation'], paraphrase: ['source', 'citation'], source_reported: ['source', 'citation'], lang: ['lang'], mention: ['member', 'specialty'] };
   if (!Object.hasOwn(extras, span.k) || !Number.isSafeInteger(span.s) || !Number.isSafeInteger(span.e) || Object.keys(span).some((k) => !['k', 's', 'e', ...extras[span.k]].includes(k))) throw new Error('Invalid fragment span shape.');
   for (const key of extras[span.k]) if (Object.hasOwn(span, key) && typeof (span as unknown as Record<string, unknown>)[key] !== 'string') throw new Error('Invalid fragment span value.');
   if ((span.k === 'quote' || span.k === 'paraphrase') && typeof span.source !== 'string') throw new Error('Missing fragment label source.');

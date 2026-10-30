@@ -36,9 +36,9 @@ function applyChange(richText: RichText, change: TextEdit): RichText {
 }
 
 export type LabelChoice =
-  | { readonly k: 'quote'; readonly source: string }
-  | { readonly k: 'paraphrase'; readonly source: string }
-  | { readonly k: 'source_reported'; readonly source?: string };
+  | { readonly k: 'quote'; readonly source: string; readonly citation?: string }
+  | { readonly k: 'paraphrase'; readonly source: string; readonly citation?: string }
+  | { readonly k: 'source_reported'; readonly source?: string; readonly citation?: string };
 
 export interface SpanResult { readonly richText: RichText; readonly issues: readonly SpanIssue[] }
 
@@ -51,9 +51,10 @@ function withSpan(richText: RichText, span: Span): SpanResult {
 /** Label the characters from `from` to `to` (R11.1 to R11.3); a label the rules refuse leaves the text unchanged. */
 export function addLabel(richText: RichText, from: number, to: number, label: LabelChoice): SpanResult {
   const source = label.source?.trim();
+  const citation = label.citation === undefined ? {} : { citation: label.citation };
   const span: Span = label.k === 'source_reported'
-    ? { s: from, e: to, k: 'source_reported', ...(source ? { source } : {}) }
-    : { s: from, e: to, k: label.k, source: source ?? '' };
+    ? { s: from, e: to, k: 'source_reported', ...(source ? { source } : {}), ...citation }
+    : { s: from, e: to, k: label.k, source: source ?? '', ...citation };
   return withSpan(richText, span);
 }
 

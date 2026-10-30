@@ -10,6 +10,7 @@ import type { LabelKind } from '@researchforce/domain/label-marks';
 import { ISO_639_1 } from '@researchforce/domain/languages';
 import type { RichText, Span, SpanIssue, TextEdit } from '@researchforce/domain/richtext';
 import type { FieldIssue } from '../api';
+import { useCitationScope } from '../citations/scope';
 import { Button, Field, SelectField, TextField } from '../ui';
 import { addLabel, insertMention, mapChanges, markLanguage, removeSpans, sameRichText, spansAt } from './spans';
 import type { LabelChoice, MentionTarget } from './spans';
@@ -55,7 +56,7 @@ function decorationsFor(spans: readonly Span[]): DecorationSet {
     const attributes: Record<string, string> = span.k === 'lang' ? { lang: span.lang, title: languageName(span.lang) } : {};
     if (span.k === 'mention') attributes['data-mention'] = 'member' in span && span.member !== undefined ? 'member' : 'specialty';
     ranges.push(Decoration.mark({ class: `rf-mark rf-mark--${span.k}`, attributes }).range(span.s, span.e));
-    if (isLabel(span)) ranges.push(Decoration.widget({ widget: new LabelCaption(labelTextFor(span.k, span.source)), side: 1 }).range(span.e));
+    if (isLabel(span)) ranges.push(Decoration.widget({ widget: new LabelCaption(`${labelTextFor(span.k, span.source)}${span.citation === undefined ? '' : ' · cited'}`), side: 1 }).range(span.e));
   }
   return Decoration.set(ranges, true);
 }
@@ -214,13 +215,20 @@ export function RichTextEditor({ label, value, onChange, mentions, hint, errors 
 
 function LabelDialog({ kind, onApply, onCancel }: { readonly kind: LabelKind; readonly onApply: (choice: LabelChoice) => void; readonly onCancel: () => void }) {
   const [source, setSource] = useState('');
+  const [citation, setCitation] = useState('');
+  const { citations } = useCitationScope();
   const optional = kind === 'source_reported';
+  const choice: LabelChoice = { k: kind, source, ...(citation === '' ? {} : { citation }) };
   return (
     <div role="dialog" aria-label={`Label as ${LABEL_KIND_NAMES[kind]}`}>
       <TextField label="Named source" value={source} onChange={setSource} maxLength={300} required={!optional}
         hint={optional ? 'Optional, up to 300 characters.' : '1 to 300 characters.'} />
+      {citations.length > 0 && (
+        <SelectField label="Cited passage" hint="Optional. The label then shows where in the source the passage is." value={citation} placeholder="No citation, the source is named in words"
+          options={citations.map((entry) => ({ value: entry.id, label: `${entry.targetLabel}, ${entry.locatorLabel}` }))} onChange={setCitation} />
+      )}
       <div className="rf-actions">
-        <Button variant="primary" onClick={() => onApply(kind === 'source_reported' ? { k: kind, source } : { k: kind, source })}>Apply the label</Button>
+        <Button variant="primary" onClick={() => onApply(choice)}>Apply the label</Button>
         <Button variant="quiet" onClick={onCancel}>Cancel</Button>
       </div>
     </div>
