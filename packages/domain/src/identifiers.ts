@@ -35,6 +35,16 @@ export function newItemIdentifier(source: RandomSource = randomSource()): { read
 export function newSubmissionReference(source: RandomSource = randomSource()): string {
   return SUBMISSION_REFERENCE_FORMAT.prefix + randomGroups(SUBMISSION_REFERENCE_FORMAT.groups, source);
 }
+/** The time in a ULID, in milliseconds. */
+export function ulidTime(id: string): number {
+  return Array.from(id.slice(0, 10)).reduce((time, char) => time * 32 + ITEM_ID_FORMAT.alphabet.indexOf(char), 0);
+}
+/** A ULID that sorts after `previous` even when the clock has not moved on, for records whose newest one is found by order. */
+export function newULIDAfter(now: Timestamp, previous: string | null | undefined, source: RandomSource = randomSource()): ULID {
+  const at = Date.parse(now);
+  if (previous === null || previous === undefined || ulidTime(previous) < at) return newULID(now, source);
+  return newULID(new Date(ulidTime(previous) + 1).toISOString() as Timestamp, source);
+}
 /** A canonical ULID: 48 bits of the supplied time and 80 random bits. The clock is always the caller's. */
 export function newULID(now: Timestamp, source: RandomSource = randomSource()): ULID {
   let time = Date.parse(now);

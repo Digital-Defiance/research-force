@@ -2,15 +2,14 @@
   "inputs": {
     ".kiro/specs/research-collab-cms/requirements.md": "9e2d7cee953f4aeece04bad4a7dfae273a908c0df65c95beea7a4e572b71b5df",
     ".kiro/specs/research-collab-cms/design.md": "85df571e6efad1205603dca7addcea9c16f68252023d5483a2fbe81d705c4d93",
-    ".kiro/specs/research-collab-cms/tasks.md": "07fd84f66b9996757ab6419713d72a93b545dc6adefe949d8c6c5a425e295d4b",
-    "docs/acceptance/task-evidence.json": "ed1c8a49a5c8e2028e5f55da98e64fb562feb6fc1d6cb2f30f30a5d644c69889"
+    ".kiro/specs/research-collab-cms/tasks.md": "bed7d7e0e7932bb79097f2359694b56531d8c95bbdef022cb35bd4826fb962fc",
+    "docs/acceptance/task-evidence.json": "563d7e8ffd09d4579ffac278cb5c87342ebf3c9a46f941d2668d20139d7dfcfc"
   },
   "schemaVersion": 1,
   "nextTasks": [
-    "63.2"
+    "63.3"
   ],
   "remainingBuildOrder": [
-    "63.2",
     "63.3",
     "63.4",
     "64.1",
@@ -198,11 +197,11 @@
     "criteria": 738,
     "properties": 126,
     "leafTasks": 406,
-    "checkedLeaves": 224,
+    "checkedLeaves": 225,
     "historicalUnverified": 182,
-    "acceptedWithLocalEvidence": 42,
+    "acceptedWithLocalEvidence": 43,
     "propertyFiles": 69,
-    "remainingWaves": 182,
+    "remainingWaves": 181,
     "gates": 4
   },
   "structuralIssues": [],
@@ -10651,7 +10650,7 @@
         {
           "path": "packages/domain/src/identifiers.ts",
           "kind": "file",
-          "sha256": "6530b988e724ca89204c992123be08a0203e9e21fc59817110f7563a59878790"
+          "sha256": "0fc13ea14a8dc774d5ddf00de0af10359894c36acad83006499938ef96fc71a7"
         }
       ],
       "gates": [],
@@ -12477,7 +12476,7 @@
         {
           "path": "apps/app/src/api/app.ts",
           "kind": "file",
-          "sha256": "408691934b96ee3ff69230008f0b978d4029608abc9699f370c99aab7b9864fe"
+          "sha256": "d840b06dc9bd13f3e3814e4516ffd97af5d123977a0e00e5a85413dcdb0719d7"
         },
         {
           "path": "apps/app/src/api/errors.ts",
@@ -13938,7 +13937,7 @@
         {
           "path": "apps/app/src/jobs/deletion.ts",
           "kind": "file",
-          "sha256": "8d1dec2e461e61b310a0c971e310ec71a42f9bfe48b36398ac70f81073898ec1"
+          "sha256": "922f3ace9df6db23115566605713f263d34eac0ec45d57bd6cd6fc320a2da250"
         }
       ],
       "gates": [],
@@ -19168,7 +19167,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "ed1c8a49a5c8e2028e5f55da98e64fb562feb6fc1d6cb2f30f30a5d644c69889"
+          "sha256": "563d7e8ffd09d4579ffac278cb5c87342ebf3c9a46f941d2668d20139d7dfcfc"
         },
         {
           "path": "README.md",
@@ -19257,7 +19256,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "ed1c8a49a5c8e2028e5f55da98e64fb562feb6fc1d6cb2f30f30a5d644c69889"
+          "sha256": "563d7e8ffd09d4579ffac278cb5c87342ebf3c9a46f941d2668d20139d7dfcfc"
         },
         {
           "path": "apps/app/src/index.ts",
@@ -19396,7 +19395,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "ed1c8a49a5c8e2028e5f55da98e64fb562feb6fc1d6cb2f30f30a5d644c69889"
+          "sha256": "563d7e8ffd09d4579ffac278cb5c87342ebf3c9a46f941d2668d20139d7dfcfc"
         },
         {
           "path": "apps/app/src/local/services.ts",
@@ -19436,7 +19435,7 @@
         {
           "path": "apps/app/src/api/app.ts",
           "kind": "file",
-          "sha256": "408691934b96ee3ff69230008f0b978d4029608abc9699f370c99aab7b9864fe"
+          "sha256": "d840b06dc9bd13f3e3814e4516ffd97af5d123977a0e00e5a85413dcdb0719d7"
         },
         {
           "path": "apps/app/src/do/mailer.ts",
@@ -20581,7 +20580,7 @@
         {
           "path": "apps/app/src/jobs/deletion.ts",
           "kind": "file",
-          "sha256": "8d1dec2e461e61b310a0c971e310ec71a42f9bfe48b36398ac70f81073898ec1"
+          "sha256": "922f3ace9df6db23115566605713f263d34eac0ec45d57bd6cd6fc320a2da250"
         },
         {
           "path": "apps/app/src/search/read.ts",
@@ -21080,12 +21079,12 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "ed1c8a49a5c8e2028e5f55da98e64fb562feb6fc1d6cb2f30f30a5d644c69889"
+          "sha256": "563d7e8ffd09d4579ffac278cb5c87342ebf3c9a46f941d2668d20139d7dfcfc"
         },
         {
           "path": "docs/acceptance/checks/local-tests.json",
           "kind": "file",
-          "sha256": "d3fcf27ff98160b2f98fa32002660e923845c89b3aa44f431a6644cc9cfbb6c1"
+          "sha256": "23e2214fd21f8776c53180311fb490f3da6b3bfebf362b95917e855a93af1add"
         },
         {
           "path": "tools/src/specs.ts",
@@ -21172,7 +21171,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "ed1c8a49a5c8e2028e5f55da98e64fb562feb6fc1d6cb2f30f30a5d644c69889"
+          "sha256": "563d7e8ffd09d4579ffac278cb5c87342ebf3c9a46f941d2668d20139d7dfcfc"
         },
         {
           "path": "packages/domain/src/settings.ts",
@@ -21207,7 +21206,7 @@
         {
           "path": "apps/app/src/api/app.ts",
           "kind": "file",
-          "sha256": "408691934b96ee3ff69230008f0b978d4029608abc9699f370c99aab7b9864fe"
+          "sha256": "d840b06dc9bd13f3e3814e4516ffd97af5d123977a0e00e5a85413dcdb0719d7"
         },
         {
           "path": "apps/app/src/env.ts",
@@ -21352,7 +21351,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "ed1c8a49a5c8e2028e5f55da98e64fb562feb6fc1d6cb2f30f30a5d644c69889"
+          "sha256": "563d7e8ffd09d4579ffac278cb5c87342ebf3c9a46f941d2668d20139d7dfcfc"
         },
         {
           "path": "docs/storage/logical-fields.md",
@@ -21417,7 +21416,7 @@
         {
           "path": "packages/db/migrations/core/meta/_journal.json",
           "kind": "file",
-          "sha256": "10d44ed2943a3175a11438815ce50cc51ed6df04908de049e885161d623f141b"
+          "sha256": "c0f1d8da358c6ab25b255a9d43a6a06826ddba13b1f423ff179789fe768916ee"
         },
         {
           "path": "packages/db/migrations/core/meta/0010_snapshot.json",
@@ -21517,7 +21516,7 @@
         {
           "path": "infra/releases/development.json",
           "kind": "file",
-          "sha256": "0a1af6558e0792f2943d77fae50d21d76bcaf6ae288b4fe423558bcfe885a92f"
+          "sha256": "1146507d74b4e60ad00995d171beea682e48d2d14c076408ddb41fa2766f5076"
         },
         {
           "path": "infra/recovery/deployment.example.json",
@@ -21587,17 +21586,17 @@
         {
           "path": "tools/test/field-migration.test.ts",
           "kind": "file",
-          "sha256": "ea03b426abf26fe590f9243cb06fab961eb83373e6347e01b12cba05fba546a2"
+          "sha256": "9804db2beeafdb8a8615c8f1955b535ea671e2939d715ee9ce34120315fede57"
         },
         {
           "path": "tools/test/upgrade-store.test.ts",
           "kind": "file",
-          "sha256": "58b7a6a43043893d2db1391490ee59b9249165a3b972d10cf077ea1468ef28cb"
+          "sha256": "876a60bb44d9781aa7e84fc672d33a18528e8d0b1176883302ba30c07a2de284"
         },
         {
           "path": "tools/test/release-tools.test.ts",
           "kind": "file",
-          "sha256": "6117961d50f05ce8fba1f79b0d0ac97c403a5972d993342dab67200b501b20c5"
+          "sha256": "773e92f8c671ef4d8623bc8fb61d49ef446759e27eb715383495877e8b6efd82"
         },
         {
           "path": "tools/test/release-compatibility.test.ts",
@@ -21722,7 +21721,7 @@
         {
           "path": "apps/app/src/api/app.ts",
           "kind": "file",
-          "sha256": "408691934b96ee3ff69230008f0b978d4029608abc9699f370c99aab7b9864fe"
+          "sha256": "d840b06dc9bd13f3e3814e4516ffd97af5d123977a0e00e5a85413dcdb0719d7"
         },
         {
           "path": "apps/app/src/api/csrf.ts",
@@ -21757,7 +21756,7 @@
         {
           "path": "packages/db/migrations/core/meta/_journal.json",
           "kind": "file",
-          "sha256": "10d44ed2943a3175a11438815ce50cc51ed6df04908de049e885161d623f141b"
+          "sha256": "c0f1d8da358c6ab25b255a9d43a6a06826ddba13b1f423ff179789fe768916ee"
         },
         {
           "path": "packages/db/migrations/core/meta/0011_snapshot.json",
@@ -21792,7 +21791,7 @@
         {
           "path": "infra/releases/development.json",
           "kind": "file",
-          "sha256": "0a1af6558e0792f2943d77fae50d21d76bcaf6ae288b4fe423558bcfe885a92f"
+          "sha256": "1146507d74b4e60ad00995d171beea682e48d2d14c076408ddb41fa2766f5076"
         },
         {
           "path": "apps/app/test/operations.test.ts",
@@ -22583,7 +22582,7 @@
         {
           "path": "apps/app/src/jobs/deletion.ts",
           "kind": "file",
-          "sha256": "8d1dec2e461e61b310a0c971e310ec71a42f9bfe48b36398ac70f81073898ec1"
+          "sha256": "922f3ace9df6db23115566605713f263d34eac0ec45d57bd6cd6fc320a2da250"
         },
         {
           "path": "apps/app/src/search/read.ts",
@@ -22618,7 +22617,7 @@
         {
           "path": "tools/test/upgrade-store.test.ts",
           "kind": "file",
-          "sha256": "58b7a6a43043893d2db1391490ee59b9249165a3b972d10cf077ea1468ef28cb"
+          "sha256": "876a60bb44d9781aa7e84fc672d33a18528e8d0b1176883302ba30c07a2de284"
         }
       ],
       "gates": [
@@ -22717,7 +22716,7 @@
         {
           "path": "apps/app/src/jobs/deletion.ts",
           "kind": "file",
-          "sha256": "8d1dec2e461e61b310a0c971e310ec71a42f9bfe48b36398ac70f81073898ec1"
+          "sha256": "922f3ace9df6db23115566605713f263d34eac0ec45d57bd6cd6fc320a2da250"
         },
         {
           "path": "apps/app/test/work-coordination.test.ts",
@@ -22732,7 +22731,7 @@
         {
           "path": "tools/test/upgrade-store.test.ts",
           "kind": "file",
-          "sha256": "58b7a6a43043893d2db1391490ee59b9249165a3b972d10cf077ea1468ef28cb"
+          "sha256": "876a60bb44d9781aa7e84fc672d33a18528e8d0b1176883302ba30c07a2de284"
         }
       ],
       "gates": [
@@ -23152,7 +23151,7 @@
         {
           "path": "apps/app/src/jobs/deletion.ts",
           "kind": "file",
-          "sha256": "8d1dec2e461e61b310a0c971e310ec71a42f9bfe48b36398ac70f81073898ec1"
+          "sha256": "922f3ace9df6db23115566605713f263d34eac0ec45d57bd6cd6fc320a2da250"
         },
         {
           "path": "apps/app/src/search/read.ts",
@@ -23192,7 +23191,7 @@
         {
           "path": "tools/test/upgrade-store.test.ts",
           "kind": "file",
-          "sha256": "58b7a6a43043893d2db1391490ee59b9249165a3b972d10cf077ea1468ef28cb"
+          "sha256": "876a60bb44d9781aa7e84fc672d33a18528e8d0b1176883302ba30c07a2de284"
         }
       ],
       "gates": [
@@ -23432,7 +23431,7 @@
         {
           "path": "tools/test/upgrade-store.test.ts",
           "kind": "file",
-          "sha256": "58b7a6a43043893d2db1391490ee59b9249165a3b972d10cf077ea1468ef28cb"
+          "sha256": "876a60bb44d9781aa7e84fc672d33a18528e8d0b1176883302ba30c07a2de284"
         }
       ],
       "gates": [
@@ -23608,7 +23607,7 @@
         {
           "path": "tools/test/upgrade-store.test.ts",
           "kind": "file",
-          "sha256": "58b7a6a43043893d2db1391490ee59b9249165a3b972d10cf077ea1468ef28cb"
+          "sha256": "876a60bb44d9781aa7e84fc672d33a18528e8d0b1176883302ba30c07a2de284"
         }
       ],
       "gates": [
@@ -23849,7 +23848,7 @@
         {
           "path": "apps/app/src/records/compute-packages.ts",
           "kind": "file",
-          "sha256": "2da1544c50e99c08a09839bc7174d03d87952615dd6cc0d832ee3e3b1b604210"
+          "sha256": "57275e2a4d242aa0a1d9fde4eff263815f8bd27f4e70bf4dad410116a7d6b7c9"
         },
         {
           "path": "apps/app/src/api/routes/compute.ts",
@@ -23864,7 +23863,7 @@
         {
           "path": "packages/db/src/schema/core/compute.ts",
           "kind": "file",
-          "sha256": "1cd42ed26da56042e72913a48ea5d170f174873544c8192d8b19a495dd301425"
+          "sha256": "bb28bb03cf13c1163b58a58064985010f5395fff0bf5e7786cb3410d9b14b90b"
         },
         {
           "path": "apps/app/test/compute-packages.test.ts",
@@ -23905,7 +23904,7 @@
     {
       "id": "63.2",
       "title": "Implement scope schemas, coverage comparison and independent reproduction",
-      "checked": false,
+      "checked": true,
       "requirements": [
         "56.3",
         "56.4",
@@ -23913,14 +23912,93 @@
       ],
       "properties": [],
       "prerequisites": [],
-      "phase": "collaboration",
-      "sourcePaths": [],
+      "phase": "completed_baseline",
+      "sourcePaths": [
+        {
+          "path": "packages/domain/src/coverage.ts",
+          "kind": "file",
+          "sha256": "a3bc89b46d1435466417fe5106e67c8f4018717db9e628711b6e12606e6d8f6e"
+        },
+        {
+          "path": "packages/domain/src/identifiers.ts",
+          "kind": "file",
+          "sha256": "0fc13ea14a8dc774d5ddf00de0af10359894c36acad83006499938ef96fc71a7"
+        },
+        {
+          "path": "packages/db/src/schema/core/compute.ts",
+          "kind": "file",
+          "sha256": "bb28bb03cf13c1163b58a58064985010f5395fff0bf5e7786cb3410d9b14b90b"
+        },
+        {
+          "path": "packages/db/migrations/core/0021_coverage_and_reproduction.sql",
+          "kind": "file",
+          "sha256": "799d3716364fb5a43f36581c8e3c4d42292f7a886468a18ee9a63030fd703e2c"
+        },
+        {
+          "path": "apps/app/src/records/coverage.ts",
+          "kind": "file",
+          "sha256": "3db7ee6407994a094cad352ef539c3354d58a06e629be2120183592efea9bef1"
+        },
+        {
+          "path": "apps/app/src/records/reproductions.ts",
+          "kind": "file",
+          "sha256": "1b06184fbdba2dab62cd51a3caaf7c82fc7f8feef51c49c07485d2664f3852ab"
+        },
+        {
+          "path": "apps/app/src/api/routes/coverage.ts",
+          "kind": "file",
+          "sha256": "9ed4a6469f4d48238ce1671085d349e8b31bdae5098f85f661b72302271f1422"
+        },
+        {
+          "path": "apps/app/src/jobs/deletion.ts",
+          "kind": "file",
+          "sha256": "922f3ace9df6db23115566605713f263d34eac0ec45d57bd6cd6fc320a2da250"
+        },
+        {
+          "path": "docs/api/coverage.md",
+          "kind": "file",
+          "sha256": "9d0658a16968993e0fcda6f00a16344e2613fa7bb3b4510487a91f9f463ddf0e"
+        },
+        {
+          "path": "packages/domain/test/coverage.test.ts",
+          "kind": "file",
+          "sha256": "156c9e3b69e0fc31b72a7e54a48f3c5bdc23f029efada7702ea145e751c9942d"
+        },
+        {
+          "path": "apps/app/test/coverage.test.ts",
+          "kind": "file",
+          "sha256": "8a9443a1900d535dc97874a5e318830165b99f10680c89f321bfa7fbdffeaa5b"
+        }
+      ],
       "gates": [
         "team_archive",
         "final_checkpoint_49"
       ],
-      "acceptance": "planned",
-      "evidence": null
+      "acceptance": "accepted",
+      "evidence": {
+        "task": "63.2",
+        "state": "accepted",
+        "reason": "Added Project scope schemas, scopes, coverage comparison and independent reproduction. A schema version (up to four named integer-range or set dimensions, whole numbers of up to 80 digits as text) is never changed; negative, decimal, inverted or out-of-schema ranges are refused. A Run records a scope against an exact package version as an edit of the Run: attempted, completed, excluded and unknown regions plus assumptions, or a generic text that is valid but labelled not machine-comparable and never counted. Union, overlap and counts use exact big-integer box arithmetic and refuse a comparison too fragmented to compute. Completed work counts toward elimination only for a Complete or Clean negative Run whose package is not incomplete or disputed and whose outputs are held Attachments with unchanged hashes; Partial, Suspended, Stopped, In progress, unverified, generic and other-schema scopes never count. An independent reproduction is a separate attributed Run by someone other than the package author and the Run Owner, with differences and evidence; it never changes the first Run, package or outcome, and the package state follows each attempter latest attempt. Deleting a Run removes its scopes and attempts and recomputes the state.",
+        "sourcePaths": [
+          "packages/domain/src/coverage.ts",
+          "packages/domain/src/identifiers.ts",
+          "packages/db/src/schema/core/compute.ts",
+          "packages/db/migrations/core/0021_coverage_and_reproduction.sql",
+          "apps/app/src/records/coverage.ts",
+          "apps/app/src/records/reproductions.ts",
+          "apps/app/src/api/routes/coverage.ts",
+          "apps/app/src/jobs/deletion.ts",
+          "docs/api/coverage.md"
+        ],
+        "testPaths": [
+          "packages/domain/test/coverage.test.ts",
+          "apps/app/test/coverage.test.ts"
+        ],
+        "correctionTasks": [],
+        "checks": [
+          "docs/acceptance/checks/local-tests.json"
+        ]
+      }
     },
     {
       "id": "63.3",
@@ -23935,9 +24013,7 @@
         "60.9"
       ],
       "properties": [],
-      "prerequisites": [
-        "63.2"
-      ],
+      "prerequisites": [],
       "phase": "collaboration",
       "sourcePaths": [],
       "gates": [
@@ -24231,7 +24307,7 @@
         {
           "path": "apps/app/src/jobs/deletion.ts",
           "kind": "file",
-          "sha256": "8d1dec2e461e61b310a0c971e310ec71a42f9bfe48b36398ac70f81073898ec1"
+          "sha256": "922f3ace9df6db23115566605713f263d34eac0ec45d57bd6cd6fc320a2da250"
         },
         {
           "path": "packages/domain/test/releases.test.ts",
@@ -24251,7 +24327,7 @@
         {
           "path": "tools/test/upgrade-store.test.ts",
           "kind": "file",
-          "sha256": "58b7a6a43043893d2db1391490ee59b9249165a3b972d10cf077ea1468ef28cb"
+          "sha256": "876a60bb44d9781aa7e84fc672d33a18528e8d0b1176883302ba30c07a2de284"
         }
       ],
       "gates": [
@@ -24373,7 +24449,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "ed1c8a49a5c8e2028e5f55da98e64fb562feb6fc1d6cb2f30f30a5d644c69889"
+          "sha256": "563d7e8ffd09d4579ffac278cb5c87342ebf3c9a46f941d2668d20139d7dfcfc"
         },
         {
           "path": "packages/domain/src/compatibility.ts",
@@ -24423,7 +24499,7 @@
         {
           "path": "infra/releases/development.json",
           "kind": "file",
-          "sha256": "0a1af6558e0792f2943d77fae50d21d76bcaf6ae288b4fe423558bcfe885a92f"
+          "sha256": "1146507d74b4e60ad00995d171beea682e48d2d14c076408ddb41fa2766f5076"
         },
         {
           "path": "infra/releases/README.md",
@@ -24478,12 +24554,12 @@
         {
           "path": "tools/test/upgrade-store.test.ts",
           "kind": "file",
-          "sha256": "58b7a6a43043893d2db1391490ee59b9249165a3b972d10cf077ea1468ef28cb"
+          "sha256": "876a60bb44d9781aa7e84fc672d33a18528e8d0b1176883302ba30c07a2de284"
         },
         {
           "path": "tools/test/release-tools.test.ts",
           "kind": "file",
-          "sha256": "6117961d50f05ce8fba1f79b0d0ac97c403a5972d993342dab67200b501b20c5"
+          "sha256": "773e92f8c671ef4d8623bc8fb61d49ef446759e27eb715383495877e8b6efd82"
         }
       ],
       "gates": [
@@ -24727,7 +24803,7 @@
         {
           "path": "apps/app/src/api/app.ts",
           "kind": "file",
-          "sha256": "408691934b96ee3ff69230008f0b978d4029608abc9699f370c99aab7b9864fe"
+          "sha256": "d840b06dc9bd13f3e3814e4516ffd97af5d123977a0e00e5a85413dcdb0719d7"
         },
         {
           "path": "apps/app/src/index.ts",
@@ -24866,39 +24942,39 @@
   "phases": {
     "collaboration": {
       "firstWave": 0,
-      "lastWave": 10
+      "lastWave": 9
     },
     "privacy": {
-      "firstWave": 11,
-      "lastWave": 34
+      "firstWave": 10,
+      "lastWave": 33
     },
     "imports_and_log": {
-      "firstWave": 35,
-      "lastWave": 58
+      "firstWave": 34,
+      "lastWave": 57
     },
     "publication": {
-      "firstWave": 59,
-      "lastWave": 76
+      "firstWave": 58,
+      "lastWave": 75
     },
     "outside_and_ai": {
-      "firstWave": 77,
-      "lastWave": 124
+      "firstWave": 76,
+      "lastWave": 123
     },
     "recovery": {
-      "firstWave": 125,
-      "lastWave": 142
+      "firstWave": 124,
+      "lastWave": 141
     },
     "release_tooling": {
-      "firstWave": 143,
-      "lastWave": 172
+      "firstWave": 142,
+      "lastWave": 171
     },
     "staging_and_acceptance": {
-      "firstWave": 173,
-      "lastWave": 180
+      "firstWave": 172,
+      "lastWave": 179
     },
     "production_activation": {
-      "firstWave": 181,
-      "lastWave": 181
+      "firstWave": 180,
+      "lastWave": 180
     }
   },
   "gates": [

@@ -238,7 +238,7 @@ export async function recordPackage(c: Context<ApiEnv>, runId: string, body: unk
       batch.insert(computePackages, {
         runId, packageVersion: next, manifestHash: prepared.hash, reproducibilityState: prepared.state, repository: manifest.code.repository ?? null, codeCommit: manifest.code.commit ?? null,
         codeRelease: manifest.code.release ?? null, command: manifest.command ?? null, entrypoint: manifest.entrypoint ?? null, methodVersion: manifest.methodVersion ?? null,
-        usesRandomness: manifest.usesRandomness ? 1 : 0, configurationSha256: prepared.configurationText === undefined ? null : fragmentDigest(prepared.configurationText),
+        usesRandomness: manifest.usesRandomness ? 1 : 0, missingCount: prepared.missing.length, configurationSha256: prepared.configurationText === undefined ? null : fragmentDigest(prepared.configurationText),
         configurationBytes: prepared.configurationText === undefined ? 0 : new TextEncoder().encode(prepared.configurationText).length, createdBy: batch.actor.id!, createdAt: batch.actor.now,
       });
       batch.bulkInsert(computeArtifacts, manifest.artifacts.map((artifact, position) => ({

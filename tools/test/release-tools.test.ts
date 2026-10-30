@@ -51,12 +51,12 @@ describe('reviewable release commands', () => {
   it('limits expansion/contraction scripts to their matching disposable local files and rejects remote or early contraction', async () => {
     const manifest = developmentManifest(ROOT); const { directory } = await rehearseRelease(ROOT, manifest, tmpdir());
     try {
-      const db = resolve(directory, 'core-18.sqlite');
-      expect(upgradeCommand(ROOT, 'expand', ['--local', 'infra/releases/development.json', 'core', db])).toMatchObject({ revision: 20, applied: [], productionAuthorized: false });
+      const db = resolve(directory, 'core-19.sqlite');
+      expect(upgradeCommand(ROOT, 'expand', ['--local', 'infra/releases/development.json', 'core', db])).toMatchObject({ revision: 21, applied: [], productionAuthorized: false });
       expect(upgradeCommand(ROOT, 'backfill', ['--local', 'infra/releases/development.json', 'search', resolve(directory, 'search-2.sqlite')])).toMatchObject({ complete: true, productionAuthorized: false });
       expect(() => upgradeCommand(ROOT, 'expand', ['--remote', 'infra/releases/development.json', 'core', db])).toThrow(/Usage/);
       expect(() => upgradeCommand(ROOT, 'expand', ['--local', 'infra/releases/development.json', 'search', db])).toThrow(/matching local/);
-      expect(() => upgradeCommand(ROOT, 'expand', ['--local', 'infra/releases/development.json', 'core', resolve(directory, 'core-18-recovery.sqlite')])).toThrow(/matching local/);
+      expect(() => upgradeCommand(ROOT, 'expand', ['--local', 'infra/releases/development.json', 'core', resolve(directory, 'core-19-recovery.sqlite')])).toThrow(/matching local/);
       const inventory = inventoryFixture(manifest); inventory.switchedAt = new Date().toISOString();
       const inventoryPath = resolve(directory, 'inventory.json'); const proofPath = resolve(directory, 'proof.json');
       writeFileSync(inventoryPath, JSON.stringify(inventory)); writeFileSync(proofPath, JSON.stringify(restoreFixture(manifest.id)));

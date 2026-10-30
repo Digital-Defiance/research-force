@@ -14,12 +14,12 @@
   ],
   "schemas": {
     "expanded": {
-      "core": 20,
+      "core": 21,
       "search": 3,
       "public": 0
     },
     "contracted": {
-      "core": 20,
+      "core": 21,
       "search": 3,
       "public": 0
     }
@@ -29,8 +29,8 @@
       "name": "app",
       "schemas": {
         "core": {
-          "min": 20,
-          "max": 20
+          "min": 21,
+          "max": 21
         },
         "search": {
           "min": 3,
@@ -46,8 +46,8 @@
       "name": "submit",
       "schemas": {
         "core": {
-          "min": 20,
-          "max": 20
+          "min": 21,
+          "max": 21
         }
       }
     },
@@ -55,8 +55,8 @@
       "name": "dl",
       "schemas": {
         "core": {
-          "min": 20,
-          "max": 20
+          "min": 21,
+          "max": 21
         }
       }
     },
@@ -218,6 +218,13 @@
       "phase": "baseline"
     },
     {
+      "store": "core",
+      "revision": 21,
+      "tag": "0021_coverage_and_reproduction",
+      "sha256": "799d3716364fb5a43f36581c8e3c4d42292f7a886468a18ee9a63030fd703e2c",
+      "phase": "baseline"
+    },
+    {
       "store": "search",
       "revision": 0,
       "tag": "0000_schema",
@@ -352,7 +359,7 @@
     },
     {
       "path": "apps/app/src/api/app.ts",
-      "sha256": "408691934b96ee3ff69230008f0b978d4029608abc9699f370c99aab7b9864fe"
+      "sha256": "d840b06dc9bd13f3e3814e4516ffd97af5d123977a0e00e5a85413dcdb0719d7"
     },
     {
       "path": "apps/app/src/api/csrf.ts",
@@ -385,6 +392,10 @@
     {
       "path": "apps/app/src/api/routes/compute.ts",
       "sha256": "67306ad936da87a0606a2453ff5d63d03f9c7f92dc654a726b53478cbfb463e9"
+    },
+    {
+      "path": "apps/app/src/api/routes/coverage.ts",
+      "sha256": "9ed4a6469f4d48238ce1671085d349e8b31bdae5098f85f661b72302271f1422"
     },
     {
       "path": "apps/app/src/api/routes/decisions.ts",
@@ -548,7 +559,7 @@
     },
     {
       "path": "apps/app/src/jobs/deletion.ts",
-      "sha256": "8d1dec2e461e61b310a0c971e310ec71a42f9bfe48b36398ac70f81073898ec1"
+      "sha256": "922f3ace9df6db23115566605713f263d34eac0ec45d57bd6cd6fc320a2da250"
     },
     {
       "path": "apps/app/src/local/mailer.ts",
@@ -632,7 +643,11 @@
     },
     {
       "path": "apps/app/src/records/compute-packages.ts",
-      "sha256": "2da1544c50e99c08a09839bc7174d03d87952615dd6cc0d832ee3e3b1b604210"
+      "sha256": "57275e2a4d242aa0a1d9fde4eff263815f8bd27f4e70bf4dad410116a7d6b7c9"
+    },
+    {
+      "path": "apps/app/src/records/coverage.ts",
+      "sha256": "3db7ee6407994a094cad352ef539c3354d58a06e629be2120183592efea9bef1"
     },
     {
       "path": "apps/app/src/records/decision-operations.ts",
@@ -741,6 +756,10 @@
     {
       "path": "apps/app/src/records/releases.ts",
       "sha256": "ffb3f84da2f0bc2c5a824d177d4bb3068056f9b7575c3e230fc2466eef69c586"
+    },
+    {
+      "path": "apps/app/src/records/reproductions.ts",
+      "sha256": "1b06184fbdba2dab62cd51a3caaf7c82fc7f8feef51c49c07485d2664f3852ab"
     },
     {
       "path": "apps/app/src/records/stages.ts",
@@ -1100,7 +1119,7 @@
     },
     {
       "path": "packages/db/src/schema/core/compute.ts",
-      "sha256": "1cd42ed26da56042e72913a48ea5d170f174873544c8192d8b19a495dd301425"
+      "sha256": "bb28bb03cf13c1163b58a58064985010f5395fff0bf5e7786cb3410d9b14b90b"
     },
     {
       "path": "packages/db/src/schema/core/decisions.ts",
@@ -1255,6 +1274,10 @@
       "sha256": "eb85ac007dcf659a0f551ba10ecea05fb51129a3c977ff780b2dd12783f51ba6"
     },
     {
+      "path": "packages/domain/src/coverage.ts",
+      "sha256": "a3bc89b46d1435466417fe5106e67c8f4018717db9e628711b6e12606e6d8f6e"
+    },
+    {
       "path": "packages/domain/src/dates.ts",
       "sha256": "88054b08eef25b010dd1b79bbfe4ddacb2db6a0834b9220269583c44eb84aa0b"
     },
@@ -1284,7 +1307,7 @@
     },
     {
       "path": "packages/domain/src/identifiers.ts",
-      "sha256": "6530b988e724ca89204c992123be08a0203e9e21fc59817110f7563a59878790"
+      "sha256": "0fc13ea14a8dc774d5ddf00de0af10359894c36acad83006499938ef96fc71a7"
     },
     {
       "path": "packages/domain/src/kind-names.ts",

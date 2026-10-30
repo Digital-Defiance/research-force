@@ -133,6 +133,20 @@ export const deletionJob: JobHandler = {
         db.prepare('UPDATE decisions SET superseded_by_id = NULL WHERE superseded_by_id IN (SELECT value FROM json_each(?1))').bind(list),
         // A Run's package versions go with it; an Attachment that a package named stays named by the package, and is no longer readable through it.
         ...['compute_configuration', 'compute_environment', 'compute_artifacts', 'compute_packages'].map((table) => db.prepare(`DELETE FROM ${table} WHERE run_id IN (SELECT value FROM json_each(?1))`).bind(list)),
+        // A Run's scopes go with it. Attempts to reproduce it go too; an attempt made by a deleted Run is dropped and its package's state is worked out again without it.
+        db.prepare('DELETE FROM compute_scope_entries WHERE scope_id IN (SELECT id FROM compute_scopes WHERE run_id IN (SELECT value FROM json_each(?1)))').bind(list),
+        db.prepare('DELETE FROM compute_scopes WHERE run_id IN (SELECT value FROM json_each(?1))').bind(list),
+        db.prepare(`UPDATE compute_packages SET reproducibility_state = CASE
+          WHEN missing_count > 0 THEN 'incomplete'
+          WHEN EXISTS (SELECT 1 FROM reproduction_attempts a WHERE a.run_id = compute_packages.run_id AND a.package_version = compute_packages.package_version AND a.outcome = 'not_reproduced'
+            AND a.attempt_run_id NOT IN (SELECT value FROM json_each(?1))
+            AND a.id = (SELECT MAX(b.id) FROM reproduction_attempts b WHERE b.run_id = a.run_id AND b.package_version = a.package_version AND b.recorded_by = a.recorded_by AND b.attempt_run_id NOT IN (SELECT value FROM json_each(?1)))) THEN 'disputed'
+          WHEN EXISTS (SELECT 1 FROM reproduction_attempts a WHERE a.run_id = compute_packages.run_id AND a.package_version = compute_packages.package_version AND a.outcome = 'reproduced'
+            AND a.attempt_run_id NOT IN (SELECT value FROM json_each(?1))
+            AND a.id = (SELECT MAX(b.id) FROM reproduction_attempts b WHERE b.run_id = a.run_id AND b.package_version = a.package_version AND b.recorded_by = a.recorded_by AND b.attempt_run_id NOT IN (SELECT value FROM json_each(?1)))) THEN 'reproduced'
+          ELSE 'specified' END
+          WHERE EXISTS (SELECT 1 FROM reproduction_attempts a WHERE a.run_id = compute_packages.run_id AND a.package_version = compute_packages.package_version AND a.attempt_run_id IN (SELECT value FROM json_each(?1)))`).bind(list),
+        db.prepare('DELETE FROM reproduction_attempts WHERE run_id IN (SELECT value FROM json_each(?1)) OR attempt_run_id IN (SELECT value FROM json_each(?1))').bind(list),
         db.prepare('DELETE FROM question_entries WHERE question_id IN (SELECT value FROM json_each(?1))').bind(list),
         db.prepare('DELETE FROM question_groups WHERE question_id IN (SELECT value FROM json_each(?1))').bind(list),
         db.prepare(`DELETE FROM revisions WHERE target_type = 'unit' AND target_id IN (SELECT value FROM json_each(?1)) AND NOT (kind = 'deletion' AND target_id = ?2)`).bind(list, params.unitId),

@@ -1207,6 +1207,30 @@
       "checks": [
         "docs/acceptance/checks/local-tests.json"
       ]
+    },
+    {
+      "task": "63.2",
+      "state": "accepted",
+      "reason": "Added Project scope schemas, scopes, coverage comparison and independent reproduction. A schema version (up to four named integer-range or set dimensions, whole numbers of up to 80 digits as text) is never changed; negative, decimal, inverted or out-of-schema ranges are refused. A Run records a scope against an exact package version as an edit of the Run: attempted, completed, excluded and unknown regions plus assumptions, or a generic text that is valid but labelled not machine-comparable and never counted. Union, overlap and counts use exact big-integer box arithmetic and refuse a comparison too fragmented to compute. Completed work counts toward elimination only for a Complete or Clean negative Run whose package is not incomplete or disputed and whose outputs are held Attachments with unchanged hashes; Partial, Suspended, Stopped, In progress, unverified, generic and other-schema scopes never count. An independent reproduction is a separate attributed Run by someone other than the package author and the Run Owner, with differences and evidence; it never changes the first Run, package or outcome, and the package state follows each attempter latest attempt. Deleting a Run removes its scopes and attempts and recomputes the state.",
+      "sourcePaths": [
+        "packages/domain/src/coverage.ts",
+        "packages/domain/src/identifiers.ts",
+        "packages/db/src/schema/core/compute.ts",
+        "packages/db/migrations/core/0021_coverage_and_reproduction.sql",
+        "apps/app/src/records/coverage.ts",
+        "apps/app/src/records/reproductions.ts",
+        "apps/app/src/api/routes/coverage.ts",
+        "apps/app/src/jobs/deletion.ts",
+        "docs/api/coverage.md"
+      ],
+      "testPaths": [
+        "packages/domain/test/coverage.test.ts",
+        "apps/app/test/coverage.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
     }
   ]
 }
