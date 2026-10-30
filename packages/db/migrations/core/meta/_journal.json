@@ -120,6 +120,13 @@
       "when": 1793325540902,
       "tag": "0016_work_items",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "6",
+      "when": 1793327440249,
+      "tag": "0017_work_assignment_history",
+      "breakpoints": true
     }
   ]
 }

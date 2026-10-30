@@ -43,6 +43,7 @@ import { rolesRoutes } from './routes/roles';
 import { settingsRoutes } from './routes/settings';
 import { stagesRoutes } from './routes/stages';
 import { valueSetsRoutes } from './routes/value-sets';
+import { workRoutes } from './routes/work';
 
 export interface ApiConfig {
   /** Only the controlled local entrypoint supplies developer routes. */
@@ -150,6 +151,7 @@ export function createApi(config: ApiConfig): Hono<ApiEnv> {
   v1.route('/projects', projectsRoutes);
   v1.route('/links', linksRoutes);
   v1.route('/citations', citationsRoutes);
+  v1.route('/work', workRoutes);
   v1.route('/parties', partiesRoutes);
   v1.route('/', discussionRoutes);
   v1.route('/', activityRoutes);

@@ -51,7 +51,7 @@ export function isUniqueViolation(error: unknown, column: string): boolean {
   return false;
 }
 
-const GUARD_ERRORS: Readonly<Partial<Record<GuardCode, ErrorCode>>> = { rev: 'conflict', chain_tip: 'conflict', decision_open: 'conflict', preview_fresh: 'preview_stale', frozen: 'frozen' };
+const GUARD_ERRORS: Readonly<Partial<Record<GuardCode, ErrorCode>>> = { rev: 'conflict', work_state: 'conflict', chain_tip: 'conflict', decision_open: 'conflict', preview_fresh: 'preview_stale', frozen: 'frozen' };
 
 /** The API error for anything a handler throws. Unknown errors become `internal` without their message. */
 export function toApiError(error: unknown): ApiError {

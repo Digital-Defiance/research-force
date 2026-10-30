@@ -20,7 +20,7 @@ interface RootRow {
 
 export const EVENT_NAMES: Readonly<Record<EventType, string>> = {
   new_submission: 'New Submission', item_update: 'Item update', reply: 'Reply', mention: 'Mention', review_requested: 'Review requested',
-  review_completed: 'Review completed', outside_submission: 'Outside Submission', reminder: 'Reminder', system_alert: 'System alert', dissent: 'Dissent Note',
+  review_completed: 'Review completed', outside_submission: 'Outside Submission', reminder: 'Reminder', system_alert: 'System alert', dissent: 'Dissent Note', work_assigned: 'Work assigned', work_update: 'Work update',
 };
 const CHANGE_NAMES: Readonly<Record<string, string>> = { correction: 'Correction', withdrawal: 'Withdrawal', status_change: 'Status change', disclosure_change: 'Disclosure change', access: 'Access change' };
 

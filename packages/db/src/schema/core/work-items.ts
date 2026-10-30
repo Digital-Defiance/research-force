@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { check, index, integer, primaryKey, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
-import { ASSIGNEE_STATES, DEPENDENCY_KINDS, OUTCOME_TRANSITIONS, QUESTION_STATES, WORK_PRIORITIES, WORK_STATES } from '@researchforce/domain/work';
+import { ASSIGNEE_STATES, DEPENDENCY_KINDS, OUTCOME_TRANSITIONS, QUESTION_STATES, WORK_EVENT_KINDS, WORK_PRIORITIES, WORK_STATES } from '@researchforce/domain/work';
 import { oneOf, spans } from '../columns';
 
 /** A Work_Item's own fields (R52.1). The state, its reason and the graph revision belong to the work operations, not to the item's editable fields. */
@@ -120,3 +120,21 @@ export const questionNextActions = sqliteTable('question_next_actions', {
   text: text('text').notNull(),
   workItemId: text('work_item_id'),
 }, (t) => [primaryKey({ columns: [t.questionId, t.position] }), index('question_next_actions_work').on(t.workItemId), check('question_next_actions_position', sql`${t.position} >= 0 AND ${t.position} < 20`)]);
+
+/**
+ * Every assignment, answer, status, dependency and due-date change, attributed and never altered (R52.6). `subjectId` is the Member or the
+ * predecessor a change concerns, so a reader who cannot read the predecessor does not see its events.
+ */
+export const workEvents = sqliteTable('work_events', {
+  id: text('id').primaryKey(),
+  workId: text('work_id').notNull(),
+  seq: integer('seq').notNull(),
+  kind: text('kind', { enum: WORK_EVENT_KINDS }).notNull(),
+  actorId: text('actor_id').notNull(),
+  at: text('at').notNull(),
+  subjectId: text('subject_id'),
+  detail: text('detail', { mode: 'json' }),
+}, (t) => [uniqueIndex('work_events_seq').on(t.workId, t.seq), index('work_events_subject').on(t.subjectId), oneOf('work_events_kind_values', t.kind, WORK_EVENT_KINDS)]);
+
+export const guardWorkState = sqliteTable('_g_work_state', { x: integer('x').notNull() });
+export const guardWorkCycle = sqliteTable('_g_work_cycle', { x: integer('x').notNull() });

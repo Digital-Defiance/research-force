@@ -191,3 +191,27 @@ function settleNotifications(batch: GuardedBatch): void {
     .run(sql`UPDATE notification_events AS e SET notification_id = (SELECT n.id FROM notifications n WHERE n.member_id = e.member_id AND n.group_key = ${sql.raw(group)} ORDER BY n.created_at DESC LIMIT 1)
       WHERE ${sql.raw(pending)}`);
 }
+
+/**
+ * A Work_Assigned event for each Member newly made responsible or assigned, who can read the work now. A Member who has lost access gets
+ * none, and nothing about the work is put in an event for them (R52.2).
+ */
+export function notifyWorkAssigned(batch: GuardedBatch, workId: string, memberIds: readonly string[], detail: Readonly<Record<string, unknown>> = {}): GuardedBatch {
+  if (memberIds.length === 0) return batch;
+  return insertEvents(batch, {
+    type: 'work_assigned', rootId: workId, detail, recipients: sql`SELECT value FROM json_each(${JSON.stringify([...new Set(memberIds)])})`, where: canRead('m.id', `'${workId}'`),
+  });
+}
+
+/**
+ * A Work_Update event for the Owner and the responsible Member, and for the assignees who have not declined when `audience` is `team`.
+ * One batch makes at most one event per Member, however many of those roles the Member holds (R52.2, R52.6). Mutes apply.
+ */
+export function notifyWorkUpdate(batch: GuardedBatch, workId: string, audience: 'team' | 'managers', detail: Readonly<Record<string, unknown>>): GuardedBatch {
+  return insertEvents(batch, {
+    type: 'work_update', rootId: workId, detail,
+    recipients: sql`SELECT owner_id FROM units WHERE id = ${workId} UNION SELECT responsible_id FROM work_items WHERE unit_id = ${workId}
+      ${audience === 'team' ? sql`UNION SELECT member_id FROM work_assignees WHERE work_id = ${workId} AND state <> 'declined'` : sql``}`,
+    where: `${canRead('m.id', `'${workId}'`)} AND NOT ${muted(projectOf(workId))}`,
+  });
+}

@@ -2,15 +2,14 @@
   "inputs": {
     ".kiro/specs/research-collab-cms/requirements.md": "9e2d7cee953f4aeece04bad4a7dfae273a908c0df65c95beea7a4e572b71b5df",
     ".kiro/specs/research-collab-cms/design.md": "85df571e6efad1205603dca7addcea9c16f68252023d5483a2fbe81d705c4d93",
-    ".kiro/specs/research-collab-cms/tasks.md": "dfa4d2d390d8b64ee32e379385f0948309a48140007331793d81c2f7438a9be2",
-    "docs/acceptance/task-evidence.json": "a8a11a122d432ec5fbb9dd2cde1db01715e6556e0b39faf5c35cdb89372d4d4f"
+    ".kiro/specs/research-collab-cms/tasks.md": "2df30a2350558adae922a9f12ca1794370370fdb8603af910feaba14ec2368a7",
+    "docs/acceptance/task-evidence.json": "20978ec922cc1a3653a330f4d35f1917a2a5483e984465e3d69742f01cf3fece"
   },
   "schemaVersion": 1,
   "nextTasks": [
-    "60.2"
+    "60.3"
   ],
   "remainingBuildOrder": [
-    "60.2",
     "60.3",
     "60.4",
     "60.5",
@@ -211,11 +210,11 @@
     "criteria": 738,
     "properties": 126,
     "leafTasks": 406,
-    "checkedLeaves": 211,
+    "checkedLeaves": 212,
     "historicalUnverified": 182,
-    "acceptedWithLocalEvidence": 29,
+    "acceptedWithLocalEvidence": 30,
     "propertyFiles": 64,
-    "remainingWaves": 195,
+    "remainingWaves": 194,
     "gates": 4
   },
   "structuralIssues": [],
@@ -10427,7 +10426,7 @@
         {
           "path": "packages/domain/src/types.ts",
           "kind": "file",
-          "sha256": "285d0d95b0c9a23ddf63999de39ac8d58b467921a44639fb65bc231dce712075"
+          "sha256": "2f399681a303ad279930c350360fd752f307a93bee15d8f0d525c98576229642"
         },
         {
           "path": "packages/domain/src/text.ts",
@@ -11187,7 +11186,7 @@
         {
           "path": "packages/db/src/batch.ts",
           "kind": "file",
-          "sha256": "0488db4f1d7c8dcace6ef60cfe89457399ef103d4bb5e5ba12613bc7a3b32d17"
+          "sha256": "745c1d3c111898f2425577d22d6c7eb59eb0acfd8806156131eb2a0df21fdc65"
         },
         {
           "path": "packages/db/src/accountant.ts",
@@ -12480,12 +12479,12 @@
         {
           "path": "apps/app/src/api/app.ts",
           "kind": "file",
-          "sha256": "55fb12c122cd1fa64809d9d516caaa7324d06dc03481d304b6250dc84587d551"
+          "sha256": "a2d9f275bb8119288f6a3560710299b852fcc2ce9aabd99c457f35c6854864cc"
         },
         {
           "path": "apps/app/src/api/errors.ts",
           "kind": "file",
-          "sha256": "d3750aea72c519d19a2ff54a52c517c77c77d46e291ce098eddf468366b45aba"
+          "sha256": "04e43d191d34252ca1ab48c6808955d44f79f8ff19a9829c017e34c029b9a5ab"
         },
         {
           "path": "apps/app/src/log.ts",
@@ -13941,7 +13940,7 @@
         {
           "path": "apps/app/src/jobs/deletion.ts",
           "kind": "file",
-          "sha256": "447e21bd61f7745b798afc20bcc89819fcb15c07faf94e381e84b9e84c7c2a73"
+          "sha256": "105f17e14f26ddc7c2c517b026820ed3b1a25b6a2144c534355ff2e7e15340db"
         }
       ],
       "gates": [],
@@ -14491,7 +14490,7 @@
         {
           "path": "apps/app/src/notifications/fanout.ts",
           "kind": "file",
-          "sha256": "4d71c5b1855307540b22818955fe1b69a413ca323576c2ce1b1f26bad8bca53a"
+          "sha256": "f00d348d4f2a4f06b0e0972d820b5adab3dae6eb7c5f304a4f8f3ec0a09869f5"
         }
       ],
       "gates": [],
@@ -14675,7 +14674,7 @@
         {
           "path": "apps/app/src/mail/compose.ts",
           "kind": "file",
-          "sha256": "5b383c7e1d7fcaa72173349c414a201d86b99e7320a8baf00ecdc4629ea26638"
+          "sha256": "20627684636b10c16f23bb10bfc3c4b460c4c8d0f58d268b578d1df88c2fe54b"
         }
       ],
       "gates": [],
@@ -19171,7 +19170,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "a8a11a122d432ec5fbb9dd2cde1db01715e6556e0b39faf5c35cdb89372d4d4f"
+          "sha256": "20978ec922cc1a3653a330f4d35f1917a2a5483e984465e3d69742f01cf3fece"
         },
         {
           "path": "README.md",
@@ -19260,7 +19259,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "a8a11a122d432ec5fbb9dd2cde1db01715e6556e0b39faf5c35cdb89372d4d4f"
+          "sha256": "20978ec922cc1a3653a330f4d35f1917a2a5483e984465e3d69742f01cf3fece"
         },
         {
           "path": "apps/app/src/index.ts",
@@ -19399,7 +19398,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "a8a11a122d432ec5fbb9dd2cde1db01715e6556e0b39faf5c35cdb89372d4d4f"
+          "sha256": "20978ec922cc1a3653a330f4d35f1917a2a5483e984465e3d69742f01cf3fece"
         },
         {
           "path": "apps/app/src/local/services.ts",
@@ -19439,7 +19438,7 @@
         {
           "path": "apps/app/src/api/app.ts",
           "kind": "file",
-          "sha256": "55fb12c122cd1fa64809d9d516caaa7324d06dc03481d304b6250dc84587d551"
+          "sha256": "a2d9f275bb8119288f6a3560710299b852fcc2ce9aabd99c457f35c6854864cc"
         },
         {
           "path": "apps/app/src/do/mailer.ts",
@@ -19595,7 +19594,7 @@
         {
           "path": "packages/db/src/batch.ts",
           "kind": "file",
-          "sha256": "0488db4f1d7c8dcace6ef60cfe89457399ef103d4bb5e5ba12613bc7a3b32d17"
+          "sha256": "745c1d3c111898f2425577d22d6c7eb59eb0acfd8806156131eb2a0df21fdc65"
         },
         {
           "path": "apps/app/test/migration-not-published.test.ts",
@@ -20584,7 +20583,7 @@
         {
           "path": "apps/app/src/jobs/deletion.ts",
           "kind": "file",
-          "sha256": "447e21bd61f7745b798afc20bcc89819fcb15c07faf94e381e84b9e84c7c2a73"
+          "sha256": "105f17e14f26ddc7c2c517b026820ed3b1a25b6a2144c534355ff2e7e15340db"
         },
         {
           "path": "apps/app/src/search/read.ts",
@@ -21083,12 +21082,12 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "a8a11a122d432ec5fbb9dd2cde1db01715e6556e0b39faf5c35cdb89372d4d4f"
+          "sha256": "20978ec922cc1a3653a330f4d35f1917a2a5483e984465e3d69742f01cf3fece"
         },
         {
           "path": "docs/acceptance/checks/local-tests.json",
           "kind": "file",
-          "sha256": "bd202f90c82ae1e71bf08989fb61b51115e43ef6d2fc814be92e6f4f10831abd"
+          "sha256": "a21d098e9f2fb0da6a56bae9227b51bf59a4a04aa82b4fda4d866f3ba5106715"
         },
         {
           "path": "tools/src/specs.ts",
@@ -21175,7 +21174,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "a8a11a122d432ec5fbb9dd2cde1db01715e6556e0b39faf5c35cdb89372d4d4f"
+          "sha256": "20978ec922cc1a3653a330f4d35f1917a2a5483e984465e3d69742f01cf3fece"
         },
         {
           "path": "packages/domain/src/settings.ts",
@@ -21210,7 +21209,7 @@
         {
           "path": "apps/app/src/api/app.ts",
           "kind": "file",
-          "sha256": "55fb12c122cd1fa64809d9d516caaa7324d06dc03481d304b6250dc84587d551"
+          "sha256": "a2d9f275bb8119288f6a3560710299b852fcc2ce9aabd99c457f35c6854864cc"
         },
         {
           "path": "apps/app/src/env.ts",
@@ -21355,7 +21354,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "a8a11a122d432ec5fbb9dd2cde1db01715e6556e0b39faf5c35cdb89372d4d4f"
+          "sha256": "20978ec922cc1a3653a330f4d35f1917a2a5483e984465e3d69742f01cf3fece"
         },
         {
           "path": "docs/storage/logical-fields.md",
@@ -21410,7 +21409,7 @@
         {
           "path": "packages/db/src/batch.ts",
           "kind": "file",
-          "sha256": "0488db4f1d7c8dcace6ef60cfe89457399ef103d4bb5e5ba12613bc7a3b32d17"
+          "sha256": "745c1d3c111898f2425577d22d6c7eb59eb0acfd8806156131eb2a0df21fdc65"
         },
         {
           "path": "packages/db/migrations/core/0010_logical_fields.sql",
@@ -21420,7 +21419,7 @@
         {
           "path": "packages/db/migrations/core/meta/_journal.json",
           "kind": "file",
-          "sha256": "f266b0c936437e383734b10a064de96158150f695c4660c779fbd04487913d58"
+          "sha256": "1a257215c1d0e3da5e0ae56e19feab6c17d99ec3b0ced0de06d975b1a0b34202"
         },
         {
           "path": "packages/db/migrations/core/meta/0010_snapshot.json",
@@ -21520,7 +21519,7 @@
         {
           "path": "infra/releases/development.json",
           "kind": "file",
-          "sha256": "2e6f584707a56c5b7ef81742ba920363e147bf79a3ca0c03f59127133e3a1361"
+          "sha256": "9edc14c3e095507e275073331ca175caa488552bb28de401a6d589ab64523264"
         },
         {
           "path": "infra/recovery/deployment.example.json",
@@ -21590,17 +21589,17 @@
         {
           "path": "tools/test/field-migration.test.ts",
           "kind": "file",
-          "sha256": "d5586140299f1aef30c8744baaee62f50e929865fd4229d1fc738beff3193047"
+          "sha256": "d948e7d2271e73f488fde05ff8fa4298b46e3dbc8ffe2a24a763073c8d1e2133"
         },
         {
           "path": "tools/test/upgrade-store.test.ts",
           "kind": "file",
-          "sha256": "227225b3677e4229a6219ccc9647b52cd79bed0c389e24b5b917d0e5cc0a03dd"
+          "sha256": "e1f1b2079e80c1f4e82a1e89c535b63d22ee73f52f16ccaaa3d0d03445844760"
         },
         {
           "path": "tools/test/release-tools.test.ts",
           "kind": "file",
-          "sha256": "e1d4d80e04ab14f5a4aac72ffece22498737d80159bd3c637c07863fef4ff28b"
+          "sha256": "ca7f6dfef9432cb6db4580acee083fb759710d2178373d4a5d955a55ec506a3d"
         },
         {
           "path": "tools/test/release-compatibility.test.ts",
@@ -21725,7 +21724,7 @@
         {
           "path": "apps/app/src/api/app.ts",
           "kind": "file",
-          "sha256": "55fb12c122cd1fa64809d9d516caaa7324d06dc03481d304b6250dc84587d551"
+          "sha256": "a2d9f275bb8119288f6a3560710299b852fcc2ce9aabd99c457f35c6854864cc"
         },
         {
           "path": "apps/app/src/api/csrf.ts",
@@ -21740,7 +21739,7 @@
         {
           "path": "packages/db/src/batch.ts",
           "kind": "file",
-          "sha256": "0488db4f1d7c8dcace6ef60cfe89457399ef103d4bb5e5ba12613bc7a3b32d17"
+          "sha256": "745c1d3c111898f2425577d22d6c7eb59eb0acfd8806156131eb2a0df21fdc65"
         },
         {
           "path": "packages/db/src/schema/core/operations.ts",
@@ -21760,7 +21759,7 @@
         {
           "path": "packages/db/migrations/core/meta/_journal.json",
           "kind": "file",
-          "sha256": "f266b0c936437e383734b10a064de96158150f695c4660c779fbd04487913d58"
+          "sha256": "1a257215c1d0e3da5e0ae56e19feab6c17d99ec3b0ced0de06d975b1a0b34202"
         },
         {
           "path": "packages/db/migrations/core/meta/0011_snapshot.json",
@@ -21795,7 +21794,7 @@
         {
           "path": "infra/releases/development.json",
           "kind": "file",
-          "sha256": "2e6f584707a56c5b7ef81742ba920363e147bf79a3ca0c03f59127133e3a1361"
+          "sha256": "9edc14c3e095507e275073331ca175caa488552bb28de401a6d589ab64523264"
         },
         {
           "path": "apps/app/test/operations.test.ts",
@@ -22024,7 +22023,7 @@
         {
           "path": "packages/db/src/batch.ts",
           "kind": "file",
-          "sha256": "0488db4f1d7c8dcace6ef60cfe89457399ef103d4bb5e5ba12613bc7a3b32d17"
+          "sha256": "745c1d3c111898f2425577d22d6c7eb59eb0acfd8806156131eb2a0df21fdc65"
         },
         {
           "path": "packages/db/src/accountant.ts",
@@ -22546,7 +22545,7 @@
         {
           "path": "packages/domain/src/work.ts",
           "kind": "file",
-          "sha256": "05acc30ba49631c7dcb51a5e833ffdb7a42e610fad3d39a554205171d2e36127"
+          "sha256": "993098b7be08155363c284e27a4db8fbe491c8ac647acde9941f138dfae13a51"
         },
         {
           "path": "packages/domain/src/permissions.ts",
@@ -22561,7 +22560,7 @@
         {
           "path": "packages/db/src/schema/core/work-items.ts",
           "kind": "file",
-          "sha256": "d2764ba7b813e7e791ff0ab36528efe73b4ceb172be8770b27226b9dae6a3526"
+          "sha256": "7d76a7915f93de3b26f11beb60783f05481a860d11dd0dd1be23fe575b75804b"
         },
         {
           "path": "packages/db/migrations/core/0016_work_items.sql",
@@ -22571,7 +22570,7 @@
         {
           "path": "apps/app/src/records/kinds/work.ts",
           "kind": "file",
-          "sha256": "bcc2056ec346d7750bb6b1dbe4435b554b0927e778016e27acb2b5077b066275"
+          "sha256": "8bdf5593faa752fddf422a5afb79a34fccb02256ec8de821e2239b1b3bfc6bde"
         },
         {
           "path": "apps/app/src/records/kinds/question.ts",
@@ -22586,7 +22585,7 @@
         {
           "path": "apps/app/src/jobs/deletion.ts",
           "kind": "file",
-          "sha256": "447e21bd61f7745b798afc20bcc89819fcb15c07faf94e381e84b9e84c7c2a73"
+          "sha256": "105f17e14f26ddc7c2c517b026820ed3b1a25b6a2144c534355ff2e7e15340db"
         },
         {
           "path": "apps/app/src/search/read.ts",
@@ -22621,7 +22620,7 @@
         {
           "path": "tools/test/upgrade-store.test.ts",
           "kind": "file",
-          "sha256": "227225b3677e4229a6219ccc9647b52cd79bed0c389e24b5b917d0e5cc0a03dd"
+          "sha256": "e1f1b2079e80c1f4e82a1e89c535b63d22ee73f52f16ccaaa3d0d03445844760"
         }
       ],
       "gates": [
@@ -22662,7 +22661,7 @@
     {
       "id": "60.2",
       "title": "Implement work assignment, dependencies and outcome APIs",
-      "checked": false,
+      "checked": true,
       "requirements": [
         "52.1",
         "52.2",
@@ -22675,14 +22674,99 @@
       "prerequisites": [
         "61.1"
       ],
-      "phase": "collaboration",
-      "sourcePaths": [],
+      "phase": "completed_baseline",
+      "sourcePaths": [
+        {
+          "path": "packages/domain/src/work.ts",
+          "kind": "file",
+          "sha256": "993098b7be08155363c284e27a4db8fbe491c8ac647acde9941f138dfae13a51"
+        },
+        {
+          "path": "packages/db/src/schema/core/work-items.ts",
+          "kind": "file",
+          "sha256": "7d76a7915f93de3b26f11beb60783f05481a860d11dd0dd1be23fe575b75804b"
+        },
+        {
+          "path": "packages/db/migrations/core/0017_work_assignment_history.sql",
+          "kind": "file",
+          "sha256": "b57c04caf8614e7315cb7f814d695475000ccd318c2b4b45c2a494920db449b5"
+        },
+        {
+          "path": "apps/app/src/records/work.ts",
+          "kind": "file",
+          "sha256": "23431e3815e87bf9db2d3c0f9c1ae47b0c062594064a1da5049f4a87ffa3bbb3"
+        },
+        {
+          "path": "apps/app/src/records/work-history.ts",
+          "kind": "file",
+          "sha256": "e6d7feb1032db9e158dc69362fa4cd836ca57567caf57519fecb0d7be8469f40"
+        },
+        {
+          "path": "apps/app/src/records/kinds/work.ts",
+          "kind": "file",
+          "sha256": "8bdf5593faa752fddf422a5afb79a34fccb02256ec8de821e2239b1b3bfc6bde"
+        },
+        {
+          "path": "apps/app/src/api/routes/work.ts",
+          "kind": "file",
+          "sha256": "303d828c735553d182be04080dce3ae28ac3628213dc501892315b211418a839"
+        },
+        {
+          "path": "apps/app/src/notifications/fanout.ts",
+          "kind": "file",
+          "sha256": "f00d348d4f2a4f06b0e0972d820b5adab3dae6eb7c5f304a4f8f3ec0a09869f5"
+        },
+        {
+          "path": "apps/app/src/jobs/deletion.ts",
+          "kind": "file",
+          "sha256": "105f17e14f26ddc7c2c517b026820ed3b1a25b6a2144c534355ff2e7e15340db"
+        },
+        {
+          "path": "apps/app/test/work-coordination.test.ts",
+          "kind": "file",
+          "sha256": "9652edba34532cefac2e007c8aff6ac969ced21954db8c50c13abaf2a8c21978"
+        },
+        {
+          "path": "apps/app/test/api-foundation.test.ts",
+          "kind": "file",
+          "sha256": "4724848e58fe69673408986bf46caf71fbf6fccda95efd1235c4e2479efff18d"
+        },
+        {
+          "path": "tools/test/upgrade-store.test.ts",
+          "kind": "file",
+          "sha256": "e1f1b2079e80c1f4e82a1e89c535b63d22ee73f52f16ccaaa3d0d03445844760"
+        }
+      ],
       "gates": [
         "team_archive",
         "final_checkpoint_49"
       ],
-      "acceptance": "planned",
-      "evidence": null
+      "acceptance": "accepted",
+      "evidence": {
+        "task": "60.2",
+        "state": "accepted",
+        "reason": "Verified the work assignment, answer, progress and dependency operations. The Owner or an authorized editor assigns the responsible Member and up to 20 assignees through the ordinary edit, so the revision check and the rule that every named Member is active and can read the work apply; an assignee answers only for themselves, accepting or declining with a reason, and can change that answer until the work is finished. The responsible Member, an accepted assignee or an authorized editor moves work between states on the state they saw; Done needs exact versions of readable Findings, Runs, Sources, Decision Records or Attachments, or a no-result statement of up to 2,000 characters, cancelling and reopening need a reason, and every outcome stays as an added row that cannot change. Dependencies are replaced against the graph revision the Member saw, reject self-dependency, duplicates and unreadable or non-work predecessors, and the cycle check runs in the same transaction as the write, so two competing edits cannot commit a loop. A predecessor the viewer cannot read shows no name, count or history event and is kept unchanged when someone else edits the list. Every assignment, answer, state, due-date and dependency change is an attributed history event, and assignment and change notices go once to each Member who can still read the work, never to one who has lost access.",
+        "sourcePaths": [
+          "packages/domain/src/work.ts",
+          "packages/db/src/schema/core/work-items.ts",
+          "packages/db/migrations/core/0017_work_assignment_history.sql",
+          "apps/app/src/records/work.ts",
+          "apps/app/src/records/work-history.ts",
+          "apps/app/src/records/kinds/work.ts",
+          "apps/app/src/api/routes/work.ts",
+          "apps/app/src/notifications/fanout.ts",
+          "apps/app/src/jobs/deletion.ts"
+        ],
+        "testPaths": [
+          "apps/app/test/work-coordination.test.ts",
+          "apps/app/test/api-foundation.test.ts",
+          "tools/test/upgrade-store.test.ts"
+        ],
+        "correctionTasks": [],
+        "checks": [
+          "docs/acceptance/checks/local-tests.json"
+        ]
+      }
     },
     {
       "id": "60.3",
@@ -22695,9 +22779,7 @@
         "60.1"
       ],
       "properties": [],
-      "prerequisites": [
-        "60.2"
-      ],
+      "prerequisites": [],
       "phase": "collaboration",
       "sourcePaths": [],
       "gates": [
@@ -22835,7 +22917,7 @@
         {
           "path": "packages/db/src/batch.ts",
           "kind": "file",
-          "sha256": "0488db4f1d7c8dcace6ef60cfe89457399ef103d4bb5e5ba12613bc7a3b32d17"
+          "sha256": "745c1d3c111898f2425577d22d6c7eb59eb0acfd8806156131eb2a0df21fdc65"
         },
         {
           "path": "apps/app/src/records/decisions.ts",
@@ -22850,7 +22932,7 @@
         {
           "path": "apps/app/src/jobs/deletion.ts",
           "kind": "file",
-          "sha256": "447e21bd61f7745b798afc20bcc89819fcb15c07faf94e381e84b9e84c7c2a73"
+          "sha256": "105f17e14f26ddc7c2c517b026820ed3b1a25b6a2144c534355ff2e7e15340db"
         },
         {
           "path": "apps/app/src/search/read.ts",
@@ -22890,7 +22972,7 @@
         {
           "path": "tools/test/upgrade-store.test.ts",
           "kind": "file",
-          "sha256": "227225b3677e4229a6219ccc9647b52cd79bed0c389e24b5b917d0e5cc0a03dd"
+          "sha256": "e1f1b2079e80c1f4e82a1e89c535b63d22ee73f52f16ccaaa3d0d03445844760"
         }
       ],
       "gates": [
@@ -23064,7 +23146,7 @@
         {
           "path": "tools/test/upgrade-store.test.ts",
           "kind": "file",
-          "sha256": "227225b3677e4229a6219ccc9647b52cd79bed0c389e24b5b917d0e5cc0a03dd"
+          "sha256": "e1f1b2079e80c1f4e82a1e89c535b63d22ee73f52f16ccaaa3d0d03445844760"
         }
       ],
       "gates": [
@@ -23587,7 +23669,7 @@
         {
           "path": "apps/app/src/jobs/deletion.ts",
           "kind": "file",
-          "sha256": "447e21bd61f7745b798afc20bcc89819fcb15c07faf94e381e84b9e84c7c2a73"
+          "sha256": "105f17e14f26ddc7c2c517b026820ed3b1a25b6a2144c534355ff2e7e15340db"
         },
         {
           "path": "packages/domain/test/releases.test.ts",
@@ -23607,7 +23689,7 @@
         {
           "path": "tools/test/upgrade-store.test.ts",
           "kind": "file",
-          "sha256": "227225b3677e4229a6219ccc9647b52cd79bed0c389e24b5b917d0e5cc0a03dd"
+          "sha256": "e1f1b2079e80c1f4e82a1e89c535b63d22ee73f52f16ccaaa3d0d03445844760"
         }
       ],
       "gates": [
@@ -23729,7 +23811,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "a8a11a122d432ec5fbb9dd2cde1db01715e6556e0b39faf5c35cdb89372d4d4f"
+          "sha256": "20978ec922cc1a3653a330f4d35f1917a2a5483e984465e3d69742f01cf3fece"
         },
         {
           "path": "packages/domain/src/compatibility.ts",
@@ -23779,7 +23861,7 @@
         {
           "path": "infra/releases/development.json",
           "kind": "file",
-          "sha256": "2e6f584707a56c5b7ef81742ba920363e147bf79a3ca0c03f59127133e3a1361"
+          "sha256": "9edc14c3e095507e275073331ca175caa488552bb28de401a6d589ab64523264"
         },
         {
           "path": "infra/releases/README.md",
@@ -23834,12 +23916,12 @@
         {
           "path": "tools/test/upgrade-store.test.ts",
           "kind": "file",
-          "sha256": "227225b3677e4229a6219ccc9647b52cd79bed0c389e24b5b917d0e5cc0a03dd"
+          "sha256": "e1f1b2079e80c1f4e82a1e89c535b63d22ee73f52f16ccaaa3d0d03445844760"
         },
         {
           "path": "tools/test/release-tools.test.ts",
           "kind": "file",
-          "sha256": "e1d4d80e04ab14f5a4aac72ffece22498737d80159bd3c637c07863fef4ff28b"
+          "sha256": "ca7f6dfef9432cb6db4580acee083fb759710d2178373d4a5d955a55ec506a3d"
         }
       ],
       "gates": [
@@ -24083,7 +24165,7 @@
         {
           "path": "apps/app/src/api/app.ts",
           "kind": "file",
-          "sha256": "55fb12c122cd1fa64809d9d516caaa7324d06dc03481d304b6250dc84587d551"
+          "sha256": "a2d9f275bb8119288f6a3560710299b852fcc2ce9aabd99c457f35c6854864cc"
         },
         {
           "path": "apps/app/src/index.ts",
@@ -24103,7 +24185,7 @@
         {
           "path": "apps/app/src/notifications/fanout.ts",
           "kind": "file",
-          "sha256": "4d71c5b1855307540b22818955fe1b69a413ca323576c2ce1b1f26bad8bca53a"
+          "sha256": "f00d348d4f2a4f06b0e0972d820b5adab3dae6eb7c5f304a4f8f3ec0a09869f5"
         },
         {
           "path": "apps/app/web/src/routes.tsx",
@@ -24222,39 +24304,39 @@
   "phases": {
     "collaboration": {
       "firstWave": 0,
-      "lastWave": 23
+      "lastWave": 22
     },
     "privacy": {
-      "firstWave": 24,
-      "lastWave": 47
+      "firstWave": 23,
+      "lastWave": 46
     },
     "imports_and_log": {
-      "firstWave": 48,
-      "lastWave": 71
+      "firstWave": 47,
+      "lastWave": 70
     },
     "publication": {
-      "firstWave": 72,
-      "lastWave": 89
+      "firstWave": 71,
+      "lastWave": 88
     },
     "outside_and_ai": {
-      "firstWave": 90,
-      "lastWave": 137
+      "firstWave": 89,
+      "lastWave": 136
     },
     "recovery": {
-      "firstWave": 138,
-      "lastWave": 155
+      "firstWave": 137,
+      "lastWave": 154
     },
     "release_tooling": {
-      "firstWave": 156,
-      "lastWave": 185
+      "firstWave": 155,
+      "lastWave": 184
     },
     "staging_and_acceptance": {
-      "firstWave": 186,
-      "lastWave": 193
+      "firstWave": 185,
+      "lastWave": 192
     },
     "production_activation": {
-      "firstWave": 194,
-      "lastWave": 194
+      "firstWave": 193,
+      "lastWave": 193
     }
   },
   "gates": [

@@ -3,6 +3,8 @@ import type { Context } from 'hono';
 import { workAssignees, workItems } from '@researchforce/db/schema/core';
 import type { AssigneeState, WorkPriority, WorkState } from '@researchforce/domain/work';
 import type { ApiEnv } from '../../api/app';
+import { notifyWorkAssigned, notifyWorkUpdate } from '../../notifications/fanout';
+import { recordWorkEvent } from '../work-history';
 import { authorize } from '../../auth/authorize';
 import { richColumns, richText, rowsOf } from './kind';
 import type { ItemFields, KindAdapter, KindRules } from './kind';
@@ -43,10 +45,32 @@ export const workItem: KindAdapter = {
     batch.insert(workItems, { unitId: item.id, ...row(fields, item.ownerId) });
     const people = assigneesOf(fields);
     if (people.length > 0) batch.insert(workAssignees, people.map((memberId, position) => ({ workId: item.id, memberId, position, assignedBy: batch.actor.id!, assignedAt: batch.actor.now })));
+    // The submitting Member is responsible by default; naming someone else is an assignment the history and that Member are told about (R52.1, R52.6).
+    const responsible = row(fields, item.ownerId).responsibleId;
+    if (responsible !== batch.actor.id) recordWorkEvent(batch, item.id, 'responsible', responsible, { from: batch.actor.id });
+    for (const memberId of people) recordWorkEvent(batch, item.id, 'assigned', memberId);
+    notifyWorkAssigned(batch, item.id, [...people, ...(responsible === batch.actor.id ? [] : [responsible])]);
   },
   update(batch, item, before, after, changed) {
     if (changed.has('objective') || DETAILS.some((field) => field !== 'assigneeIds' && changed.has(field))) batch.update(workItems, row(after, item.ownerId), eq(workItems.unitId, item.id));
+    // Every assignment and due-date change is attributed history and tells the people it concerns (R52.2, R52.6).
+    const responsible = row(after, item.ownerId).responsibleId;
+    const previousResponsible = row(before, item.ownerId).responsibleId;
+    if (responsible !== previousResponsible) {
+      recordWorkEvent(batch, item.id, 'responsible', responsible, { from: previousResponsible });
+      notifyWorkAssigned(batch, item.id, [responsible]);
+    }
+    if (changed.has('dueDate')) {
+      recordWorkEvent(batch, item.id, 'due_date', null, { from: (before['dueDate'] as { value: string } | undefined)?.value ?? null, to: (after['dueDate'] as { value: string } | undefined)?.value ?? null });
+      notifyWorkUpdate(batch, item.id, 'team', { change: 'due_date' });
+    }
     if (!changed.has('assigneeIds')) return;
+    const previous = assigneesOf(before);
+    const current = assigneesOf(after);
+    for (const memberId of previous.filter((member) => !current.includes(member))) recordWorkEvent(batch, item.id, 'unassigned', memberId);
+    const newcomers = current.filter((member) => !previous.includes(member));
+    for (const memberId of newcomers) recordWorkEvent(batch, item.id, 'assigned', memberId);
+    notifyWorkAssigned(batch, item.id, newcomers.filter((member) => member !== responsible || responsible === previousResponsible));
     // An assignee who stays keeps their answer; one who is dropped loses it, and one added later starts again as pending (R52.2).
     const next = assigneesOf(after);
     const kept = new Set(assigneesOf(before).filter((member) => next.includes(member)));

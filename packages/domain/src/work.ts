@@ -16,6 +16,9 @@ export const ASSIGNEE_STATES = ['pending', 'accepted', 'declined'] as const;
 export type AssigneeState = typeof ASSIGNEE_STATES[number];
 export const DEPENDENCY_KINDS = ['blocker', 'informational'] as const;
 export type DependencyKind = typeof DEPENDENCY_KINDS[number];
+/** What the history of a Work_Item records, each as an attributed event (R52.6). */
+export const WORK_EVENT_KINDS = ['assigned', 'unassigned', 'accepted', 'declined', 'responsible', 'due_date', 'state', 'dependency_added', 'dependency_removed', 'dependency_kind'] as const;
+export type WorkEventKind = typeof WORK_EVENT_KINDS[number];
 /** What a Done work item may point to as its result (R52.4). */
 export const RESULT_TARGET_KINDS = ['finding', 'run', 'source', 'decision_record', 'attachment'] as const;
 export type ResultTargetKind = typeof RESULT_TARGET_KINDS[number];
@@ -41,6 +44,36 @@ export type WorkResult = z.output<typeof resultSchema>;
 /** Whether a transition needs a reason: cancelling and reopening do (R52.4). */
 export function transitionNeedsReason(from: WorkState, to: WorkState): boolean {
   return to === 'cancelled' || ((from === 'done' || from === 'cancelled') && to === 'open');
+}
+
+const stateSchema = z.enum(WORK_STATES);
+/** Assignments are a replacement of who is responsible and who is assigned; the due date and objective use ordinary editing (design "Work coordination"). */
+export const assignmentInputSchema = z.strictObject({
+  rev: z.number().int().min(1),
+  responsibleId: idSchema.optional(),
+  assigneeIds: z.array(idSchema).max(WORK_LIMITS.assignees).optional(),
+}).refine((value) => value.responsibleId !== undefined || value.assigneeIds !== undefined, { message: 'Name the responsible Member or the assignees.' });
+export const responseInputSchema = z.strictObject({ response: z.enum(['accepted', 'declined']), reason: textField(WORK_LIMITS.reasonCodePoints, true).optional() });
+/** `expectedState` is the state the Member saw, so a move made on a stale page is refused rather than overwritten. */
+export const progressInputSchema = z.strictObject({
+  state: stateSchema, expectedState: stateSchema, reason: textField(WORK_LIMITS.reasonCodePoints, true).optional(), result: resultSchema.optional(),
+});
+export type ProgressInput = z.output<typeof progressInputSchema>;
+export const dependenciesInputSchema = z.strictObject({
+  graphRev: z.number().int().min(0),
+  dependencies: z.array(z.strictObject({ predecessorId: idSchema, kind: z.enum(DEPENDENCY_KINDS).default('blocker') })).max(WORK_LIMITS.dependencies),
+});
+export type DependenciesInput = z.output<typeof dependenciesInputSchema>;
+
+/** What stops a progress move, or nothing (R52.4). */
+export function progressIssues(from: WorkState, input: ProgressInput): { field: string; rule: string }[] {
+  const issues: { field: string; rule: string }[] = [];
+  if (input.state === from) issues.push({ field: 'state', rule: 'The work is already in this state.' });
+  else if (!WORK_TRANSITIONS[from].includes(input.state)) issues.push({ field: 'state', rule: `Work that is ${WORK_STATE_NAMES[from]} cannot move to ${WORK_STATE_NAMES[input.state]}.` });
+  if (transitionNeedsReason(from, input.state) && input.reason === undefined) issues.push({ field: 'reason', rule: input.state === 'cancelled' ? 'Cancelling work needs a reason.' : 'Reopening work needs a reason.' });
+  if (input.state === 'done' && input.result === undefined) issues.push({ field: 'result', rule: 'Done work needs at least one resulting record or a statement that there is no result.' });
+  if (input.state !== 'done' && input.result !== undefined) issues.push({ field: 'result', rule: 'A result is recorded only when work is Done.' });
+  return issues;
 }
 
 /** R50.9 to R50.11: the Question lifecycle's states and bounds. */

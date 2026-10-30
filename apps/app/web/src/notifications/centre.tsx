@@ -9,7 +9,7 @@ import { Button, formatDate, LoadState, Notice, PersonLink, SaveFailure, useLoad
 
 const EVENT_NAMES: Readonly<Record<string, string>> = {
   new_submission: 'New Submission', item_update: 'Item update', reply: 'Reply', mention: 'Mention', review_requested: 'Review requested',
-  review_completed: 'Review completed', outside_submission: 'Outside Submission', reminder: 'Reminder', system_alert: 'System alert', dissent: 'Dissent Note',
+  review_completed: 'Review completed', outside_submission: 'Outside Submission', reminder: 'Reminder', system_alert: 'System alert', dissent: 'Dissent Note', work_assigned: 'Work assigned', work_update: 'Work update',
 };
 const kindName = (kind: string | null): string => (kind !== null && kind in ITEM_KIND_NAMES ? ITEM_KIND_NAMES[kind as ItemKind] : 'Record');
 
