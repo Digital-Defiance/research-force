@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "command": "npm test -- --reporter=json --outputFile=<temporary report>",
-  "recordedAt": "2026-10-30T19:19:49.253Z",
+  "recordedAt": "2026-10-30T19:32:28.708Z",
   "scope": "local-synthetic",
   "success": true,
   "suites": [
@@ -290,6 +290,12 @@
     {
       "path": "apps/app/test/properties/p116-question-lifecycle.test.ts",
       "passed": 5,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p117-decision-records.test.ts",
+      "passed": 8,
       "failed": 0,
       "skipped": 0
     },
@@ -1364,6 +1370,7 @@
     "apps/app/test/properties/p110-idempotent-mutations.test.ts": "870ba98db23a944fee8488b263ad9985ab4a0a1037ab7bc8ff2e073d3b1ae539",
     "apps/app/test/properties/p115-work-coordination.test.ts": "151a93c3fbfb0020b5f7d7594155a8d1058e4852e1028a5a512da2ac77d2abff",
     "apps/app/test/properties/p116-question-lifecycle.test.ts": "52e2ef3d6ccef465241d086c3a0af87527c361aa67639b8ca3a848fe349035b8",
+    "apps/app/test/properties/p117-decision-records.test.ts": "b61ccb1aa6d3379d2477fddc0fae73a4956a5bb704d37535225d429084b2d420",
     "apps/app/test/properties/p118-evidence-citations.test.ts": "5e639cd79486ddd12b38bfb2085ae530c2407293d5d2729c623b8498a4b7fc70",
     "apps/app/test/properties/p119-artifact-derivations.test.ts": "679cf142ca9ee4c2fdd9d3d711e8f718c1057582100057379012af627d1d8078",
     "apps/app/test/properties/p23-permission-decisions.test.ts": "9e36301d1a8c79d20156d698207be8de30884abd016414f36551348286ffd27f",

@@ -1172,6 +1172,22 @@
       "checks": [
         "docs/acceptance/checks/local-tests.json"
       ]
+    },
+    {
+      "task": "61.3",
+      "state": "accepted",
+      "reason": "Verified Property 117 against an independent model. One Team decision names two participants and is driven through random responses (to current or older wording, replacing the latest response or one the Member never saw, and by a Member who is not named), rewordings, outcome changes, detail edits, adoption, withdrawal and loss of access. After every step each participant's status equals their own latest response judged against the wording as it is now: silence is no response, a response to older wording is earlier wording and counts again if the wording is put back, and no participant's status depends on anyone else's action. The same wording always has the same digest and different wordings never share one; every response is kept as the next version of its Member's own; adoption needs an outcome and follows the Owner or an editor on the revision seen; a withdrawn decision takes no response or edit; and a refused step changes nothing. Concrete scenarios and maximum encoded inputs are covered: a question of 2,000 code points, a context and rationale of 20,000, 20 alternatives with titles of 200 and descriptions of 5,000, a revisit condition and a deferral reason of 1,000 and a comment of 2,000, each with one more refused. Injected faults, a status that ignores the wording and adoption without an outcome, are caught by the property. No deployment or production certification is claimed.",
+      "sourcePaths": [
+        "apps/app/src/records/decision-operations.ts",
+        "apps/app/src/records/decisions.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/properties/p117-decision-records.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
     }
   ]
 }

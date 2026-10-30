@@ -2,15 +2,14 @@
   "inputs": {
     ".kiro/specs/research-collab-cms/requirements.md": "9e2d7cee953f4aeece04bad4a7dfae273a908c0df65c95beea7a4e572b71b5df",
     ".kiro/specs/research-collab-cms/design.md": "85df571e6efad1205603dca7addcea9c16f68252023d5483a2fbe81d705c4d93",
-    ".kiro/specs/research-collab-cms/tasks.md": "059291068fbd1f1fa1c28f3786f7893e2306e2749003e9f4a2f5ca872e1f7e31",
-    "docs/acceptance/task-evidence.json": "fb9a1d7dc9e89a3d7fe9c14ae02b55f343397b6255180e7ae4c74d3ca717bac4"
+    ".kiro/specs/research-collab-cms/tasks.md": "3efaf5c77e9f45a484b5db25007389e639f79666182f703d61852601da2c2383",
+    "docs/acceptance/task-evidence.json": "b9a8e5c2edde1782b1d41ee85f61f9dd04a4fb30b4d7f98c91ca58ab01885190"
   },
   "schemaVersion": 1,
   "nextTasks": [
-    "61.3"
+    "63.1"
   ],
   "remainingBuildOrder": [
-    "61.3",
     "63.1",
     "63.2",
     "63.3",
@@ -200,11 +199,11 @@
     "criteria": 738,
     "properties": 126,
     "leafTasks": 406,
-    "checkedLeaves": 222,
+    "checkedLeaves": 223,
     "historicalUnverified": 182,
-    "acceptedWithLocalEvidence": 40,
-    "propertyFiles": 68,
-    "remainingWaves": 184,
+    "acceptedWithLocalEvidence": 41,
+    "propertyFiles": 69,
+    "remainingWaves": 183,
     "gates": 4
   },
   "structuralIssues": [],
@@ -10160,7 +10159,9 @@
         "53.5"
       ],
       "task": "61.3",
-      "testPaths": []
+      "testPaths": [
+        "apps/app/test/properties/p117-decision-records.test.ts"
+      ]
     },
     {
       "id": 118,
@@ -19168,7 +19169,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "fb9a1d7dc9e89a3d7fe9c14ae02b55f343397b6255180e7ae4c74d3ca717bac4"
+          "sha256": "b9a8e5c2edde1782b1d41ee85f61f9dd04a4fb30b4d7f98c91ca58ab01885190"
         },
         {
           "path": "README.md",
@@ -19257,7 +19258,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "fb9a1d7dc9e89a3d7fe9c14ae02b55f343397b6255180e7ae4c74d3ca717bac4"
+          "sha256": "b9a8e5c2edde1782b1d41ee85f61f9dd04a4fb30b4d7f98c91ca58ab01885190"
         },
         {
           "path": "apps/app/src/index.ts",
@@ -19396,7 +19397,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "fb9a1d7dc9e89a3d7fe9c14ae02b55f343397b6255180e7ae4c74d3ca717bac4"
+          "sha256": "b9a8e5c2edde1782b1d41ee85f61f9dd04a4fb30b4d7f98c91ca58ab01885190"
         },
         {
           "path": "apps/app/src/local/services.ts",
@@ -21080,12 +21081,12 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "fb9a1d7dc9e89a3d7fe9c14ae02b55f343397b6255180e7ae4c74d3ca717bac4"
+          "sha256": "b9a8e5c2edde1782b1d41ee85f61f9dd04a4fb30b4d7f98c91ca58ab01885190"
         },
         {
           "path": "docs/acceptance/checks/local-tests.json",
           "kind": "file",
-          "sha256": "a1ca3369342b773a0da1f65b008f60d5ca6b0045b8a4ae815f006c8b8beb0258"
+          "sha256": "242e0fa5a73cb6735361bd894e8d874605b94427bd766edb514541f6be372b8f"
         },
         {
           "path": "tools/src/specs.ts",
@@ -21172,7 +21173,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "fb9a1d7dc9e89a3d7fe9c14ae02b55f343397b6255180e7ae4c74d3ca717bac4"
+          "sha256": "b9a8e5c2edde1782b1d41ee85f61f9dd04a4fb30b4d7f98c91ca58ab01885190"
         },
         {
           "path": "packages/domain/src/settings.ts",
@@ -21352,7 +21353,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "fb9a1d7dc9e89a3d7fe9c14ae02b55f343397b6255180e7ae4c74d3ca717bac4"
+          "sha256": "b9a8e5c2edde1782b1d41ee85f61f9dd04a4fb30b4d7f98c91ca58ab01885190"
         },
         {
           "path": "docs/storage/logical-fields.md",
@@ -23303,7 +23304,7 @@
     {
       "id": "61.3",
       "title": "Write property and regression tests for decision records",
-      "checked": false,
+      "checked": true,
       "requirements": [
         "53.1",
         "53.2",
@@ -23315,19 +23316,45 @@
         117
       ],
       "prerequisites": [],
-      "phase": "collaboration",
+      "phase": "completed_baseline",
       "sourcePaths": [
         {
           "path": "apps/app/test/properties/p117-decision-records.test.ts",
-          "kind": "missing"
+          "kind": "file",
+          "sha256": "b61ccb1aa6d3379d2477fddc0fae73a4956a5bb704d37535225d429084b2d420"
+        },
+        {
+          "path": "apps/app/src/records/decision-operations.ts",
+          "kind": "file",
+          "sha256": "9ef2e6d23853f2ee8b34d6b90c2122e6ab58ceebac90258b985c489cb038f20c"
+        },
+        {
+          "path": "apps/app/src/records/decisions.ts",
+          "kind": "file",
+          "sha256": "443d872865231e98885e561a2d0abacc692009317e9f55b21fe6cdb9af10331c"
         }
       ],
       "gates": [
         "team_archive",
         "final_checkpoint_49"
       ],
-      "acceptance": "planned",
-      "evidence": null
+      "acceptance": "accepted",
+      "evidence": {
+        "task": "61.3",
+        "state": "accepted",
+        "reason": "Verified Property 117 against an independent model. One Team decision names two participants and is driven through random responses (to current or older wording, replacing the latest response or one the Member never saw, and by a Member who is not named), rewordings, outcome changes, detail edits, adoption, withdrawal and loss of access. After every step each participant's status equals their own latest response judged against the wording as it is now: silence is no response, a response to older wording is earlier wording and counts again if the wording is put back, and no participant's status depends on anyone else's action. The same wording always has the same digest and different wordings never share one; every response is kept as the next version of its Member's own; adoption needs an outcome and follows the Owner or an editor on the revision seen; a withdrawn decision takes no response or edit; and a refused step changes nothing. Concrete scenarios and maximum encoded inputs are covered: a question of 2,000 code points, a context and rationale of 20,000, 20 alternatives with titles of 200 and descriptions of 5,000, a revisit condition and a deferral reason of 1,000 and a comment of 2,000, each with one more refused. Injected faults, a status that ignores the wording and adoption without an outcome, are caught by the property. No deployment or production certification is claimed.",
+        "sourcePaths": [
+          "apps/app/src/records/decision-operations.ts",
+          "apps/app/src/records/decisions.ts"
+        ],
+        "testPaths": [
+          "apps/app/test/properties/p117-decision-records.test.ts"
+        ],
+        "correctionTasks": [],
+        "checks": [
+          "docs/acceptance/checks/local-tests.json"
+        ]
+      }
     },
     {
       "id": "62.1",
@@ -23817,9 +23844,7 @@
         "60.1"
       ],
       "properties": [],
-      "prerequisites": [
-        "61.3"
-      ],
+      "prerequisites": [],
       "phase": "collaboration",
       "sourcePaths": [],
       "gates": [
@@ -24302,7 +24327,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "fb9a1d7dc9e89a3d7fe9c14ae02b55f343397b6255180e7ae4c74d3ca717bac4"
+          "sha256": "b9a8e5c2edde1782b1d41ee85f61f9dd04a4fb30b4d7f98c91ca58ab01885190"
         },
         {
           "path": "packages/domain/src/compatibility.ts",
@@ -24795,39 +24820,39 @@
   "phases": {
     "collaboration": {
       "firstWave": 0,
-      "lastWave": 12
+      "lastWave": 11
     },
     "privacy": {
-      "firstWave": 13,
-      "lastWave": 36
+      "firstWave": 12,
+      "lastWave": 35
     },
     "imports_and_log": {
-      "firstWave": 37,
-      "lastWave": 60
+      "firstWave": 36,
+      "lastWave": 59
     },
     "publication": {
-      "firstWave": 61,
-      "lastWave": 78
+      "firstWave": 60,
+      "lastWave": 77
     },
     "outside_and_ai": {
-      "firstWave": 79,
-      "lastWave": 126
+      "firstWave": 78,
+      "lastWave": 125
     },
     "recovery": {
-      "firstWave": 127,
-      "lastWave": 144
+      "firstWave": 126,
+      "lastWave": 143
     },
     "release_tooling": {
-      "firstWave": 145,
-      "lastWave": 174
+      "firstWave": 144,
+      "lastWave": 173
     },
     "staging_and_acceptance": {
-      "firstWave": 175,
-      "lastWave": 182
+      "firstWave": 174,
+      "lastWave": 181
     },
     "production_activation": {
-      "firstWave": 183,
-      "lastWave": 183
+      "firstWave": 182,
+      "lastWave": 182
     }
   },
   "gates": [
