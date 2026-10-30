@@ -47,5 +47,3 @@ Run it with `-WhatIf` first to preview the changes. `-SendingAddress` defaults t
 `researchforce@researchforce.org`; the spec fixes no literal, so confirm the value against your
 tenant. Review the `Test-ServicePrincipalAuthorization` output at the end to confirm the app is
 authorized to send only as the `ResearchForce` mailbox.
-
-Content was rephrased for compliance with licensing restrictions.
