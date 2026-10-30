@@ -15,7 +15,8 @@
     "types/*.d.ts",
     "../infra/secrets.ts",
     "../infra/cloudflare/resources.ts",
-    "../infra/cloudflare/provision.ts"
+    "../infra/cloudflare/provision.ts",
+    "../infra/dns/records.ts"
   ],
   "references": [
     {
