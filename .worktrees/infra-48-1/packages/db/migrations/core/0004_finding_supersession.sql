@@ -1,1 +1,0 @@
-ALTER TABLE `findings` ADD `superseded_by_id` text;

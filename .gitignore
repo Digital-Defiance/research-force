@@ -2,6 +2,7 @@ node_modules/
 dist/
 .cache/
 .wrangler/
+.worktrees/
 coverage/
 playwright-report/
 test-results/
