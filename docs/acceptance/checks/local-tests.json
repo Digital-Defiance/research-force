@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "command": "npm test -- --reporter=json --outputFile=<temporary report>",
-  "recordedAt": "2026-10-30T17:57:32.671Z",
+  "recordedAt": "2026-10-30T18:48:12.617Z",
   "scope": "local-synthetic",
   "success": true,
   "suites": [
@@ -289,6 +289,12 @@
     },
     {
       "path": "apps/app/test/properties/p118-evidence-citations.test.ts",
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p119-artifact-derivations.test.ts",
       "passed": 6,
       "failed": 0,
       "skipped": 0
@@ -1290,7 +1296,7 @@
     "apps/app/src/records/citations.ts": "cca17d7f85c59f48d7b324fde2118e456ed1009759eabb6b94e26b7ddacddcb8",
     "apps/app/src/records/decisions.ts": "443d872865231e98885e561a2d0abacc692009317e9f55b21fe6cdb9af10331c",
     "apps/app/src/records/derivation-export.ts": "11e3496b199489b2bce7c25019f5c7d052e629ef810008b12bc925d94c4b82ec",
-    "apps/app/src/records/derivations.ts": "4ed50bea9b8720da6e3a5c3abf4e926f195c893aa5b92625ef54adaa1f64df11",
+    "apps/app/src/records/derivations.ts": "a959df00ecb929c52f20c8c75f80980e1ba377f0cd13356890cf6fd9c34ed32d",
     "apps/app/src/records/field-values.ts": "62544c7633894faf051160160a5bc53bfaef6fa539e39a8c232383887f75c993",
     "apps/app/src/records/history.ts": "7c4bd027ecc4fab1e571c5cef115baf81f42beb208f5c719566743bc38cfc764",
     "apps/app/src/records/items.ts": "ee447c796720b2bdb1c47704b5b13d2f2cd061a65c29ed3ff53109241062a723",
@@ -1344,6 +1350,7 @@
     "apps/app/test/properties/p115-work-coordination.test.ts": "151a93c3fbfb0020b5f7d7594155a8d1058e4852e1028a5a512da2ac77d2abff",
     "apps/app/test/properties/p116-question-lifecycle.test.ts": "52e2ef3d6ccef465241d086c3a0af87527c361aa67639b8ca3a848fe349035b8",
     "apps/app/test/properties/p118-evidence-citations.test.ts": "5e639cd79486ddd12b38bfb2085ae530c2407293d5d2729c623b8498a4b7fc70",
+    "apps/app/test/properties/p119-artifact-derivations.test.ts": "679cf142ca9ee4c2fdd9d3d711e8f718c1057582100057379012af627d1d8078",
     "apps/app/test/properties/p23-permission-decisions.test.ts": "9e36301d1a8c79d20156d698207be8de30884abd016414f36551348286ffd27f",
     "apps/app/test/question-assessments.test.ts": "3b91777a6addf32187ab37921e14ef4c14eaa0b39e1d58380ed21174543768fa",
     "apps/app/test/question-entries.test.ts": "fd3b8419ca2f9eccc72ada76104c666c1fcefd4a164df3e06b75128db19b5501",
@@ -1413,7 +1420,7 @@
     "infra/recovery/deployment.example.json": "f50e284de933da91b761d0b6293f62caef82e8aa0c8db7c83e31e7eca5398bec",
     "infra/recovery/restore-proof.example.json": "2c02a645aaa612d1dd4f0bc537433a5e58764b4244a02562523aabc6d6a31554",
     "infra/releases/README.md": "73919ce7f8cc7b532d520dbc250f4f16ccd28f84e70e32d21d556190afe50ade",
-    "infra/releases/development.json": "d9689e2d6a4fac92439ccd556069f85cbe57bbde886139c4ad9c7c27a5732a26",
+    "infra/releases/development.json": "442a40349b4121c0a2e8103f6a96c8bf8a655f6f5cc0e15b0b420ceb419366f6",
     "package-lock.json": "46bb71e749eeb2b853d3113a54c6b75e0a3a610f1178687a73334d4114e099d5",
     "package.json": "a57669ad85b1bb5873507b1ef7021825127f5e1aaa49ab3f7101b42ef8857e36",
     "packages/db/migrations/core/0007_restricted_access.sql": "68d6acff93c939939932102ad9a767541a9181815f983c24ebdcfc18ce3518a1",

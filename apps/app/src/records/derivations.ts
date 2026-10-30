@@ -377,9 +377,12 @@ export async function provenance(c: Context<ApiEnv>, unitId: string, field: stri
     frontier = next;
   }
   if (frontier.length > 0) truncated = true;
-  const described = await describeUnits(c, [...nodes.values()].map((node) => node.unitId));
   const startNode = nodeOf(unitId, field);
-  if (!nodes.has(startNode)) nodes.set(startNode, { unitId: unitId as ULID, field, type: field === '' ? 'attachment' : 'text', sha256: '' });
+  if (!nodes.has(startNode)) {
+    const sha = field === '' ? (await db.prepare('SELECT sha256 FROM attachments WHERE unit_id = ?1').bind(unitId).first<string>('sha256')) ?? '' : '';
+    nodes.set(startNode, { unitId: unitId as ULID, field, type: field === '' ? 'attachment' : 'text', sha256: sha });
+  }
+  const described = await describeUnits(c, [...nodes.values()].map((node) => node.unitId));
   const epoch = rowsOf<{ v: number }>(await c.get('accountant').track(db.prepare("SELECT v FROM counters WHERE k = 'derivation'").all()))[0]?.v ?? 0;
   return {
     graphEpoch: epoch, start: { unitId: unitId as ULID, ...(field === '' ? {} : { field }) }, direction, truncated, edges,

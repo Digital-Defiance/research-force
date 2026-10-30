@@ -1139,6 +1139,21 @@
       "checks": [
         "docs/acceptance/checks/local-tests.json"
       ]
+    },
+    {
+      "task": "62.6",
+      "state": "accepted",
+      "reason": "Verified Property 119 against an independent model. Two records hold the files, the author's, which every Member reads, and the colleague's, which only the colleague reads. Derivations are recorded, corrected and reviewed by either Member, and their inputs are deleted or given a newer version, in random order. After every step what each Member lists is exactly the model's derivations whose ends that Member can read, with only the readable inputs, the original hashes, the attributed reviews and the predicted review state; a creator's own review never counts; the stored graph, read independently of the routes, has no cycle among its active edges and its epoch counts the writes; the bytes of every original are unchanged; and a refused step changes nothing. At the end the provenance each Member walks reaches exactly the nodes joined by edges readable on both ends, with the original hash of each node, an unreadable start is a 404, and a newer version of a file is never reached. Broken review and cycle rules are caught by the property. Maximum encoded inputs are covered: an uncertainty note of 2,000 astral code points, a method of 300 and a version of 100, a stored transcript of 200,000 code points read back exactly, a review note of 2,000 and 50 passages with notes of 500, and 100 inputs in order with 101 refused. This found that the provenance of an artifact with no edges returned no nodes, not even itself; it now returns the artifact with its hash. No deployment or production certification is claimed.",
+      "sourcePaths": [
+        "apps/app/src/records/derivations.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/properties/p119-artifact-derivations.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
     }
   ]
 }

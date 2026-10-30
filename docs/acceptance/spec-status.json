@@ -2,15 +2,14 @@
   "inputs": {
     ".kiro/specs/research-collab-cms/requirements.md": "9e2d7cee953f4aeece04bad4a7dfae273a908c0df65c95beea7a4e572b71b5df",
     ".kiro/specs/research-collab-cms/design.md": "85df571e6efad1205603dca7addcea9c16f68252023d5483a2fbe81d705c4d93",
-    ".kiro/specs/research-collab-cms/tasks.md": "d2612efd01fdeb4059b1a3e06744be98b4fb397a4ba82d3af2afd9c04d7a838a",
-    "docs/acceptance/task-evidence.json": "09b91bf3f52a0e19224127c0ef3dcca8ca5f4d5a32709bbd860a16b70ff73801"
+    ".kiro/specs/research-collab-cms/tasks.md": "ff7a5c6ae1f1c4079eed2868040d57d1eed6b425e110a13e8ec4483c8bf41c8f",
+    "docs/acceptance/task-evidence.json": "42c3c3aefce32cd0d1b2d1d26a17518584e6ea915f8c4427b1b7a46450393b64"
   },
   "schemaVersion": 1,
   "nextTasks": [
-    "62.6"
+    "61.2"
   ],
   "remainingBuildOrder": [
-    "62.6",
     "61.2",
     "61.3",
     "63.1",
@@ -202,11 +201,11 @@
     "criteria": 738,
     "properties": 126,
     "leafTasks": 406,
-    "checkedLeaves": 220,
+    "checkedLeaves": 221,
     "historicalUnverified": 182,
-    "acceptedWithLocalEvidence": 38,
-    "propertyFiles": 67,
-    "remainingWaves": 186,
+    "acceptedWithLocalEvidence": 39,
+    "propertyFiles": 68,
+    "remainingWaves": 185,
     "gates": 4
   },
   "structuralIssues": [],
@@ -10191,7 +10190,9 @@
         "55.5"
       ],
       "task": "62.6",
-      "testPaths": []
+      "testPaths": [
+        "apps/app/test/properties/p119-artifact-derivations.test.ts"
+      ]
     },
     {
       "id": 120,
@@ -19168,7 +19169,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "09b91bf3f52a0e19224127c0ef3dcca8ca5f4d5a32709bbd860a16b70ff73801"
+          "sha256": "42c3c3aefce32cd0d1b2d1d26a17518584e6ea915f8c4427b1b7a46450393b64"
         },
         {
           "path": "README.md",
@@ -19257,7 +19258,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "09b91bf3f52a0e19224127c0ef3dcca8ca5f4d5a32709bbd860a16b70ff73801"
+          "sha256": "42c3c3aefce32cd0d1b2d1d26a17518584e6ea915f8c4427b1b7a46450393b64"
         },
         {
           "path": "apps/app/src/index.ts",
@@ -19396,7 +19397,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "09b91bf3f52a0e19224127c0ef3dcca8ca5f4d5a32709bbd860a16b70ff73801"
+          "sha256": "42c3c3aefce32cd0d1b2d1d26a17518584e6ea915f8c4427b1b7a46450393b64"
         },
         {
           "path": "apps/app/src/local/services.ts",
@@ -21080,12 +21081,12 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "09b91bf3f52a0e19224127c0ef3dcca8ca5f4d5a32709bbd860a16b70ff73801"
+          "sha256": "42c3c3aefce32cd0d1b2d1d26a17518584e6ea915f8c4427b1b7a46450393b64"
         },
         {
           "path": "docs/acceptance/checks/local-tests.json",
           "kind": "file",
-          "sha256": "228c0508707fb8d6d8e5593ab35c1b4b3e39b29034b31a49c1d27bbf62703415"
+          "sha256": "5fbbe3a6cfabe03077b6e4e4b8a8ece3869dafb6c4eeb9fae0e44e4b37772ede"
         },
         {
           "path": "tools/src/specs.ts",
@@ -21172,7 +21173,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "09b91bf3f52a0e19224127c0ef3dcca8ca5f4d5a32709bbd860a16b70ff73801"
+          "sha256": "42c3c3aefce32cd0d1b2d1d26a17518584e6ea915f8c4427b1b7a46450393b64"
         },
         {
           "path": "packages/domain/src/settings.ts",
@@ -21352,7 +21353,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "09b91bf3f52a0e19224127c0ef3dcca8ca5f4d5a32709bbd860a16b70ff73801"
+          "sha256": "42c3c3aefce32cd0d1b2d1d26a17518584e6ea915f8c4427b1b7a46450393b64"
         },
         {
           "path": "docs/storage/logical-fields.md",
@@ -21517,7 +21518,7 @@
         {
           "path": "infra/releases/development.json",
           "kind": "file",
-          "sha256": "d9689e2d6a4fac92439ccd556069f85cbe57bbde886139c4ad9c7c27a5732a26"
+          "sha256": "442a40349b4121c0a2e8103f6a96c8bf8a655f6f5cc0e15b0b420ceb419366f6"
         },
         {
           "path": "infra/recovery/deployment.example.json",
@@ -21792,7 +21793,7 @@
         {
           "path": "infra/releases/development.json",
           "kind": "file",
-          "sha256": "d9689e2d6a4fac92439ccd556069f85cbe57bbde886139c4ad9c7c27a5732a26"
+          "sha256": "442a40349b4121c0a2e8103f6a96c8bf8a655f6f5cc0e15b0b420ceb419366f6"
         },
         {
           "path": "apps/app/test/operations.test.ts",
@@ -23246,7 +23247,6 @@
       ],
       "properties": [],
       "prerequisites": [
-        "62.6",
         "62.1"
       ],
       "phase": "collaboration",
@@ -23507,7 +23507,7 @@
         {
           "path": "apps/app/src/records/derivations.ts",
           "kind": "file",
-          "sha256": "4ed50bea9b8720da6e3a5c3abf4e926f195c893aa5b92625ef54adaa1f64df11"
+          "sha256": "a959df00ecb929c52f20c8c75f80980e1ba377f0cd13356890cf6fd9c34ed32d"
         },
         {
           "path": "apps/app/src/api/routes/derivations.ts",
@@ -23610,7 +23610,7 @@
         {
           "path": "apps/app/src/records/derivations.ts",
           "kind": "file",
-          "sha256": "4ed50bea9b8720da6e3a5c3abf4e926f195c893aa5b92625ef54adaa1f64df11"
+          "sha256": "a959df00ecb929c52f20c8c75f80980e1ba377f0cd13356890cf6fd9c34ed32d"
         },
         {
           "path": "apps/app/web/test/provenance.test.tsx",
@@ -23720,7 +23720,7 @@
     {
       "id": "62.6",
       "title": "Write property and regression tests for artifact derivations",
-      "checked": false,
+      "checked": true,
       "requirements": [
         "55.1",
         "55.2",
@@ -23732,19 +23732,39 @@
         119
       ],
       "prerequisites": [],
-      "phase": "collaboration",
+      "phase": "completed_baseline",
       "sourcePaths": [
         {
           "path": "apps/app/test/properties/p119-artifact-derivations.test.ts",
-          "kind": "missing"
+          "kind": "file",
+          "sha256": "679cf142ca9ee4c2fdd9d3d711e8f718c1057582100057379012af627d1d8078"
+        },
+        {
+          "path": "apps/app/src/records/derivations.ts",
+          "kind": "file",
+          "sha256": "a959df00ecb929c52f20c8c75f80980e1ba377f0cd13356890cf6fd9c34ed32d"
         }
       ],
       "gates": [
         "team_archive",
         "final_checkpoint_49"
       ],
-      "acceptance": "planned",
-      "evidence": null
+      "acceptance": "accepted",
+      "evidence": {
+        "task": "62.6",
+        "state": "accepted",
+        "reason": "Verified Property 119 against an independent model. Two records hold the files, the author's, which every Member reads, and the colleague's, which only the colleague reads. Derivations are recorded, corrected and reviewed by either Member, and their inputs are deleted or given a newer version, in random order. After every step what each Member lists is exactly the model's derivations whose ends that Member can read, with only the readable inputs, the original hashes, the attributed reviews and the predicted review state; a creator's own review never counts; the stored graph, read independently of the routes, has no cycle among its active edges and its epoch counts the writes; the bytes of every original are unchanged; and a refused step changes nothing. At the end the provenance each Member walks reaches exactly the nodes joined by edges readable on both ends, with the original hash of each node, an unreadable start is a 404, and a newer version of a file is never reached. Broken review and cycle rules are caught by the property. Maximum encoded inputs are covered: an uncertainty note of 2,000 astral code points, a method of 300 and a version of 100, a stored transcript of 200,000 code points read back exactly, a review note of 2,000 and 50 passages with notes of 500, and 100 inputs in order with 101 refused. This found that the provenance of an artifact with no edges returned no nodes, not even itself; it now returns the artifact with its hash. No deployment or production certification is claimed.",
+        "sourcePaths": [
+          "apps/app/src/records/derivations.ts"
+        ],
+        "testPaths": [
+          "apps/app/test/properties/p119-artifact-derivations.test.ts"
+        ],
+        "correctionTasks": [],
+        "checks": [
+          "docs/acceptance/checks/local-tests.json"
+        ]
+      }
     },
     {
       "id": "63.1",
@@ -24242,7 +24262,7 @@
         {
           "path": "docs/acceptance/task-evidence.json",
           "kind": "file",
-          "sha256": "09b91bf3f52a0e19224127c0ef3dcca8ca5f4d5a32709bbd860a16b70ff73801"
+          "sha256": "42c3c3aefce32cd0d1b2d1d26a17518584e6ea915f8c4427b1b7a46450393b64"
         },
         {
           "path": "packages/domain/src/compatibility.ts",
@@ -24292,7 +24312,7 @@
         {
           "path": "infra/releases/development.json",
           "kind": "file",
-          "sha256": "d9689e2d6a4fac92439ccd556069f85cbe57bbde886139c4ad9c7c27a5732a26"
+          "sha256": "442a40349b4121c0a2e8103f6a96c8bf8a655f6f5cc0e15b0b420ceb419366f6"
         },
         {
           "path": "infra/releases/README.md",
@@ -24735,39 +24755,39 @@
   "phases": {
     "collaboration": {
       "firstWave": 0,
-      "lastWave": 14
+      "lastWave": 13
     },
     "privacy": {
-      "firstWave": 15,
-      "lastWave": 38
+      "firstWave": 14,
+      "lastWave": 37
     },
     "imports_and_log": {
-      "firstWave": 39,
-      "lastWave": 62
+      "firstWave": 38,
+      "lastWave": 61
     },
     "publication": {
-      "firstWave": 63,
-      "lastWave": 80
+      "firstWave": 62,
+      "lastWave": 79
     },
     "outside_and_ai": {
-      "firstWave": 81,
-      "lastWave": 128
+      "firstWave": 80,
+      "lastWave": 127
     },
     "recovery": {
-      "firstWave": 129,
-      "lastWave": 146
+      "firstWave": 128,
+      "lastWave": 145
     },
     "release_tooling": {
-      "firstWave": 147,
-      "lastWave": 176
+      "firstWave": 146,
+      "lastWave": 175
     },
     "staging_and_acceptance": {
-      "firstWave": 177,
-      "lastWave": 184
+      "firstWave": 176,
+      "lastWave": 183
     },
     "production_activation": {
-      "firstWave": 185,
-      "lastWave": 185
+      "firstWave": 184,
+      "lastWave": 184
     }
   },
   "gates": [
