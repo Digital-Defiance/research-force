@@ -3,6 +3,7 @@ dist/
 .cache/
 .wrangler/
 .worktrees/
+.agents/
 coverage/
 playwright-report/
 test-results/
