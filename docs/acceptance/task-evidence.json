@@ -1154,6 +1154,24 @@
       "checks": [
         "docs/acceptance/checks/local-tests.json"
       ]
+    },
+    {
+      "task": "61.2",
+      "state": "accepted",
+      "reason": "Added the decision operations and their views. Adopt, withdraw and supersede are saved as Status_Changes of the record, so each has its revision, notice and history; each adds an event to an append-only timeline that a trigger keeps unchanged. Adoption needs a non-blank rationale and an outcome and is refused otherwise, naming what is missing; a stale revision, a decision already moved on, or one that moved while the request ran is refused with nothing written. Supersession adopts the replacement and marks the earlier adopted decision of the same Project superseded in one step, with links both ways, two revisions, and both rationales and responses kept visible; an earlier decision the Member cannot read is not named. A participant records only their own response, against the wording and version they saw; silence reads as no response and old wording as earlier wording. An hourly sweep reminds the Owner, the adopter and the participants when an adopted decision's revisit date comes, and again every 7 days, until it is superseded or withdrawn, without a Member as cause. The decision form, with alternatives and outcome, the decision panel with participants, history, supersession and actions, a strict JSON export, and a public allowlist that never carries participants, responses or who acted are covered by tests. Not done here: the Publisher, backup and restore inventory, and followers do not exist yet, so the audience is the Owner, the named participants and the adopter. No deployment or production certification is claimed.",
+      "sourcePaths": [
+        "apps/app/src/records/decision-operations.ts",
+        "apps/app/src/api/routes/decisions.ts",
+        "apps/app/web/src/decisions/panel.tsx"
+      ],
+      "testPaths": [
+        "apps/app/test/decision-operations.test.ts",
+        "apps/app/web/test/decisions.test.tsx"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
     }
   ]
 }

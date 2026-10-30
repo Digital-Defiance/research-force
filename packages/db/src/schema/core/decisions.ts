@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { check, index, integer, primaryKey, sqliteTable, text } from 'drizzle-orm/sqlite-core';
-import { ACKNOWLEDGEMENT_RESPONSES, DECISION_SCOPES, DECISION_STATES } from '@researchforce/domain/decisions';
+import { ACKNOWLEDGEMENT_RESPONSES, DECISION_EVENT_KINDS, DECISION_SCOPES, DECISION_STATES } from '@researchforce/domain/decisions';
 import { oneOf, spans } from '../columns';
 
 export const OUTCOME_KINDS = ['selected', 'deferred'] as const;
@@ -33,6 +33,8 @@ export const decisions = sqliteTable('decisions', {
   supersededById: text('superseded_by_id'),
   stateChangedAt: text('state_changed_at'),
   stateChangedBy: text('state_changed_by'),
+  /** When an overdue review was last reminded, so that a reminder repeats only after an interval (R53.4). */
+  revisitRemindedAt: text('revisit_reminded_at'),
 }, (t) => [
   index('decisions_supersedes').on(t.supersedesId),
   index('decisions_superseded_by').on(t.supersededById),
@@ -86,6 +88,24 @@ export const decisionAcknowledgements = sqliteTable('decision_acknowledgements',
   oneOf('decision_acknowledgements_response_values', t.response, ACKNOWLEDGEMENT_RESPONSES),
   check('decision_acknowledgements_version', sql`${t.version} >= 1`),
   check('decision_acknowledgements_digest', sql`length(${t.digest}) = 64`),
+]);
+
+/**
+ * What happened to a decision, in order: adoption, supersession, withdrawal and overdue-review reminders. Rows are only added, and each names who
+ * acted (no one, for a reminder) and, for a supersession, the other decision (R53.4).
+ */
+export const decisionEvents = sqliteTable('decision_events', {
+  decisionId: text('decision_id').notNull(),
+  seq: integer('seq').notNull(),
+  kind: text('kind', { enum: DECISION_EVENT_KINDS }).notNull(),
+  actorId: text('actor_id'),
+  at: text('at').notNull(),
+  reason: text('reason'),
+  relatedId: text('related_id'),
+}, (t) => [
+  primaryKey({ columns: [t.decisionId, t.seq] }),
+  oneOf('decision_events_kind_values', t.kind, DECISION_EVENT_KINDS),
+  check('decision_events_seq', sql`${t.seq} >= 1`),
 ]);
 
 export const guardDecisionParticipant = sqliteTable('_g_decision_participant', { x: integer('x').notNull() });

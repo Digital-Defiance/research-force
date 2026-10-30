@@ -19,7 +19,7 @@ import { Button, formatDate, LoadState, Notice, RestoredNotice, SaveFailure, Sel
 import { FieldInput } from './inputs';
 import type { FormData } from './inputs';
 import { createBody, editBody, fieldsFor, initialValues, needsMark, valuesFromItem } from './model';
-import type { EditMarkValue, FormValues } from './model';
+import type { AlternativeValue, EditMarkValue, FormValues } from './model';
 
 const REVISION_KIND_NAMES: Readonly<Record<string, string>> = {
   minor_edit: 'Minor edit', correction: 'Correction', status_change: 'Status change', withdrawal: 'Withdrawal',
@@ -97,7 +97,7 @@ function Fields({ kind, mode, values, set, failure, data }: {
   return (
     <>
       {fieldsFor(kind, mode).map((spec) => (
-        <FieldInput key={spec.name} spec={spec} value={values[spec.name]} onChange={(value) => set(spec.name, value)} errors={errors} data={data} />
+        <FieldInput key={spec.name} spec={spec} value={values[spec.name]} onChange={(value) => set(spec.name, value)} errors={errors} data={kind === 'decision_record' ? { ...data, alternatives: (values['alternatives'] ?? []) as AlternativeValue[] } : data} />
       ))}
     </>
   );

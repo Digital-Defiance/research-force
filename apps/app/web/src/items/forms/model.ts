@@ -11,7 +11,7 @@ import { groupsFromItem, groupsToApi } from '../question/model';
 
 export type FieldKind =
   | 'text' | 'longtext' | 'rich' | 'value' | 'choice' | 'partial-date' | 'document-date' | 'full-date' | 'time'
-  | 'party' | 'members' | 'correspondence-parties' | 'counts' | 'sections' | 'item-ref' | 'groups';
+  | 'party' | 'members' | 'correspondence-parties' | 'counts' | 'sections' | 'item-ref' | 'groups' | 'alternatives' | 'outcome';
 
 export interface FieldSpec {
   readonly name: string;
@@ -47,7 +47,19 @@ export const KIND_FIELDS: Readonly<Record<ItemKind, readonly FieldSpec[]>> = {
     { name: 'sections', label: 'Entry Sections', kind: 'sections', required: true },
     logSummary(false), groupNote,
   ],
-  decision_record: [],
+  decision_record: [
+    title,
+    { name: 'question', label: 'Question', kind: 'longtext', max: 2000, required: true },
+    { name: 'context', label: 'Context', kind: 'rich', max: 20_000 },
+    { name: 'alternatives', label: 'Alternatives', kind: 'alternatives', required: true },
+    { name: 'outcome', label: 'Outcome', kind: 'outcome', hint: 'Needed before the decision is adopted: a chosen alternative, or an explicit deferral.' },
+    { name: 'rationale', label: 'Rationale', kind: 'rich', max: 20_000, hint: 'Needed before the decision is adopted.' },
+    { name: 'scope', label: 'Scope', kind: 'choice', options: [{ value: 'individual', label: 'Individual' }, { value: 'team', label: 'Team' }], hint: 'A Team decision lists each named participant’s own response.' },
+    { name: 'participantIds', label: 'Participants', kind: 'members', hint: 'Required for a Team decision.' },
+    { name: 'revisitDate', label: 'Revisit on', kind: 'full-date', hint: 'An adopted decision reminds its Owner and participants once this date comes.' },
+    { name: 'revisitCondition', label: 'Revisit when', kind: 'longtext', max: 1000 },
+    logSummary(false), groupNote,
+  ],
   work_item: [],
   research_question: [
     title,
@@ -129,6 +141,8 @@ export interface PartyValue { readonly kind: 'member' | 'external' | ''; readonl
 export interface CorrespondencePartyValue { readonly kind: 'member' | 'external'; readonly id: string; readonly consent?: string }
 export interface CountValue { readonly name: string; readonly value: string }
 export interface SectionValue { readonly id?: string; readonly content: RichText }
+export interface AlternativeValue { readonly title: string; readonly description: string }
+export interface OutcomeValue { readonly kind: '' | 'selected' | 'deferred'; readonly alternative: string; readonly reason: string }
 export type FormValues = Readonly<Record<string, unknown>>;
 
 const EMPTY_DATE: DateValue = { value: '', approx: false };
@@ -139,7 +153,8 @@ export function emptyValue(kind: FieldKind): unknown {
     case 'partial-date': case 'full-date': return EMPTY_DATE;
     case 'document-date': return { start: EMPTY_DATE, end: EMPTY_DATE };
     case 'party': return { kind: '', id: '' };
-    case 'members': case 'correspondence-parties': case 'counts': case 'groups': return [];
+    case 'outcome': return { kind: '', alternative: '', reason: '' } satisfies OutcomeValue;
+    case 'members': case 'correspondence-parties': case 'counts': case 'groups': case 'alternatives': return [];
     case 'sections': return [{ content: EMPTY_RICH_TEXT }];
     default: return '';
   }
@@ -158,6 +173,10 @@ function fromStored(field: FieldSpec, stored: unknown): unknown {
     case 'document-date': {
       const value = stored as DateValue | DocumentDateValue;
       return 'start' in value ? value : { start: value, end: EMPTY_DATE };
+    }
+    case 'outcome': {
+      const outcome = stored as { kind: 'selected'; alternative: number } | { kind: 'deferred'; reason?: string };
+      return outcome.kind === 'selected' ? { kind: 'selected', alternative: String(outcome.alternative), reason: '' } : { kind: 'deferred', alternative: '', reason: outcome.reason ?? '' };
     }
     case 'sections': return (stored as readonly { id: string; content: RichText }[]).map((section) => ({ id: section.id, content: section.content }));
     default: return stored;
@@ -201,6 +220,15 @@ export function toApi(field: FieldSpec, value: unknown): unknown {
     case 'counts': {
       const counts = (value as readonly CountValue[]).filter((count) => count.name !== '' || count.value !== '');
       return counts.length === 0 ? undefined : counts;
+    }
+    case 'alternatives': {
+      const alternatives = (value as readonly AlternativeValue[]).filter((alternative) => alternative.title !== '' || alternative.description !== '');
+      return alternatives.length === 0 ? undefined : alternatives.map((alternative) => ({ title: alternative.title, description: alternative.description }));
+    }
+    case 'outcome': {
+      const outcome = value as OutcomeValue;
+      if (outcome.kind === 'selected') return outcome.alternative === '' ? undefined : { kind: 'selected', alternative: Number(outcome.alternative) };
+      return outcome.kind === 'deferred' ? { kind: 'deferred', ...(outcome.reason.trim() === '' ? {} : { reason: outcome.reason }) } : undefined;
     }
     case 'groups': return groupsToApi(value as Parameters<typeof groupsToApi>[0]);
     case 'sections': return (value as readonly SectionValue[]).map((section) => (section.id === undefined ? { content: section.content } : { id: section.id, content: section.content }));

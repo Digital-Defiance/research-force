@@ -25,6 +25,7 @@ import { QuestionBody } from './question/question-body';
 import { WorkBody } from '../work/work-body';
 import { CitationsPanel } from '../citations/panel';
 import { CitationScope } from '../citations/scope';
+import { DecisionPanel } from '../decisions/panel';
 import { ProvenancePanel } from '../provenance/panel';
 import type { CorrespondencePartyValue, CountValue, DateValue, DocumentDateValue, FieldSpec, PartyValue } from './forms/model';
 
@@ -89,6 +90,14 @@ function FieldValue({ spec, value, data }: { readonly spec: FieldSpec; readonly 
     );
     case 'counts': return <ul className="rf-list">{(value as CountValue[]).map((count) => <li key={count.name}>{`${count.name}: ${count.value}`}</li>)}</ul>;
     case 'item-ref': return <Link to={`/items/${String(value)}`}>{String(value)}</Link>;
+    case 'alternatives': return (
+      <ol className="rf-list">{(value as { title: string; description: string }[]).map((alternative, index) => <li key={index}><strong>{alternative.title}</strong>{`: ${alternative.description}`}</li>)}</ol>
+    );
+    case 'outcome': {
+      const outcome = value as { kind: 'selected'; alternative: number } | { kind: 'deferred'; reason?: string };
+      const alternatives = (data.item['alternatives'] ?? []) as { title: string }[];
+      return outcome.kind === 'selected' ? `Selected: ${alternatives[outcome.alternative]?.title ?? `alternative ${outcome.alternative + 1}`}` : `Deferred${outcome.reason === undefined ? '' : `: ${outcome.reason}`}`;
+    }
     default: return String(value);
   }
 }
@@ -250,6 +259,7 @@ export function ItemDetails({ data }: { readonly data: ItemPageData }) {
       <Companions data={data} />
       {item.kind === 'research_question' && <QuestionBody item={item} />}
       {item.kind === 'research_question' && <AssessmentPanel item={item} onChanged={onChanged} />}
+      {item.kind === 'decision_record' && <DecisionPanel item={item} onChanged={onChanged} />}
       {item.kind === 'work_item' && <WorkBody item={item} onChanged={onChanged} />}
       {fields.length > 0 && (
         <section className="rf-section" aria-label="Fields">

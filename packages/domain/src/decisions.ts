@@ -12,6 +12,13 @@ export type DecisionScope = typeof DECISION_SCOPES[number];
 export const DECISION_STATES = ['proposed', 'adopted', 'superseded', 'withdrawn'] as const;
 export type DecisionState = typeof DECISION_STATES[number];
 export const DECISION_STATE_NAMES: Readonly<Record<DecisionState, string>> = Object.freeze({ proposed: 'Proposed', adopted: 'Adopted', superseded: 'Superseded', withdrawn: 'Withdrawn' });
+export const DECISION_EVENT_KINDS = ['adopted', 'superseded', 'withdrawn', 'revisit_due'] as const;
+export type DecisionEventKind = typeof DECISION_EVENT_KINDS[number];
+export const DECISION_EVENT_NAMES: Readonly<Record<DecisionEventKind, string>> = Object.freeze({
+  adopted: 'Adopted', superseded: 'Superseded', withdrawn: 'Withdrawn', revisit_due: 'Review overdue',
+});
+/** An overdue review is reminded again after this many days, until the decision is revisited, superseded or withdrawn (R53.4). */
+export const REVISIT_REMINDER_DAYS = 7;
 export const ACKNOWLEDGEMENT_RESPONSES = ['acknowledged', 'disagreed'] as const;
 export type AcknowledgementResponse = typeof ACKNOWLEDGEMENT_RESPONSES[number];
 
@@ -76,3 +83,34 @@ export const acknowledgementInputSchema = z.strictObject({
   expectedVersion: z.int().min(0),
 });
 export type AcknowledgementInput = z.output<typeof acknowledgementInputSchema>;
+
+/** What the Member read when asking to change a decision's state: the revision of the record, so a stale view is refused (R53.2). */
+const revision = z.int().min(1);
+export const adoptInputSchema = z.strictObject({ rev: revision });
+export const withdrawInputSchema = z.strictObject({ rev: revision, reason: textField(DECISION_LIMITS.deferredReasonCodePoints, true).optional() });
+/** Adopt this decision in place of an earlier adopted one, which becomes Superseded and keeps its rationale, evidence and responses (R53.4). */
+export const supersedeInputSchema = z.strictObject({ rev: revision, supersededId: z.string().regex(/^[0-9A-HJKMNP-TV-Z]{26}$/u), supersededRev: revision });
+export type AdoptInput = z.output<typeof adoptInputSchema>;
+export type WithdrawInput = z.output<typeof withdrawInputSchema>;
+export type SupersedeInput = z.output<typeof supersedeInputSchema>;
+
+/** Whether a decision's review is overdue: it is adopted and its revisit date is today or earlier (R53.4). A condition alone never comes due by itself. */
+export function revisitIsDue(state: DecisionState, revisitDate: string | null | undefined, today: string): boolean {
+  return state === 'adopted' && typeof revisitDate === 'string' && revisitDate !== '' && revisitDate.slice(0, 10) <= today;
+}
+
+/**
+ * What a public view of a decision may show (R53.5): the question, wording, outcome and state. Participants, their responses, evidence
+ * details and the people behind state changes are never part of it, whatever the record holds.
+ */
+export interface PublicDecisionView {
+  readonly question: string; readonly context?: string; readonly rationale?: string; readonly alternatives: readonly Alternative[];
+  readonly outcome?: Outcome; readonly scope: DecisionScope; readonly state: DecisionState; readonly adoptedAt?: string; readonly revisitDate?: string;
+}
+export function publicDecision(decision: PublicDecisionView): PublicDecisionView {
+  return {
+    question: decision.question, ...(decision.context === undefined ? {} : { context: decision.context }), ...(decision.rationale === undefined ? {} : { rationale: decision.rationale }),
+    alternatives: decision.alternatives.map((alternative) => ({ title: alternative.title, description: alternative.description })), ...(decision.outcome === undefined ? {} : { outcome: decision.outcome }),
+    scope: decision.scope, state: decision.state, ...(decision.adoptedAt === undefined ? {} : { adoptedAt: decision.adoptedAt }), ...(decision.revisitDate === undefined ? {} : { revisitDate: decision.revisitDate }),
+  };
+}

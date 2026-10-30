@@ -7,13 +7,15 @@ import type { MemberRow, PartyRecord, ValueSets } from '../../types';
 import { Button, CheckboxField, SelectField, TextField } from '../../ui';
 import type { Option } from '../../ui';
 import { GroupsInput } from '../question/groups-input';
-import type { CorrespondencePartyValue, CountValue, DateValue, DocumentDateValue, FieldSpec, PartyValue, SectionValue } from './model';
+import type { AlternativeValue, CorrespondencePartyValue, CountValue, DateValue, DocumentDateValue, FieldSpec, OutcomeValue, PartyValue, SectionValue } from './model';
 
 export interface FormData {
   readonly valueSets: ValueSets;
   readonly parties: readonly PartyRecord[];
   readonly members: readonly MemberRow[];
   readonly mentions: MentionOptions;
+  /** The alternatives as the form holds them now, so the outcome can name one. */
+  readonly alternatives?: readonly AlternativeValue[];
 }
 
 interface InputProps {
@@ -148,6 +150,40 @@ export function FieldInput({ spec, value, onChange, errors, data }: InputProps) 
             </div>
           ))}
           {counts.length < 20 && <Button onClick={() => onChange([...counts, { name: '', value: '' }])}>Add a count</Button>}
+        </fieldset>
+      );
+    }
+    case 'alternatives': {
+      const alternatives = value as readonly AlternativeValue[];
+      const update = (index: number, next: AlternativeValue | undefined) => onChange(next === undefined ? alternatives.filter((_alternative, at) => at !== index) : alternatives.map((alternative, at) => (at === index ? next : alternative)));
+      return (
+        <fieldset className="rf-field">
+          <legend className="rf-field__label">{spec.label}{spec.required && <span className="rf-field__required"> (required)</span>}</legend>
+          <p className="rf-field__hint">Up to 20 alternatives; the outcome refers to one by its number.</p>
+          {own(fieldErrors, spec.name).length > 0 && <p className="rf-field__error">{own(fieldErrors, spec.name).map((issue) => issue.rule).join(' ')}</p>}
+          {alternatives.map((alternative, index) => (
+            <div className="rf-section" key={index}>
+              <TextField label={`Alternative ${index + 1} title`} value={alternative.title} onChange={(title) => update(index, { ...alternative, title })} errors={under(fieldErrors, `${spec.name}.${index}.title`)} maxLength={200} />
+              <TextField label={`Alternative ${index + 1} description`} multiline value={alternative.description} onChange={(description) => update(index, { ...alternative, description })} errors={under(fieldErrors, `${spec.name}.${index}.description`)} maxLength={5000} />
+              <Button variant="quiet" onClick={() => update(index, undefined)}>{`Remove alternative ${index + 1}`}</Button>
+            </div>
+          ))}
+          {alternatives.length < 20 && <Button onClick={() => onChange([...alternatives, { title: '', description: '' }])}>Add an alternative</Button>}
+        </fieldset>
+      );
+    }
+    case 'outcome': {
+      const outcome = value as OutcomeValue;
+      const names = (data.alternatives ?? []).map((alternative, index): Option => ({ value: String(index), label: `${index + 1}. ${alternative.title === '' ? 'Untitled' : alternative.title}` }));
+      return (
+        <fieldset className="rf-field">
+          <legend className="rf-field__label">{spec.label}</legend>
+          {spec.hint !== undefined && <p className="rf-field__hint">{spec.hint}</p>}
+          {own(fieldErrors, spec.name).length > 0 && <p className="rf-field__error">{own(fieldErrors, spec.name).map((issue) => issue.rule).join(' ')}</p>}
+          <SelectField label="Outcome" value={outcome.kind} options={[{ value: 'selected', label: 'Select an alternative' }, { value: 'deferred', label: 'Defer the decision' }]} placeholder="No outcome yet"
+            onChange={(kind) => onChange({ ...outcome, kind })} errors={[]} />
+          {outcome.kind === 'selected' && <SelectField label="Selected alternative" value={outcome.alternative} options={names} placeholder="Choose…" onChange={(alternative) => onChange({ ...outcome, alternative })} errors={under(fieldErrors, `${spec.name}.alternative`)} />}
+          {outcome.kind === 'deferred' && <TextField label="Reason for deferring" multiline value={outcome.reason} onChange={(reason) => onChange({ ...outcome, reason })} errors={under(fieldErrors, `${spec.name}.reason`)} maxLength={1000} />}
         </fieldset>
       );
     }

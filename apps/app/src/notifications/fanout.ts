@@ -215,3 +215,21 @@ export function notifyWorkUpdate(batch: GuardedBatch, workId: string, audience: 
     where: `${canRead('m.id', `'${workId}'`)} AND NOT ${muted(projectOf(workId))}`,
   });
 }
+
+/**
+ * An event for the named participants of a decision, and for its Owner when `owner` is set, who can read it now (R53.4). A change of state
+ * tells the participants (the save itself already tells the Owner and the Thread); an overdue review tells the Owner, the Member who adopted it
+ * and the participants, and is caused by no Member. A Member who muted the Project is left out.
+ */
+export function notifyDecisionAudience(
+  batch: GuardedBatch, decisionId: string, detail: Readonly<Record<string, unknown>>, options: { readonly type: 'item_update' | 'reminder'; readonly owner: boolean },
+): GuardedBatch {
+  const reminder = options.type === 'reminder';
+  return insertEvents(batch, {
+    type: options.type, rootId: decisionId, detail, ...(reminder ? { includeActor: true, anonymous: true } : {}),
+    recipients: sql`SELECT member_id FROM decision_participants WHERE decision_id = ${decisionId}
+      ${options.owner ? sql`UNION SELECT owner_id FROM units WHERE id = ${decisionId}` : sql``}
+      ${reminder ? sql`UNION SELECT adopted_by FROM decisions WHERE unit_id = ${decisionId} AND adopted_by IS NOT NULL` : sql``}`,
+    where: `${canRead('m.id', `'${decisionId}'`)} AND NOT ${muted(projectOf(decisionId))}`,
+  });
+}

@@ -128,7 +128,7 @@ export const deletionJob: JobHandler = {
         // A Question's lifecycle rows go with it, including every assessment it recorded.
         ...['question_assessment_evidence', 'question_assessments', 'question_uncertainties', 'question_next_actions'].map((table) => db.prepare(`DELETE FROM ${table} WHERE question_id IN (SELECT value FROM json_each(?1))`).bind(list)),
         // A decision's own rows go with it; a decision that it replaced, or that replaced it, only loses the pointer (R53.4).
-        ...['decision_alternatives', 'decision_participants', 'decision_evidence', 'decision_acknowledgements'].map((table) => db.prepare(`DELETE FROM ${table} WHERE decision_id IN (SELECT value FROM json_each(?1))`).bind(list)),
+        ...['decision_alternatives', 'decision_participants', 'decision_evidence', 'decision_acknowledgements', 'decision_events'].map((table) => db.prepare(`DELETE FROM ${table} WHERE decision_id IN (SELECT value FROM json_each(?1))`).bind(list)),
         db.prepare('UPDATE decisions SET supersedes_id = NULL WHERE supersedes_id IN (SELECT value FROM json_each(?1))').bind(list),
         db.prepare('UPDATE decisions SET superseded_by_id = NULL WHERE superseded_by_id IN (SELECT value FROM json_each(?1))').bind(list),
         db.prepare('DELETE FROM question_entries WHERE question_id IN (SELECT value FROM json_each(?1))').bind(list),

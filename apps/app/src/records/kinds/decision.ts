@@ -1,11 +1,14 @@
 import { eq, sql } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { decisionAlternatives, decisionEvidence, decisionParticipants, decisions } from '@researchforce/db/schema/core';
-import { decisionDigest } from '@researchforce/domain/decisions';
+import { decisionDigest, revisitIsDue } from '@researchforce/domain/decisions';
+import type { DecisionEventKind, DecisionState } from '@researchforce/domain/decisions';
 import type { Alternative, Outcome } from '@researchforce/domain/decisions';
 import type { RichText } from '@researchforce/domain/richtext';
 import type { ApiEnv } from '../../api/app';
 import type { FieldIssue } from '../../api/errors';
+import { readParticipantResponses } from '../decisions';
+import { visibleTo } from '../submissions';
 import { richColumns, richText, rowsOf } from './kind';
 import type { ItemFields, KindAdapter, KindRules } from './kind';
 
@@ -108,14 +111,54 @@ export const decision: KindAdapter = {
       writeEvidence(batch, item.id, idsOf(after, 'evidenceCitationIds'));
     }
   },
-  /** Evidence the viewer cannot read is left out, and the others come with their locator and whether the cited version is still current (R53.4, R54.5). */
-  async visible(c: Context<ApiEnv>, fields) {
+  /**
+   * What the viewer may see of the decision: its state and history, each named participant's own response, the decisions it replaced or was replaced
+   * by when they can read them, and the evidence whose Source they can read, with its locator and whether the cited version is still current
+   * (R53.2, R53.4, R54.5).
+   */
+  async visible(c: Context<ApiEnv>, fields, id) {
+    const db = c.env.RF_CORE;
+    const viewer = c.get('session').member.id;
+    const [stateRows, eventRows, nameRows] = await c.get('accountant').track(db.batch([
+      db.prepare(`SELECT state, adopted_at AS adoptedAt, adopted_by AS adoptedBy, supersedes_id AS supersedesId, superseded_by_id AS supersededById,
+        wording_digest AS digest, wording_version AS wordingVersion, revisit_reminded_at AS revisitRemindedAt FROM decisions WHERE unit_id = ?1`).bind(id),
+      db.prepare(`SELECT e.seq, e.kind, e.actor_id AS actorId, p.display_name AS actorName, e.at, e.reason, e.related_id AS relatedId
+        FROM decision_events e LEFT JOIN profiles p ON p.member_id = e.actor_id WHERE e.decision_id = ?1 ORDER BY e.seq`).bind(id),
+      db.prepare(`SELECT p.member_id AS id, pr.display_name AS name FROM decision_participants p LEFT JOIN profiles pr ON pr.member_id = p.member_id WHERE p.decision_id = ?1`).bind(id),
+    ]));
+    const stored = rowsOf<{ state: DecisionState; adoptedAt: string | null; adoptedBy: string | null; supersedesId: string | null; supersededById: string | null; digest: string; wordingVersion: number; revisitRemindedAt: string | null }>(stateRows)[0];
+    const names = new Map(rowsOf<{ id: string; name: string | null }>(nameRows).map((row) => [row.id, row.name]));
+    const state: Record<string, unknown> = {};
+    if (stored !== undefined) {
+      const neighbours = [stored.supersedesId, stored.supersededById].filter((value): value is string => value !== null);
+      const readableNeighbours = neighbours.length === 0 ? [] : rowsOf<{ id: string; title: string; state: DecisionState; adoptedAt: string | null; rationale: string | null }>(await c.get('accountant').track(db.prepare(
+        `SELECT d.unit_id AS id, ri.title, d.state, d.adopted_at AS adoptedAt, d.rationale FROM decisions d JOIN units u ON u.id = d.unit_id JOIN research_items ri ON ri.unit_id = d.unit_id
+          WHERE d.unit_id IN (SELECT value FROM json_each(?1)) AND ${visibleTo('u', '?2')} AND NOT EXISTS (SELECT 1 FROM deletions x WHERE x.unit_id IN (u.id, u.root_id))`,
+      ).bind(JSON.stringify(neighbours), viewer).all()));
+      const summary = async (neighbourId: string | null) => {
+        const found = readableNeighbours.find((row) => row.id === neighbourId);
+        if (found === undefined) return undefined;
+        const responses = await readParticipantResponses(db, found.id);
+        const ids = responses.map((response) => response.memberId);
+        const named = ids.length === 0 ? [] : rowsOf<{ id: string; name: string | null }>(await c.get('accountant').track(db.prepare('SELECT member_id AS id, display_name AS name FROM profiles WHERE member_id IN (SELECT value FROM json_each(?1))').bind(JSON.stringify(ids)).all()));
+        return { id: found.id, title: found.title, state: found.state, adoptedAt: found.adoptedAt, rationale: found.rationale, responses: responses.map((response) => ({ ...response, name: named.find((row) => row.id === response.memberId)?.name ?? null })) };
+      };
+      const events = rowsOf<{ seq: number; kind: DecisionEventKind; actorId: string | null; actorName: string | null; at: string; reason: string | null; relatedId: string | null }>(eventRows)
+        .map((event) => ({ ...event, relatedId: event.relatedId !== null && readableNeighbours.some((row) => row.id === event.relatedId) ? event.relatedId : null }));
+      const responses = await readParticipantResponses(db, id);
+      Object.assign(state, {
+        decisionState: stored.state, decisionAdoptedAt: stored.adoptedAt, decisionAdoptedBy: stored.adoptedBy, wordingDigest: stored.digest, wordingVersion: stored.wordingVersion,
+        revisitDue: revisitIsDue(stored.state, (fields['revisitDate'] as { value: string } | undefined)?.value, c.get('now').slice(0, 10)), decisionEvents: events,
+        participantResponses: responses.map((response) => ({ ...response, name: names.get(response.memberId) ?? null })),
+        supersedes: await summary(stored.supersedesId) ?? null, supersededBy: await summary(stored.supersededById) ?? null,
+      });
+    }
     const wanted = idsOf(fields, 'evidenceCitationIds');
-    if (wanted.length === 0) return { fields, extra: { evidenceDetails: {} } };
+    if (wanted.length === 0) return { fields, extra: { ...state, evidenceDetails: {} } };
     const { readableCitations } = await import('../citations'); // citations load items, which load the kind adapters
     const found = await readableCitations(c, { ids: wanted, includeRetired: true });
     const details = Object.fromEntries(found.map((citation) => [citation.id, citation]));
-    return { fields: { ...fields, evidenceCitationIds: wanted.filter((id) => details[id] !== undefined) }, extra: { evidenceDetails: details } };
+    return { fields: { ...fields, evidenceCitationIds: wanted.filter((id) => details[id] !== undefined) }, extra: { ...state, evidenceDetails: details } };
   },
   /**
    * A decision that is Superseded or Withdrawn is final (R53.4). Evidence must be citations recorded from this decision that are still in use

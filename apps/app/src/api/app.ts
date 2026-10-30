@@ -35,6 +35,7 @@ import { discussionRoutes } from './routes/discussion';
 import { historyRoutes } from './routes/history';
 import { itemsRoutes } from './routes/items';
 import { citationsRoutes } from './routes/citations';
+import { decisionsRoutes } from './routes/decisions';
 import { derivationsRoutes } from './routes/derivations';
 import { linksRoutes } from './routes/links';
 import { partiesRoutes } from './routes/parties';
@@ -154,6 +155,7 @@ export function createApi(config: ApiConfig): Hono<ApiEnv> {
   v1.route('/projects', projectsRoutes);
   v1.route('/links', linksRoutes);
   v1.route('/citations', citationsRoutes);
+  v1.route('/decisions', decisionsRoutes);
   v1.route('/derivations', derivationsRoutes);
   v1.route('/work', workRoutes);
   v1.route('/', workListRoutes);

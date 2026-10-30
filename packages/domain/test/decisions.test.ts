@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ACKNOWLEDGEMENT_RESPONSES, DECISION_LIMITS, DECISION_TRANSITIONS, acknowledgementInputSchema, acknowledgementStatus, adoptionIssues, decisionDigest } from '../src/decisions';
+import { ACKNOWLEDGEMENT_RESPONSES, DECISION_LIMITS, DECISION_TRANSITIONS, acknowledgementInputSchema, adoptInputSchema, revisitIsDue, supersedeInputSchema, withdrawInputSchema, acknowledgementStatus, adoptionIssues, decisionDigest } from '../src/decisions';
 import type { DecisionWording } from '../src/decisions';
 import { researchItemSchema } from '../src/schemas/items';
 import { fc } from '@researchforce/testing/fc';
@@ -150,5 +150,25 @@ describe('the personal response input (R53.3)', () => {
     for (const bad of [{ response: 'agreed' }, { digest: 'abc' }, { digest: 'A'.repeat(64) }, { wordingVersion: 0 }, { expectedVersion: -1 }, { memberId: 'someone' }]) {
       expect(acknowledgementInputSchema.safeParse({ ...valid, ...bad }).success, JSON.stringify(bad)).toBe(false);
     }
+  });
+});
+
+describe('state change inputs and review dates (R53.4)', () => {
+  it('name the revision they act on and refuse anything else', () => {
+    expect(adoptInputSchema.safeParse({ rev: 3 }).success).toBe(true);
+    expect(adoptInputSchema.safeParse({ rev: 3, state: 'adopted' }).success).toBe(false);
+    expect(withdrawInputSchema.safeParse({ rev: 1, reason: 'No longer needed.' }).success).toBe(true);
+    expect(withdrawInputSchema.safeParse({ rev: 1, reason: ' ' }).success).toBe(false);
+    const earlier = '01J0000000000000000000DC02';
+    expect(supersedeInputSchema.safeParse({ rev: 1, supersededId: earlier, supersededRev: 2 }).success).toBe(true);
+    for (const bad of [{ supersededId: 'x' }, { supersededRev: 0 }, { supersededId: earlier.replace('J', 'I') }]) expect(supersedeInputSchema.safeParse({ rev: 1, supersededId: earlier, supersededRev: 2, ...bad }).success).toBe(false);
+  });
+
+  it('come due only for an adopted decision whose date has come', () => {
+    expect(revisitIsDue('adopted', '2026-11-05', '2026-11-05')).toBe(true);
+    expect(revisitIsDue('adopted', '2026-11-06', '2026-11-05')).toBe(false);
+    expect(revisitIsDue('adopted', undefined, '2026-11-05')).toBe(false);
+    expect(revisitIsDue('adopted', null, '2026-11-05')).toBe(false);
+    for (const state of ['proposed', 'superseded', 'withdrawn'] as const) expect(revisitIsDue(state, '2020-01-01', '2026-11-05')).toBe(false);
   });
 });

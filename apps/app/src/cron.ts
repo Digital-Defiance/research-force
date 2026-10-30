@@ -1,6 +1,7 @@
 import type { Timestamp } from '@researchforce/domain/types';
 import type { Env } from './env';
 import type { Logger } from './log';
+import { sweepDecisionRevisits } from './records/decision-operations';
 import { sweepFollowUps } from './notifications/reminders';
 import { kickAll } from './outbox';
 import { sweepUploads } from './files/uploads';
@@ -21,6 +22,7 @@ export const HOURLY_SWEEPS: readonly Sweep[] = [
   { name: 'abandoned_uploads', run: sweepUploads },
   { name: 'staging_rows', run: (env, now) => sweepStages(env.RF_CORE, now) },
   { name: 'follow_up_reminders', run: sweepFollowUps },
+  { name: 'decision_revisits', run: sweepDecisionRevisits },
 ];
 
 /** Run every sweep; one that fails is logged and the rest still run. */
