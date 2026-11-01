@@ -2,7 +2,7 @@ import type { Context } from 'hono';
 import { eq, sql } from 'drizzle-orm';
 import { GuardedBatch } from '@researchforce/db/batch';
 import { crossLinks } from '@researchforce/db/schema/core';
-import { newULID } from '@researchforce/domain/identifiers';
+import { newULIDAfter } from '@researchforce/domain/identifiers';
 import { BUILT_IN_VALUE_IDS } from '@researchforce/domain/value-sets';
 import { isULID } from '@researchforce/domain/types';
 import type { Timestamp, ULID } from '@researchforce/domain/types';
@@ -84,9 +84,16 @@ export async function linkIssues(
  * still exists when the batch runs and an outbox row for each end's pages (R15.2, R15.3).
  */
 export function writeLinks(batch: GuardedBatch, links: readonly LinkInput[], actor: { readonly id: ULID; readonly now: Timestamp }): ULID[] {
-  const rows = links.map((link) => ({
-    id: newULID(actor.now), originId: link.originId, targetId: link.targetId, relationValueId: link.relationValueId ?? null, addedBy: actor.id, addedAt: actor.now,
-  }));
+  // Chain the ids so they sort in insertion order even within one millisecond: a Cross_Link's id is how the kernel
+  // orders a unit's links (project.ts `linkViews`), and a Research_Question's Addresses entries must keep the order
+  // the Member submitted (R50.2, R50.4). `newULID(now)` alone randomises the low bits, so same-batch links could sort
+  // in any order; `newULIDAfter` keeps each id strictly after the previous one.
+  let previous: ULID | null = null;
+  const rows = links.map((link) => {
+    const id = newULIDAfter(actor.now, previous);
+    previous = id;
+    return { id, originId: link.originId, targetId: link.targetId, relationValueId: link.relationValueId ?? null, addedBy: actor.id, addedAt: actor.now };
+  });
   const ends = ids(links.flatMap((link) => [link.originId, link.targetId]));
   batch.guard('rev', sql`NOT EXISTS (SELECT 1 FROM json_each(${ends}) j
       WHERE NOT EXISTS (SELECT 1 FROM units u WHERE u.id = j.value) OR EXISTS (SELECT 1 FROM deletions d WHERE d.unit_id = j.value))`)

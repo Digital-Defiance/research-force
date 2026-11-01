@@ -97,6 +97,8 @@ export interface ResearchItemView {
   readonly publicSummary?: RichText; readonly itemDate: DocumentDate; readonly logDate: PartialDate; readonly credit: readonly CreditView[];
   readonly identifier: string; readonly status?: StatusView; readonly withdrawal?: WithdrawalView; readonly project: ProjectRef;
   readonly firstPublicOn: UTCDate; readonly attachments: readonly ChildRef[]; readonly links: readonly LinkView[];
+  /** A Research_Question's question text, always present whatever the Public_Presentation; the introduction stays in `full.fields` (R50.4). */
+  readonly question?: string;
   readonly full?: FullContentView;
 }
 export interface AttachmentView {

@@ -339,7 +339,8 @@ class Projector {
         rich('requestText', item.requestText); date('dateSent', item.dateSent); date('replyDate', item.replyDate); rich('replyContent', item.replyContent);
         break;
       case 'topic': rich('body', item.body); break;
-      case 'research_question': text('question', item.question); rich('introduction', item.introduction); text('investigationState', item.investigationState); rich('assessment', item.assessment); break;
+      // The question text is a top-level view field (R50.4, R50.5); the introduction appears under Full_Content.
+      case 'research_question': rich('introduction', item.introduction); text('investigationState', item.investigationState); rich('assessment', item.assessment); break;
     }
     return fields;
   }
@@ -362,7 +363,8 @@ class Projector {
       itemDate: itemDate(dates, 'UTC'), logDate: logDate(dates, 'UTC'), credit: this.credits(unit.credit), identifier: item.identifier,
       ...(status ? { status } : {}), ...this.withdrawal(unit), project: this.projectRef(project),
       firstPublicOn: dateOf(item.firstPublicAt ?? this.input.now),
-      attachments: this.visibleChildren(unit.id, 'attachment', byPosition), links: this.linkViews(unit), ...(full ? { full } : {}),
+      attachments: this.visibleChildren(unit.id, 'attachment', byPosition), links: this.linkViews(unit),
+      ...(item.kind === 'research_question' ? { question: item.question } : {}), ...(full ? { full } : {}),
     };
   }
 

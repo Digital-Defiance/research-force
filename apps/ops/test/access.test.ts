@@ -60,10 +60,12 @@ describe('rf-ops Access sync', () => {
       'containPublicHosts',
       'containmentCapabilities',
       'declareIncident',
+      'deploySite',
       'probePublicAddress',
       'releaseContainment',
       'removeMember',
       'revokeSessions',
+      'setSubmitBlock',
       'verifyContainment',
     ]);
     expect('fetch' in Ops.prototype).toBe(false);

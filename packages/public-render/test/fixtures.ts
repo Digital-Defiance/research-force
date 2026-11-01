@@ -16,6 +16,7 @@ export const VALUES = {
   ownWork: { id: '0000000000000000000000P001', name: 'Own work' },
   licensed: { id: '01V00000000000000000000009', name: 'Licensed' },
   related: { id: '01V00000000000000000000008', name: 'Related' },
+  addresses: { id: '00000000000000000000000006', name: 'Addresses' },
   retiredUnused: { id: '01V00000000000000000000010', name: 'Old status' },
 } satisfies Record<string, ValueRef>;
 
@@ -70,6 +71,25 @@ export const REPLY: ReplyView = {
 export const DISSENT: DissentNoteView = {
   tag: 'dissent_note', key: 'u:dissent', text: rich('I read the result differently.'), author: 'Ada Example', savedOn: '2026-01-08', earlierWording: true, authorProfiled: true,
 };
+/** A Full_Content Research_Question whose entries are Addresses Cross_Links to a Public Finding and a Withheld item (R50.4). */
+export const QUESTION: ResearchItemView = {
+  tag: 'research_item', key: 'u:question', path: '/r/QQQQ-6666-RRRR', kind: 'research_question', title: 'A synthetic question',
+  itemDate: partialDate('1954'), logDate: partialDate('1954'), credit: [{ name: 'Dana Member' }], identifier: 'QQQQ-6666-RRRR',
+  project: REF, firstPublicOn: '2026-01-09', attachments: [],
+  question: 'What really happened on the night route?',
+  links: [
+    { direction: 'outgoing', relation: VALUES.addresses, target: { tag: 'link', key: FINDING.key, path: FINDING.path, type: 'research_item', title: FINDING.title, kind: 'finding' } },
+    { direction: 'outgoing', relation: VALUES.addresses, target: { tag: 'withheld', key: 'u:withheld-item', path: '/r/WWWW-0000-WWWW', line: LINE } },
+  ],
+  full: { fields: [{ key: 'introduction', value: { t: 'rich', value: rich('The **introduction** to the question.') } }], sections: [], replies: [], dissent: [] },
+};
+/** A Summary_Only Research_Question of the same Project, created earlier, so the two order newest first by default. */
+export const QUESTION_SUMMARY: ResearchItemView = {
+  tag: 'research_item', key: 'u:question-2', path: '/r/SSSS-7777-TTTT', kind: 'research_question', title: 'An earlier synthetic question',
+  itemDate: partialDate('1953'), logDate: partialDate('1953'), credit: [], identifier: 'SSSS-7777-TTTT',
+  project: REF, firstPublicOn: '2026-01-04', attachments: [], question: 'Why was the route chosen at all?', links: [],
+};
+
 const withheld = (key: UnitKey, path: string | undefined, kindOfMaterial: string, date = '1950-03'): WithheldView =>
   ({ tag: 'withheld', key, ...(path === undefined ? {} : { path }), line: { ...LINE, kindOfMaterial, date: partialDate(date) }, project: REF });
 
@@ -104,6 +124,16 @@ const SECTIONS: Readonly<Record<PolicyPageKey, PolicyPageInput['sections']>> = {
   ],
   corrections: [{ key: 'asking_for_a_correction', title: 'Asking for a correction', required: true, text: rich('Write to us.') }],
 };
+
+/** A site input that also carries the two Research_Questions, with their creation times for newest-first ordering (R50.4, R50.5). */
+export function questionSite(overrides: Partial<SiteInput> = {}): SiteInput {
+  const base = site();
+  return site({
+    views: new Map([...base.views, [QUESTION.key, QUESTION], [QUESTION_SUMMARY.key, QUESTION_SUMMARY]]),
+    createdAt: new Map([...base.createdAt, [QUESTION.key, '2026-01-09T00:00:00.000Z'], [QUESTION_SUMMARY.key, '2026-01-04T00:00:00.000Z']]),
+    ...overrides,
+  });
+}
 
 export function site(overrides: Partial<SiteInput> = {}): SiteInput {
   return {

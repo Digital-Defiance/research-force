@@ -6,7 +6,7 @@ import { profileHref } from '../src/format';
 import { SUPERSEDED_HREF, WITHDRAWN_HREF, WITHHELD_HREF, labelKindHref, termHref, valueHref } from '../src/methods';
 import { renderSite, type SiteFile } from '../src/render-site';
 import type { SiteInput } from '../src/site';
-import { FILE_NEW, FILE_OLD, FINDING, HYPOTHESIS, PROJECT, VALUES, WITHHELD_PROJECT, site } from './fixtures';
+import { FILE_NEW, FILE_OLD, FINDING, HYPOTHESIS, PROJECT, VALUES, WITHHELD_PROJECT, questionSite, site } from './fixtures';
 
 function build(input: SiteInput = site()): Map<string, SiteFile> {
   return new Map(renderSite(input).map((file) => [file.file, file]));
@@ -133,6 +133,59 @@ describe('Summary_Only item page', () => {
     expect(linkTo(view, termHref('term.elimination_scope'))).toEqual(['Elimination scope']);
     for (const heading of ['log-summary-heading', 'details-heading', 'discussion-heading']) expect(find(view.main.children, (node) => node.attributes.get('id') === heading)).toBeUndefined();
     expect(meta(view, 'og:description')).toEqual([]);
+  });
+});
+
+describe('Research_Question page (R50.4)', () => {
+  const view = page(build(questionSite()), 'r/QQQQ-6666-RRRR.html');
+
+  it('shows the question text and renders each entry like the other end of a Cross_Link', () => {
+    expect(view.mainText).toContain('What really happened on the night route?');
+    const links = find(view.main.children, byClass('rf-links'))!;
+    // A Public entry is a link to its page; a Withheld entry is its Disclosure_Line (R24.8).
+    expect(textOf(links.children)).toContain('Links to Addresses A synthetic finding (Finding)');
+    expect(textOf(links.children)).toContain('Letter · March 1950 · A Correspondent');
+    expect(linkTo(view, FINDING.path)).toContain(FINDING.title);
+  });
+
+  it('shows the introduction only under Full_Content', () => {
+    expect(view.mainText).toContain('The introduction to the question.');
+    const summary = page(build(questionSite()), 'r/SSSS-7777-TTTT.html');
+    expect(summary.mainText).toContain('Why was the route chosen at all?'); // the question still shows
+    expect(summary.mainText).not.toContain('introduction');
+    expect(find(summary.main.children, (node) => node.attributes.get('id') === 'details-heading')).toBeUndefined();
+  });
+});
+
+describe('Project page Research_Question part (R50.5)', () => {
+  const questionsPart = (view: Page) => find(view.main.children, byClass('rf-project__questions'));
+
+  it('lists the Project’s Public Research_Questions newest first when no order is set, before the listings', () => {
+    const view = page(build(questionSite()), 'p/alpha.html');
+    const part = questionsPart(view)!;
+    const titles = findAll(part.children, byClass('rf-listing__title')).map((node) => textOf(node.children));
+    expect(titles).toEqual(['A synthetic question', 'An earlier synthetic question']);
+    expect(view.mainText).toContain('What really happened on the night route?');
+    // The part comes before the navigation to the listings (the "Project log" link text only appears in the nav).
+    expect(view.mainText.indexOf('What really happened')).toBeLessThan(view.mainText.indexOf('Project log'));
+    expect(linkTo(view, '/r/QQQQ-6666-RRRR')).toContain('A synthetic question');
+  });
+
+  it('honours an Administrator’s question_order, then appends the rest newest first', () => {
+    const view = page(build(questionSite({ questionOrder: new Map([[PROJECT.key, ['u:question-2' as const]]]) })), 'p/alpha.html');
+    const titles = findAll(questionsPart(view)!.children, byClass('rf-listing__title')).map((node) => textOf(node.children));
+    expect(titles).toEqual(['An earlier synthetic question', 'A synthetic question']);
+  });
+
+  it('shows no part while the Project has no Public Research_Question', () => {
+    expect(questionsPart(page(build(), 'p/alpha.html'))).toBeUndefined();
+  });
+
+  it('also generates the questions listing for the Project (R29.1)', () => {
+    const listing = page(build(questionSite()), 'p/alpha/questions.html');
+    expect(findAll(listing.main.children, byClass('rf-listing__title')).map((node) => textOf(node.children))).toEqual([
+      'A synthetic question', 'An earlier synthetic question',
+    ]);
   });
 });
 

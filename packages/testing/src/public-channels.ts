@@ -3,6 +3,7 @@ import { project } from '@researchforce/kernel/project';
 import { projectProfile } from '@researchforce/kernel/substitute';
 import { composeEmail } from '@researchforce/public-render/email/compose';
 import { emailEntryFor } from '@researchforce/public-render/email/views';
+import { renderExport } from '@researchforce/public-render/export/render-export';
 import { renderSite } from '@researchforce/public-render/render-site';
 import { buildSearchIndex } from '@researchforce/search-public/build';
 import { siteInputFor } from './site';
@@ -65,5 +66,15 @@ const notificationEmails: PublicChannel = {
   },
 };
 
-export const PUBLIC_CHANNELS: readonly PublicChannel[] = [kernelViews, kernelProfiles, publicSite, publicSearchIndex, notificationEmails];
+/** Every file of a whole-archive Public_Archive_Export, which must reveal nothing beyond the Public_Views it is built from (R35.2, R35.4). */
+const publicExport: PublicChannel = {
+  name: 'public archive export',
+  *artifacts(state) {
+    for (const file of renderExport(siteInputFor(state), { startedAt: '2026-01-01T00:00:00.000Z', scope: 'Whole public archive' })) {
+      yield { name: file.path, content: file.content };
+    }
+  },
+};
+
+export const PUBLIC_CHANNELS: readonly PublicChannel[] = [kernelViews, kernelProfiles, publicSite, publicSearchIndex, notificationEmails, publicExport];
 // Channels that need a running Worker, such as rf-dl, are registered in live-channels.ts and exercised by that Worker's workerd tests.

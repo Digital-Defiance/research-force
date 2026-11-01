@@ -26,14 +26,27 @@ describe('project', () => {
   });
 
   it('shows a Research_Question’s state and assessment only under Full_Content', () => {
-    const question = { kind: 'research_question' as const, question: 'Who wrote it?', investigationState: 'answered', assessment: rich('The clerk wrote it.') };
+    const question = { kind: 'research_question' as const, question: 'Who wrote it?', introduction: rich('Why it matters.'), investigationState: 'answered', assessment: rich('The clerk wrote it.') };
     const full = projectDetailed(state([item('q', question)])).views.get('u:q');
     expect(full).toMatchObject({ tag: 'research_item', full: { fields: expect.arrayContaining([
+      { key: 'introduction', value: { t: 'rich', value: expect.objectContaining({ text: 'Why it matters.' }) } },
       { key: 'investigationState', value: { t: 'text', value: 'answered' } }, { key: 'assessment', value: { t: 'rich', value: expect.objectContaining({ text: 'The clerk wrote it.' }) } },
     ]) } });
     const summary = projectDetailed(state([item('q', { ...question, presentation: 'summary_only', publicSummary: rich('Shown') } as never)])).views.get('u:q');
     expect(JSON.stringify(summary)).not.toContain('The clerk wrote it.');
     expect(JSON.stringify(summary)).not.toContain('answered');
+    expect(JSON.stringify(summary)).not.toContain('Why it matters.'); // the introduction is Full_Content only (R50.4)
+  });
+
+  it('carries a Research_Question’s question text at the top level whatever the Public_Presentation (R50.4, R50.5)', () => {
+    const question = { kind: 'research_question' as const, question: 'Who wrote it?' };
+    const full = projectDetailed(state([item('q', question)])).views.get('u:q');
+    expect(full).toMatchObject({ tag: 'research_item', question: 'Who wrote it?' });
+    // The question text is not duplicated into the Full_Content fields.
+    expect(JSON.stringify((full as { full?: { fields: unknown } }).full?.fields)).not.toContain('Who wrote it?');
+    const summary = projectDetailed(state([item('q', { ...question, presentation: 'summary_only', publicSummary: rich('Shown') } as never)])).views.get('u:q');
+    expect(summary).toMatchObject({ tag: 'research_item', question: 'Who wrote it?' });
+    expect(summary).not.toHaveProperty('full');
   });
 
   it('shows only the Disclosure_Line for a Withheld unit, and makes its descendants Not_Published', () => {

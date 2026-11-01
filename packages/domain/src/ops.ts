@@ -99,3 +99,68 @@ export interface ConfidentialityIncident {
   /** A short, content-free description of the last public state actually verified. */
   readonly lastVerifiedState: string;
 }
+
+/**
+ * The narrow RPC surface of `rf-ops` for the single precreated WAF custom rule that blocks
+ * `submit.researchforce.org` when the Public_Traffic_Budget is reached (task 34.1/34.2, design "Capacity,
+ * cost, and public abuse budgets", R28.5, R28.6, R28.11). The `Budget` Durable Object (task 34.1) calls this
+ * when a public counter crosses the Public_Traffic_Budget-minus-2%-margin threshold, and again at the 00:00
+ * UTC reset to lift it. Like {@link OpsAccess}, the method throws when Cloudflare refuses or cannot be
+ * reached. This is ordinary edge shedding, NOT confidentiality Containment ({@link OpsContainment}): it only
+ * turns the optional, invocation-costing public submit API on or off; it never denies the static public
+ * research hosts, their stored pages, file copies, or static search.
+ */
+export interface OpsWaf {
+  /**
+   * Enable (`true`) or disable (`false`) the precreated WAF custom rule that blocks the public submit host.
+   * Idempotent: toggling the rule to the state it already holds is not an error. 34.2 implements the rf-ops
+   * side (`apps/ops/src/waf.ts`); 34.1 only calls this.
+   */
+  setSubmitBlock(enabled: boolean): Promise<void>;
+}
+
+/**
+ * The narrow RPC surface of `rf-ops` for deploying the assets-only `rf-site` Worker through the Cloudflare
+ * Workers Static Assets Direct Upload API, under the serialized publication-epoch fence (task 32.1, design
+ * "Public pages" + "Workers Static Assets", R24.7, R24.11, R24.12, R24.16, R24.17, R28.6, R60.2). `rf-site`
+ * is deployed ONLY by the Publisher through rf-ops. rf-ops serializes promotion and rechecks the authoritative
+ * publication epoch immediately before AND after it; a stale or raced promotion does not stand and any
+ * independent containment stays in force — an obsolete operation can never reopen a contained host. For an
+ * ambiguous answer the operation identity, exact version/manifest, and verified status are recorded so a later
+ * reconciliation against actual provider state decides before any retry; rf-ops never blind-retries.
+ */
+export interface OpsDeploy {
+  /**
+   * Deploy `manifest` (path -> {hash, size}) as a new `rf-site` version, fenced by `epoch` under the durable
+   * `operationId`. `run` is the Publisher generation id; `missing` supplies the base64 bytes and content type
+   * for each file hash the platform reports missing (only missing files are uploaded); `containmentActive` is
+   * whether independent containment is currently in force. Returns the live result the 32.5 orchestrator acts
+   * on: whether the version was promoted, whether containment must remain, the created version id, and the
+   * settled operation state. Throws only on a definite Cloudflare refusal; a lost/uncertain answer is returned
+   * as an `uncertain` outcome, never a blind retry.
+   */
+  deploySite(input: {
+    readonly manifest: Readonly<Record<string, { readonly hash: string; readonly size: number }>>;
+    readonly run: string;
+    readonly epoch: number;
+    readonly operationId: string;
+    readonly missing: Readonly<Record<string, { readonly base64: string; readonly contentType: string }>>;
+    readonly containmentActive: boolean;
+  }): Promise<OpsDeployResult>;
+}
+
+/** The content-free result of an `rf-site` deploy attempt (R28.6): identities and states only, no research body. */
+export interface OpsDeployResult {
+  /** Whether the version was promoted to 100% and stands. False means stale/raced/uncertain or a refusal. */
+  readonly promoted: boolean;
+  /** Whether containment must remain in force after this operation. Never cleared on a stale/raced deploy. */
+  readonly keepContainment: boolean;
+  /** The created Worker version id, once the platform returned one (recorded even when not promoted). */
+  readonly versionId: string | null;
+  /** The durable operation identity this deploy ran under. */
+  readonly operationId: string;
+  /** The settled durable state: `confirmed`, `failed`, or `uncertain`. */
+  readonly operationState: 'confirmed' | 'failed' | 'uncertain';
+  /** Why the deploy ended the way it did. */
+  readonly reason: 'promoted' | 'stale_before' | 'raced_after' | 'uncertain' | 'created_not_promoted';
+}

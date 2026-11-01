@@ -1,7 +1,7 @@
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { GuardedBatch } from '@researchforce/db/batch';
 import { researchItems, submissions, units } from '@researchforce/db/schema/core';
-import { researchItemRow } from './units';
+import { addItem, addSubmissionRow, researchItemRow } from './units';
 import { PROJECT_ACCENT_IDS } from '@researchforce/design/tokens';
 import { newULID } from '@researchforce/domain/identifiers';
 import { BUILT_IN_ROLES, ROLE_IDS } from '@researchforce/domain/permissions';
@@ -67,7 +67,7 @@ describe('creating Projects', () => {
     const second = await create('Beta', 'beta', deputy);
     expect(first).toEqual({
       id: first.id, name: 'Alpha', description: 'About Alpha.', slug: 'alpha', slugFixed: false, featured: false, accent: null, position: 0,
-      disclosureLevel: 'not_published', disclosureLine: null, createdBy: adminId, createdAt: at, rev: 1,
+      disclosureLevel: 'not_published', disclosureLine: null, questionOrder: [], createdBy: adminId, createdAt: at, rev: 1,
     });
     expect(second).toMatchObject({ position: 1, disclosureLevel: 'not_published', featured: false });
     expect(await core().prepare('SELECT name_key FROM projects WHERE id = ?1').bind(first.id).first('name_key')).toBe('alpha');
@@ -103,7 +103,7 @@ describe('editing Projects', () => {
       { kind: 'minor_edit', memberId: adminId, displayName: `Member ${adminId}`, at, reason: null, changes: [{ field: 'description', before: 'About Alpha.', after: 'Revised.' }, { field: 'accent', before: null, after: accent }] },
       { kind: 'minor_edit', memberId: expect.any(String), displayName: expect.stringMatching(/^Member /u), at, reason: null, changes: [{ field: 'name', before: 'Alpha', after: 'Alpha Prime' }, { field: 'featured', before: false, after: true }] },
       { kind: 'creation', memberId: adminId, displayName: `Member ${adminId}`, at, values: {
-        name: 'Alpha', description: 'About Alpha.', slug: 'alpha', featured: false, accent: null, position: 0, disclosureLevel: 'not_published', disclosureLine: null,
+        name: 'Alpha', description: 'About Alpha.', slug: 'alpha', featured: false, accent: null, position: 0, disclosureLevel: 'not_published', disclosureLine: null, questionOrder: [],
       } },
     ]);
   });
@@ -175,6 +175,52 @@ describe('editing Projects', () => {
     expect((await call(api, bindings, admin, 'GET', '/projects/nope/history')).status).toBe(404);
     expect((await edit(admin, project, { rev: 1, position: 3 })).status).toBe(422);
     expect((await edit(admin, project, { name: 'No rev' })).status).toBe(422);
+  });
+});
+
+describe('the Project page Research_Question order (R50.5)', () => {
+  const questionOf = async (projectId: ULID, ownerId: ULID): Promise<ULID> => {
+    const submissionId = await addSubmissionRow(core(), ownerId, at);
+    return (await addItem(core(), { projectId, ownerId, submissionId, now: at }, { kind: 'research_question' })).id;
+  };
+  const storedOrder = async (projectId: string): Promise<string[]> =>
+    JSON.parse((await core().prepare('SELECT question_order AS q FROM projects WHERE id = ?1').bind(projectId).first<string>('q'))!) as string[];
+
+  it('lets an Administrator set an order of the Project’s Research_Questions, persists it, and publishes the Project page', async () => {
+    const project = await create('Alpha', 'alpha');
+    const q1 = await questionOf(asULID(project.id), adminId);
+    const q2 = await questionOf(asULID(project.id), adminId);
+    await core().prepare('DELETE FROM outbox').run();
+    const response = await edit(admin, project, { rev: 1, questionOrder: [q2, q1] });
+    expect(response.status).toBe(200);
+    expect((await response.json<{ project: ProjectRecord }>()).project).toMatchObject({ rev: 2 });
+    expect(await storedOrder(project.id)).toEqual([q2, q1]);
+    expect(await outboxScopes()).toEqual([{ topic: 'publish', scope: `project:${project.id}` }]);
+    expect((await history(project))[0]).toMatchObject({ kind: 'minor_edit', changes: [{ field: 'questionOrder', before: [], after: [q2, q1] }] });
+  });
+
+  it('refuses a non-Administrator, so only Administrators order the Project page part', async () => {
+    const project = await create('Alpha', 'alpha');
+    const q1 = await questionOf(asULID(project.id), adminId);
+    // A Contributor and a Deputy (a custom Role, not an Administrator) are both refused, like the Project_Accent.
+    expect((await edit(contributor, project, { rev: 1, questionOrder: [q1] })).status).toBe(403);
+    expect((await edit(deputy, project, { rev: 1, questionOrder: [q1] })).status).toBe(403);
+    expect((await edit(admin, project, { rev: 1, questionOrder: [q1] })).status).toBe(200);
+  });
+
+  it('rejects unknown ids, duplicates, another Project’s question, and a non-question, saving nothing', async () => {
+    const project = await create('Alpha', 'alpha');
+    const other = await create('Beta', 'beta');
+    const q1 = await questionOf(asULID(project.id), adminId);
+    const otherQuestion = await questionOf(asULID(other.id), adminId);
+    const finding = (await addItem(core(), { projectId: asULID(project.id), ownerId: adminId, submissionId: await addSubmissionRow(core(), adminId, at), now: at }, { kind: 'finding' })).id;
+    const before = await snapshot();
+    for (const order of [[newULID(at)], [q1, q1], [otherQuestion], [finding]]) {
+      const response = await edit(admin, project, { rev: 1, questionOrder: order });
+      expect([order, response.status]).toEqual([order, 422]);
+    }
+    expect(await snapshot()).toBe(before);
+    expect(await storedOrder(project.id)).toEqual([]);
   });
 });
 

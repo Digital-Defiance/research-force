@@ -810,31 +810,31 @@ Canonical phases: `collaboration` → `privacy` → `imports_and_log` → `publi
     - **Property 79: Log_Summary rules**
     - **Validates: Requirements 41.1, 41.2, 41.5, 41.13**
 
-- [ ] 32. Build the Publisher and the public site deployment
-  - [ ] 32.1 Implement the `rf-ops` site deployment in `apps/ops/src/deploy.ts`
+- [x] 32. Build the Publisher and the public site deployment
+  - [x] 32.1 Implement the `rf-ops` site deployment in `apps/ops/src/deploy.ts`
     - Implement deploySite(manifest, epoch, operationId) with the existing Direct Upload protocol, resumable upload token and assets-only version. rf-ops serializes promotion and requires the expected authoritative publication epoch before and after it; an obsolete operation cannot reopen a contained host.
     - Record operation identity, exact Worker version/manifest and verified status for ambiguous API responses, reconcile before retry, and maintain precreated independent containment controls from task 59.
     - _Requirements: 24.7, 24.11, 24.12, 24.16, 24.17, 28.6, 28.16, 60.2_
-  - [ ] 32.2 Implement the Publisher projection step in `apps/app/src/do/publisher.ts`
+  - [x] 32.2 Implement the Publisher projection step in `apps/app/src/do/publisher.ts`
     - Retain dirty-scope expansion and versioned Public_Views, but give runs leases/generations and a publication epoch. Urgent invalidations preempt older addition work at the next bounded slice; every copy/render/deploy transition checks the epoch and may not resurrect suppressed output.
     - Read logical fields through bounded version readers from task 57; retain versions required by release/citation/backup leases and only prune eligible unreferenced derived history. Restore remains quarantined until the current suppression and public-launch preflight pass.
     - _Requirements: 24.11, 24.12, 24.16, 24.17, 34.6, 36.16, 46.7, 46.34, 59.3_
-  - [ ] 32.3 Implement planning and rendering in `apps/app/src/publisher/plan.ts` and `apps/app/src/publisher/render.ts`
+  - [x] 32.3 Implement planning and rendering in `apps/app/src/publisher/plan.ts` and `apps/app/src/publisher/render.ts`
     - Map changed views to every affected output (unit, Parent, and root pages; every page of affected listings, Project_Logs, and Disclosure_Line listings; Project, home, and projects pages; Research_Question pages and the Project page's Research_Question part from task 55.4; People and Policy pages; search index files; file operations), render with `public-render` and `search-public`, include the `site-shell` build, `robots.txt`, `sitemap.xml`, and `_headers`, hash each file as the Direct Upload API specifies, store new content under `rf-private/build/{hash}`, and keep the manifest in `rf-public.site_files`; alert at 16,000 files
     - No file is rendered for a Not_Published Project's addresses or for any address of a Withheld Project other than its page, so those addresses get the same `404.html` as unknown ones; Policy_Pages, metadata, print styles, fonts, scripts, and images ship only as static assets
     - _Requirements: 24.1, 24.2, 24.4, 24.5, 28.16, 29.1, 30.7, 30.8, 40.4, 40.9, 40.10, 45.4_
-  - [ ] 32.4 Implement public file copies in `apps/app/src/publisher/files.ts`
+  - [x] 32.4 Implement public file copies in `apps/app/src/publisher/files.ts`
     - Copy an Attachment that becomes Public to `rf-public` at `f/{Item_Identifier}` with a server-side `CopyObject` before any page links to it, with a content type from the file kind (`application/octet-stream` for script-capable types) and `Content-Disposition` naming `{Item_Identifier}.{ext}`; delete copies first for removals and retry failed deletions each slice
     - _Requirements: 24.3, 25.2, 25.3, 25.4, 28.6_
-  - [ ] 32.5 Implement urgency, deployment, and verification in `apps/app/src/publisher/deploy.ts`
+  - [x] 32.5 Implement urgency, deployment, and verification in `apps/app/src/publisher/deploy.ts`
     - Urgent removals interrupt addition work; addition batching remains 30 seconds quiet/5 minutes maximum. Fence all deploy/file effects against the current epoch, reconcile ambiguous promotion results and retain containment across stale retries.
     - Verify pages, files, static index generations, public release outputs and controlled caches. At four minutes unconfirmed, initiate independent edge containment and alerting; by five minutes verify removal or containment where provider controls are available. If both fail, report an unconfirmed confidentiality incident and never claim success.
     - Do not uncontain after a restore until fresh validation, known post-snapshot suppressions and a new authorized generation pass. Tests interleave a hold with a long run, failed deploy, old retry and resource exhaustion.
     - _Requirements: 24.11, 24.12, 24.16, 24.17, 25.3, 25.7, 30.7, 30.8, 36.9, 36.16, 42.8, 46.30, 46.38, 59.3_
-  - [ ] 32.6 Write property test for Publisher convergence
+  - [x] 32.6 Write property test for Publisher convergence
     - **Property 15: Publisher convergence**
     - **Validates: Requirements 24.1, 24.2, 24.4, 24.11, 24.12, 25.2, 25.3, 29.1, 30.7, 30.8, 36.9, 40.4, 46.7, 46.30**
-  - [ ] 32.7 Write integration tests for publication timing and alerts
+  - [x] 32.7 Write integration tests for publication timing and alerts
     - A stubbed `HEAD` that keeps answering 200 raises the System_Alert of Requirement 25.7; urgent runs deploy before add-only runs; a restore in progress pauses the Publisher
     - _Requirements: 24.11, 25.7, 36.9_
 
@@ -842,11 +842,11 @@ Canonical phases: `collaboration` → `privacy` → `imports_and_log` → `publi
   - Run `npm test` (`vitest --run`) and `npm run lint`; ensure all tests pass, ask the user if questions arise.
 
 - [ ] 34. Build the `Budget` Durable Object and the public submission API in `rf-submit`
-  - [ ] 34.1 Implement the `Budget` Durable Object in `apps/app/src/do/budget.ts` and `apps/app/src/budget/status.ts`
+  - [x] 34.1 Implement the `Budget` Durable Object in `apps/app/src/do/budget.ts` and `apps/app/src/budget/status.ts`
     - Use 59.3's profile-aware reserve/settlement and provider-level accounting helpers for per-UTC-day Public_Traffic requests, rows read, and rows written with `admit()` and `report(rows)`; when a counter reaches the Public_Traffic_Budget minus a 2% margin, refuse further public requests with a fixed "unavailable until 00:00 UTC" response that uses no D1 query, ask `rf-ops` to enable the WAF block rule for `submit.researchforce.org`, and rewrite `files.researchforce.org/status.json`; `PUBLIC_SEARCH_FOLLOWS_BUDGET = false` in `status.ts` keeps static search available; dynamic form and addressed-view status are separate
     - The 00:00 UTC cron resets the counters, disables the WAF rule, and rewrites `status.json`; network-address counters stored only as HMAC-SHA-256 under a daily key with hourly counts, deleted with the key within 24 hours; an AI Neuron ledger of reservations and settlements; Recipient_Cap usage reported by the `Mailer`
     - _Requirements: 28.5, 28.6, 28.7, 28.11, 46.20_
-  - [ ] 34.2 Implement the WAF switch in `apps/ops/src/waf.ts`
+  - [x] 34.2 Implement the WAF switch in `apps/ops/src/waf.ts`
     - `setSubmitBlock(enabled)` toggling the pre-created custom rule that blocks `submit.researchforce.org` at the edge
     - _Requirements: 28.5, 28.6_
   - [ ] 34.3 Implement submission sessions and files in `apps/submit/src/index.ts` and `apps/submit/src/sessions.ts`
@@ -971,16 +971,16 @@ Canonical phases: `collaboration` → `privacy` → `imports_and_log` → `publi
     - **Validates: Requirements 28.5, 37.14**
 
 - [ ] 38. Build the Export_Service: Public_Archive_Exports, Internal_Backups, and restore
-  - [ ] 38.1 Implement the export templates and data files in `packages/public-render/src/export/`
+  - [x] 38.1 Implement the export templates and data files in `packages/public-render/src/export/`
     - The public templates with relative links; an index page with start time, Export_Scope, and links to everything; the About, Methods, and Licence pages as of the start time with last-updated dates; CSS, fonts, and their licence notices under `assets/`; no search page
     - `data/archive.json` with every value each view shows, character for character, ISO 8601 dates at recorded precision, presented Cross_Links, each Research_Item's Project, and each child's Parent and position; `data/research-items.csv` and `data/attachments.csv`; `LICENSE.txt`; `MANIFEST.json` and `SHA256SUMS`; register the outputs in `packages/testing/src/public-channels.ts`
     - _Requirements: 35.1, 35.3, 35.4, 35.12, 45.12, 45.20_
-  - [ ] 38.2 Implement the Public_Archive_Export job in `apps/app/src/jobs/export.ts`, `POST /exports`, and `GET /exports`
+  - [x] 38.2 Implement the Public_Archive_Export job in `apps/app/src/jobs/export.ts`, `POST /exports`, and `GET /exports`
     - Build the package under `rf-private/exports/{id}/` from the views valid at the start time for the Export_Scope, with server-side copies of Public Attachment files; mark it complete only when every manifest entry has its size and checksum, otherwise incomplete with each missing or mismatched file listed; a System_Alert for every Administrator (scheduled) or the requester (requested) when incomplete or not complete within 24 hours
     - The cron starts the scheduled export at 00:07 UTC on the first day of each month; keep the 3 most recent complete scheduled exports and delete older ones; delete requested exports 7 days after their start
     - Store each package's index of units with exported levels, named External_Parties, and email-like strings; label packages holding material no longer public, a Party now marked Do_Not_Name, or a registered Member's address, and offer deletion; list the packages that contain elements removed by a permanent deletion and delete the selected ones within 24 hours, stating that copies outside R2 are unaffected
     - _Requirements: 22.8, 35.1, 35.2, 35.5, 35.6, 35.7, 35.8, 35.10, 35.11, 42.18, 46.34_
-  - [ ] 38.3 Implement package volume streaming in `apps/dl/src/tar.ts`
+  - [x] 38.3 Implement package volume streaming in `apps/dl/src/tar.ts`
     - Stream packages as POSIX tar volumes with pax headers for UTF-8 names and at most 900 objects per volume, only through Download_Links
     - _Requirements: 28.8, 35.9, 36.2_
   - [ ] 38.4 Implement the Internal_Backup job in `apps/app/src/jobs/backup.ts` and `POST /backups`
@@ -1329,7 +1329,7 @@ Canonical phases: `collaboration` → `privacy` → `imports_and_log` → `publi
     - **Property 104: Dual_Approvals need two different active Administrators**
     - **Validates: Requirements 23.22, 47.7, 48.8, 48.9, 49.1, 49.3, 49.4, 49.5, 49.6, 49.8**
 
-- [ ] 55. Build Research_Questions
+- [x] 55. Build Research_Questions
   - [x] 55.1 Add the Research_Question kind
     - The kind in `packages/domain` (kind names, Item_Identifier prefix, the zod schema with the limits of R50.1), the next migration adding `research_questions`, `question_groups`, `question_entries`, and `projects.question_order`, and rebuilding `research_items` because its `research_items_kind_values` check lists the kinds; and the fixed relation label Addresses, seeded as locked, not offered for ordinary Cross_Links, and refused by `validateLinks` in `apps/app/src/records/links.ts` for any link that is not a Question_Group entry
     - _Requirements: 50.1, 50.2, 50.8_
@@ -1340,10 +1340,10 @@ Canonical phases: `collaboration` → `privacy` → `imports_and_log` → `publi
   - [x] 55.3 Build the Research_Question screens in `apps/app/web/src/items/question/`
     - The form with groups and entries (add, remove, and reorder with buttons as well as dragging) and the page with question, introduction, and groups, omitting entries the viewer cannot read
     - _Requirements: 50.1, 50.3_
-  - [ ] 55.4 Render Research_Questions on the Public_Site in `packages/public-render` and `apps/app/src/publisher/plan.ts`
+  - [x] 55.4 Render Research_Questions on the Public_Site in `packages/public-render` and `apps/app/src/publisher/plan.ts`
     - The question page at `/r/{Item_Identifier}` with each entry rendered like the other end of a Cross_Link and the introduction under Full_Content; the Project page's Research_Question part before the listings in `question_order`, then newest first; a `questions` listing; `PATCH /projects/{id}` accepting `question_order` from Administrators; re-rendering through Cross_Link neighbour expansion
     - _Requirements: 29.1, 50.4, 50.5_
-  - [ ] 55.5 Write property test for Research_Questions
+  - [x] 55.5 Write property test for Research_Questions
     - Exercise 55.4's rendering only once it exists; until then the test checks the Workspace invariants and the public assertions are added with 55.4
     - **Property 106: Research_Question entries are valid and follow their targets**
     - **Validates: Requirements 50.1, 50.2, 50.4, 50.5, 50.6, 50.7**
@@ -1467,7 +1467,7 @@ Canonical phases: `collaboration` → `privacy` → `imports_and_log` → `publi
     - Implement narrow rf-ops control methods, precreated public-host deny rules, an independently recoverable operator credential/runbook and out-of-band verification/alert adapters. Confirm actual plan capabilities; inability to provide required denial blocks public launch.
     - At four minutes unverified removal, initiate denial on public research hosts while leaving app available; verify by five minutes where provider controls are available. If neither removal nor denial is possible, report an unconfirmed confidentiality incident, not success. A reset/retry cannot clear active containment.
     - _Requirements: 24.16, 24.17, 28.6, 60.4, 60.6_
-  - [ ] 59.3 Implement profile-aware admission, rejected-traffic accounting and shedding
+  - [x] 59.3 Implement profile-aware admission, rejected-traffic accounting and shedding
     - Distinguish admitted public work, charged rejected/invalid-download invocations and provider/account totals; reserve bounded in-flight D1/work capacity before admission and settle actual use. Edge controls and profile headroom must include distributed syntactically valid but invalid-signature download tokens.
     - Keep static public search independent of optional API-budget status; dynamic forms and addressed views have separate admission. Retain the Member/removal reserve without representing an in-Worker check as preventing the invocation charge; do not auto-upgrade services.
     - _Requirements: 28.1, 28.3, 28.4, 28.5, 28.6, 28.7, 28.8, 28.11, 28.17, 60.7_
@@ -1605,20 +1605,20 @@ Canonical phases: `collaboration` → `privacy` → `imports_and_log` → `publi
     - **Property 123: Navigation and follows preserve access and event uniqueness**
     - **Validates: Requirements 58.1, 58.2, 58.3, 58.4, 58.5**
 
-- [ ] 66. Build citable research releases with current public suppression
+- [x] 66. Build citable research releases with current public suppression
   - [x] 66.1 Define release schema, immutable manifests and exact citations
     - Add release identity/state/snapshot, scope/rationale/licence version, bounded artifact/citation/package/provenance/work/decision references and immutable authenticated manifest. Draft validation captures exact revisions/hashes and current permission evidence; backup inventory includes release data even before public release UI ships.
     - Separate internal sealed manifest from the approved public subset. Sealing requires complete validation and current approvals; changed contents produce a successor ID, and version-specific citations include release/revision/hash.
     - _Requirements: 59.1, 59.2, 59.4, 60.1_
-  - [ ] 66.2 Implement release creation, validation and publication through the kernel
+  - [x] 66.2 Implement release creation, validation and publication through the kernel
     - Implement /releases and export/snapshot sealing under operation keys and exact dependency guards; use normal preview/Owner/rights/hold/naming checks, not an independent publication bypass.
     - Index every public release file/page/citation for current suppression and epoch/containment; keep immutable originals internal when permitted, but remove currently disallowed historic output from static manifests and public copies within the normal SLO.
     - _Requirements: 24.16, 59.1, 59.2, 59.3, 59.5, 60.2_
-  - [ ] 66.3 Build release and version-citation screens and offline export verification
+  - [x] 66.3 Build release and version-citation screens and offline export verification
     - Build create/preflight/seal/successor views and exact citation copy/export, with current withdrawn/superseded/unavailable behavior that reveals no hidden metadata. Offline HTML/JSON/CSL/package manifests must round-trip without executing code.
     - Document external repository/DOI deposit as a separate explicit operator action with permanent-copy implications; setup does not publish/deposit research. Exercise removal of an old public release after a later hold or permission withdrawal.
     - _Requirements: 59.3, 59.4, 59.5, 60.9_
-  - [ ] 66.4 Write property and regression tests for research releases
+  - [x] 66.4 Write property and regression tests for research releases
     - Use independent models and fault injection in `apps/app/test/properties/p124-research-releases.test.ts`; cover the concrete scenarios in the design, including current-access and maximum encoded-input cases. This owning property file does not replace browser/staging tests.
     - **Property 124: Research releases preserve manifests and current suppression**
     - **Validates: Requirements 59.1, 59.2, 59.3, 59.4, 59.5**

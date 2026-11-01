@@ -25,7 +25,7 @@ export function buildPages(site: SiteInput): PageSpec[] {
   const pages: PageSpec[] = [homePage(site), ...projectsListing(site)];
   for (const entry of projects) {
     if (entry.tag === 'withheld') { pages.push(withheldProjectPage(entry)); continue; }
-    pages.push(projectPage(entry), ...projectListings(newContext, site, entry).map((listing) => listing.spec), searchPage(publicProjects, assets.searchScript, entry));
+    pages.push(projectPage(site, entry), ...projectListings(newContext, site, entry).map((listing) => listing.spec), searchPage(publicProjects, assets.searchScript, entry));
   }
   for (const view of site.views.values()) {
     if (view.tag === 'research_item') pages.push(itemPage(newContext(), view, assets.citationScript));

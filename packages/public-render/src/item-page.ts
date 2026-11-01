@@ -38,6 +38,8 @@ export function itemPage(context: PageContext, view: ResearchItemView, citationS
   const body: ViewNode[] = [
     element('p', { class: 'rf-item-kind' }, [text(KIND_NAMES[view.kind])]),
     ...(view.withdrawal === undefined ? [] : [withdrawalNotice(view.withdrawal)]),
+    // A Research_Question's question text leads the page whatever the Public_Presentation (R50.4).
+    ...(view.question === undefined ? [] : [element('p', { class: 'rf-question' }, [text(view.question)])]),
     ...optional(status),
     metaList([
       ['Project', [element('a', { href: view.project.path }, [text(view.project.name)])]],

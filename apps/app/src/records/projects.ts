@@ -20,21 +20,28 @@ export interface ProjectFields {
 }
 export interface ProjectRecord extends ProjectFields {
   readonly id: ULID; readonly slugFixed: boolean; readonly createdBy: ULID; readonly createdAt: Timestamp; readonly rev: number;
+  /** The Administrator-set Research_Question order for the Project page; empty when none is set (R50.5). */
+  readonly questionOrder: readonly string[];
 }
 /** Disclosure_Change for level and Disclosure_Line, Minor_Edit for everything else (R39.8). */
 const PROJECT_FIELD_CLASSES: Readonly<Record<keyof ProjectFields, FieldClass>> = {
   name: 'detail', description: 'detail', slug: 'detail', featured: 'detail', accent: 'detail', position: 'detail', disclosureLevel: 'disclosure', disclosureLine: 'disclosure',
 };
 const PROJECT_COLUMNS = `id, name, short_description AS description, slug, slug_fixed_at IS NOT NULL AS slugFixed, featured, accent, position,
-  disclosure_level AS disclosureLevel, disclosure_line AS disclosureLine, created_by AS createdBy, created_at AS createdAt, rev`;
+  disclosure_level AS disclosureLevel, disclosure_line AS disclosureLine, question_order AS questionOrder, created_by AS createdBy, created_at AS createdAt, rev`;
 const NAME_TAKEN = 'Project names must be unique ignoring letter case.';
 const SLUG_TAKEN = 'This Project Slug is already in use.';
 /** Creation retries when another creation took the last position first. */
 const CREATE_ATTEMPTS = 3;
 
-type ProjectRow = Omit<ProjectRecord, 'slugFixed' | 'featured' | 'disclosureLine'> & { slugFixed: number; featured: number; disclosureLine: string | null };
+type ProjectRow = Omit<ProjectRecord, 'slugFixed' | 'featured' | 'disclosureLine' | 'questionOrder'>
+  & { slugFixed: number; featured: number; disclosureLine: string | null; questionOrder: string | null };
 function record(row: ProjectRow): ProjectRecord {
-  return { ...row, slugFixed: row.slugFixed === 1, featured: row.featured === 1, disclosureLine: row.disclosureLine === null ? null : JSON.parse(row.disclosureLine) as DisclosureLine };
+  return {
+    ...row, slugFixed: row.slugFixed === 1, featured: row.featured === 1,
+    disclosureLine: row.disclosureLine === null ? null : JSON.parse(row.disclosureLine) as DisclosureLine,
+    questionOrder: row.questionOrder === null ? [] : JSON.parse(row.questionOrder) as string[],
+  };
 }
 
 export async function listProjects(c: Context<ApiEnv>): Promise<ProjectRecord[]> {
@@ -116,6 +123,35 @@ export async function editProject(c: Context<ApiEnv>, current: ProjectRecord, ed
 }
 
 /**
+ * Set the order an Administrator gives the Project's Research_Questions on its public page (R50.5). The list must name
+ * only Research_Questions of this Project, each at most once; an unknown id, a duplicate, or an id of another Project or
+ * another kind refuses the whole save. The stored `question_order` is persisted and a `project:{id}` publish row re-renders
+ * the Project page; Research_Questions left out of the order follow newest first at render time.
+ */
+export async function setQuestionOrder(c: Context<ApiEnv>, current: ProjectRecord, order: readonly string[]): Promise<ProjectRecord> {
+  const duplicate = order.find((id, index) => order.indexOf(id) !== index);
+  if (duplicate !== undefined) throw new ApiError('validation', { fields: [{ field: 'questionOrder', rule: 'A Research Question may appear at most once in the order.' }] });
+  if (order.length > 0) {
+    const found = new Set((await c.get('accountant').track(c.env.RF_CORE.prepare(
+      `SELECT u.id FROM units u JOIN research_items ri ON ri.unit_id = u.id
+        WHERE u.id IN (SELECT value FROM json_each(?1)) AND u.project_id = ?2 AND ri.kind = 'research_question'
+          AND NOT EXISTS (SELECT 1 FROM deletions d WHERE d.unit_id = u.id)`,
+    ).bind(JSON.stringify([...order]), current.id).all<{ id: string }>())).results.map((row) => row.id));
+    const unknown = order.find((id) => !found.has(id));
+    if (unknown !== undefined) throw new ApiError('validation', { fields: [{ field: 'questionOrder', rule: 'Every entry must be a Research Question of this Project.' }] });
+  }
+  const before = [...current.questionOrder];
+  if (JSON.stringify(before) === JSON.stringify([...order])) return current;
+  await commitSave(c, {
+    target: { type: 'project', id: current.id }, startedFrom: current.rev,
+    change: { fields: [{ field: 'questionOrder', before, after: [...order], fieldClass: 'detail' }] },
+    write: (batch) => { batch.update(projects, { questionOrder: [...order] }, eq(projects.id, current.id)); },
+    outbox: [['publish', `project:${current.id}`]],
+  });
+  return loadProject(c, current.id);
+}
+
+/**
  * Move a Project to `position`, rewriting the positions between its old and new place in one batch so the
  * Project_Order stays a permutation and the others keep their relative order (R39.7). Every Project whose
  * position changes gets a Revision and a new `rev`. Positions move out of the way first because SQLite
@@ -166,7 +202,7 @@ export async function projectHistory(c: Context<ApiEnv>, current: ProjectRecord)
   ]));
   let state: Record<string, unknown> = {
     name: current.name, description: current.description, slug: current.slug, featured: current.featured, accent: current.accent,
-    position: current.position, disclosureLevel: current.disclosureLevel, disclosureLine: current.disclosureLine,
+    position: current.position, disclosureLevel: current.disclosureLevel, disclosureLine: current.disclosureLine, questionOrder: current.questionOrder,
   };
   const entries: HistoryEntry[] = [];
   for (const revision of (revisions as D1Result<{ kind: string; memberId: ULID; displayName: string | null; at: Timestamp; reason: string | null; prev: string }>).results) {

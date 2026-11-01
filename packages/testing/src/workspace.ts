@@ -412,7 +412,9 @@ export function allowedCanaries(state: WorkspaceState): Set<string> {
       case 'correspondence': add(item.channel); addRich(item.content); for (const party of item.parties) addParty(party); break;
       case 'archival_request': addParty(item.archiveOrDesk); addParty(item.contact); add(item.channel); addRich(item.requestText); addRich(item.replyContent); break;
       case 'topic': addRich(item.body); break;
-      case 'research_question': add(item.question); addRich(item.introduction); break;
+      // The question headline is allowed for any Public Research_Question (added with the title below), so only
+      // its Full_Content fields are gated here (R50.4): the introduction, investigation state, and assessment.
+      case 'research_question': addRich(item.introduction); add(item.investigationState); addRich(item.assessment); break;
     }
   };
 
@@ -434,6 +436,8 @@ export function allowedCanaries(state: WorkspaceState): Set<string> {
       case 'research_item': {
         const item = unit.item;
         add(item.identifier); add(item.title); addRich(item.publicSummary); addCredit(unit.credit);
+        // A Research_Question's question is its public headline, shown even in Summary_Only, like the title (R50.4).
+        if (item.kind === 'research_question') add(item.question);
         if (item.kind === 'finding') addRich(item.scopeCaveat);
         if (item.kind === 'hypothesis' && item.statusValueId === BUILT_IN_VALUE_IDS.hypothesisEliminated) addRich(item.eliminationScope);
         if (item.kind === 'run') { add(item.toolName); add(item.toolVersion); }

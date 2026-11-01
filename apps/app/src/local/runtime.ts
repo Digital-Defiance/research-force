@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
 import { ROLE_IDS } from '@researchforce/domain/permissions';
+import type { OpsDeploy, OpsDeployResult } from '@researchforce/domain/ops';
 import type { ApiEnv } from '../api/app';
 import { ApiError } from '../api/errors';
 import { parse, readJson } from '../api/input';
@@ -56,6 +57,19 @@ export const localRuntime: LocalRuntimeAdapter = {
     const service = localServicesFor(env);
     return { ...env, OPS: {
       addMember: (email: string) => service.addMember(email), removeMember: (email: string) => service.removeMember(email), revokeSessions: (email: string) => service.revokeSessions(email),
+      // The local runtime captures only; it never deploys the public site or touches a real edge. The
+      // Publisher's deploy phase (task 32.5) is effectively inert here: a deploy reports it was not promoted
+      // (so nothing is claimed live) and Containment is reported unavailable, matching "no external change".
+      deploySite: async (input: Parameters<OpsDeploy['deploySite']>[0]) =>
+        ({ promoted: false, keepContainment: false, versionId: null, operationId: input.operationId, operationState: 'uncertain', reason: 'uncertain' } as OpsDeployResult),
+      containmentCapabilities: async () => ({ canDeny: false, verifiable: false, canAlert: false, blockingReason: 'The local runtime provides no edge Containment.' }),
+      containPublicHosts: async () => { throw new Error('The local runtime provides no edge Containment.'); },
+      releaseContainment: async () => { /* no edge to release locally */ },
+      verifyContainment: async () => ({ active: false, verified: false }),
+      probePublicAddress: async () => 'unknown' as const,
+      declareIncident: async () => { /* no independent alert channel locally */ },
+      // The local runtime has no edge WAF; the Budget still runs, it simply toggles nothing externally.
+      setSubmitBlock: async () => { /* no edge WAF rule locally */ },
       fetch: async () => new Response('Local RPC methods only', { status: 404 }),
     } as unknown as Env['OPS'], AI: { run: async (model: string, input: unknown) => {
       const result = await service.ai(model, input);

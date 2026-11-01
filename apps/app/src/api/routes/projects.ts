@@ -6,7 +6,7 @@ import { isULID } from '@researchforce/domain/types';
 import type { ULID } from '@researchforce/domain/types';
 import { authorize, authorizeRead } from '../../auth/authorize';
 import { firstProject, logFilterFromQuery, logFilterSchema, readLog, reversedFromQuery } from '../../projects/log';
-import { createProject, editProject, listProjects, loadProject, moveProject, projectHistory } from '../../records/projects';
+import { createProject, editProject, listProjects, loadProject, moveProject, projectHistory, setQuestionOrder } from '../../records/projects';
 import type { ProjectRecord } from '../../records/projects';
 import { projectChoice } from '../../records/submissions';
 import type { ApiEnv } from '../app';
@@ -22,6 +22,8 @@ async function logPage(c: Context<ApiEnv>, projectId: string) {
 const editSchema = z.strictObject({
   rev: z.number().int().min(1), name: z.string().optional(), description: z.string().optional(), slug: z.string().optional(),
   featured: z.boolean().optional(), accent: z.string().nullable().optional(),
+  // An ordered list of Research_Question ids for the Project page part, set by Administrators only (R50.5).
+  questionOrder: z.array(z.string()).optional(),
 });
 const moveSchema = z.strictObject({ position: z.number().int() });
 
@@ -66,9 +68,14 @@ projectsRoutes.patch('/:id', async (c) => {
   const current = await projectById(c);
   await authorize(c, [{ permission: 'project.edit', target: { type: 'project', field: 'details' } }]);
   const body = await readJson(c);
+  const has = (key: string): boolean => typeof body === 'object' && body !== null && Object.hasOwn(body, key);
   // Setting or clearing a Project_Accent is for Administrators only (R45.22).
-  if (typeof body === 'object' && body !== null && Object.hasOwn(body, 'accent')) await authorize(c, [{ permission: 'project.edit', target: { type: 'project', field: 'accent' } }]);
-  return c.json({ project: await editProject(c, current, parse(editSchema, body)) });
+  if (has('accent')) await authorize(c, [{ permission: 'project.edit', target: { type: 'project', field: 'accent' } }]);
+  // The Research_Question order on the Project page is for Administrators only (R50.5).
+  if (has('questionOrder')) await authorize(c, [{ permission: 'project.edit', target: { type: 'project', field: 'questionOrder' } }]);
+  const edit = parse(editSchema, body);
+  if (edit.questionOrder !== undefined) return c.json({ project: await setQuestionOrder(c, current, edit.questionOrder) });
+  return c.json({ project: await editProject(c, current, edit) });
 });
 
 projectsRoutes.post('/:id/move-position', async (c) => {

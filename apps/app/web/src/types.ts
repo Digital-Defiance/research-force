@@ -746,3 +746,64 @@ export interface ArchivalEntryView extends ListEntryBase {
 }
 /** One page of a record-kind list: its entries and the cursor for the next page (R43.1). */
 export interface ListPageView<Entry> { readonly entries: readonly Entry[]; readonly next: string | null }
+
+/** The lifecycle of a Research_Release (R59.2). */
+export type ReleaseState = 'draft' | 'sealed' | 'published' | 'withdrawn';
+/** How a release artifact now compares with what the sealed release recorded, without describing anything the viewer cannot read (R59.4). */
+export type ArtifactDrift = 'unchanged' | 'changed' | 'unavailable';
+export type ReleaseArtifactKind = 'record' | 'attachment' | 'citation' | 'package' | 'provenance';
+
+/** A version-specific citation of one release artifact, as the API returns it (R59.4). */
+export interface VersionCitationView {
+  readonly releaseId: string;
+  readonly releaseName: string;
+  readonly kind: ReleaseArtifactKind;
+  readonly identifier: string | null;
+  readonly revision: number | null;
+  readonly sha256: string;
+  readonly line: string;
+}
+/** One readable artifact of a release, with its drift, public-approval, and version-specific citation (R59.1, R59.4). */
+export interface ReleaseArtifactView {
+  readonly kind: ReleaseArtifactKind;
+  readonly unitId: string;
+  readonly identifier: string | null;
+  readonly title: string | null;
+  readonly revision: number | null;
+  readonly sha256: string;
+  readonly publicApproved: boolean;
+  readonly drift: ArtifactDrift;
+  readonly citation: VersionCitationView;
+}
+/** A Research_Release as the viewer may see it, with only the artifacts they can read (R59.2, R59.4). */
+export interface ReleaseView {
+  readonly id: string;
+  readonly name: string;
+  readonly state: ReleaseState;
+  readonly licenceVersion: string;
+  readonly snapshotSeq: number;
+  readonly snapshotAt: string;
+  readonly predecessorId: string | null;
+  readonly sealedAt: string | null;
+  readonly manifestHash: string | null;
+  readonly publicManifestHash: string | null;
+  /** Only an Administrator sees the scope and rationale of a release. */
+  readonly scope?: string;
+  readonly rationale?: string;
+  readonly artifacts: readonly ReleaseArtifactView[];
+  /** How many artifacts the viewer cannot read, so a gap is visible without saying what it was. */
+  readonly hiddenArtifacts: number;
+}
+/** A release in the Administrator's list (R59.1). */
+export interface ReleaseListItem {
+  readonly id: string;
+  readonly name: string;
+  readonly state: ReleaseState;
+  readonly licenceVersion: string;
+  readonly snapshotAt: string;
+  readonly sealedAt: string | null;
+  readonly publishedAt: string | null;
+  readonly withdrawnAt: string | null;
+  readonly predecessorId: string | null;
+}
+export interface ReleaseListView { readonly releases: readonly ReleaseListItem[]; readonly nextCursor: string | null }

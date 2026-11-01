@@ -3,10 +3,11 @@ import { GROUP_STATEMENT, SITE_PATHS } from '@researchforce/design/fixed-texts';
 import { element, text, type ElementNode, type ViewNode } from '@researchforce/domain/tree';
 import { ITEM_KINDS } from '@researchforce/domain/types';
 import type { ProjectView, WithheldView } from '@researchforce/kernel/views';
+import type { ResearchItemView, UnitKey } from '@researchforce/kernel/views';
 import { disclosureLine } from './blocks';
 import { KIND_LISTING_TITLES } from './format';
 import { SITE_NAME, type PageSpec } from './frame';
-import { toPages } from './listings';
+import { kindListing, toPages } from './listings';
 import { PAGE_PATHS, paged, projectPaths } from './paths';
 import type { SiteInput } from './site';
 
@@ -68,13 +69,45 @@ export function projectsListing(site: SiteInput): PageSpec[] {
   });
 }
 
-/** A Public Project's page with links to its listings, Project_Log, Disclosure_Lines, search, and form (R40.3). */
-export function projectPage(project: ProjectView): PageSpec {
+/**
+ * A Project's Public Research_Questions in the order an Administrator set (`questionOrder`), then the rest newest first
+ * (R50.5). The stored order names unit keys; unknown or no-longer-Public keys are skipped, and every Public question of
+ * the Project is shown exactly once.
+ */
+export function projectQuestions(site: SiteInput, project: ProjectView): ResearchItemView[] {
+  const questions = kindListing(site, project.key, 'research_question'); // newest first, Public only
+  const byKey = new Map(questions.map((view) => [view.key, view]));
+  const ordered: ResearchItemView[] = [];
+  const placed = new Set<UnitKey>();
+  for (const key of site.questionOrder?.get(project.key) ?? []) {
+    const view = byKey.get(key);
+    if (view !== undefined && !placed.has(key)) { ordered.push(view); placed.add(key); }
+  }
+  for (const view of questions) if (!placed.has(view.key)) ordered.push(view);
+  return ordered;
+}
+
+/** The Research_Question part of a Project page: title, question, and a link to each; nothing when the Project has none (R50.5). */
+function questionsPart(site: SiteInput, project: ProjectView): ElementNode[] {
+  const questions = projectQuestions(site, project);
+  if (questions.length === 0) return [];
+  return [element('section', { class: 'rf-project__questions', 'aria-labelledby': 'questions-heading' }, [
+    element('h2', { id: 'questions-heading' }, [text(KIND_LISTING_TITLES.research_question)]),
+    element('ul', { class: 'rf-listing' }, questions.map((view) => element('li', { class: 'rf-listing__entry' }, [
+      element('h3', { class: 'rf-listing__title' }, [element('a', { href: view.path }, [text(view.title)])]),
+      ...(view.question === undefined ? [] : [element('p', { class: 'rf-question' }, [text(view.question)])]),
+    ]))),
+  ])];
+}
+
+/** A Public Project's page with its Research_Questions (R50.5) and links to its listings, Project_Log, Disclosure_Lines, search, and form (R40.3). */
+export function projectPage(site: SiteInput, project: ProjectView): PageSpec {
   const paths = projectPaths(project.slug);
   return {
     path: project.path, title: project.name, ...(project.accent === undefined ? {} : { accent: project.accent }),
     body: [
       element('p', { class: 'rf-project__description' }, [text(project.description)]),
+      ...questionsPart(site, project),
       navigation('Project sections', [
         ...ITEM_KINDS.map((kind) => ({ label: KIND_LISTING_TITLES[kind], href: paths.listing(kind) })),
         { label: 'Project log', href: paths.log() },

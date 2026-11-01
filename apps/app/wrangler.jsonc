@@ -10,7 +10,9 @@
   },
   "vars": {
     "WORKSPACE_ORIGIN": "https://app.researchforce.org",
-    "DOWNLOAD_ORIGIN": "https://dl.researchforce.org"
+    "DOWNLOAD_ORIGIN": "https://dl.researchforce.org",
+    "PUBLIC_SITE_ORIGIN": "https://researchforce.org",
+    "PUBLIC_FILES_ORIGIN": "https://files.researchforce.org"
   },
   "d1_databases": [
     {
@@ -103,7 +105,9 @@
       "preview_urls": false,
       "vars": {
         "WORKSPACE_ORIGIN": "https://staging.researchforce.org",
-        "DOWNLOAD_ORIGIN": "https://dl-staging.researchforce.org"
+        "DOWNLOAD_ORIGIN": "https://dl-staging.researchforce.org",
+        "PUBLIC_SITE_ORIGIN": "https://staging-public.researchforce.org",
+        "PUBLIC_FILES_ORIGIN": "https://files-staging.researchforce.org"
       },
       "d1_databases": [
         {

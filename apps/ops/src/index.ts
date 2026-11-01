@@ -5,15 +5,29 @@ import type {
   ContainmentState,
   OpsAccess,
   OpsContainment,
+  OpsDeploy,
+  OpsDeployResult,
+  OpsWaf,
 } from '@researchforce/domain/ops';
+import type { Timestamp } from '@researchforce/domain/types';
 import { AccessSync } from './access';
 import { Containment } from './containment';
+import { type AssetBody, SiteDeploy } from './deploy';
+import { Waf } from './waf';
 
 export interface OpsEnv {
   CF_ACCOUNT_ID: string;
   ACCESS_MEMBER_LIST_ID: string;
   /** Secret. */
   CF_ACCESS_API_TOKEN: string;
+
+  // --- rf-site assets-only deploy through the Direct Upload API (task 32.1, R24.7, R24.16, R24.17, R60.2) ---
+  /** The `rf-site` script/dispatch name the assets-upload-session and version/deploy endpoints address. */
+  CF_SITE_SCRIPT_NAME: string;
+  /** Secret. The Workers deploy API token scoped to `rf-site` on this account only. */
+  CF_SITE_DEPLOY_API_TOKEN: string;
+  /** The `rf-core` D1 database, for the durable `external_operations` record and the publication epoch. */
+  RF_CORE: D1Database;
 
   // --- Edge Containment on the public research hosts (task 59.2, R24.16, R24.17, R60.4, R60.6) ---
   /** The zone that serves the public research hosts. */
@@ -38,12 +52,30 @@ export interface OpsEnv {
   CONTAINMENT_API_TOKEN: string;
   /** Secret. The bearer credential for the independent alert channel. */
   INCIDENT_ALERT_TOKEN: string;
+
+  // --- Public submit-host WAF budget shed (task 34.2, R28.5, R28.6). Ordinary edge shedding, NOT Containment:
+  //     its own zone/ruleset/rule id and its own WAF token, never the independently-vaulted Containment token.
+  /** The zone that serves the public submit host `submit.researchforce.org`. */
+  CF_SUBMIT_ZONE_ID: string;
+  /** The WAF ruleset id the precreated submit-block rule lives in. */
+  CF_SUBMIT_BLOCK_RULESET_ID: string;
+  /** The id of the PRECREATED submit-block WAF custom rule `setSubmitBlock` enables/disables (never creates). */
+  CF_SUBMIT_BLOCK_RULE_ID: string;
+  /** Secret. An API token scoped to the submit host zone's WAF only, for toggling the precreated block rule. */
+  CF_SUBMIT_WAF_API_TOKEN: string;
 }
 
 /** Reachable only through service bindings: no fetch handler and no route. */
-export default class Ops extends WorkerEntrypoint<OpsEnv> implements OpsAccess, OpsContainment {
+export default class Ops extends WorkerEntrypoint<OpsEnv> implements OpsAccess, OpsContainment, OpsDeploy, OpsWaf {
   #access(): AccessSync {
     return new AccessSync({ accountId: this.env.CF_ACCOUNT_ID, memberListId: this.env.ACCESS_MEMBER_LIST_ID, apiToken: this.env.CF_ACCESS_API_TOKEN });
+  }
+
+  #deploy(): SiteDeploy {
+    return new SiteDeploy(
+      { accountId: this.env.CF_ACCOUNT_ID, scriptName: this.env.CF_SITE_SCRIPT_NAME, apiToken: this.env.CF_SITE_DEPLOY_API_TOKEN },
+      this.env.RF_CORE,
+    );
   }
 
   #containment(): Containment {
@@ -60,6 +92,15 @@ export default class Ops extends WorkerEntrypoint<OpsEnv> implements OpsAccess, 
     });
   }
 
+  #waf(): Waf {
+    return new Waf({
+      submitZoneId: this.env.CF_SUBMIT_ZONE_ID,
+      submitBlockRulesetId: this.env.CF_SUBMIT_BLOCK_RULESET_ID,
+      submitBlockRuleId: this.env.CF_SUBMIT_BLOCK_RULE_ID,
+      apiToken: this.env.CF_SUBMIT_WAF_API_TOKEN,
+    });
+  }
+
   async addMember(email: string): Promise<void> { await this.#access().addMember(email); }
   async removeMember(email: string): Promise<void> { await this.#access().removeMember(email); }
   async revokeSessions(email: string): Promise<void> { await this.#access().revokeSessions(email); }
@@ -70,4 +111,21 @@ export default class Ops extends WorkerEntrypoint<OpsEnv> implements OpsAccess, 
   async verifyContainment(): Promise<ContainmentState> { return this.#containment().verifyContainment(); }
   async probePublicAddress(url: string): Promise<'present' | 'absent' | 'unknown'> { return this.#containment().probePublicAddress(url); }
   async declareIncident(incident: ConfidentialityIncident): Promise<void> { await this.#containment().declareIncident(incident); }
+
+  // Public submit-host WAF budget shed (task 34.2, R28.5, R28.6): the `Budget` DO (34.1) flips this on at the
+  // Public_Traffic_Budget-minus-margin threshold and off at the 00:00 UTC reset.
+  async setSubmitBlock(enabled: boolean): Promise<void> { await this.#waf().setSubmitBlock(enabled); }
+
+  async deploySite(input: Parameters<OpsDeploy['deploySite']>[0]): Promise<OpsDeployResult> {
+    // The 32.5 caller passes the bytes of only the missing files keyed by hash; adapt them to the AssetSource.
+    const missing: Record<string, AssetBody> = { ...input.missing };
+    return this.#deploy().deploySite({
+      manifest: input.manifest,
+      generation: { run: input.run, epoch: input.epoch },
+      operationId: input.operationId,
+      assets: async (hash) => missing[hash] ?? null,
+      containmentActive: input.containmentActive,
+      now: new Date().toISOString() as Timestamp,
+    });
+  }
 }

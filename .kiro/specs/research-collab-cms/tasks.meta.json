@@ -186,6 +186,16 @@
         "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
         "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
         "timestamp": 1793397393509
+      },
+      {
+        "executionId": "0ff5204b-1671-4542-8124-fe142611fada",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793554862865
+      },
+      {
+        "executionId": "0ff5204b-1671-4542-8124-fe142611fada",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793555480175
       }
     ],
     "32.2 Implement the Publisher projection step in `apps/app/src/do/publisher.ts`": [
@@ -193,6 +203,16 @@
         "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
         "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
         "timestamp": 1793397393573
+      },
+      {
+        "executionId": "0ff5204b-1671-4542-8124-fe142611fada",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793555484205
+      },
+      {
+        "executionId": "0ff5204b-1671-4542-8124-fe142611fada",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793556312669
       }
     ],
     "32.3 Implement planning and rendering in `apps/app/src/publisher/plan.ts` and `apps/app/src/publisher/render.ts`": [
@@ -200,6 +220,16 @@
         "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
         "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
         "timestamp": 1793397393648
+      },
+      {
+        "executionId": "0ff5204b-1671-4542-8124-fe142611fada",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793556317750
+      },
+      {
+        "executionId": "0ff5204b-1671-4542-8124-fe142611fada",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793557097577
       }
     ],
     "32.4 Implement public file copies in `apps/app/src/publisher/files.ts`": [
@@ -207,6 +237,16 @@
         "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
         "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
         "timestamp": 1793397393718
+      },
+      {
+        "executionId": "0ff5204b-1671-4542-8124-fe142611fada",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793557102088
+      },
+      {
+        "executionId": "0ff5204b-1671-4542-8124-fe142611fada",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793557511642
       }
     ],
     "32.5 Implement urgency, deployment, and verification in `apps/app/src/publisher/deploy.ts`": [
@@ -214,6 +254,16 @@
         "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
         "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
         "timestamp": 1793397393790
+      },
+      {
+        "executionId": "0ff5204b-1671-4542-8124-fe142611fada",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793557517188
+      },
+      {
+        "executionId": "0ff5204b-1671-4542-8124-fe142611fada",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793558495667
       }
     ],
     "32.6 Write property test for Publisher convergence": [
@@ -221,6 +271,16 @@
         "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
         "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
         "timestamp": 1793397393858
+      },
+      {
+        "executionId": "0ff5204b-1671-4542-8124-fe142611fada",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793558501704
+      },
+      {
+        "executionId": "0ff5204b-1671-4542-8124-fe142611fada",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793558964916
       }
     ],
     "32.7 Write integration tests for publication timing and alerts": [
@@ -228,6 +288,16 @@
         "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
         "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
         "timestamp": 1793397393921
+      },
+      {
+        "executionId": "0ff5204b-1671-4542-8124-fe142611fada",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793558968687
+      },
+      {
+        "executionId": "0ff5204b-1671-4542-8124-fe142611fada",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793559316065
       }
     ],
     "33. Checkpoint - Ensure all tests pass": [
@@ -242,6 +312,16 @@
         "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
         "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
         "timestamp": 1793397394068
+      },
+      {
+        "executionId": "0ff5204b-1671-4542-8124-fe142611fada",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793566925112
+      },
+      {
+        "executionId": "0ff5204b-1671-4542-8124-fe142611fada",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793567516084
       }
     ],
     "34.2 Implement the WAF switch in `apps/ops/src/waf.ts`": [
@@ -249,6 +329,16 @@
         "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
         "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
         "timestamp": 1793397394142
+      },
+      {
+        "executionId": "0ff5204b-1671-4542-8124-fe142611fada",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793567521178
+      },
+      {
+        "executionId": "0ff5204b-1671-4542-8124-fe142611fada",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793567686497
       }
     ],
     "34.3 Implement submission sessions and files in `apps/submit/src/index.ts` and `apps/submit/src/sessions.ts`": [
@@ -630,6 +720,16 @@
         "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
         "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
         "timestamp": 1793397396519
+      },
+      {
+        "executionId": "0ff5204b-1671-4542-8124-fe142611fada",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793564530781
+      },
+      {
+        "executionId": "0ff5204b-1671-4542-8124-fe142611fada",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793565578890
       }
     ],
     "38.2 Implement the Public_Archive_Export job in `apps/app/src/jobs/export.ts`, `POST /exports`, and `GET /exports`": [
@@ -637,6 +737,16 @@
         "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
         "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
         "timestamp": 1793397396600
+      },
+      {
+        "executionId": "0ff5204b-1671-4542-8124-fe142611fada",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793565695419
+      },
+      {
+        "executionId": "0ff5204b-1671-4542-8124-fe142611fada",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793566901099
       }
     ],
     "38.3 Implement package volume streaming in `apps/dl/src/tar.ts`": [
@@ -644,6 +754,16 @@
         "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
         "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
         "timestamp": 1793397396667
+      },
+      {
+        "executionId": "0ff5204b-1671-4542-8124-fe142611fada",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793564018024
+      },
+      {
+        "executionId": "0ff5204b-1671-4542-8124-fe142611fada",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793564510744
       }
     ],
     "38.4 Implement the Internal_Backup job in `apps/app/src/jobs/backup.ts` and `POST /backups`": [
@@ -1446,6 +1566,16 @@
         "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
         "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
         "timestamp": 1793397402566
+      },
+      {
+        "executionId": "0ff5204b-1671-4542-8124-fe142611fada",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793559347680
+      },
+      {
+        "executionId": "0ff5204b-1671-4542-8124-fe142611fada",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793560182398
       }
     ],
     "55.5 Write property test for Research_Questions": [
@@ -1453,6 +1583,16 @@
         "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
         "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
         "timestamp": 1793397402650
+      },
+      {
+        "executionId": "0ff5204b-1671-4542-8124-fe142611fada",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793560193449
+      },
+      {
+        "executionId": "0ff5204b-1671-4542-8124-fe142611fada",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793562024651
       }
     ],
     "56.1 Add the consent request data": [
@@ -1623,6 +1763,11 @@
         "executionId": "c9b4c602-5e45-4ae9-bbf2-cd2d8e5d17fb",
         "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
         "timestamp": 1793553973362
+      },
+      {
+        "executionId": "0ff5204b-1671-4542-8124-fe142611fada",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793554877010
       }
     ],
     "59.4 Write mandatory distributed abuse and removal-failure staging scenarios": [
@@ -1787,6 +1932,16 @@
         "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
         "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
         "timestamp": 1793397405001
+      },
+      {
+        "executionId": "0ff5204b-1671-4542-8124-fe142611fada",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793562133165
+      },
+      {
+        "executionId": "0ff5204b-1671-4542-8124-fe142611fada",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793562735740
       }
     ],
     "66.3 Build release and version-citation screens and offline export verification": [
@@ -1794,6 +1949,16 @@
         "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
         "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
         "timestamp": 1793397405081
+      },
+      {
+        "executionId": "0ff5204b-1671-4542-8124-fe142611fada",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793562814467
+      },
+      {
+        "executionId": "0ff5204b-1671-4542-8124-fe142611fada",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793563472917
       }
     ],
     "66.4 Write property and regression tests for research releases": [
@@ -1801,6 +1966,16 @@
         "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
         "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
         "timestamp": 1793397405151
+      },
+      {
+        "executionId": "0ff5204b-1671-4542-8124-fe142611fada",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793563477508
+      },
+      {
+        "executionId": "0ff5204b-1671-4542-8124-fe142611fada",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793563980393
       }
     ],
     "67.2 Implement independent health, recovery-age, removal and spend alerts": [
@@ -1936,6 +2111,27 @@
         "executionId": "002b3ed5-1843-492e-ba73-a3c635de74ba",
         "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
         "timestamp": 1793549008136
+      }
+    ],
+    "32. Build the Publisher and the public site deployment": [
+      {
+        "executionId": "0ff5204b-1671-4542-8124-fe142611fada",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793559316148
+      }
+    ],
+    "55. Build Research_Questions": [
+      {
+        "executionId": "0ff5204b-1671-4542-8124-fe142611fada",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793562024724
+      }
+    ],
+    "66. Build citable research releases with current public suppression": [
+      {
+        "executionId": "0ff5204b-1671-4542-8124-fe142611fada",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793563980451
       }
     ]
   }

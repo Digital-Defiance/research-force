@@ -7,6 +7,7 @@ import { kickAll } from './outbox';
 import { sweepUploads } from './files/uploads';
 import { sweepStages } from './records/stages';
 import { sweepDrafts } from './records/drafts';
+import { startScheduledExport, sweepExportRetention } from './jobs/export-cron';
 
 /** The two Cron Triggers in `wrangler.jsonc` (design "Cron Triggers"). */
 export const EVERY_MINUTE = '* * * * *';
@@ -25,6 +26,10 @@ export const HOURLY_SWEEPS: readonly Sweep[] = [
   { name: 'follow_up_reminders', run: sweepFollowUps },
   { name: 'decision_revisits', run: sweepDecisionRevisits },
   { name: 'inactive_drafts', run: (env, now) => sweepDrafts(env, now) },
+  // The scheduled monthly Public_Archive_Export starts at 00:07 UTC on the 1st (idempotent), and export retention keeps
+  // the 3 most recent complete scheduled exports and deletes requested ones after 7 days (R35.5, R35.6, R35.11).
+  { name: 'scheduled_export', run: startScheduledExport },
+  { name: 'export_retention', run: sweepExportRetention },
 ];
 
 /** Run every sweep; one that fails is logged and the rest still run. */

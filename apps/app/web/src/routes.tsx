@@ -40,6 +40,7 @@ import { DualApprovalsPage } from './reviews/dual';
 import { SearchScreen } from './search/search';
 import { ProjectLogRoute, ProjectLogScreen } from './projects/log';
 import { ArchivalRequestsScreen, CorrespondencesScreen, FindingsScreen, HypothesesScreen, RunsScreen } from './lists/lists';
+import { NewReleasePage, ReleasePage, ReleasesListPage } from './releases/releases';
 import { SessionContext, sessionFor } from './session';
 import type { Me, MemberRow, Role } from './types';
 import { LoadState, Notice, useLoad } from './ui';
@@ -84,6 +85,7 @@ export function Header() {
             <li><Link className="rf-nav__link" to="/evidence/queue">Evidence queue</Link></li>
             <li><Link className="rf-nav__link" to="/imports/journal">Import a journal</Link></li>
             <li><Link className="rf-nav__link" to="/imports/bulk">Import a manifest</Link></li>
+            <li><Link className="rf-nav__link" to="/releases">Releases</Link></li>
             <li><Link className="rf-nav__link" to="/me/profile">Your Profile</Link></li>
             <li><Link className="rf-nav__link" to="/me/preferences">Notification settings</Link></li>
           </ul>
@@ -169,6 +171,10 @@ function ProjectCoverageRoute() {
 function SubmissionItemsRoute() {
   const { id = '' } = useParams();
   return <SubmissionItemsScreen key={id} id={id} />;
+}
+function ReleaseRoute() {
+  const { id = '' } = useParams();
+  return <ReleasePage key={id} id={id} />;
 }
 function ProposeEditRoute() {
   const { id = '' } = useParams();
@@ -256,6 +262,9 @@ export function WorkspaceRoutes() {
       <Route path="/evidence/queue" element={<CurationQueueScreen />} />
       <Route path="/imports/journal" element={<JournalImportScreen />} />
       <Route path="/imports/bulk" element={<BulkImportScreen />} />
+      <Route path="/releases" element={<ReleasesListPage />} />
+      <Route path="/releases/new" element={<NewReleasePage />} />
+      <Route path="/releases/:id" element={<ReleaseRoute />} />
       <Route path="/evidence/units/:id" element={<EvidenceEditorRoute />} />
       <Route path="/dual-approvals" element={<DualApprovalsPage />} />
       <Route path="/search" element={<SearchScreen />} />

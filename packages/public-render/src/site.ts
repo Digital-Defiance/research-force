@@ -62,6 +62,11 @@ export interface SiteInput {
   /** Every Project key in the Project_Order; Projects without a view are left out. */
   readonly projectOrder: readonly UnitKey[];
   readonly featured: ReadonlySet<UnitKey>;
+  /**
+   * Each Project key to the Research_Question unit keys an Administrator ordered for the Project page, in that order;
+   * Research_Questions not listed follow newest first (R50.5). A Project with no stored order is absent.
+   */
+  readonly questionOrder?: ReadonlyMap<UnitKey, readonly UnitKey[]>;
   /** Creation times (ISO 8601) that break ties in listings (R40.4); never shown. */
   readonly createdAt: ReadonlyMap<UnitKey, string>;
   readonly licence: ContentLicence;

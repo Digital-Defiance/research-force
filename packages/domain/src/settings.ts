@@ -90,6 +90,8 @@ export const INSTALLATION_SETTINGS = Object.freeze({ operatingProfile: operating
 export const OPERATIONS = Object.freeze({
   maxD1Statements: DEFAULT_RESOURCE_PROFILE.chosen.statementsPerSave, maxExternalSubrequests: DEFAULT_RESOURCE_PROFILE.chosen.externalSubrequests, stagedSaveThresholdBytes: DEFAULT_RESOURCE_PROFILE.chosen.bytes.request,
   jobSliceRows: 500, renderPagesPerSlice: 20, projectionSliceBytes: 500_000,
+  // A `rf-site` version may hold 20,000 files; the Publisher alerts at 16,000 so growth is handled before the ceiling (design "Publisher", R28.16).
+  siteFileCeiling: 20_000, siteFileAlertThreshold: 16_000,
   bulkImportRowsPerUTCDay: 30_000, exportObjectsPerVolume: 900,
   singlePutMaxBytes: 64 * 1024 * 1024, multipartPartBytes: 16 * 1024 * 1024,
   publicBudgetMarginFraction: 0.02, aiNeuronMargin: 300, aiNeuronsPerUTCDay: 10_000,

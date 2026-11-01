@@ -54,7 +54,7 @@ export type PermissionTarget =
   | { readonly type: 'link'; readonly addedById: ULID }
   | { readonly type: 'review'; readonly requesterId: ULID; readonly memberIds: readonly ULID[]; readonly specialtyIds: readonly ULID[]; readonly roleIds: readonly ULID[] }
   | { readonly type: 'submission'; readonly memberId: ULID }
-  | { readonly type: 'project'; readonly field: 'details' | 'accent' }
+  | { readonly type: 'project'; readonly field: 'details' | 'accent' | 'questionOrder' }
   | { readonly type: 'setting'; readonly key: SettingKey; readonly candidateMember?: SettingMember }
   | { readonly type: 'policy_section' }
   | { readonly type: 'role'; readonly roleId: ULID }
@@ -105,7 +105,8 @@ export function can(ctx: PermissionContext, permission: Permission, target?: Per
     case 'ai.draft.logSummary': return ownScope && ((target?.type === 'research_item' && own(target.ownerId)) || (target?.type === 'submission' && own(target.memberId)));
     case 'ai.draft.publicSummary': return target?.type === 'research_item' && scope === 'any';
     case 'ai.draft.disclosureLine': return target !== undefined && ['research_item', 'attachment', 'reply', 'entry_section', 'dissent_note', 'project'].includes(target.type) && scope === 'any';
-    case 'project.edit': return target?.type === 'project' && scope === 'any' && (target.field !== 'accent' || isAdministrator(ctx));
+    // The Project_Accent and the Research_Question order on the Project page are for Administrators only (R45.22, R50.5).
+    case 'project.edit': return target?.type === 'project' && scope === 'any' && ((target.field !== 'accent' && target.field !== 'questionOrder') || isAdministrator(ctx));
     case 'policy.edit': return target?.type === 'policy_section' && scope === 'any' && isAdministrator(ctx);
     case 'settings.edit':
       if (target?.type !== 'setting' || scope !== 'any') return false;

@@ -23,6 +23,10 @@ export interface FieldVersionReader {
   fragments(reference: FieldReference): AsyncIterable<FieldFragment>;
 }
 export const fragmentDigest = (value: unknown): string => bytesToHex(sha256(utf8ToBytes(stableJson(value))));
+/** SHA-256, as lowercase hexadecimal, of a string's UTF-8 bytes: the hash a reader recomputes to verify a file's exact text. */
+export const sha256Hex = (text: string): string => bytesToHex(sha256(utf8ToBytes(text)));
+/** The number of UTF-8 bytes a string occupies, so a manifest can record each text file's size without the file system. */
+export const utf8ByteLength = (text: string): number => utf8ToBytes(text).length;
 export function isFieldReference(value: unknown): value is FieldReference {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
   const v = value as Record<string, unknown>;

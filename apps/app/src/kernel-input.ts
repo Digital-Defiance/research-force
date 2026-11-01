@@ -349,9 +349,87 @@ export async function loadProjectionInput(
     db.prepare('SELECT id, name, permits_publication FROM config_values'),
   ]));
 
-  // Link neighbours outside the loaded roots are referenced by the kernel's projection only as their own targets; we
-  // include the neighbour units so the projection can render a withheld/link target when the neighbour is loaded.
   const links = (linkRows as D1Result<LinkRow>).results;
+
+  // A Cross_Link renders the other end as a link/withheld target on each end's page, so the kernel must be able to
+  // resolve every neighbour of a loaded unit even when the neighbour falls outside the loaded roots (the Publisher's
+  // neighbour expansion adds the owning root of a changed unit's link partners, but not those partners' own entry
+  // targets two hops away). We load the neighbour units — the cross_link ends not already loaded — and their kind
+  // detail so `project.ts` can build each one's own target end (its Effective_Disclosure, hence a Not_Published
+  // neighbour yields no end and a Withheld neighbour yields its Disclosure_Line). This is a single hop: a neighbour's
+  // OWN links are never expanded (`project.ts target()` renders a neighbour only as an end, never via `linkViews`),
+  // so the load stays bounded. Neighbours join the kernel's unit set only; they are NOT added to the dependency set
+  // or the consent/gate load, which stay scoped to the primary units under the roots.
+  const loadedUnitIds = new Set(unitIds);
+  const neighbourIds = [...new Set(links.flatMap((link) => [link.origin_id, link.target_id]).filter((id) => !loadedUnitIds.has(id)))];
+  const neighbourJson = dialectEach(neighbourIds);
+
+  let neighbourUnitRows: readonly (UnitRow & { updatedSeq: number })[] = [];
+  let neighbourProjectRows: readonly (ProjectRow & { updatedSeq: number })[] = [];
+  if (neighbourIds.length > 0) {
+    const [
+      nUnitRows, nItemRows, nAttachmentRows, nSectionRows, nReplyRows, nDissentRows,
+      nJournalRows, nJeMemberRows, nFindingRows, nSourceRows, nRunRows, nRunCountRows,
+      nHypothesisRows, nCorrespondenceRows, nCorrespondencePartyRows, nArchivalRows, nTopicRows, nQuestionRows,
+      nProjectRows,
+    ] = await track(db.batch([
+      db.prepare(`SELECT id, unit_type AS unitType, project_id AS projectId, root_id AS rootId, parent_id AS parentId, position, owner_id AS ownerId,
+          credit, created_at AS createdAt, disclosure_level AS level, classification_state AS classification, disclosure_line AS disclosureLine,
+          withdrawn_at AS withdrawnAt, withdrawal_reason AS withdrawalReason, updated_seq AS updatedSeq
+        FROM units WHERE id IN (SELECT value FROM json_each(?1)) AND NOT EXISTS (SELECT 1 FROM deletions d WHERE d.unit_id = units.id)`).bind(neighbourJson),
+      db.prepare(`SELECT unit_id, kind, item_identifier, project_id, title, status_value_id, public_presentation, public_summary, public_summary_spans,
+          log_summary, log_summary_spans, first_public_at, access_level FROM research_items WHERE unit_id IN (SELECT value FROM json_each(?1))`).bind(neighbourJson),
+      db.prepare(`SELECT unit_id, item_identifier, title, file_kind, size_bytes, caption, origin, uploaded_at, rights_status_id, rights_holder, rights_terms, supersedes_unit_id
+        FROM attachments WHERE unit_id IN (SELECT value FROM json_each(?1))`).bind(neighbourJson),
+      db.prepare('SELECT unit_id, text, text_spans FROM entry_sections WHERE unit_id IN (SELECT value FROM json_each(?1))').bind(neighbourJson),
+      db.prepare('SELECT unit_id, text, text_spans, is_group_note FROM replies WHERE unit_id IN (SELECT value FROM json_each(?1))').bind(neighbourJson),
+      db.prepare('SELECT unit_id, author_id, text, text_spans, attached_at, last_saved_at, concerned_summary, concerned_summary_spans FROM dissent_notes WHERE unit_id IN (SELECT value FROM json_each(?1))').bind(neighbourJson),
+      db.prepare('SELECT unit_id, phase_id, start_date, start_date_approx, end_date, end_date_approx FROM journal_entries WHERE unit_id IN (SELECT value FROM json_each(?1))').bind(neighbourJson),
+      db.prepare('SELECT unit_id, member_id FROM je_members WHERE unit_id IN (SELECT value FROM json_each(?1)) ORDER BY position').bind(neighbourJson),
+      db.prepare('SELECT unit_id, claim, claim_spans, scope_caveat, scope_caveat_spans, superseded_by_id FROM findings WHERE unit_id IN (SELECT value FROM json_each(?1))').bind(neighbourJson),
+      db.prepare(`SELECT unit_id, source_kind, reliability_id, doc_date, doc_date_approx, doc_date_end, doc_date_end_approx, archive_or_collection, archival_reference,
+          recoverer_kind, recoverer_id, reliability_note, reliability_note_spans, rights_status_id, rights_holder, rights_terms FROM sources WHERE unit_id IN (SELECT value FROM json_each(?1))`).bind(neighbourJson),
+      db.prepare(`SELECT unit_id, scope, scope_spans, parameters, parameters_spans, tool_name, tool_version, compute_resource, start_time, end_time, outcome_id, resume_point, notes, notes_spans
+        FROM runs WHERE unit_id IN (SELECT value FROM json_each(?1))`).bind(neighbourJson),
+      db.prepare('SELECT unit_id, name, value FROM run_counts WHERE unit_id IN (SELECT value FROM json_each(?1)) ORDER BY position').bind(neighbourJson),
+      db.prepare('SELECT unit_id, statement, statement_spans, elimination_scope, elimination_scope_spans FROM hypotheses WHERE unit_id IN (SELECT value FROM json_each(?1))').bind(neighbourJson),
+      db.prepare('SELECT unit_id, date, date_approx, channel, direction, content, content_spans FROM correspondences WHERE unit_id IN (SELECT value FROM json_each(?1))').bind(neighbourJson),
+      db.prepare('SELECT unit_id, party_kind, party_id, consent_status FROM correspondence_parties WHERE unit_id IN (SELECT value FROM json_each(?1)) ORDER BY position').bind(neighbourJson),
+      db.prepare(`SELECT unit_id, archive_kind, archive_id, contact_kind, contact_id, channel, request_text, request_text_spans, date_sent, date_sent_approx, reply_date, reply_date_approx, reply_content, reply_content_spans
+        FROM archival_requests WHERE unit_id IN (SELECT value FROM json_each(?1))`).bind(neighbourJson),
+      db.prepare('SELECT unit_id, body, body_spans FROM topics WHERE unit_id IN (SELECT value FROM json_each(?1))').bind(neighbourJson),
+      db.prepare('SELECT unit_id, question, introduction, introduction_spans, investigation_state FROM research_questions WHERE unit_id IN (SELECT value FROM json_each(?1))').bind(neighbourJson),
+      // A neighbour in another Project needs its Project loaded so the kernel can resolve the neighbour's own level.
+      db.prepare(`SELECT id, name, short_description AS description, slug, accent, disclosure_level AS level, disclosure_line AS disclosureLine, updated_seq AS updatedSeq
+        FROM projects WHERE id IN (SELECT DISTINCT project_id FROM units WHERE id IN (SELECT value FROM json_each(?1)))`).bind(neighbourJson),
+    ]));
+    neighbourUnitRows = (nUnitRows as D1Result<UnitRow & { updatedSeq: number }>).results;
+    // A cross-Project neighbour's Project feeds the kernel so it can resolve the neighbour's level, but it is NOT a
+    // dependency of this load (preview tokens and consent snapshots stay bound to the primary units' rows) and does
+    // not become a reprojected Project view; it only lets `projectNode` resolve the neighbour end.
+    const loadedProjectIds = new Set((projectRows as D1Result<ProjectRow & { updatedSeq: number }>).results.map((p) => p.id));
+    neighbourProjectRows = (nProjectRows as D1Result<ProjectRow & { updatedSeq: number }>).results.filter((p) => !loadedProjectIds.has(p.id));
+    for (const row of (nJournalRows as D1Result<JournalRow>).results) (journalRows as D1Result<JournalRow>).results.push(row);
+    for (const row of (nJeMemberRows as D1Result<JeMemberRow>).results) (jeMemberRows as D1Result<JeMemberRow>).results.push(row);
+    for (const row of (nFindingRows as D1Result<FindingRow>).results) (findingRows as D1Result<FindingRow>).results.push(row);
+    for (const row of (nSourceRows as D1Result<SourceRow>).results) (sourceRows as D1Result<SourceRow>).results.push(row);
+    for (const row of (nRunRows as D1Result<RunRow>).results) (runRows as D1Result<RunRow>).results.push(row);
+    for (const row of (nRunCountRows as D1Result<RunCountRow>).results) (runCountRows as D1Result<RunCountRow>).results.push(row);
+    for (const row of (nHypothesisRows as D1Result<HypothesisRow>).results) (hypothesisRows as D1Result<HypothesisRow>).results.push(row);
+    for (const row of (nCorrespondenceRows as D1Result<CorrespondenceRow>).results) (correspondenceRows as D1Result<CorrespondenceRow>).results.push(row);
+    for (const row of (nCorrespondencePartyRows as D1Result<CorrespondencePartyRow>).results) (correspondencePartyRows as D1Result<CorrespondencePartyRow>).results.push(row);
+    for (const row of (nArchivalRows as D1Result<ArchivalRow>).results) (archivalRows as D1Result<ArchivalRow>).results.push(row);
+    for (const row of (nTopicRows as D1Result<TopicRow>).results) (topicRows as D1Result<TopicRow>).results.push(row);
+    for (const row of (nQuestionRows as D1Result<QuestionRow>).results) (questionRows as D1Result<QuestionRow>).results.push(row);
+    for (const row of (nItemRows as D1Result<ResearchItemRow>).results) (itemRows as D1Result<ResearchItemRow>).results.push(row);
+    for (const row of (nAttachmentRows as D1Result<AttachmentRow>).results) (attachmentRows as D1Result<AttachmentRow>).results.push(row);
+    for (const row of (nSectionRows as D1Result<EntrySectionRow>).results) (sectionRows as D1Result<EntrySectionRow>).results.push(row);
+    for (const row of (nReplyRows as D1Result<ReplyRow>).results) (replyRows as D1Result<ReplyRow>).results.push(row);
+    for (const row of (nDissentRows as D1Result<DissentRow>).results) (dissentRows as D1Result<DissentRow>).results.push(row);
+  }
+
+  // The kernel's unit set is the primary units under the roots plus the loaded link neighbours.
+  const allUnits = [...units, ...neighbourUnitRows];
 
   const detail: Detail = {
     journal: map((journalRows as D1Result<JournalRow>).results),
@@ -384,15 +462,21 @@ export async function loadProjectionInput(
   const replyMap = map((replyRows as D1Result<ReplyRow>).results);
   const dissentMap = map((dissentRows as D1Result<DissentRow>).results);
 
-  const unitRecords = units.flatMap((row): UnitRecord[] => {
+  const unitRecords = allUnits.flatMap((row): UnitRecord[] => {
     const record = unitRecord(row, items, attachments, sections, replyMap, dissentMap, detail);
     return record ? [record] : [];
   });
 
-  const projectRecords = (projectRows as D1Result<ProjectRow & { updatedSeq: number }>).results.map((row): ProjectRecord => ({
+  const toProjectRecord = (row: ProjectRow & { updatedSeq: number }): ProjectRecord => ({
     id: row.id, name: row.name, description: row.description, slug: row.slug, ...(row.accent === null ? {} : { accent: row.accent }),
     level: row.level, ...(row.disclosureLine ? { disclosureLine: JSON.parse(row.disclosureLine) as DisclosureLine } : {}),
-  }));
+  });
+  // The primary roots' Projects, plus any cross-Project neighbour's Project so the kernel can resolve the neighbour's
+  // own level. The neighbour Projects are not in `projectRows`, so they are neither dependencies nor reprojected views.
+  const projectRecords = [
+    ...(projectRows as D1Result<ProjectRow & { updatedSeq: number }>).results.map(toProjectRecord),
+    ...neighbourProjectRows.map(toProjectRecord),
+  ];
 
   const members = (memberRows as D1Result<MemberRow>).results.map((row): MemberRecord => ({
     id: row.id, displayName: row.display_name ?? '', email: row.email, status: row.status, publicProfile: flag(row.public_profile),

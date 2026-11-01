@@ -327,3 +327,108 @@ export async function readManifest(c: Context<ApiEnv>, id: string, key: string):
   const authentic = digest === release.manifestHash && (await manifestMac(key, digest)) === release.manifestMac;
   return { manifest, manifestHash: release.manifestHash, authentic };
 }
+
+/**
+ * The publication recheck of a release's approved-public artifacts (R59.3, R59.5): each must still be available, carry a rights status that
+ * permits publication, and have a current Owner and rights approval bound to its captured evidence. Mirrors the public-subset half of
+ * `sealingIssues`, applied to a sealed release's stored artifacts and approvals; a non-public artifact never blocks publication.
+ */
+function publicationIssues(artifacts: readonly CapturedArtifact[], approvals: readonly ReleaseApprovalRecord[]): FieldIssue[] {
+  const issues: FieldIssue[] = [];
+  const approved = (kind: ReleaseApprovalKind, subject: string, evidence: string) => approvals.some((approval) => approval.kind === kind && approval.subjectId === subject && approval.evidenceHash === evidence);
+  artifacts.forEach((artifact, index) => {
+    if (!artifact.publicApproved) return;
+    const at = `artifacts.${index}`;
+    if (artifact.unavailableAt) { issues.push({ field: at, rule: 'This artifact is no longer available and cannot be published.' }); return; }
+    if (artifact.rightsPermitsPublication === false || ((artifact.kind === 'attachment' || artifact.itemKind === 'source') && artifact.rightsPermitsPublication !== true)) {
+      issues.push({ field: `${at}.rights`, rule: 'The rights status of this artifact does not permit publication.' });
+    }
+    const evidence = artifactEvidenceDigest(artifact);
+    if (!approved('owner', artifact.unitId, evidence)) issues.push({ field: `${at}.owner`, rule: 'The Owner has not approved this artifact as it now stands.' });
+    if (!approved('rights', artifact.unitId, evidence)) issues.push({ field: `${at}.rights`, rule: 'The rights evidence for this artifact has not been approved as it now stands.' });
+  });
+  return issues;
+}
+
+/** The `publish` outbox scopes a release's public output rests on: the Root_Items of its approved-public, still-available artifacts (R59.3). */
+function publicRoots(artifacts: readonly CapturedArtifact[]): string[] {
+  return [...new Set(artifacts.filter((artifact) => artifact.publicApproved && !artifact.unavailableAt).map((artifact) => `root:${artifact.rootId}`))];
+}
+
+export interface PublishedRelease { readonly id: ULID; readonly state: ReleaseState }
+/**
+ * Publish a sealed release (R59.2, R59.3, R59.5). The release moves `sealed → published` under its revision and an operation key, and its
+ * approved-public artifacts' Root_Items are handed to the Publisher through `publish` outbox rows. Publication writes NOTHING to the public site
+ * itself: the Publisher re-projects each root with the kernel, which applies the CURRENT disclosure, access, holds, naming, rights and consent
+ * policy, so only an artifact whose Public_View still permits publication ever reaches a page, file copy or citation. There is no release-only
+ * publish path that could expose an artifact the current gates disallow. Dependencies are rechecked here first: an artifact that drifted,
+ * became unavailable, or no longer permits publication fails the recheck, exactly as a seal would.
+ */
+export async function publishRelease(c: Context<ApiEnv>, id: string, body: unknown): Promise<PublishedRelease> {
+  await manage(c);
+  const rev = (body as { rev?: unknown } | null)?.rev;
+  if (typeof rev !== 'number') refuseWith([{ field: 'rev', rule: 'Send the revision you started from.' }]);
+  const { release, artifacts, approvals } = await loadRelease(c, id);
+  if (release.state !== 'sealed') throw new ApiError('conflict', { details: { rule: 'Only a sealed release can be published.' } });
+  if (release.rev !== rev) throw new ApiError('conflict', { details: { rule: 'This release changed after you opened it.' } });
+  // Recheck the public dependencies against the current state before publication (R59.3, R59.5). Each approved-public artifact must still read as
+  // captured, still be available, still carry a rights status that permits publication, and still have a current Owner and rights approval. A
+  // drift, a permanent deletion, a rights downgrade, or a lapsed approval fails the recheck. This is the same evidence the seal validated, re-run
+  // now; it does NOT grant publication — the Publisher still re-projects through the full gates, so a current Confidentiality_Hold or a
+  // disclosure downgrade keeps the artifact off the site even when this recheck passes.
+  const issues: FieldIssue[] = publicationIssues(artifacts, approvals);
+  // Drift is rechecked only for the public artifacts that are still available to recapture; `publicationIssues` has already
+  // flagged a public artifact that went unavailable, and a non-public artifact never blocks publication.
+  const publicAvailable = artifacts.filter((artifact) => artifact.publicApproved && !artifact.unavailableAt);
+  for (const index of await staleArtifacts(c, publicAvailable)) {
+    issues.push({ field: `artifacts.${artifacts.indexOf(publicAvailable[index]!)}`, rule: 'This artifact changed after the release was sealed. Make a successor release for the new contents.' });
+  }
+  if (issues.length > 0) refuseWith(issues);
+  const batch = new GuardedBatch(c.env.RF_CORE, { id: actorOf(c), now: c.get('now') })
+    .guard('rev', sql`(SELECT rev FROM research_releases WHERE id = ${release.id} AND state = 'sealed') = ${release.rev}`)
+    .update(researchReleases, { state: 'published', publishedBy: actorOf(c), publishedAt: c.get('now') }, eq(researchReleases.id, release.id));
+  // Hand the public artifacts' roots to the Publisher; it re-projects them through the normal gates. No current-public root means nothing to project.
+  batch.outboxMany('publish', publicRoots(artifacts));
+  await batch.commit(c.get('accountant'));
+  return { id: release.id, state: 'published' };
+}
+
+/**
+ * Withdraw a published release (R59.2, R59.3). The release moves `published → withdrawn` under its revision and an operation key, and its public
+ * output is removed: the same Root_Items are handed to the Publisher, and the publication epoch is advanced in the same batch so the removal is
+ * urgent and no stale generation can resurrect it (R24.16). The Publisher's epoch-fenced removal+verify path drops the release's pages, file
+ * copies and citations from `site_files` and `rf-public` within the normal SLO. The sealed internal manifest and the immutable originals are
+ * untouched; only the PUBLIC projection changes, and a retained internal snapshot is not permission to keep serving it.
+ */
+export async function withdrawRelease(c: Context<ApiEnv>, id: string, body: unknown): Promise<PublishedRelease> {
+  await manage(c);
+  const rev = (body as { rev?: unknown } | null)?.rev;
+  if (typeof rev !== 'number') refuseWith([{ field: 'rev', rule: 'Send the revision you started from.' }]);
+  const { release, artifacts } = await loadRelease(c, id);
+  if (release.state !== 'published') throw new ApiError('conflict', { details: { rule: 'Only a published release can be withdrawn.' } });
+  if (release.rev !== rev) throw new ApiError('conflict', { details: { rule: 'This release changed after you opened it.' } });
+  const batch = new GuardedBatch(c.env.RF_CORE, { id: actorOf(c), now: c.get('now') })
+    .guard('rev', sql`(SELECT rev FROM research_releases WHERE id = ${release.id} AND state = 'published') = ${release.rev}`)
+    .update(researchReleases, { state: 'withdrawn', withdrawnBy: actorOf(c), withdrawnAt: c.get('now') }, eq(researchReleases.id, release.id))
+    .bumpEpoch();
+  batch.outboxMany('publish', publicRoots(artifacts));
+  await batch.commit(c.get('accountant'));
+  return { id: release.id, state: 'withdrawn' };
+}
+
+export interface ReleaseListItem {
+  readonly id: ULID; readonly name: string; readonly state: ReleaseState; readonly licenceVersion: string; readonly snapshotAt: Timestamp;
+  readonly sealedAt: Timestamp | null; readonly publishedAt: Timestamp | null; readonly withdrawnAt: Timestamp | null; readonly predecessorId: ULID | null;
+}
+/** A keyset-paginated list of releases for an Administrator, newest id first; `after` is the last id of the previous page (R59.1). */
+export async function listReleases(c: Context<ApiEnv>, query: { readonly after?: string; readonly limit?: number }): Promise<{ readonly releases: ReleaseListItem[]; readonly nextCursor: string | null }> {
+  await manage(c);
+  const limit = Math.min(Math.max(1, query.limit ?? 50), 100);
+  const after = query.after !== undefined && isULID(query.after) ? query.after : null;
+  const rows = (await c.get('accountant').track(c.env.RF_CORE.prepare(
+    `SELECT id, name, state, licence_version AS licenceVersion, snapshot_at AS snapshotAt, sealed_at AS sealedAt, published_at AS publishedAt, withdrawn_at AS withdrawnAt, predecessor_id AS predecessorId
+      FROM research_releases WHERE (?1 IS NULL OR id < ?1) ORDER BY id DESC LIMIT ?2`,
+  ).bind(after, limit + 1).all<ReleaseListItem>())).results;
+  const page = rows.slice(0, limit);
+  return { releases: page, nextCursor: rows.length > limit ? page[page.length - 1]!.id : null };
+}

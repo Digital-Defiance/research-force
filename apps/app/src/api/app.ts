@@ -59,6 +59,8 @@ import { evidenceRoutes, unitEvidenceRoutes } from './routes/evidence';
 import { dualApprovalsRoutes } from './routes/dual';
 import { importsRoutes } from './routes/imports';
 import { dissentRoutes } from './routes/dissent';
+import { releaseRoutes } from './routes/releases';
+import { exportsRoutes } from './routes/exports';
 
 export interface ApiConfig {
   /** Only the controlled local entrypoint supplies developer routes. */
@@ -198,6 +200,8 @@ export function createApi(config: ApiConfig): Hono<ApiEnv> {
   v1.route('/settings', settingsRoutes);
   v1.route('/imports', importsRoutes);
   v1.route('/dissent', dissentRoutes);
+  v1.route('/releases', releaseRoutes);
+  v1.route('/exports', exportsRoutes);
   app.route('/api/v1', v1);
 
   app.notFound((c) => {
