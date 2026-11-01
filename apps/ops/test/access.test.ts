@@ -53,8 +53,19 @@ describe('rf-ops Access sync', () => {
     }
   });
 
-  it('exposes only the three RPC methods and no fetch handler', () => {
-    expect(Object.getOwnPropertyNames(Ops.prototype).sort()).toEqual(['addMember', 'constructor', 'removeMember', 'revokeSessions']);
+  it('exposes only the narrow RPC methods and no fetch handler', () => {
+    expect(Object.getOwnPropertyNames(Ops.prototype).sort()).toEqual([
+      'addMember',
+      'constructor',
+      'containPublicHosts',
+      'containmentCapabilities',
+      'declareIncident',
+      'probePublicAddress',
+      'releaseContainment',
+      'removeMember',
+      'revokeSessions',
+      'verifyContainment',
+    ]);
     expect('fetch' in Ops.prototype).toBe(false);
   });
 

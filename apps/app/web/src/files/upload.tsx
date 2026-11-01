@@ -22,8 +22,8 @@ export function readiness(files: readonly FileDraft[]): string[] {
 export function selectedFiles(files: readonly FileDraft[]): FileSelection[] {
   return files.map((file) => ({ uploadId: file.uploadId!, metadata: { title: file.title, origin: file.origin, ...(file.caption === '' ? {} : { caption: file.caption }) } }));
 }
-interface Digests { sha256: string; parts: string[] }
-function hashFile(file: File, signal: AbortSignal): Promise<Digests> {
+export interface Digests { sha256: string; parts: string[] }
+export function hashFile(file: File, signal: AbortSignal): Promise<Digests> {
   return new Promise((resolve, reject) => {
     const worker = new Worker(new URL('./hash-worker.ts', import.meta.url), { type: 'module' });
     const abort = () => { worker.terminate(); reject(new Error('Upload cancelled.')); };

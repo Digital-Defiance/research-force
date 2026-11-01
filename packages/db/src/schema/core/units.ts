@@ -5,6 +5,7 @@ import type { CreditEntry, DisclosureLine } from '@researchforce/domain/types';
 import { FILE_KIND_EXTENSIONS } from '@researchforce/domain/file-kinds';
 import type { FileKind } from '@researchforce/domain/file-kinds';
 import { QUESTION_STATES } from '@researchforce/domain/work';
+import { REQUEST_TYPES } from '@researchforce/domain/consent';
 import { flag, oneOf, spans, versioned } from '../columns';
 
 export const CLASSIFICATION_STATES = ['unclassified', 'classified'] as const;
@@ -15,7 +16,9 @@ export { CONSENT_STATUSES };
 export const DIRECTIONS = ['sent', 'received'] as const;
 export const SECTION_GROUP_KINDS = ['list', 'table'] as const;
 export const REVIEW_STATES = ['needs_review', 'reviewed'] as const;
-export const REVIEW_OUTCOMES = ['applied', 'declined'] as const;
+// A Publication_Request is Applied or Declined; a Publication_Proposal is Approved or Declined (R23.18, R23.19).
+export const REVIEW_OUTCOMES = ['applied', 'declined', 'approved'] as const;
+export { REQUEST_TYPES };
 export const ADDRESSEE_TYPES = ['member', 'specialty', 'role'] as const;
 const FILE_KINDS = Object.keys(FILE_KIND_EXTENSIONS) as [FileKind, ...FileKind[]];
 
@@ -403,6 +406,8 @@ export const reviewRequests = sqliteTable('review_requests', {
   reviewerId: text('reviewer_id'),
   reviewedAt: text('reviewed_at'),
   reviewNote: text('review_note'),
+  /** Which review this is: an ordinary Review_Request, a Publication_Request, or a Publication_Proposal. */
+  requestType: text('request_type', { enum: REQUEST_TYPES }).notNull().default('review'),
   isPublicationRequest: flag('is_publication_request'),
   proposal: text('proposal', { mode: 'json' }), // level, Public_Summary, Public_Presentation, Disclosure_Line
   outcome: text('outcome', { enum: REVIEW_OUTCOMES }),
@@ -413,10 +418,14 @@ export const reviewRequests = sqliteTable('review_requests', {
   index('review_requests_root').on(t.rootId),
   index('review_requests_open').on(t.state, t.createdAt),
   oneOf('review_requests_state_values', t.state, REVIEW_STATES),
+  oneOf('review_requests_type_values', t.requestType, REQUEST_TYPES),
   oneOf('review_requests_outcome_values', t.outcome, REVIEW_OUTCOMES, true),
   check('review_requests_reviewed', sql`(${t.state} = 'reviewed') = (${t.reviewedAt} IS NOT NULL AND ${t.reviewerId} IS NOT NULL)`),
-  check('review_requests_outcome_publication', sql`${t.outcome} IS NULL OR (${t.isPublicationRequest} = 1 AND ${t.state} = 'reviewed')`),
-  check('review_requests_proposal', sql`(${t.isPublicationRequest} = 1) = (${t.proposal} IS NOT NULL)`),
+  // The flag and the type agree: a Publication_Request carries the publication proposal and a widening request keeps the flag set.
+  check('review_requests_type_flag', sql`(${t.isPublicationRequest} = 1) = (${t.requestType} = 'publication_request')`),
+  // An outcome is only reviewed publication work; a Publication_Request is Applied or Declined, a Publication_Proposal Approved or Declined.
+  check('review_requests_outcome_publication', sql`${t.outcome} IS NULL OR (${t.state} = 'reviewed' AND ((${t.requestType} = 'publication_request' AND ${t.outcome} IN ('applied', 'declined')) OR (${t.requestType} = 'proposal' AND ${t.outcome} IN ('approved', 'declined'))))`),
+  check('review_requests_proposal', sql`(${t.requestType} IN ('publication_request', 'proposal')) = (${t.proposal} IS NOT NULL)`),
 ]);
 
 export const reviewAddressees = sqliteTable('review_addressees', {

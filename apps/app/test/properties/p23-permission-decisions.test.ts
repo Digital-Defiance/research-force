@@ -120,6 +120,7 @@ function reference(member: PermissionMember, map: RolePermissionMap, permission:
     case 'item.move': return t?.type === 'research_item' && scope === 'any';
     case 'backup.manage': return scope === 'any' && administrator;
     case 'party.doNotName.off': return scope === 'any' && administrator;
+    case 'draft.recover': return scope === 'any' && administrator;
     case 'access.restrict': return t?.type === 'research_item' && scoped(t.ownerId);
     case 'access.widen': return t?.type === 'research_item' && ownOnly(t.ownerId);
     case 'attachment.move': return t?.type === 'attachment' && scoped(t.ownerId);

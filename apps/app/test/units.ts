@@ -11,7 +11,9 @@ export async function resetRecords(core: D1Database): Promise<void> {
     'units', 'research_items', 'attachments', 'entry_sections', 'replies', 'dissent_notes', 'submissions', 'cross_links', 'deletions', 'external_parties', 'projects',
     'journal_entries', 'je_members', 'findings', 'sources', 'runs', 'run_counts', 'hypotheses', 'correspondences', 'correspondence_parties', 'archival_requests', 'topics', 'source_bibliography', 'source_creators', 'source_identifiers', 'evidence_citations', 'decision_events', 'compute_packages', 'compute_artifacts', 'compute_configuration', 'compute_environment', 'scope_schemas', 'compute_scopes', 'compute_scope_entries', 'reproduction_attempts', 'artifact_derivations', 'artifact_derivation_inputs', 'derivation_reviews', 'derivation_flags', 'research_questions', 'question_groups', 'decisions', 'decision_alternatives', 'decision_participants', 'decision_evidence', 'decision_acknowledgements', 'question_entries', 'revisions',
     'uploads', 'upload_parts', 'staging_rows', 'review_requests', 'review_addressees', 'access_grants', 'notification_events',
-    'flags', 'views', 'activity', 'activity_tags', 'notifications', 'email_batches',
+    'flags', 'views', 'activity', 'activity_tags', 'notifications', 'email_batches', 'saved_drafts', 'draft_events', 'bookmarks', 'saved_searches', 'follows',
+    'publication_consents', 'confidentiality_holds', 'dual_approvals',
+    'permission_evidence', 'permission_evidence_items', 'permission_evidence_uses', 'permission_evidence_withdrawals',
   ].map((table) => core.prepare(`DELETE FROM ${table}`)));
 }
 

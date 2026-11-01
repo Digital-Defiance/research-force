@@ -42,6 +42,8 @@ const stepArb = fc.oneof(
   { weight: 6, arbitrary: changeArb },
   { weight: 2, arbitrary: fc.record({ kind: fc.constant('publish' as const), item: fc.nat({ max: 2 }), unit: fc.nat({ max: 1 }), level: fc.constantFrom('public', 'withheld') }) },
   { weight: 1, arbitrary: fc.record({ kind: fc.constant('edit' as const), item: fc.nat({ max: 2 }) }) },
+  // A move of one item to the other Project; it changes only the Project and must keep the Access_Level and Access_List (R47.12).
+  { weight: 2, arbitrary: fc.record({ kind: fc.constant('move' as const), item: fc.nat({ max: 2 }), to: fc.boolean() }) },
 );
 
 let bindings: Env;
@@ -78,6 +80,8 @@ describe('Property 101: Only the Owner widens access, and restricting unpublishe
     await fc.assert(fc.asyncProperty(fc.array(startArb, { minLength: 3, maxLength: 3 }), fc.array(stepArb, { minLength: 1, maxLength: 8 }), async (starts, steps) => {
       await resetRecords(core());
       const projectId = await addProject(core(), ids.admin, at);
+      const otherProjectId = await addProject(core(), ids.admin, at);
+      const projects = [projectId, otherProjectId] as const;
       const items: ModelItem[] = [];
       for (const { owner } of starts) {
         const place = { projectId, ownerId: ids[owner], submissionId: await addSubmissionRow(core(), ids[owner], at), now: at };
@@ -119,6 +123,28 @@ describe('Property 101: Only the Owner widens access, and restricting unpublishe
           const { item: view } = await (await call(api, bindings, tokens[item.owner], 'GET', `/items/${item.id}`)).json<{ item: { rev: number } }>();
           const edited = await call(api, bindings, tokens[item.owner], 'PATCH', `/items/${item.id}`, { rev: view.rev, title: `Edited ${view.rev}`, mark: { mark: 'minor_edit' } });
           expect(edited.status).toBe(200);
+        } else if (step.kind === 'move') {
+          // A move to the other Project. Only an Administrator may move an item (item.move is `any`); the move must keep
+          // the item's Access_Level and Access_List (R47.12). The Projects are Not_Published, so a move changes no
+          // Effective Public_View and needs no token. The publish helper sets own levels without a Publication_Consent,
+          // which the move's consent gate would (correctly) refuse as an un-consented widening, so the move step runs
+          // only on items whose units are all Not_Published, where it still fully exercises keeping access on a move.
+          const item = items[step.item]!;
+          const target = projects[step.to ? 1 : 0]!;
+          if (item.units.every((unit) => unit.level === 'not_published')) {
+            const before = await core().prepare('SELECT access_level AS level FROM research_items WHERE unit_id = ?1').bind(item.id).first<{ level: string }>();
+            const beforeGrants = (await core().prepare('SELECT member_id AS memberId FROM access_grants WHERE root_id = ?1 ORDER BY member_id').bind(item.id).all<{ memberId: string }>()).results.map((row) => row.memberId);
+            const moved = await call(api, bindings, tokens.admin, 'POST', `/items/${item.id}/move`, { projectId: target });
+            expect(moved.status).toBe(200);
+            // R47.12: the Access_Level and Access_List are unchanged by the move.
+            const after = await core().prepare('SELECT access_level AS level FROM research_items WHERE unit_id = ?1').bind(item.id).first<{ level: string }>();
+            const afterGrants = (await core().prepare('SELECT member_id AS memberId FROM access_grants WHERE root_id = ?1 ORDER BY member_id').bind(item.id).all<{ memberId: string }>()).results.map((row) => row.memberId);
+            expect(after?.level).toBe(before?.level);
+            expect(afterGrants).toEqual(beforeGrants);
+            // The item and its whole subtree now belong to the target Project.
+            const projectRows = await core().prepare('SELECT project_id AS projectId FROM units WHERE root_id = ?1').bind(item.id).all<{ projectId: string }>();
+            expect(projectRows.results.every((row) => row.projectId === target)).toBe(true);
+          }
         } else {
           const chosen = step.items.map((index) => items[index]!);
           const body = { ...(step.level === undefined ? {} : { level: step.level }), ...(step.add.length > 0 ? { add: step.add.map((who) => ids[who]) } : {}), ...(step.remove.length > 0 ? { remove: step.remove.map((who) => ids[who]) } : {}) };

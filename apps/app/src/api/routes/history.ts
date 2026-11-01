@@ -4,6 +4,7 @@ import { reasonSchema } from '@researchforce/domain/schemas/other';
 import { authorize, authorizeRead } from '../../auth/authorize';
 import { requestDeletion } from '../../jobs/deletion';
 import { compareResponse, historyResponse, loadHistory, restoreItem, withdrawItem } from '../../records/history';
+import { dualApprovalsForRoot } from '../../reviews/dual';
 import { itemResponse, loadItem } from '../../records/items';
 import type { ApiEnv } from '../app';
 import { ApiError } from '../errors';
@@ -16,7 +17,9 @@ export const historyRoutes = new Hono<ApiEnv>();
 historyRoutes.get('/:id/history', async (c) => {
   await authorizeRead(c);
   const item = await loadItem(c, c.req.param('id'));
-  return c.json(historyResponse(await loadHistory(c, item), c.req.query('point')));
+  const [history, dualApprovals] = await Promise.all([loadHistory(c, item), dualApprovalsForRoot(c, item.base.id)]);
+  // The Dual_Approvals that concern the Item, with a Hold_Override among them, are shown in its history (R48.9, R49.7).
+  return c.json({ ...historyResponse(history, c.req.query('point')), dualApprovals });
 });
 
 /** Each field that differs between two points, with marked words; `section` narrows it to one Entry_Section (R22.4). */

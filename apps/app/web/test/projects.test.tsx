@@ -79,7 +79,7 @@ describe('the Project_Order', () => {
     expect(api.writes().map((call) => [call.path, call.body])).toEqual([['/projects/P1/move-position', { position: 0 }], ['/projects/P1/move-position', { position: 2 }]]);
     expect(order.textContent).toContain('Featured');
     expect(order.textContent).toContain('Muted');
-    expect(order.textContent).toContain('/project-2 · Not published · 2 Research Items');
+    expect(order.textContent).toContain('/project-2 · Disclosure Not published, effective Not published · 2 Research Items');
   });
 
   it('moves a dragged Project to the position it is dropped on', async () => {
@@ -101,7 +101,11 @@ describe('the Project_Order', () => {
     renderScreen(<ProjectsPage />, { client: fakeApi({ 'GET /projects': { projects: PROJECTS } }).client });
     const order = await screen.findByRole('list', { name: 'Project order' });
     expect(within(order).queryAllByRole('button')).toEqual([]);
-    expect(within(order).getAllByRole('link').map((link) => link.textContent)).toEqual(['History of Project 0', 'Work in Project 0', 'Citations in Project 0', 'Search coverage in Project 0', 'History of Project 1', 'Work in Project 1', 'Citations in Project 1', 'Search coverage in Project 1', 'History of Project 2', 'Work in Project 2', 'Citations in Project 2', 'Search coverage in Project 2']);
+    expect(within(order).getAllByRole('link').map((link) => link.textContent)).toEqual([
+      'History of Project 0', 'Log of Project 0', 'Team dashboard for Project 0', 'Work in Project 0', 'Citations in Project 0', 'Search coverage in Project 0',
+      'History of Project 1', 'Log of Project 1', 'Team dashboard for Project 1', 'Work in Project 1', 'Citations in Project 1', 'Search coverage in Project 1',
+      'History of Project 2', 'Log of Project 2', 'Team dashboard for Project 2', 'Work in Project 2', 'Citations in Project 2', 'Search coverage in Project 2',
+    ]);
     expect(screen.queryByRole('link', { name: 'Create a Project' })).toBeNull();
     expect(within(order).getAllByRole('listitem')[0]!.getAttribute('draggable')).toBe('false');
   });

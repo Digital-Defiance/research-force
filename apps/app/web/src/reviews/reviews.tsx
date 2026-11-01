@@ -150,6 +150,7 @@ function ReviewEntry({ review, what, onChanged }: { readonly review: ReviewView;
       <p>
         <span className={open ? 'rf-status rf-status--warning' : 'rf-status rf-status--success'}>{open ? 'Needs review' : 'Reviewed'}</span>
         {review.isPublicationRequest && <>{' '}<span className="rf-status">Publication request</span></>}
+        {review.requestType === 'proposal' && <>{' '}<span className="rf-status">Publication proposal</span></>}
         {' '}{what}
       </p>
       <p className="rf-meta">{'Requested by '}<PersonLink person={review.requester} />{` on ${formatDate(review.createdAt)}`}</p>
@@ -187,15 +188,23 @@ export function targetLink(review: ReviewView): { to: string; name: string } {
 }
 
 /** The Needs_Review requests the Member can review now, oldest first, each linking to its Item or Entry_Section (R17.8). */
-export function ReviewQueuePage() {
+export function ReviewQueuePage({ embedded = false }: { readonly embedded?: boolean }) {
   const queue = useLoad<{ reviews: ReviewView[] }>('/reviews/queue');
   if (!queue.data) return <LoadState error={queue.error} />;
   return (
     <div className="rf-stack">
-      <h1>Review queue</h1>
+      {!embedded && <h1>Review queue</h1>}
       {queue.data.reviews.length === 0 ? <p className="rf-meta">No Review Requests are waiting for you.</p> : (
         <ul className="rf-list">
           {queue.data.reviews.map((review) => {
+            // A Publication_Proposal addressed to the viewer links to their proposal page; every other request links to its target (R23.18, R23.19).
+            if (review.requestType === 'proposal') {
+              return <li key={review.id}><ReviewEntry review={review} what={<Link to={`/publication-proposals/${review.id}`}>A Publication Proposal to review</Link>} onChanged={queue.reload} /></li>;
+            }
+            // A Publication_Request links an Administrator to the apply or decline screen (R23.11, R23.12).
+            if (review.isPublicationRequest) {
+              return <li key={review.id}><ReviewEntry review={review} what={<Link to={`/publication-requests/${review.id}`}>A Publication Request to apply or decline</Link>} onChanged={queue.reload} /></li>;
+            }
             const link = targetLink(review);
             return <li key={review.id}><ReviewEntry review={review} what={<Link to={link.to}>{link.name}</Link>} onChanged={queue.reload} /></li>;
           })}

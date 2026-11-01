@@ -1,11 +1,14 @@
 import type { POLICY_PAGE_KEYS } from '../schema/core/activity';
 
 /**
- * Exchange can keep hidden copies of sent mail in Recoverable Items (design open question 2). The
- * Microsoft 365 setup script configures the mailbox instead, so the Privacy page makes no statement
- * about such copies while this is false.
+ * Microsoft 365 keeps residual copies of sent mail even when the Sending_Address mailbox requests no Sent Items
+ * copy: a copy can remain in the hidden Recoverable Items folder for the deleted-item retention period while single
+ * item recovery is on, and Microsoft 365 keeps its own delivery records, such as message traces, outside the
+ * Research_CMS (R20.24). Design open question 2 is resolved: this residual retention is disclosed on the Privacy page
+ * and staging verifies the tenant's effective behavior, and saveToSentItems is never presented as erasing all
+ * provider copies. The flag is true, so the Privacy page states this plainly.
  */
-export const STATE_MAILBOX_RESIDUAL_COPIES = false;
+export const STATE_MAILBOX_RESIDUAL_COPIES = true;
 
 export type PolicyPageKey = typeof POLICY_PAGE_KEYS[number];
 export interface SeedPolicySection {
@@ -20,7 +23,9 @@ const servicesThatProcessData = [
   'The software runs on Cloudflare. Cloudflare Workers, D1, and R2 store and serve the archive and the workspace, Cloudflare Access handles Member sign-in, and Cloudflare Turnstile checks that the public form is used by a person.',
   'Email to Members and to people who use the public form is sent through Microsoft 365, which processes the recipient’s email address and the message.',
   'Members can ask Workers AI, Cloudflare’s hosted AI service, for a draft summary. Only the text being summarised is sent, and Cloudflare states that it does not keep that text or use it to train models.',
-  ...(STATE_MAILBOX_RESIDUAL_COPIES ? ['Microsoft 365 may keep a hidden copy of a sent email for a short period after sending.'] : []),
+  ...(STATE_MAILBOX_RESIDUAL_COPIES
+    ? ['Even though the sending mailbox is asked to keep no copy of a sent email, Microsoft 365 can keep a residual copy in a hidden recovery area for its deleted-item retention period while single-item recovery is on, and it keeps its own delivery records, such as message traces, outside this site. Asking the mailbox to save no copy does not remove those provider records.']
+    : []),
 ].join('\n\n');
 
 /**
@@ -42,13 +47,14 @@ export const SEED_POLICY_SECTIONS: readonly SeedPolicySection[] = Object.freeze(
     text: 'Some material is withheld: the archive records that it exists, with its kind, date, and parties, but does not publish its content. Other material is not published at all, for example because consent or reproduction rights are missing.' },
   { pageKey: 'methods', sectionKey: 'corrections_and_withdrawals', title: 'Corrections and withdrawals', required: true,
     text: 'Corrections are recorded with a reason and a date. Withdrawn material stays in the record, marked with the date and reason, so that nothing is silently removed.' },
-  { pageKey: 'licence', sectionKey: 'further_notes', title: 'Further notes', required: false, text: '' },
+  { pageKey: 'licence', sectionKey: 'further_notes', title: 'Further notes', required: true,
+    text: 'The content licence named on this page is chosen and configured by the group that runs this site; no licence is assumed and the software licence is never used in its place. Before any public launch or team-archive use, the group must configure a content licence and the recovery and email-provider inputs the setup needs; the launch gates do not pass until those are in place.' },
   { pageKey: 'privacy', sectionKey: 'members', title: 'Members', required: true,
-    text: 'For each Member the site keeps an email address for sign-in and notifications, the profile the Member enters, and a record of the Member’s contributions and their history, so that work stays attributed to its authors.' },
+    text: 'For each Member the site keeps an email address for sign-in and notifications, the profile the Member enters, and a record of the Member’s contributions and their history, so that work stays attributed to its authors. Members reach a protected file through a short-lived download link. Such a link is a scoped exception to the usual sign-in check: it is valid for only a few minutes, is tied to the Member it was issued to, and grants access to that one file alone, not to the rest of the Workspace.' },
   { pageKey: 'privacy', sectionKey: 'submitters_and_requesters', title: 'Submitters and requesters', required: true,
     text: 'When someone uses the public form, the site keeps the name, email address, affiliation, message, and files they send, so that the group can review the submission, reply, and credit accepted material. The table below states how long each part is kept.' },
   { pageKey: 'privacy', sectionKey: 'people_named_in_records', title: 'People named in records', required: true,
-    text: 'Research records can name people outside the group, such as correspondents and archive staff. Correspondence is published only with the consent of every outside party, and a person can be shown under a generic label instead of their name.' },
+    text: 'Research records can name people outside the group, such as correspondents and archive staff. Correspondence is published only with the consent of every outside party. An outside party is named in a published record only while recorded permission allows naming that person on that record and the person has not asked not to be named; otherwise the record shows a generic label or a neutral role description instead of the name, and never reveals the withheld name.' },
   { pageKey: 'privacy', sectionKey: 'visitors', title: 'Visitors', required: true,
     text: 'Reading the public archive needs no account, and the archive sets no cookies. The public form uses a bot check, and the site counts form use per network address for a short time to limit abuse.' },
   { pageKey: 'privacy', sectionKey: 'services_that_process_data', title: 'Services that process data', required: true, text: servicesThatProcessData },

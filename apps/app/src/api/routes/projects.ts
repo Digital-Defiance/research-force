@@ -5,12 +5,19 @@ import { canRead } from '@researchforce/db/access';
 import { isULID } from '@researchforce/domain/types';
 import type { ULID } from '@researchforce/domain/types';
 import { authorize, authorizeRead } from '../../auth/authorize';
+import { firstProject, logFilterFromQuery, logFilterSchema, readLog, reversedFromQuery } from '../../projects/log';
 import { createProject, editProject, listProjects, loadProject, moveProject, projectHistory } from '../../records/projects';
 import type { ProjectRecord } from '../../records/projects';
 import { projectChoice } from '../../records/submissions';
 import type { ApiEnv } from '../app';
 import { ApiError } from '../errors';
 import { parse, readJson } from '../input';
+
+/** One page of a Project_Log from the request's query, keeping its order and filters (R43.1, R43.4). */
+async function logPage(c: Context<ApiEnv>, projectId: string) {
+  const query = c.req.query();
+  return readLog(c, projectId, parse(logFilterSchema, logFilterFromQuery(query)), reversedFromQuery(query), query['cursor'] || undefined);
+}
 
 const editSchema = z.strictObject({
   rev: z.number().int().min(1), name: z.string().optional(), description: z.string().optional(), slug: z.string().optional(),
@@ -40,7 +47,8 @@ projectsRoutes.get('/', async (c) => {
   ]);
   const muted = new Set((counts[0] as D1Result<{ projectId: ULID }>).results.map((row) => row.projectId));
   const items = new Map((counts[1] as D1Result<{ projectId: ULID; n: number }>).results.map((row) => [row.projectId, row.n]));
-  return c.json({ projects: list.map((project) => ({ ...project, muted: muted.has(project.id), researchItems: items.get(project.id) ?? 0 })) });
+  // A Project's Effective_Disclosure is its own Disclosure_Level, named explicitly for the Projects list (R39.16).
+  return c.json({ projects: list.map((project) => ({ ...project, effectiveDisclosure: project.disclosureLevel, muted: muted.has(project.id), researchItems: items.get(project.id) ?? 0 })) });
 });
 
 /** The Project choice of a new Research_Item, preselected from the page where the Submission started (R39.2). */
@@ -72,4 +80,18 @@ projectsRoutes.post('/:id/move-position', async (c) => {
 projectsRoutes.get('/:id/history', async (c) => {
   await authorizeRead(c);
   return c.json({ history: await projectHistory(c, await projectById(c)) });
+});
+
+/** The Project_Log of the first Project in the Project_Order, for when the Member chose no Project (R43.6). */
+projectsRoutes.get('/log', async (c) => {
+  await authorizeRead(c);
+  return c.json(await logPage(c, await firstProject(c)));
+});
+
+/** The Project_Log of the chosen Project, newest first by default or reversed, with its filters (R43.1 to R43.8). */
+projectsRoutes.get('/:id/log', async (c) => {
+  await authorizeRead(c);
+  const id = c.req.param('id');
+  if (id === undefined || !isULID(id)) throw new ApiError('not_found');
+  return c.json(await logPage(c, id));
 });

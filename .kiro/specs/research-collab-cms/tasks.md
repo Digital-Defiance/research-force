@@ -758,31 +758,31 @@ Canonical phases: `collaboration` → `privacy` → `imports_and_log` → `publi
     - _Requirements: 12.7, 12.8, 12.10_
 
 - [ ] 31. Build disclosure changes, previews, classification, Publication_Requests, rights and consent rules, and item moves
-  - [ ] 31.1 Implement projection input loading and the preview API in `apps/app/src/kernel-input.ts` and `apps/app/src/disclosure/preview.ts`
+  - [x] 31.1 Implement projection input loading and the preview API in `apps/app/src/kernel-input.ts` and `apps/app/src/disclosure/preview.ts`
     - `loadProjectionInput(roots)`, the only code that turns `rf-core` rows into kernel input, including Parties, Do_Not_Name flags, registered Member emails, consent, rights, Licence_Agreements, and Cross_Link neighbours
     - It reads `research_items.access_level` into the `restricted` flag that task 52.5 added to the kernel input; the access preview of task 52.4, which until then lists the units whose level a restriction resets, then also renders the Public_Views the restriction removes with `diffViews`
     - `POST /disclosure/preview` for levels, presentations, Public_Summaries, and Disclosure_Lines of one unit or up to 1,000, a Project's level, a Project move, or turning Do_Not_Name off; returns `diffViews` and `checkGates` output and a preview token that is an HMAC over the change set and its dependency rows' `updated_seq`; previews of more than a few hundred units run in a `Jobs` object with progress and paging
     - _Requirements: 23.6, 23.16, 26.7, 33.7, 34.7, 34.9, 39.13, 46.16_
-  - [ ] 31.2 Implement the apply API in `apps/app/src/disclosure/apply.ts`
+  - [x] 31.2 Implement the apply API in `apps/app/src/disclosure/apply.ts`
     - `POST /disclosure/apply`: the `preview_fresh` guard comparing every dependency's `updated_seq` in one `json_each` statement, rights and consent guards, the values written, Classified set on exactly the selected Unclassified units with Administrator and time, one Disclosure_Change per unit, Owner Item_Update events, one Activity_Feed entry (a Project change as one entry naming the Project with a link to its history), `slug_fixed_at` when a Project first becomes Public or Withheld, `first_public_at`, and a publish outbox row; any failure applies nothing and lists each unit with its reason
     - _Requirements: 23.2, 23.4, 23.5, 23.7, 23.14, 26.5, 26.6, 26.7, 26.14, 39.6, 39.11_
-  - [ ] 31.3 Implement the classification and public-overview lists in `apps/app/src/api/routes/disclosure.ts`
+  - [x] 31.3 Implement the classification and public-overview lists in `apps/app/src/api/routes/disclosure.ts`
     - `GET /disclosure/unclassified` with counts per Root_Item, per import, and per accepted Outside_Submission; `GET /disclosure/public-units` listing every Public or Withheld unit with kind, Effective_Disclosure, Project, Root_Item, Rights_Status, and the time of the last projection, filterable by Effective_Disclosure and Project
     - _Requirements: 23.8, 26.8, 33.7, 39.14_
-  - [ ] 31.4 Implement Publication_Request proposal, apply, and decline in `apps/app/src/reviews/publication.ts`
+  - [x] 31.4 Implement Publication_Request proposal, apply, and decline in `apps/app/src/reviews/publication.ts`
     - A Contributor's proposal creates a Review_Request addressed to the Administrator Role with the proposed level and optional Public_Summary, Public_Presentation, or Disclosure_Line within limits; applying pre-fills the disclosure change, runs the same preview and checks, and marks it Reviewed with outcome Applied and the applied values; a consent refusal leaves it Needs_Review; declining needs a note of 1 to 2,000 characters and changes no disclosure value
     - A proposal for the proposer's own Disclosure_Units also records the proposer's Publication_Consent for the proposed values (task 54.3 adds the consent rows and the check on edited values)
     - _Requirements: 17.5, 23.10, 23.11, 23.12, 23.21, 34.2_
-  - [ ] 31.5 Implement the rights and consent rules in `apps/app/src/disclosure/rights.ts`
+  - [x] 31.5 Implement the rights and consent rules in `apps/app/src/disclosure/rights.ts`
     - A save that sets a non-permitting Rights_Status on a Public Attachment makes it Withheld in the same batch with a Disclosure_Line of only file kind and upload date, a Disclosure_Change by the saving Member, and an Administrator Item_Update; marking a Rights_Status value as not permitting shows the count of affected Public Attachments, then downgrades them all in one batch with a Disclosure_Change each and one Item_Update per Administrator listing them
     - Making an Attachment Public with a non-permitting Rights_Status, or a Correspondence Public while any consent is not Granted, is refused with Withheld offered; turning Do_Not_Name off goes through the preview
     - _Requirements: 33.4, 33.5, 33.8, 34.2, 34.6, 34.9_
-  - [ ] 31.6 Implement item moves in `apps/app/src/records/move.ts` and `POST /items/{id}/move`
+  - [x] 31.6 Implement item moves in `apps/app/src/records/move.ts` and `POST /items/{id}/move`
     - Update `project_id` on the Research_Item and every element under it in one statement, leaving everything else unchanged (including its Access_Level and Access_List), and record a Revision holding the previous Project (Disclosure_Change when a Public_View changes, Minor_Edit otherwise); a move that alters a Public_View needs a confirmed, fresh preview
     - Extend Property 101 (`apps/app/test/properties/p101-access-changes.test.ts`) with moves, checking that a moved Research_Item keeps its Access_Level and Access_List (R47.12)
     - The same batch removes every Question_Group entry that names the moved Research_Item or anything under it from Research_Questions of the old Project, recording the removal in each Research_Question's history (task 55.2 supplies the shared helper)
     - _Requirements: 23.3, 39.12, 39.13, 47.12, 50.7_
-  - [ ] 31.7 Build the disclosure screens in `apps/app/web/src/disclosure/`
+  - [x] 31.7 Build the disclosure screens in `apps/app/web/src/disclosure/`
     - The disclosure dialog with the preview (changed views, Party names, Dissent_Notes that will not be Public, Licence_Agreement states, gate failures with Withheld offers), set selection up to 1,000 units, the Public_Summary editor pre-filled from the Log_Summary when empty or from a Publication_Request being applied, the Unclassified list, the public overview, Publication_Request apply and decline, the move dialog, and Consent_Status, Do_Not_Name, and Generic_Label on Correspondence pages and previews
     - _Requirements: 23.6, 23.8, 23.11, 23.12, 26.8, 34.7, 41.13_
   - [ ] 31.8 Write property test for independent Disclosure_Levels
@@ -912,61 +912,61 @@ Canonical phases: `collaboration` → `privacy` → `imports_and_log` → `publi
     - The due and overdue marks and filter in the Moderation_Queue, the Contact_Review form with Keep and Erase, the correction form on the Outside_Submission view, and the history of Contact_Reviews and corrections
     - _Requirements: 32.19, 32.20, 32.21, 32.22_
 
-- [ ] 36. Build the journal and attachment migration service
-  - [ ] 36.1 Implement the journal import job in `apps/app/src/jobs/journal-import.ts` and `POST /imports/journal`
+- [x] 36. Build the journal and attachment migration service
+  - [x] 36.1 Implement the journal import job in `apps/app/src/jobs/journal-import.ts` and `POST /imports/journal`
     - The server re-validates every parsed entry it receives; a `Jobs` object commits one Journal_Entry with all its Entry_Sections per batch in the P1030680 Project, with phase identifier, dates, and Campaign_Status where the journal states them, Owner the importing Administrator, every unit Not_Published and Unclassified, the Access_Level chosen for the import (Restricted with an empty Access_List, or Whole_Team) on every Research_Item, and no Findings or labels
     - Re-imports skip entries matched by phase identifier or the `front-matter` key and leave them unchanged; at the end one Activity_Feed entry with the counts, no New_Flags, and no Notification_Events; the import report (created, skipped, and failed entries and files with reasons, the Journal_Printer output as a downloadable Markdown file, the comparison result, and failing entries with titles and line ranges) is stored under `rf-private/imports/{job}/`
     - _Requirements: 26.1, 26.4, 26.9, 26.10, 26.11, 26.13, 27.4, 27.8, 47.13_
-  - [ ] 36.2 Implement the attachment import in `apps/app/src/jobs/journal-import.ts`
+  - [x] 36.2 Implement the attachment import in `apps/app/src/jobs/journal-import.ts`
     - Verify each stored file's size and checksum against the source values before creating its Attachment; Parent from `resolveAttachmentParent`; keep title, original file name, file kind, size label, caption, and Origin (or the fixed text "No origin recorded in the source journal", flagged in the report); Credit from the crediting contributor; Rights_Status Unknown; skip files matched by original file name
     - A file that no entry references (`resolveAttachmentParent` returns `undefined`) becomes an Attachment of the Project's Unassigned_Attachments_Source, created once per Project under the import key `unassigned-attachments` as the Source "Unassigned legacy attachments" (Primary, reliability Unknown, Rights_Status Unknown, Not_Published, Unclassified, with the import's Access_Level); the file's Origin is its metadata Origin followed by, or in its absence, "Not referenced in the source journal; provenance unknown"; a re-import reuses the Source; the report lists these files as unassigned
     - A file that cannot be read or stored, or whose copy mismatches, gets no Attachment, has any stored copy deleted, and is listed as failed with the reason
     - _Requirements: 26.2, 26.3, 26.10, 26.12, 26.15_
-  - [ ] 36.3 Build the journal import screen in `apps/app/web/src/imports/journal.tsx`
+  - [x] 36.3 Build the journal import screen in `apps/app/web/src/imports/journal.tsx`
     - Select the journal file, the attachment folder, and the metadata JSON; parse, print, and compare in a Web Worker; show the report preview (entries, sections, unassigned spans, attachments with Parents, files that will go to the Unassigned_Attachments_Source); choose the Access_Level for the import, with Restricted preselected and the statement that the importing Administrator, as Owner, and every Administrator can read Restricted items; hash and upload the files; start the job and show progress and the report with the access choice
     - _Requirements: 26.1, 26.3, 26.11, 26.15, 27.7, 27.8, 47.13_
-  - [ ] 36.4 Write integration tests for the journal import
+  - [x] 36.4 Write integration tests for the journal import
     - The import sets no flags and creates no events but adds one feed entry; an interrupted import leaves no partial Journal_Entry and resumes; a re-import skips everything; unreferenced files land in one Unassigned_Attachments_Source per Project; every Research_Item gets the chosen Access_Level
     - _Requirements: 26.9, 26.10, 26.13, 26.15, 47.13_
 
-- [ ] 37. Build the Bulk_Import with the Manifest_Parser and Manifest_Printer
-  - [ ] 37.1 Implement the Manifest_Parser in `packages/manifest/src/parse.ts`
+- [x] 37. Build the Bulk_Import with the Manifest_Parser and Manifest_Printer
+  - [x] 37.1 Implement the Manifest_Parser in `packages/manifest/src/parse.ts`
     - CSV decoded with `TextDecoder('utf-8', { fatal: true })` after an optional byte order mark, RFC 4180 records with LF or CRLF and kept line breaks inside quotes; XLSX through SheetJS from the first worksheet using each cell's formatted text, listing other worksheets with non-empty cells; values kept exactly; empty rows skipped; spreadsheet row numbers with the header as row 1
     - Header errors (missing required column, repeated name, unnamed column with a value, by position), row errors (empty or repeated Row_Key, invalid kind, Rights_Status that is not current), missing kind-specific columns naming the column and kind, and encoding or quoting errors naming the starting row, each returning no rows
     - _Requirements: 33.10, 37.1, 38.1, 38.2, 38.3, 38.6, 38.7, 38.8, 38.9_
-  - [ ] 37.2 Implement the Manifest_Printer in `packages/manifest/src/print.ts`
+  - [x] 37.2 Implement the Manifest_Printer in `packages/manifest/src/print.ts`
     - CSV in UTF-8 with a byte order mark, CRLF line ends, the header in the original column order, and every field quoted with inner quotes doubled, so that parsing the output gives back the same rows
     - _Requirements: 38.4, 38.5_
-  - [ ] 37.3 Write property test for the manifest round trip
+  - [x] 37.3 Write property test for the manifest round trip
     - Use `manifestArb` and `csvBytesArb` in `packages/testing/src/manifest.ts` with Unicode values, quotes, commas, line breaks, spaces, empty cells, byte order marks, invalid UTF-8, and unclosed quotes
     - **Property 68: Manifest round trip**
     - **Validates: Requirements 38.4, 38.5**
-  - [ ] 37.4 Write property test for manifest parsing and validation
+  - [x] 37.4 Write property test for manifest parsing and validation
     - **Property 69: Manifest parsing is exact and validation is complete**
     - **Validates: Requirements 33.10, 37.1, 37.2, 37.3, 37.8, 37.16, 38.1, 38.2, 38.3, 38.6, 38.7, 38.9**
-  - [ ] 37.5 Implement Bulk_Import validation in `apps/app/src/jobs/bulk-validate.ts`
+  - [x] 37.5 Implement Bulk_Import validation in `apps/app/src/jobs/bulk-validate.ts`
     - Re-run the parser and row rules on the server, then check Party, archive or desk, and contact names against at most one Member or External_Party; files that exist, are named by one row only, and fit the Attachment_Size_Limit; version marks without branches or cycles that name only the row's files; kind-specific columns filled for the row's kind and empty otherwise, with the date column empty for Findings, Hypotheses, and Topics; each row's values against the kind's schema with the Log_Summary checked only for length; an Origin of 1 to 5,000 characters for rows with files
     - The optional `access_level` (`whole_team` or `restricted`) and `access_members` columns: names in `access_members` are matched against exactly one Pending or Active Member like Party names, and `access_members` filled with `access_level` other than `restricted` is a row error; a `research_question` kind is a row error (R50.8)
     - Any error creates no Item and the report lists every error with row, column, file name, and reason; folder files that no row names are listed as not imported without being errors
     - _Requirements: 33.10, 37.2, 37.3, 37.4, 37.8, 37.16, 47.13, 50.8_
-  - [ ] 37.6 Implement the Bulk_Import job in `apps/app/src/jobs/bulk-import.ts` and `POST /imports/bulk`
+  - [x] 37.6 Implement the Bulk_Import job in `apps/app/src/jobs/bulk-import.ts` and `POST /imports/bulk`
     - In the chosen Project, one batch per row: a Research_Item of the row's kind (Findings and Hypotheses Open) with the mapped values, an Attachment per file with the row's Origin, caption, Credit, and rights, the row's rights on a Source, Parties linked by name or created as External_Parties, and Version_Chains in the declared order; every unit Not_Published and Unclassified; the row's own Access_Level and Access_List when its access columns are filled, otherwise the access choice made for the import
     - A Row_Key already used by an earlier or concurrent Bulk_Import skips the row through the unique index; a file that fails to store or match fails the whole row; writes are metered against the daily import allowance and the job pauses until the next UTC day when it is used
     - The final step writes New_Flags and New_Submission events in chunks, both joined to the `canRead` fragment, and sets the Submission complete in one statement; the report lists created, skipped, and failed rows and Attachments with row number, Row_Key, and reason, and states the access choice
     - _Requirements: 33.9, 37.5, 37.6, 37.7, 37.9, 37.10, 37.11, 37.12, 37.13, 37.14, 37.15, 37.17, 37.18, 47.5, 47.13_
-  - [ ] 37.7 Build the Bulk_Import screen in `apps/app/web/src/imports/bulk.tsx`
+  - [x] 37.7 Build the Bulk_Import screen in `apps/app/web/src/imports/bulk.tsx`
     - Choose the Project and the Access_Level for rows that do not set their own (Restricted preselected, with the statement of who can read Restricted items), select the manifest and folder, show the browser-side validation report, hash and upload the files, start the job, and show progress and the report
     - _Requirements: 37.3, 37.11, 37.17, 47.13_
-  - [ ] 37.8 Write property test for import idempotency and mapping
+  - [x] 37.8 Write property test for import idempotency and mapping
     - **Property 70: Imports are idempotent and map rows and files correctly**
     - **Validates: Requirements 26.2, 26.10, 26.12, 26.15, 33.9, 37.6, 37.7, 37.12, 37.15, 37.18, 47.13**
-  - [ ] 37.9 Write property test for import reports
+  - [x] 37.9 Write property test for import reports
     - **Property 71: Import reports account for every input**
     - **Validates: Requirements 26.11, 37.4, 37.11**
-  - [ ] 37.10 Write property test for atomic saves
+  - [x] 37.10 Write property test for atomic saves
     - **Property 28: Saves are all-or-nothing**
     - **Validates: Requirements 4.1, 4.5, 26.13, 28.13, 32.15, 37.13**
-  - [ ] 37.11 Write property test for budget gates
+  - [x] 37.11 Write property test for budget gates
     - **Property 81: Budget gates admit only what the budget allows**
     - **Validates: Requirements 28.5, 37.14**
 
@@ -1021,36 +1021,36 @@ Canonical phases: `collaboration` → `privacy` → `imports_and_log` → `publi
 - [ ] 39. Checkpoint - Ensure all tests pass
   - Run `npm test` (`vitest --run`) and `npm run lint`; ensure all tests pass, ask the user if questions arise.
 
-- [ ] 40. Build the Project_Log and the Workspace lists
-  - [ ] 40.1 Implement the Project_Log in `apps/app/src/projects/log.ts` and `GET /projects/{id}/log`
+- [x] 40. Build the Project_Log and the Workspace lists
+  - [x] 40.1 Implement the Project_Log in `apps/app/src/projects/log.ts` and `GET /projects/{id}/log`
     - Every Research_Item of the Project except those of incomplete Submissions, newest first by Log_Date then creation time, or reversed; ordered by a UTC key with neighbouring entries within one day read and the exact viewer time-zone order applied before the page is cut; pages of 50 with links that keep order and filters; the "no entries" notice; the first Project in the Project_Order when none is chosen
     - Entries with kind, Item_Identifier, title, Log_Date, Owner, Credit, status, Journal_Entry phase identifier and dates, withdrawal mark with date and reason, link, and the Log_Summary in full with labels or the "no Log_Summary recorded" notice; a deleted Research_Item appears as its Deletion record dated at the deletion, matching only the kind filter
     - Filters by kind, Member (Owner or Credit), current Specialty, and an inclusive Log_Date range, with an end-before-start range refused while the previous results stay; data read live on each page load
     - _Requirements: 43.1, 43.2, 43.3, 43.4, 43.5, 43.6, 43.7, 43.8_
-  - [ ] 40.2 Implement the Workspace lists in `apps/app/src/lists/` and `apps/app/src/api/routes/lists.ts`
+  - [x] 40.2 Implement the Workspace lists in `apps/app/src/lists/` and `apps/app/src/api/routes/lists.ts`
     - The Findings ledger (newest first, filters by Finding_Status, Credit person, and Specialty), Runs (newest start first with the listed columns and filters), Hypotheses (statement and status, status filter), Correspondences (newest date first, filters by Party, direction, and date range), Archival_Requests (Follow_Up_Due marks, filters by status and archive or desk), and the Projects list with every field of Requirement 39.16; every list applies the visibility gate with the `canRead` fragment, filters by one or more Projects, names each Research_Item's Project, and shows the Restricted mark; the Project_Log of 40.1 and the Projects list's counts apply the same fragment, so no entry or count reveals a Restricted Research_Item to a Member outside its Access_List
     - _Requirements: 5.7, 7.6, 8.5, 9.7, 10.4, 39.14, 39.15, 39.16, 47.4, 47.11_
-  - [ ] 40.3 Build the Project_Log and list screens in `apps/app/web/src/lists/` and `apps/app/web/src/projects/log.tsx`
+  - [x] 40.3 Build the Project_Log and list screens in `apps/app/web/src/lists/` and `apps/app/web/src/projects/log.tsx`
     - Flags (Task 25): show `FlagMark` from `apps/app/web/src/activity/activity.tsx` on entries, read as the page opened them with `useFlagSnapshot`, and call `useRecordViews` with the Items the page opens.
     - The Project_Log with Project switcher, order toggle, filters, and page links; after 10 seconds without a page, "the Project_Log is unavailable", with the 00:00 UTC note for daily limits, keeping Project, order, and filters; the list pages and the Projects list
     - _Requirements: 39.16, 43.1, 43.6, 43.8, 43.9_
-  - [ ] 40.4 Write property test for query and date-range validation
+  - [x] 40.4 Write property test for query and date-range validation
     - **Property 64: Query and date-range validation**
     - **Validates: Requirements 21.9, 30.11, 43.8**
-  - [ ] 40.5 Write property test for Workspace lists
+  - [x] 40.5 Write property test for Workspace lists
     - **Property 65: Workspace lists filter by conjunction and page losslessly**
     - **Validates: Requirements 3.4, 5.7, 7.6, 8.5, 9.7, 10.4, 18.8, 18.9, 23.8, 26.8, 39.14, 39.16, 43.1, 43.2, 43.4, 43.5**
 
 - [ ] 41. Build Dissent_Notes
-  - [ ] 41.1 Implement the Dissent_Note API in `apps/app/src/dissent/dissent.ts` and `apps/app/src/api/routes/dissent.ts`
+  - [x] 41.1 Implement the Dissent_Note API in `apps/app/src/dissent/dissent.ts` and `apps/app/src/api/routes/dissent.ts`
     - `POST /dissent` by an active Member other than the Owner on a Research_Item with a Log_Summary, withdrawn or not, recording text, author, time, and a snapshot of the Log_Summary's text and labels, Not_Published, with the `dissent_unique` guard; `PATCH /dissent/{id}` and `POST /dissent/{id}/withdraw` by the author only, with marks and reasons, a new snapshot on each text change, and refusal when the Log_Summary or the note changed since the editor opened, returning the current Log_Summary and the changes since
     - `DELETE /dissent/{id}` by Administrators with a reason, removing text, values, and Revisions and leaving a Deletion record; disclosure changes through the disclosure API; Restorations and Log_Summary changes never touch notes; Activity_Feed entries naming the Research_Item; the Dissent event rule in `fanout.ts`; search and publish outbox rows; package lists for deletions through the export indexes
     - _Requirements: 42.1, 42.2, 42.4, 42.5, 42.6, 42.7, 42.11, 42.12, 42.16, 42.17, 42.18_
-  - [ ] 41.2 Implement Dissent_Note display in `apps/app/src/dissent/display.ts` and update `apps/app/src/projects/log.ts`
+  - [x] 41.2 Implement Dissent_Note display in `apps/app/src/dissent/display.ts` and update `apps/app/src/projects/log.ts`
     - Non-withdrawn notes directly after the Log_Summary, oldest first, with text, author, and last-saved time in the viewer's zone on the item page, in the Project_Log, previews, Publication_Requests, and the Owner's Log_Summary editor; their count with a link where only an excerpt is shown; the earlier-wording mark with a link to the word comparison while the current Log_Summary differs from the snapshot of the author's last save
     - Withdrawn notes only on the item page and in history, with date and reason; Deletion records in place of deleted notes; the item history includes each note's creation and Revisions
     - _Requirements: 42.3, 42.8, 42.9, 42.10, 43.3_
-  - [ ] 41.3 Build the Dissent_Note screens in `apps/app/web/src/dissent/`
+  - [x] 41.3 Build the Dissent_Note screens in `apps/app/web/src/dissent/`
     - Attach, edit, and withdraw forms with marks and reasons, the earlier-wording mark and comparison, the conflict view, and Administrator deletion and disclosure controls
     - _Requirements: 42.3, 42.9, 42.16, 42.17_
   - [ ] 41.4 Write property test for new Disclosure_Units
@@ -1249,7 +1249,7 @@ Canonical phases: `collaboration` → `privacy` → `imports_and_log` → `publi
     - `rg -n "'private'"` over `apps` and `packages` finds no Disclosure_Level use afterwards
     - _Requirements: 23.1_
 
-- [ ] 52. Build restricted access inside the team
+- [x] 52. Build restricted access inside the team
   - Existing implementation and migration are present; task 57.1 reconciled acceptance individually. See `docs/acceptance/README.md` and the task-evidence ledger; 52.4–52.6 retain their preview/projection/list integration gaps. Do not recreate an already applied migration. Later kinds extend these privacy checks in their own tasks.
   - [x] 52.1 Add the access data and Permissions
     - The next migration adds `research_items.access_level` (`whole_team` or `restricted`, default `whole_team`), `access_grants (root_id, member_id, granted_by, granted_at)` with primary key (`root_id`, `member_id`), the guard table `_g_access_owner`, and the Revision_Kind `access_change`; add `access_owner` to `GUARD_CODES` in `packages/db/src/batch.ts`
@@ -1264,15 +1264,15 @@ Canonical phases: `collaboration` → `privacy` → `imports_and_log` → `publi
     - Submissions accept `access: { level, members }` for each new Research_Item, with members limited to Pending or Active Members and the statement that the Owner and every Administrator can read Restricted items returned for display
     - Mentions and Review_Requests that name a Member who cannot read the Research_Item are refused with `rule: access_addressee` listing the Members, keeping the input; Specialty Mentions and Specialty or Role addressees reach only holders who Can_Read the Research_Item
     - _Requirements: 47.1, 47.2, 47.5, 47.10_
-  - [ ] 52.4 Implement access changes in `apps/app/src/records/access.ts`
+  - [x] 52.4 Implement access changes in `apps/app/src/records/access.ts`
     - `POST /items/{id}/access` with `{ level, add, remove }`, `POST /access/bulk` for 1 to 1,000 Research_Items, and their preview endpoint, which lists the Members who would gain read access and, when restricting, every Public or Withheld unit whose own level the change resets, with the Public_Views removed
     - A change that only narrows needs `access.restrict`; a change that adds Members or lifts the restriction needs `access.widen` and the `access_owner` guard (task 54.5 adds the Dual_Approval path for a Revoked Owner); restricting writes, in the same batch, `not_published` on each listed unit, a Disclosure_Change per unit, Item_Update events for every Administrator, and a `publish` outbox row; every change writes an `access_change` Revision with the previous level and list; a bulk change applies to every Research_Item or none and states the reason
     - Item history (`apps/app/src/records/history.ts`, `packages/domain/src/history.ts`, and the history screen) lists Access_Change Revisions with the previous and new level and list; a Restoration never changes the Access_Level or Access_List, so add them to `ALWAYS_KEPT` beside the disclosure fields
     - _Requirements: 47.6, 47.7, 47.8, 47.14_
-  - [ ] 52.5 Treat Restricted roots as Not_Published in the kernel
+  - [x] 52.5 Treat Restricted roots as Not_Published in the kernel
     - `loadProjectionInput` and the kernel input carry a `restricted` flag on Research_Items, and `effective()` treats a Restricted root like a Not_Published ancestor; `checkGates` refuses any change that sets a Public or Withheld level, a Public_Presentation, a Public_Summary, or a Disclosure_Line on a Restricted Research_Item, naming it as Restricted
     - _Requirements: 23.1, 47.9_
-  - [ ] 52.6 Build the access screens in `apps/app/web/src/access/`
+  - [x] 52.6 Build the access screens in `apps/app/web/src/access/`
     - The access fields in the item form (Whole_Team or Restricted, a Member picker, and the statement of who can always read), the Restricted mark with the Owner and the Access_List on item pages, lists, and Thread headers, the access dialog with the preview and confirmation, and bulk selection on lists
     - _Requirements: 47.2, 47.7, 47.8, 47.11, 47.14_
   - [x] 52.7 Write property test for restricted reads
@@ -1283,49 +1283,49 @@ Canonical phases: `collaboration` → `privacy` → `imports_and_log` → `publi
     - **Property 101: Only the Owner widens access, and restricting unpublishes**
     - **Validates: Requirements 47.6, 47.7, 47.8, 47.12, 47.14**
 
-- [ ] 53. Build Attachment moves
-  - [ ] 53.1 Implement the move API in `apps/app/src/files/move.ts` and `POST /attachments/{id}/move`
+- [x] 53. Build Attachment moves
+  - [x] 53.1 Implement the move API in `apps/app/src/files/move.ts` and `POST /attachments/{id}/move`
     - Move the whole Version_Chain to the new Parent in one batch, updating `parent_id`, `root_id`, and `project_id` of each Attachment and everything under it while identifiers, files, rights, levels, Classification_States, holds, and Cross_Links stay unchanged; a Revision per moved Attachment holding the previous Parent (Disclosure_Change when a Public_View changes, Minor_Edit otherwise) and one Activity_Feed entry
     - A preview endpoint computes the views before and after; a move that widens a Public_View needs `disclosure.set`, a fresh preview token, and the disclosure gates; a move out of a Restricted Research_Item to a Root_Item that more Members can read needs `access.widen` on the source with the `access_owner` guard; Question_Group entries that would cross Projects are removed in the same batch through task 55.2's helper
     - _Requirements: 12.12, 12.13, 12.14, 12.15, 50.7_
-  - [ ] 53.2 Build the move dialog in `apps/app/web/src/files/move.tsx`
+  - [x] 53.2 Build the move dialog in `apps/app/web/src/files/move.tsx`
     - Choose the new Parent (a Research_Item or Reply the Member Can_Read; editing the moved Attachment is required, editing the destination is not), show the preview with changed views and Members who gain read access, and confirm; offered on every Attachment page, including those of the Unassigned_Attachments_Source
     - _Requirements: 12.12, 12.14_
-  - [ ] 53.3 Write property test for Attachment moves
+  - [x] 53.3 Write property test for Attachment moves
     - **Property 105: Attachment moves keep identity and move whole Version_Chains**
     - **Validates: Requirements 12.12, 12.13, 12.14, 12.15**
 
-- [ ] 54. Build Owner consent, Confidentiality_Holds, and Dual_Approvals
-  - [ ] 54.1 Add the consent, hold, and approval data
+- [x] 54. Build Owner consent, Confidentiality_Holds, and Dual_Approvals
+  - [x] 54.1 Add the consent, hold, and approval data
     - The next migration adds `publication_consents`, `confidentiality_holds` with its partial unique index, and `dual_approvals` as the design defines them, the Review_Request type `proposal` (the existing `review_requests` checks allow an outcome only on Publication_Requests and only Applied or Declined, so the migration rebuilds `review_requests` with a request type column and outcomes Approved and Declined for proposals, mapping existing rows), and the guard tables `_g_consent_valid`, `_g_hold_free`, `_g_dual_open`, and `_g_dual_distinct`; add the codes to `GUARD_CODES`
     - _Requirements: 23.18, 48.1, 49.2, 23.23, 23.24, 49.8_
-  - [ ] 54.2 Add the widening test and the new gates to the kernel and `loadProjectionInput`
+  - [x] 54.2 Add the widening test and the new gates to the kernel and `loadProjectionInput`
     - Retain widens with actual and prospective-public ancestors and the hold/Restricted gates. Add canonical approved snapshot/dependency digests for content revisions, exact files, rights, naming, licence and other projection inputs; narrower output is omission of approved material, not a text substitution.
     - The apply batch rechecks the snapshot dependencies and unused/unwithdrawn consent, current coverage and holds before all writes. Owner approval of A followed by an Administrator edit to B requires new approval, even with identical summary/level. Retain the separate policy for an Owner editing their own already-public work.
     - _Requirements: 23.17, 23.20, 23.23, 23.24, 48.2, 48.4_
-  - [ ] 54.3 Implement Publication_Proposals and consents in `apps/app/src/reviews/proposals.ts`
+  - [x] 54.3 Implement Publication_Proposals and consents in `apps/app/src/reviews/proposals.ts`
     - `POST /proposals` creates one Publication_Proposal per Consenting_Member with the proposed values, an optional note, and the resulting Public_Views, and a Review_Requested event; the addressee approves or declines with an optional note, writing one consent row per unit on approval and a Review_Completed event for the proposer; withdrawing an approval before it is used
     - A Publication_Request by the unit's Consenting_Member writes a consent row with source `request` while it is open; applying it with edited values needs a new consent for each value that the consent does not cover
     - _Requirements: 23.18, 23.19, 23.20, 23.21_
-  - [ ] 54.4 Implement Confidentiality_Holds in `apps/app/src/disclosure/holds.ts`
+  - [x] 54.4 Implement Confidentiality_Holds in `apps/app/src/disclosure/holds.ts`
     - `POST /items/{id}/holds` with a note and a preview that lists the units whose own levels the hold resets; the batch writes them as Not_Published with Disclosure_Changes, Item_Update events for every Administrator and the Owner, an `access_change` Revision, and a `publish` outbox row
     - Lifting by the placer or the Owner with an optional note, events for the placer and every Administrator, and no level change; any other lift is refused with an authorization error; holds shown on item pages, previews, Publication_Requests and Publication_Proposals, and the Unclassified list
     - _Requirements: 48.1, 48.2, 48.3, 48.5, 48.6, 48.7, 48.10_
-  - [ ] 54.5 Implement Dual_Approvals in `apps/app/src/reviews/dual.ts`
+  - [x] 54.5 Implement Dual_Approvals in `apps/app/src/reviews/dual.ts`
     - Keep propose/approve/decline/withdraw for hold_override, departed-Owner access_widen and consent_on_behalf with immutable reasons/history. Store target/effect and approved content/dependency digests.
     - Inside the approving batch recheck both proposer and approver as different currently Active Administrators, the exact effect/snapshot, open state and every action precondition; lapse a changed or ineligible proposal. An active administrator count alone is insufficient.
     - Keep the existing recipient rules, one Activity_Feed entry on approval, disabled explanation with fewer than two Administrators, and read/commit access checks; no override may rewrite protected personal wording.
     - _Requirements: 23.22, 23.23, 23.24, 47.7, 48.8, 48.9, 49.1, 49.2, 49.3, 49.4, 49.5, 49.6, 49.7, 49.8_
-  - [ ] 54.6 Build the consent, hold, and approval screens in `apps/app/web/src/disclosure/` and `apps/app/web/src/reviews/`
+  - [x] 54.6 Build the consent, hold, and approval screens in `apps/app/web/src/disclosure/` and `apps/app/web/src/reviews/`
     - The consent failure in the disclosure dialog with the offer to send Publication_Proposals, the Consenting_Member's proposal page with the preview, approve, decline, and withdraw; the hold panel on item pages with place, lift, and the proposal of a Hold_Override; the open Dual_Approvals list with approve, decline, and withdraw; and holds and approvals in item history
     - _Requirements: 23.17, 23.18, 23.19, 48.5, 48.8, 49.2, 49.6, 49.7_
-  - [ ] 54.7 Write property test for publication consent
+  - [x] 54.7 Write property test for publication consent
     - **Property 102: Publication follows the Consenting_Member's consent**
     - **Validates: Requirements 23.17, 23.18, 23.19, 23.20, 23.21, 23.22, 23.23, 23.24**
-  - [ ] 54.8 Write property test for Confidentiality_Holds
+  - [x] 54.8 Write property test for Confidentiality_Holds
     - **Property 103: Confidentiality_Holds block publication until lifted or overridden**
     - **Validates: Requirements 48.1, 48.2, 48.3, 48.4, 48.6, 48.7, 48.10**
-  - [ ] 54.9 Write property test for Dual_Approvals
+  - [x] 54.9 Write property test for Dual_Approvals
     - **Property 104: Dual_Approvals need two different active Administrators**
     - **Validates: Requirements 23.22, 47.7, 48.8, 48.9, 49.1, 49.3, 49.4, 49.5, 49.6, 49.8**
 
@@ -1459,11 +1459,11 @@ Canonical phases: `collaboration` → `privacy` → `imports_and_log` → `publi
     - **Validates: Requirements 36.8, 36.14, 36.15, 36.16, 60.5**
 
 - [ ] 59. Certify publication epochs, containment and bounded public abuse
-  - [ ] 59.1 Implement durable publication epochs and fenced external operations
+  - [x] 59.1 Implement durable publication epochs and fenced external operations
     - Increment the public invalidation epoch in the originating transaction; add job/deploy/file operation identities, generation guards, urgent preemption and rf-ops serialized expected-epoch checks used by tasks 32.1–32.5.
     - A late provider response or old retry cannot restore a suppressed file, promote stale assets unchecked, or reopen containment. Reconcile ambiguous version promotion against actual provider state and keep denial until the latest authorized generation verifies.
     - _Requirements: 24.11, 24.16, 24.17, 25.3, 30.7, 60.2, 60.6_
-  - [ ] 59.2 Prepare independent edge containment and health/incident handling
+  - [x] 59.2 Prepare independent edge containment and health/incident handling
     - Implement narrow rf-ops control methods, precreated public-host deny rules, an independently recoverable operator credential/runbook and out-of-band verification/alert adapters. Confirm actual plan capabilities; inability to provide required denial blocks public launch.
     - At four minutes unverified removal, initiate denial on public research hosts while leaving app available; verify by five minutes where provider controls are available. If neither removal nor denial is possible, report an unconfirmed confidentiality incident, not success. A reset/retry cannot clear active containment.
     - _Requirements: 24.16, 24.17, 28.6, 60.4, 60.6_
@@ -1569,38 +1569,38 @@ Canonical phases: `collaboration` → `privacy` → `imports_and_log` → `publi
     - **Property 120: Compute coverage is exact only for compatible verified scopes**
     - **Validates: Requirements 56.1, 56.2, 56.3, 56.4, 56.5, 56.6**
 
-- [ ] 64. Build durable drafts and authorized proposed edits
-  - [ ] 64.1 Implement author-scoped durable draft storage and recovery
+- [x] 64. Build durable drafts and authorized proposed edits
+  - [x] 64.1 Implement author-scoped durable draft storage and recovery
     - Add /drafts with target/base revision, exact field-version manifests, upload/group IDs, operation key, pin/last-save state and local fallback. Distinguish acknowledged durable content from unsaved local changes; normal reads are author-only with current target access.
     - Implement reasoned audited Administrator recovery, warned 83/90-day inactive expiry and pinned retention, encrypted backup visibility metadata and exclusion from public/search/notification/Submission output. File reselection revalidates identity rather than fabricating File objects.
     - _Requirements: 2.16, 28.10, 57.1, 57.2, 57.3, 60.1, 60.2, 60.8_
-  - [ ] 64.2 Implement revision-bound proposed diffs and guarded acceptance
+  - [x] 64.2 Implement revision-bound proposed diffs and guarded acceptance
     - Implement edit proposal submit/rebase/withdraw/accept/decline with exact diff, explanation, evidence and immutable author/base identities. Current authorized field editors accept; a stale base requires explicit rebase/review and a forbidden field rejects the entire action.
     - Do not route disclosure/access/rights/consent/status changes through content proposals. Preserve another Member's Log_Summary/Profile/Dissent protections and personal acknowledgement ownership; record proposer separately from actual editor and deduplicate readable notifications.
     - _Requirements: 57.4, 57.5, 57.6, 60.1, 60.2_
-  - [ ] 64.3 Build draft resumption and proposal review screens
+  - [x] 64.3 Build draft resumption and proposal review screens
     - Add save/resume/discard/pin draft controls and clear saved/local/unknown indicators; test closing/reopening tabs, permission loss and upload expiry while preserving metadata.
     - Build proposed-diff review, stale/conflict rebase, accept/decline/withdraw and attribution/history screens; a Contributor can suggest another record's edit but does not gain target editing or public disclosure rights.
     - _Requirements: 57.1, 57.2, 57.3, 57.4, 57.5, 57.6, 60.9_
-  - [ ] 64.4 Write property and regression tests for durable drafts
+  - [x] 64.4 Write property and regression tests for durable drafts
     - Use independent models and fault injection in `apps/app/test/properties/p121-durable-drafts.test.ts`; cover the concrete scenarios in the design, including current-access and maximum encoded-input cases. This owning property file does not replace browser/staging tests.
     - **Property 121: Durable drafts recover acknowledged input with author isolation**
     - **Validates: Requirements 57.1, 57.2, 57.3**
-  - [ ] 64.5 Write property and regression tests for proposed edits
+  - [x] 64.5 Write property and regression tests for proposed edits
     - Use independent models and fault injection in `apps/app/test/properties/p122-edit-proposals.test.ts`; cover the concrete scenarios in the design, including current-access and maximum encoded-input cases. This owning property file does not replace browser/staging tests.
     - **Property 122: Proposed edits apply only current authorized diffs**
     - **Validates: Requirements 57.4, 57.5, 57.6**
 
-- [ ] 65. Build personal navigation and team work dashboards
-  - [ ] 65.1 Implement personal bookmarks, saved queries, follows and recipient union
+- [x] 65. Build personal navigation and team work dashboards
+  - [x] 65.1 Implement personal bookmarks, saved queries, follows and recipient union
     - Add author-scoped bookmark/search/follow tables and /me endpoints with validated names/count limits and no stored result snapshots; rerun saved searches through current authorization and show only a neutral unavailable personal entry for a lost target.
     - Union follows with existing participation recipients before notification/email grouping; apply event preferences and Project muting without defeating existing mandatory policy-alert exceptions. Add migration-defined preferences for new event types; personal records appear only in encrypted backup/personal export.
     - _Requirements: 2.16, 58.2, 58.3, 58.4, 60.1_
-  - [ ] 65.2 Build My_Work and authorized team dashboards
+  - [x] 65.2 Build My_Work and authorized team dashboards
     - Provide assignment acceptance/due/blocked work, eligible reviews, archival follow-ups, proposals, followed Questions and durable drafts with lossless paging and Project/responsible/state filters.
     - Keep outstanding work separate from unseen flags; show no inaccessible context/counts and do not clear flags merely by listing results. Add bookmark/search management and saved-navigation access-loss walkthroughs.
     - _Requirements: 52.5, 58.1, 58.4, 58.5, 60.9_
-  - [ ] 65.3 Write property and regression tests for navigation and follows
+  - [x] 65.3 Write property and regression tests for navigation and follows
     - Use independent models and fault injection in `apps/app/test/properties/p123-personal-navigation.test.ts`; cover the concrete scenarios in the design, including current-access and maximum encoded-input cases. This owning property file does not replace browser/staging tests.
     - **Property 123: Navigation and follows preserve access and event uniqueness**
     - **Validates: Requirements 58.1, 58.2, 58.3, 58.4, 58.5**
@@ -1643,15 +1643,15 @@ Canonical phases: `collaboration` → `privacy` → `imports_and_log` → `publi
     - **Validates: Requirements 60.1, 60.3, 60.4, 60.5, 60.6, 60.7, 60.8, 60.9**
 
 - [ ] 68. Complete permission-evidence policy and mandatory release gates
-  - [ ] 68.1 Add shared Permission_Evidence and manual/emailed grant coverage
+  - [x] 68.1 Add shared Permission_Evidence and manual/emailed grant coverage
     - Add immutable grant/evidence/source/document/version/hash/use/naming/authority/expiry/withdrawal rows and common coverage helpers. Legacy hand-set statuses become unverified legacy evidence pending curation; do not invent historical grants or silently publish uncovered material.
     - Provide exact snapshot coverage helpers for 54's Owner consents and dual eligibility, Withheld neutral-name fallback and existing Do_Not_Name precedence; changing a status does not grant unlimited rights. Extend backup/recovery/release schema readers and suppression indexes.
     - _Requirements: 23.23, 23.24, 49.8, 51.9, 51.15, 51.16, 51.17, 51.18, 60.1_
-  - [ ] 68.2 Build evidence recording, precise permission requests and policy text
+  - [x] 68.2 Build evidence recording, precise permission requests and policy text
     - Build a manual evidence editor and curation queue with immutable evidence references, exact file/use/naming identity and expiry; provide shared preview/snapshot components with structured document identity and asserted authority for the later task 56 Consent_Request screens. A separately authorized feature is required to share file bytes externally.
     - Disclose verified residual Microsoft 365 retention in policy; make the explicit scoped bearer Download_Link exception visible to Members, preserve neutral withheld naming without a grant, and require configured content licence and recovery/provider inputs before their launch gates.
     - _Requirements: 1.3, 20.24, 51.9, 51.15, 51.16, 51.17, 51.18, 60.1_
-  - [ ] 68.3 Write property and regression tests for permission evidence coverage
+  - [x] 68.3 Write property and regression tests for permission evidence coverage
     - Use independent models and fault injection in `apps/app/test/properties/p126-permission-evidence.test.ts`; cover the concrete scenarios in the design, including current-access and maximum encoded-input cases. This owning property file does not replace browser/staging tests.
     - **Property 126: Permission evidence covers only the exact authorized use**
     - **Validates: Requirements 51.9, 51.15, 51.16, 51.17, 51.18, 23.23, 23.24, 49.8**

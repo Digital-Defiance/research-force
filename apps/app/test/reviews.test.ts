@@ -43,7 +43,7 @@ describe('POST /reviews', () => {
         { type: 'member', id: world.ids.colleague, name: nameOf(world.ids.colleague) }, { type: 'specialty', id: SPECIALTY, name: 'Historian' },
         { type: 'role', id: ROLE_IDS.administrator, name: 'Administrator' },
       ],
-      note: 'Please check the caveat.', createdAt: world.at, isPublicationRequest: false,
+      note: 'Please check the caveat.', createdAt: world.at, isPublicationRequest: false, requestType: 'review',
     }]);
   });
 
@@ -198,8 +198,8 @@ describe('POST /reviews/{id}/complete', () => {
   it('leaves a Publication_Request to its apply and decline actions', async () => {
     const item = await world.created('author', 'finding');
     const id = newULID(world.at);
-    await world.core().prepare(`INSERT INTO review_requests (id, target_id, root_id, requester_id, created_at, is_publication_request, proposal, updated_seq)
-      VALUES (?1, ?2, ?2, ?3, ?4, 1, '{}', 0)`).bind(id, item.id, world.ids.author, world.at).run();
+    await world.core().prepare(`INSERT INTO review_requests (id, target_id, root_id, requester_id, created_at, request_type, is_publication_request, proposal, updated_seq)
+      VALUES (?1, ?2, ?2, ?3, ?4, 'publication_request', 1, '{}', 0)`).bind(id, item.id, world.ids.author, world.at).run();
     await world.core().prepare("INSERT INTO review_addressees (request_id, addressee_type, addressee_id) VALUES (?1, 'role', ?2)").bind(id, ROLE_IDS.administrator).run();
     expect(await errorOf(await complete('admin', id))).toMatchObject({ status: 422, error: 'rule', details: { rule: 'publication_request' } });
     expect(reviewsOf(await world.view('author', item.id))[0]).toMatchObject({ id, isPublicationRequest: true, state: 'needs_review' });

@@ -9,6 +9,11 @@ import type { ItemKind } from '@researchforce/domain/types';
 import { BUILT_IN_VALUE_IDS, RESUMABLE_RUN_OUTCOME_IDS } from '@researchforce/domain/value-sets';
 import type { ValueSetKind } from '@researchforce/domain/value-sets';
 import { AccessSummary, RestrictedMark } from '../access/access';
+import { DissentPanel } from '../dissent/dissent';
+import { HoldPanel } from '../disclosure/holds';
+import { DisclosureChange } from '../disclosure/disclosure';
+import { CorrespondenceParties } from '../disclosure/correspondence';
+import { MoveDialog } from '../disclosure/move';
 import { RichTextView } from '../editor/RichTextView';
 import { FlagMark, useFlagSnapshot, useRecordViews } from '../activity/activity';
 import { Thread, mentionOptions } from '../discussion/thread';
@@ -235,12 +240,20 @@ export function ItemDetails({ data }: { readonly data: ItemPageData }) {
         {item.disclosure.line !== undefined && <p className="rf-disclosure-line">{item.disclosure.line}</p>}
         <div className="rf-actions">
           <Link className="rf-button" to={`/items/${item.id}/edit`}>Edit</Link>
+          <Link className="rf-button" to={`/items/${item.id}/propose`}>Propose an edit</Link>
+          <Link className="rf-button" to={`/items/${item.id}/proposals`}>Proposed edits</Link>
           <Link className="rf-button" to={`/items/${item.id}/history`}>History</Link>
           {item.withdrawal === null && <Link className="rf-button" to={`/items/${item.id}/withdraw`}>Withdraw</Link>}
           {session.can('item.delete') && <Link className="rf-button rf-button--danger" to={`/items/${item.id}/delete`}>Delete permanently</Link>}
         </div>
       </header>
       <AccessSummary item={item} members={data.members} onChanged={onChanged} />
+      <DisclosureChange itemId={item.id} level={item.disclosure.level} {...(typeof item['publicPresentation'] === 'string' ? { presentation: item['publicPresentation'] } : {})}
+        {...(isRich(item['publicSummary']) ? { publicSummary: item['publicSummary'] } : {})} {...(item.logSummary !== undefined ? { logSummary: item.logSummary } : {})}
+        members={data.members} onProposed={onChanged} onApplied={onChanged} />
+      {item.kind === 'correspondence' && <CorrespondenceParties item={item} parties={data.parties} members={data.members} onChanged={onChanged} />}
+      <HoldPanel itemId={item.id} ownerId={item.owner.id} holds={item.holds ?? []} onChanged={onChanged} />
+      <MoveDialog itemId={item.id} projectId={item.project.id} members={data.members} onMoved={onChanged} />
       {item.withdrawal !== null && (
         <Notice tone="warning" title={`Withdrawn on ${formatDate(item.withdrawal.at)}`}>
           <p>{'By '}<PersonLink person={item.withdrawal.by} />{item.withdrawal.reason === null ? '' : `: ${item.withdrawal.reason}`}</p>
@@ -286,6 +299,7 @@ export function ItemDetails({ data }: { readonly data: ItemPageData }) {
           ? <><p className="rf-meta">{'By '}<PersonLink person={item.owner} /></p><RichTextView value={item.logSummary} /></>
           : <p className="rf-meta">No Log Summary is recorded.</p>}
       </section>
+      <DissentPanel item={item} members={data.members} onChanged={onChanged} />
       <AttachmentList parentId={item.id} />
       <LinkList title="Cross-links" entries={data.links} empty="No Cross-links from this record." />
       <LinkList title="Backlinks" entries={data.backlinks} empty="No Backlinks to this record." />

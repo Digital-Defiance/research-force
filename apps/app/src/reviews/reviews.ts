@@ -134,7 +134,7 @@ export async function completeReview(c: Context<ApiEnv>, id: string, body: unkno
 interface RequestRow {
   id: ULID; targetId: ULID; rootId: ULID | null; requesterId: ULID; requesterName: string | null; note: string | null; createdAt: Timestamp; state: 'needs_review' | 'reviewed';
   reviewerId: ULID | null; reviewerName: string | null; reviewedAt: Timestamp | null; reviewNote: string | null; publication: number; outcome: string | null;
-  targetType: string | null; identifier: string | null; title: string | null;
+  targetType: string | null; identifier: string | null; title: string | null; requestType: string | null;
 }
 interface AddresseeRow { requestId: ULID; type: AddresseeType; id: ULID; name: string | null }
 export interface ReviewView {
@@ -146,6 +146,8 @@ export interface ReviewView {
   readonly note: string | null;
   readonly createdAt: Timestamp;
   readonly isPublicationRequest: boolean;
+  /** `proposal` for a Publication_Proposal (R23.18), so the queue links it to the Consenting_Member's proposal page. */
+  readonly requestType: string;
   readonly reviewer?: { readonly id: ULID; readonly displayName: string | null };
   readonly reviewedAt?: Timestamp;
   readonly reviewNote?: string | null;
@@ -154,7 +156,7 @@ export interface ReviewView {
 
 const REQUEST_COLUMNS = `rr.id, rr.target_id AS targetId, rr.root_id AS rootId, rr.requester_id AS requesterId, rq.display_name AS requesterName, rr.note, rr.created_at AS createdAt,
   rr.state, rr.reviewer_id AS reviewerId, rv.display_name AS reviewerName, rr.reviewed_at AS reviewedAt, rr.review_note AS reviewNote,
-  rr.is_publication_request AS publication, rr.outcome, t.unit_type AS targetType, coalesce(at.item_identifier, ri.item_identifier) AS identifier, coalesce(at.title, ri.title) AS title`;
+  rr.is_publication_request AS publication, rr.outcome, rr.request_type AS requestType, t.unit_type AS targetType, coalesce(at.item_identifier, ri.item_identifier) AS identifier, coalesce(at.title, ri.title) AS title`;
 const REQUEST_JOINS = `LEFT JOIN profiles rq ON rq.member_id = rr.requester_id LEFT JOIN profiles rv ON rv.member_id = rr.reviewer_id
   LEFT JOIN units t ON t.id = rr.target_id LEFT JOIN attachments at ON at.unit_id = rr.target_id LEFT JOIN research_items ri ON ri.unit_id = rr.root_id`;
 const ADDRESSEE_COLUMNS = `a.request_id AS requestId, a.addressee_type AS type, a.addressee_id AS id, coalesce(p.display_name, v.name, r.name) AS name`;
@@ -169,7 +171,7 @@ function views(requests: readonly RequestRow[], addressees: readonly AddresseeRo
     id: row.id, target: { id: row.targetId, type: row.targetType, rootId: row.rootId, identifier: row.identifier, title: row.title },
     state: row.state, requester: { id: row.requesterId, displayName: row.requesterName },
     addressees: (named.get(row.id) ?? []).sort((a, b) => order[a.type] - order[b.type] || (a.name ?? '').localeCompare(b.name ?? '')).map(({ type, id, name }) => ({ type, id, name })),
-    note: row.note, createdAt: row.createdAt, isPublicationRequest: row.publication === 1,
+    note: row.note, createdAt: row.createdAt, isPublicationRequest: row.publication === 1, requestType: row.requestType ?? 'review',
     ...(row.state === 'reviewed' ? { reviewer: { id: row.reviewerId!, displayName: row.reviewerName }, reviewedAt: row.reviewedAt!, reviewNote: row.reviewNote, outcome: row.outcome } : {}),
   }));
 }

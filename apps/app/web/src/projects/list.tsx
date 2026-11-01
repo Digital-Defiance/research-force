@@ -44,10 +44,13 @@ export function ProjectOrder({ projects, canEdit, onMoved }: { readonly projects
               <strong>{project.name}</strong>
               {project.featured && <span className="rf-status rf-status--info"> Featured</span>}
               {project.muted === true && <span className="rf-status"> Muted</span>}
-              <p className="rf-meta">{`/${project.slug} · ${levelName(project.disclosureLevel)} · ${project.researchItems ?? 0} Research Items`}</p>
+              {project.description !== null && project.description !== '' && <p>{project.description}</p>}
+              <p className="rf-meta">{`/${project.slug} · Disclosure ${levelName(project.disclosureLevel)}, effective ${levelName(project.effectiveDisclosure ?? project.disclosureLevel)} · ${project.researchItems ?? 0} Research Items`}</p>
             </div>
             <div className="rf-actions">
               <Link to={`/projects/${project.id}/history`}>{`History of ${project.name}`}</Link>
+              {' '}<Link to={`/projects/${project.id}/log`}>{`Log of ${project.name}`}</Link>
+              {' '}<Link to={`/projects/${project.id}/dashboard`}>{`Team dashboard for ${project.name}`}</Link>
               {' '}<Link to={`/projects/${project.id}/work`}>{`Work in ${project.name}`}</Link>
               {' '}<Link to={`/projects/${project.id}/citations`}>{`Citations in ${project.name}`}</Link>
               {' '}<Link to={`/projects/${project.id}/coverage`}>{`Search coverage in ${project.name}`}</Link>

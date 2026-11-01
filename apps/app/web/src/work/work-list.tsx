@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 import { WORK_PRIORITIES } from '@researchforce/domain/work';
 import { useApi } from '../api';
+import type { MemberRow, ProjectRecord } from '../types';
 import { Button, LoadState, SelectField, TextField, useLoad } from '../ui';
 import { ANSWER_NAMES, priorityName, STATE_OPTIONS, stateName } from './model';
 import type { WorkPage, WorkRow } from './model';
@@ -24,15 +25,25 @@ function Row({ row }: { readonly row: WorkRow }) {
   );
 }
 
-/** The Member's own work, or a Project's, with the filters combined and a page at a time (R52.5). */
-export function WorkListScreen({ projectId }: { readonly projectId?: string }) {
+/**
+ * The Member's own work, or a Project's, with the filters combined and a page at a time (R52.5). On the
+ * Member's own work a Project and a responsible-Member filter are offered as well; both narrow the
+ * conjunction and a target the Member cannot read simply matches nothing, so neither can confirm a
+ * record they cannot see.
+ */
+export function WorkListScreen({ projectId, embedded = false }: { readonly projectId?: string; readonly embedded?: boolean }) {
   const client = useApi();
+  const mine = projectId === undefined;
   const [view, setView] = useState('');
   const [state, setState] = useState('');
   const [priority, setPriority] = useState('');
+  const [project, setProject] = useState('');
+  const [responsible, setResponsible] = useState('');
   const [dueFrom, setDueFrom] = useState('');
   const [dueTo, setDueTo] = useState('');
-  const query = new URLSearchParams(Object.entries({ view, state, priority, dueFrom, dueTo }).filter(([, value]) => value !== ''));
+  const members = useLoad<{ members: MemberRow[] }>('/members');
+  const projects = useLoad<{ projects: ProjectRecord[] }>(mine ? '/projects' : undefined);
+  const query = new URLSearchParams(Object.entries({ view, state, priority, project, responsible, dueFrom, dueTo }).filter(([, value]) => value !== ''));
   const base = projectId === undefined ? '/me/work' : `/projects/${projectId}/work`;
   const path = `${base}${query.size === 0 ? '' : `?${query.toString()}`}`;
   const first = useLoad<WorkPage>(path);
@@ -46,12 +57,15 @@ export function WorkListScreen({ projectId }: { readonly projectId?: string }) {
       setMore({ path, rows: [...extra.rows, ...page.items], next: page.next });
     } catch (error) { setFailure(error); }
   };
+  const title = projectId === undefined ? 'My work' : 'Work in this Project';
   return (
-    <div className="rf-stack">
-      <h1>{projectId === undefined ? 'My work' : 'Work in this Project'}</h1>
+    <section className="rf-stack" aria-label={title}>
+      {embedded ? <h2>{title}</h2> : <h1>{title}</h1>}
       <form aria-label="Filter work" onSubmit={(event) => event.preventDefault()}>
-        {projectId === undefined && <SelectField label="Show" value={view} placeholder="All my open work" options={VIEWS} onChange={setView} />}
-        <SelectField label="State" value={state} placeholder={projectId === undefined ? 'Any open state' : 'Any state'} options={STATE_OPTIONS} onChange={setState} />
+        {mine && <SelectField label="Show" value={view} placeholder="All my open work" options={VIEWS} onChange={setView} />}
+        {mine && <SelectField label="Project" value={project} placeholder="Any Project" options={(projects.data?.projects ?? []).map((record) => ({ value: record.id, label: record.name }))} onChange={setProject} />}
+        <SelectField label="State" value={state} placeholder={mine ? 'Any open state' : 'Any state'} options={STATE_OPTIONS} onChange={setState} />
+        <SelectField label="Responsible Member" value={responsible} placeholder="Any Member" options={(members.data?.members ?? []).map((record) => ({ value: record.id, label: record.displayName ?? record.email }))} onChange={setResponsible} />
         <SelectField label="Priority" value={priority} placeholder="Any priority" options={WORK_PRIORITIES.map((value) => ({ value, label: priorityName(value) }))} onChange={setPriority} />
         <TextField label="Due from" hint="YYYY-MM-DD, in your own time zone." value={dueFrom} onChange={setDueFrom} />
         <TextField label="Due to" hint="YYYY-MM-DD, in your own time zone." value={dueTo} onChange={setDueTo} />
@@ -66,6 +80,6 @@ export function WorkListScreen({ projectId }: { readonly projectId?: string }) {
           {failure !== undefined && <LoadState error={failure} />}
         </>
       )}
-    </div>
+    </section>
   );
 }

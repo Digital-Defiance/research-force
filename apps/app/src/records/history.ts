@@ -8,6 +8,7 @@ import { CREATION, inSaveOrder, sectionIds, stateAt } from '@researchforce/domai
 import type { Fields, HistoryPoint, HistoryState, SectionValue, StoredRevision } from '@researchforce/domain/history';
 import { addedBack, restoreFields, restoreSection } from '@researchforce/domain/restore';
 import { reasonSchema } from '@researchforce/domain/schemas/other';
+import type { RichText } from '@researchforce/domain/richtext';
 import type { AccessLevel, DisclosureLine, Level, RevisionKind, Timestamp, ULID } from '@researchforce/domain/types';
 import { BUILT_IN_VALUE_IDS } from '@researchforce/domain/value-sets';
 import type { ApiEnv } from '../api/app';
@@ -15,7 +16,7 @@ import { ApiError } from '../api/errors';
 import { parse } from '../api/input';
 import { authorize } from '../auth/authorize';
 import { KIND_ADAPTERS } from './kinds';
-import { rowsOf } from './kinds/kind';
+import { richText, rowsOf } from './kinds/kind';
 import { editItem, itemResponse } from './items';
 import type { LoadedItem } from './items';
 import type { NamedMember } from './access';
@@ -39,6 +40,18 @@ export interface HistoryRevision extends StoredRevision {
   readonly reason: string | null;
   readonly restoredPoint: string | null;
 }
+/** A Dissent_Note's place in the item history: its creation and each of its Revisions, oldest first (R42.10). */
+export interface DissentNoteHistory {
+  readonly id: ULID;
+  readonly authorId: ULID;
+  readonly authorName: string | null;
+  /** The note's text now, or null once it is permanently deleted. */
+  readonly text: RichText | null;
+  readonly withdrawnAt: Timestamp | null;
+  readonly creation: { readonly at: Timestamp };
+  /** Every Revision of the note, oldest first, with the Member, time, kind, and reason (R22.3, R42.10). */
+  readonly revisions: readonly { readonly id: string; readonly kind: RevisionKind; readonly memberId: ULID; readonly displayName: string | null; readonly at: Timestamp; readonly reason: string | null }[];
+}
 export interface ItemHistory {
   readonly current: HistoryState;
   /** Oldest first. */
@@ -46,6 +59,8 @@ export interface ItemHistory {
   readonly creation: { readonly memberId: ULID; readonly displayName: string | null; readonly at: Timestamp };
   /** Display names of the Members on any Access_List the history shows. */
   readonly names: ReadonlyMap<ULID, string | null>;
+  /** The creation and Revisions of each Dissent_Note on the Item's Log_Summary, oldest first by attachment (R42.10). */
+  readonly dissentNotes: readonly DissentNoteHistory[];
 }
 export interface AccessPoint { readonly level: AccessLevel; readonly members: readonly NamedMember[] }
 
@@ -66,7 +81,7 @@ export function itemFields(item: LoadedItem): Fields {
 export async function loadHistory(c: Context<ApiEnv>, item: LoadedItem): Promise<ItemHistory> {
   const db = c.env.RF_CORE;
   const id = item.base.id;
-  const [sectionRows, revisionRows, creatorRows, nameRows] = await c.get('accountant').track(db.batch([
+  const [sectionRows, revisionRows, creatorRows, nameRows, dissentUnitRows] = await c.get('accountant').track(db.batch([
     db.prepare(`SELECT id, disclosure_level AS disclosureLevel, classification_state AS classificationState, disclosure_line AS disclosureLine
       FROM units WHERE root_id = ?1 AND unit_type = 'entry_section'`).bind(id),
     db.prepare(`SELECT r.id, r.seq, r.target_id AS targetId, r.kind, COALESCE(fs.prev_json,r.prev) AS prev, EXISTS(SELECT 1 FROM field_references f WHERE f.holder_type='revision' AND f.holder_id=r.id) AS hasFields, r.member_id AS memberId, p.display_name AS displayName, r.at, r.reason, r.restored_point AS restoredPoint
@@ -75,6 +90,11 @@ export async function loadHistory(c: Context<ApiEnv>, item: LoadedItem): Promise
     db.prepare('SELECT s.member_id AS memberId, p.display_name AS displayName FROM submissions s LEFT JOIN profiles p ON p.member_id = s.member_id WHERE s.id = ?1').bind(item.base.submissionId),
     db.prepare(`SELECT DISTINCT j.value AS id, p.display_name AS displayName FROM revisions r, json_each(r.prev, '$.accessMembers') j LEFT JOIN profiles p ON p.member_id = j.value
       WHERE r.target_type = 'unit' AND r.target_id = ?1 AND r.kind = 'access_change'`).bind(id),
+    // The Dissent_Notes on the Item's Log_Summary, with their author and text, so the history shows each note's
+    // creation and Revisions; a permanently deleted note keeps its unit row as a placeholder (R42.10, R42.11).
+    db.prepare(`SELECT u.id, u.created_at AS createdAt, u.withdrawn_at AS withdrawnAt, dn.author_id AS authorId, ap.display_name AS authorName, dn.text, dn.text_spans AS spans
+      FROM units u LEFT JOIN dissent_notes dn ON dn.unit_id = u.id LEFT JOIN profiles ap ON ap.member_id = dn.author_id
+      WHERE u.root_id = ?1 AND u.unit_type = 'dissent_note' ORDER BY u.id`).bind(id),
   ]));
   const sections = Object.fromEntries(rowsOf<{ id: ULID; disclosureLevel: Level; classificationState: string | null; disclosureLine: string | null }>(sectionRows).map((row) => [
     row.id, defined({ disclosureLevel: row.disclosureLevel, classificationState: row.classificationState, disclosureLine: row.disclosureLine === null ? null : JSON.parse(row.disclosureLine) as DisclosureLine }),
@@ -88,9 +108,25 @@ export async function loadHistory(c: Context<ApiEnv>, item: LoadedItem): Promise
   const covered = sectionIds(current, all);
   const revisions = inSaveOrder(all.filter((revision) => revision.targetId === id || covered.has(revision.targetId)));
   const creator = rowsOf<{ memberId: ULID; displayName: string | null }>(creatorRows)[0];
+  // Each Dissent_Note's creation and its Revisions, oldest first, keyed off the revisions already loaded (R42.10).
+  interface DissentUnitRow { id: ULID; createdAt: Timestamp; withdrawnAt: Timestamp | null; authorId: ULID | null; authorName: string | null; text: string | null; spans: string | null }
+  const revisionsByNote = new Map<ULID, HistoryRevision[]>();
+  for (const revision of inSaveOrder(all)) {
+    if (revision.targetId === id || covered.has(revision.targetId)) continue;
+    revisionsByNote.set(revision.targetId as ULID, [...(revisionsByNote.get(revision.targetId as ULID) ?? []), revision]);
+  }
+  const dissentNotes: DissentNoteHistory[] = rowsOf<DissentUnitRow>(dissentUnitRows).map((note) => ({
+    id: note.id, authorId: note.authorId ?? item.base.ownerId, authorName: note.authorName,
+    text: note.text === null ? null : richText(note.text, note.spans) ?? null, withdrawnAt: note.withdrawnAt,
+    creation: { at: note.createdAt },
+    revisions: (revisionsByNote.get(note.id) ?? []).map((revision) => ({
+      id: revision.id, kind: revision.kind as RevisionKind, memberId: revision.memberId, displayName: revision.displayName, at: revision.at, reason: revision.reason,
+    })),
+  }));
   return {
     current, revisions, creation: { memberId: creator?.memberId ?? item.base.ownerId, displayName: creator?.displayName ?? null, at: item.base.createdAt },
     names: new Map([...rowsOf<NamedMember>(nameRows), ...item.accessMembers].map((member) => [member.id, member.displayName])),
+    dissentNotes,
   };
 }
 
@@ -121,6 +157,8 @@ export function historyResponse(history: ItemHistory, point?: HistoryPoint) {
   });
   return {
     entries: [...entries, { id: CREATION, kind: CREATION, ...history.creation, reason: null, restoredPoint: null, sectionId: null, fields: [] }],
+    // Each Dissent_Note on the Log_Summary, with its creation and Revisions, oldest first by attachment (R42.10).
+    dissentNotes: history.dissentNotes,
     ...(point === undefined ? {} : { point, state: pointState(history, point) }),
   };
 }

@@ -101,6 +101,18 @@ describe('POST /items/{id}/access', () => {
     expect(await status('colleague', item.id)).toBe(200);
   });
 
+  it('renders the Public_Views a restriction removes, so the Member sees what the public will no longer see', async () => {
+    const item = await world.created('author', 'finding');
+    await world.core().prepare("UPDATE projects SET disclosure_level = 'public' WHERE id = ?1").bind(world.projectId).run();
+    await world.core().prepare("UPDATE units SET disclosure_level = 'public' WHERE id = ?1").bind(item.id).run();
+    const shown = await preview('author', item.id, { level: 'restricted' });
+    expect(shown.removedViews).toEqual([
+      { key: `u:${item.id}`, rootId: item.id, tag: 'research_item', path: `/r/${item.identifier}`, title: item.title },
+    ]);
+    // A change that keeps Whole_Team removes no Public_Views.
+    expect((await preview('author', item.id, { level: 'whole_team' })).removedViews).toEqual([]);
+  });
+
   it('lets only the Owner widen; an Administrator narrows without a confirmation', async () => {
     const item = await world.created('author', 'finding', restricted([world.ids.colleague]));
     for (const body of [{ level: 'whole_team' }, { add: [await addMember(world.core(), 'third@example.test', 'active', world.at)] }]) {

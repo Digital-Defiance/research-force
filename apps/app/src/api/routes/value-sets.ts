@@ -12,6 +12,7 @@ import { changeValueSet, publicDescriptionIssue, VALUE_SET_KINDS } from '@resear
 import type { ConfigValue, ValueSet, ValueSetKind, ValueSetOperation } from '@researchforce/domain/value-sets';
 import { authorize, authorizeRead } from '../../auth/authorize';
 import type { PermissionCheck } from '../../auth/authorize';
+import { affectedPublicAttachments, downgradeAttachments } from '../../disclosure/rights';
 import { rowsOf } from '../../records/kinds/kind';
 import type { ApiEnv } from '../app';
 import { ApiError, isUniqueViolation } from '../errors';
@@ -35,6 +36,8 @@ const SET_PATHS: ReadonlyMap<string, ValueSetKind> = new Map(VALUE_SET_KINDS.map
 const addSchema = z.strictObject({ name: z.string(), publicDescription: z.string().optional(), permitsPublication: z.boolean().optional() });
 const editSchema = z.strictObject({
   rev: z.int().min(1), name: z.string().optional(), retired: z.literal(true).optional(), permitsPublication: z.boolean().optional(), publicDescription: z.string().nullable().optional(),
+  /** The hash of the affected-Attachments preview the Administrator confirmed; required to mark a Rights_Status value not permitting while it downgrades any Public Attachment (R33.8). */
+  confirmation: z.string().optional(),
 });
 const describeSchema = z.strictObject({ rev: z.int().min(1), publicDescription: z.string() });
 
@@ -173,11 +176,28 @@ valueSetsRoutes.patch('/:set/:id', async (c) => {
     ...((next.publicDescription ?? null) === current.publicDescription ? {} : { publicDescription: next.publicDescription ?? null }),
   };
   if (Object.keys(changes).length === 0 && edit.rev === current.rev) return c.json({ value: current });
+
+  // R33.8: marking a Rights_Status value as not permitting publication downgrades every Public Attachment that holds
+  // it. The change first shows the count of those Attachments and a confirmation hash, applying nothing; once the
+  // Administrator confirms with that hash, the marking and the per-Attachment downgrades commit in the same batch,
+  // each to Withheld with a file-kind-and-date Disclosure_Line and a Disclosure_Change, with one Item_Update per
+  // Administrator listing them. A marking that affects no Public Attachment applies at once, with no confirmation.
+  const marksNotPermitting = changes.permitsPublication === false;
+  const affected = marksNotPermitting ? await affectedPublicAttachments(c, current.id) : [];
+  if (affected.length > 0) {
+    const confirmation = await affectedConfirmation(current.id, affected);
+    if (edit.confirmation !== confirmation) return c.json({ affected: { count: affected.length, confirmation } });
+  }
+
   const batch = new GuardedBatch(c.env.RF_CORE, { id: c.get('session').member.id, now: c.get('now') })
     .guard('rev', sql`(SELECT rev FROM config_values WHERE id = ${current.id}) = ${edit.rev}`)
     .update(configValues, changes, eq(configValues.id, current.id));
   // Two Administrators retiring the last two available values at once would otherwise leave none (R3.3).
   if (changes.retired) batch.guard('rev', sql`EXISTS (SELECT 1 FROM config_values WHERE set_key = ${kind} AND retired = 0)`);
+  // Downgrade the Public Attachments the marking affects in the same batch (R33.8). The confirmation preview bound the
+  // exact unit list; a downgrade of an Attachment that stopped being Public meanwhile changes only its own level, so a
+  // guard confirms each is still Public before the batch rewrites it would be redundant with the publish re-projection.
+  if (affected.length > 0) downgradeAttachments(batch, affected);
   try {
     await batch.outbox('publish', `value:${kind}:${current.id}`).commit(c.get('accountant'));
   } catch (error) {
@@ -187,3 +207,10 @@ valueSetsRoutes.patch('/:set/:id', async (c) => {
   }
   return c.json({ value: await loadValue(c, kind, current.id) });
 });
+
+/** The confirmation hash bound to the affected-Attachments preview, over the value and each affected unit (R33.8). */
+async function affectedConfirmation(valueId: string, affected: readonly { readonly unitId: string }[]): Promise<string> {
+  const payload = JSON.stringify([valueId, affected.map((attachment) => attachment.unitId)]);
+  const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(payload)));
+  return Array.from(digest, (byte) => byte.toString(16).padStart(2, '0')).join('');
+}

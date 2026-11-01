@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { partialDate } from '@researchforce/domain/dates';
 import { MAX_CHANGE_UNITS, applyChange, checkGates, previewChange } from '../src/preview';
-import type { GateState, UnitChange } from '../src/preview';
+import type { ConsentState, GateState, UnitChange } from '../src/preview';
+import { approvedSnapshot } from '../src/consent';
+import type { ConsentRow, SnapshotDependency } from '../src/consent';
 import { LICENCE, LINE, RESTRICTED, attachment, dissent, id, item, rich, state } from './fixtures';
 
 const gateState = (input = state([]), requesterId = 'member-1'): GateState => ({ input, requesterId, contentLicence: LICENCE });
@@ -98,5 +100,58 @@ describe('checkGates', () => {
 
   it('names unknown units', () => {
     expect(checkGates({ units: [{ key: 'u:nope', level: 'public' }] }, gateState())).toEqual([expect.objectContaining({ key: 'u:nope', reason: 'unknown_unit' })]);
+  });
+});
+
+describe('consent and hold gates', () => {
+  const deps: SnapshotDependency[] = [{ table: 'units', id: 'a', updatedSeq: 1 }];
+  // Unit 'a' is owned by member-2 so its Consenting_Member differs from the requester member-1.
+  const ownedByMember2 = () => item('a', { kind: 'topic', body: rich('Body') }, { level: 'not_published', ownerId: 'member-2', credit: [{ member: id('member-2') }] });
+  const consentState = (over: Partial<ConsentState> = {}): ConsentState => ({
+    consentingMember: (key) => (key === 'u:a' ? 'member-2' : undefined),
+    consents: [], holds: [], dependencies: deps, ...over,
+  });
+
+  it('refuses a widening of a Consenting_Member\'s view with no covering consent and names the Member', () => {
+    const input = state([ownedByMember2()]);
+    // member-2 credits exist, so the licence gate is satisfied for them (they agreed). Give member-2 a licence.
+    const withLicence = { ...input, members: input.members.map((m) => (m.id === 'member-2' ? { ...m, licenceName: LICENCE } : m)) };
+    const failures = checkGates({ units: [{ key: 'u:a', level: 'public' }] }, { input: withLicence, requesterId: 'member-1', contentLicence: LICENCE, consent: consentState() });
+    expect(failures).toContainEqual(expect.objectContaining({ key: 'u:a', reason: 'owner_consent', memberId: 'member-2', offerWithheld: false }));
+  });
+
+  it('allows the widening once a live consent covers the exact snapshot', () => {
+    const input = state([ownedByMember2()]);
+    const withLicence = { ...input, members: input.members.map((m) => (m.id === 'member-2' ? { ...m, licenceName: LICENCE } : m)) };
+    const after = applyChange(withLicence, { units: [{ key: 'u:a', level: 'public' }] });
+    // The consent records exactly the applied values (level and presentation) the gate recomputes.
+    const values = { level: 'public' as const, presentation: 'full_content' as const };
+    const snapshot = approvedSnapshot(after, 'u:a', values, deps);
+    const consent: ConsentRow = {
+      id: 'c1', unitKey: 'u:a', memberId: 'member-2', values, viewHash: snapshot.viewHash,
+      dependencyHash: snapshot.dependencyHash, withdrawn: false, used: false,
+    };
+    const failures = checkGates({ units: [{ key: 'u:a', level: 'public' }] }, { input: withLicence, requesterId: 'member-1', contentLicence: LICENCE, consent: consentState({ consents: [consent] }) });
+    expect(failures.filter((f) => f.reason === 'owner_consent')).toEqual([]);
+  });
+
+  it('needs no consent when the requester is the Consenting_Member', () => {
+    const input = state([item('a', { kind: 'topic', body: rich('Body') }, { level: 'not_published' })]);
+    const failures = checkGates({ units: [{ key: 'u:a', level: 'public' }] }, { input, requesterId: 'member-1', contentLicence: LICENCE, consent: { consentingMember: () => 'member-1', consents: [], holds: [], dependencies: deps } });
+    expect(failures.filter((f) => f.reason === 'owner_consent')).toEqual([]);
+  });
+
+  it('refuses any widening of a unit covered by a Confidentiality_Hold and lists the hold', () => {
+    const input = state([item('a', { kind: 'topic', body: rich('Body') }, { level: 'not_published' })]);
+    const holds = [{ key: 'u:a', holds: [{ id: 'h1', memberId: 'member-2', placedAt: '2026-02-01T00:00:00.000Z', note: 'Confidential source' }] }];
+    const failures = checkGates({ units: [{ key: 'u:a', level: 'public' }] }, { input, requesterId: 'member-1', contentLicence: LICENCE, consent: { consentingMember: () => 'member-1', consents: [], holds, dependencies: deps } });
+    expect(failures).toContainEqual(expect.objectContaining({ key: 'u:a', reason: 'hold', offerWithheld: false, details: ['Ben Example: Confidential source'] }));
+  });
+
+  it('runs no consent or hold gates when the consent data is absent', () => {
+    const input = state([ownedByMember2()]);
+    const withLicence = { ...input, members: input.members.map((m) => (m.id === 'member-2' ? { ...m, licenceName: LICENCE } : m)) };
+    const failures = checkGates({ units: [{ key: 'u:a', level: 'public' }] }, { input: withLicence, requesterId: 'member-1', contentLicence: LICENCE });
+    expect(failures.filter((f) => f.reason === 'owner_consent' || f.reason === 'hold')).toEqual([]);
   });
 });

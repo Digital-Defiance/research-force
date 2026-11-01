@@ -16,7 +16,7 @@ function review(id: string, extra: Partial<ReviewView> = {}): ReviewView {
   return {
     id, target: { id: ITEM_ID, type: 'research_item', rootId: ITEM_ID, identifier: 'RF-0001', title: 'A synthetic record' }, state: 'needs_review',
     requester: ben, addressees: [{ type: 'member', id: MEMBER_ID, name: 'Ada Example' }], note: 'Please check the dates.', createdAt: '2026-10-20T10:00:00.000Z',
-    isPublicationRequest: false, ...extra,
+    isPublicationRequest: false, requestType: 'review', ...extra,
   };
 }
 const OPTIONS = reviewOptions(sessionFor(makeMe(), BUILT_IN, () => undefined), MEMBERS);

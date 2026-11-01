@@ -107,6 +107,13 @@ export function AccessPreview({ preview }: { readonly preview: AccessPreviewView
           <ul>{preview.resets.map((unit) => <li key={unit.unitId}>{`${unit.identifier ?? ''} ${unit.title ?? ''} (${levelName(unit.level)})`.trim()}</li>)}</ul>
         </Notice>
       )}
+      {preview.removedViews.length > 0 && (
+        <Notice tone="warning" title="The public would no longer see these pages:">
+          <ul>{preview.removedViews.map((view) => (
+            <li key={view.key}>{view.path === null ? view.title : <a href={view.path}>{view.title}</a>}</li>
+          ))}</ul>
+        </Notice>
+      )}
       <p className="rf-meta">{preview.statement}</p>
     </section>
   );

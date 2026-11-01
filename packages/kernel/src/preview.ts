@@ -2,6 +2,8 @@ import type { RichText } from '@researchforce/domain/richtext';
 import { validate } from '@researchforce/domain/schemas/common';
 import { disclosureLineSchema } from '@researchforce/domain/schemas/other';
 import type { DisclosureLine, Level, PublicPresentation, ULID } from '@researchforce/domain/types';
+import { approvedSnapshot, coverWidening, widens } from './consent';
+import type { ConsentRow, ConsentValues, HoldCoverage, SnapshotDependency } from './consent';
 import type { ProjectRecord, ProjectionInput, UnitRecord } from './input';
 import { projectDetailed } from './project';
 import type { Projection } from './project';
@@ -20,6 +22,12 @@ export interface UnitChange {
 export interface ChangeSet {
   readonly units?: readonly UnitChange[];
   readonly moves?: readonly { readonly itemId: string; readonly projectId: string }[];
+  /**
+   * Attachments moved to another Parent (R12.12). Each entry names a unit and its new Parent id; the unit's Root_Item,
+   * Project, and Effective_Disclosure are re-derived from the new Parent chain. The caller lists every Attachment of
+   * the moved Version_Chain, each of which carries the Parent; units nested under them follow through their own Parent.
+   */
+  readonly attachmentMoves?: readonly { readonly unitId: string; readonly parentId: string }[];
   /** External_Parties whose Do_Not_Name flag is turned off (R34.9). */
   readonly doNotNameOff?: readonly string[];
 }
@@ -35,6 +43,7 @@ function withLine<T extends { readonly disclosureLine?: DisclosureLine }>(record
 export function applyChange(input: ProjectionInput, change: ChangeSet): ProjectionInput {
   const byKey = new Map((change.units ?? []).map((entry) => [entry.key, entry]));
   const moves = new Map((change.moves ?? []).map((move) => [move.itemId, move.projectId]));
+  const reparent = new Map((change.attachmentMoves ?? []).map((move) => [move.unitId, move.parentId]));
   const unnamedOff = new Set(change.doNotNameOff ?? []);
   const projects = input.projects.map((project): ProjectRecord => {
     const entry = byKey.get(projectKey(project.id));
@@ -43,8 +52,10 @@ export function applyChange(input: ProjectionInput, change: ChangeSet): Projecti
   const units = input.units.map((unit): UnitRecord => {
     const entry = byKey.get(unitKey(unit.id));
     const projectId = moves.get(unit.id);
-    let next: UnitRecord = unit;
-    if (unit.type === 'research_item' && (projectId !== undefined || entry?.presentation !== undefined || entry?.publicSummary !== undefined)) {
+    const newParentId = reparent.get(unit.id);
+    let next: UnitRecord = newParentId === undefined ? unit : { ...unit, parentId: newParentId };
+    if (next.type === 'research_item' && (projectId !== undefined || entry?.presentation !== undefined || entry?.publicSummary !== undefined)) {
+      const unit = next;
       let item = { ...unit.item, ...(projectId === undefined ? {} : { projectId }), ...(entry?.presentation ? { presentation: entry.presentation } : {}) };
       if (entry?.publicSummary === null) { const { publicSummary: _previous, ...rest } = item; item = rest as typeof item; }
       else if (entry?.publicSummary) item = { ...item, publicSummary: entry.publicSummary };
@@ -146,20 +157,43 @@ export function diffViews(before: ProjectionInput, after: ProjectionInput, optio
   return describe(compare(before, after), after, options.contentLicence);
 }
 
-export type GateReason = 'unit_limit' | 'unknown_unit' | 'rights' | 'consent' | 'licence' | 'requester_licence' | 'disclosure_line' | 'restricted';
+export type GateReason =
+  | 'unit_limit' | 'unknown_unit' | 'rights' | 'consent' | 'licence' | 'requester_licence' | 'disclosure_line' | 'restricted'
+  | 'owner_consent' | 'hold';
 export interface GateFailure {
   readonly key?: UnitKey;
   readonly reason: GateReason;
   readonly message: string;
   readonly offerWithheld: boolean;
-  /** The Member without a Licence_Agreement for the current Content_Licence. */
+  /** The Member without a Licence_Agreement for the current Content_Licence, or the Consenting_Member whose consent is missing. */
   readonly memberId?: string;
   readonly details?: readonly string[];
 }
+
+/**
+ * The consent and hold data `loadProjectionInput` supplies for the Owner-consent and Confidentiality_Hold
+ * gates (R23.17, R48.2, R48.4). A unit's Consenting_Member is resolved from the stored Owner/author; the
+ * Publication_Consents are that Member's rows for the unit; the hold coverage lists the active holds over
+ * each covered unit; and the dependency manifest is the loaded rows the resulting snapshot binds to, so a
+ * consent whose manifest digest no longer matches no longer covers the change.
+ */
+export interface ConsentState {
+  /** The Consenting_Member of a Disclosure_Unit, or undefined for a Project (which needs no consent). */
+  consentingMember(key: UnitKey): string | undefined;
+  /** The Publication_Consents on hand, with their exact values and snapshot digests. */
+  readonly consents: readonly ConsentRow[];
+  /** Active Confidentiality_Hold coverage per unit key (R48.2). */
+  readonly holds: readonly HoldCoverage[];
+  /** The loaded dependency rows the resulting snapshot binds to (R23.23). */
+  readonly dependencies: readonly SnapshotDependency[];
+}
+
 export interface GateState {
   readonly input: ProjectionInput;
   readonly requesterId: string;
   readonly contentLicence: string;
+  /** Present once the consent, hold, and dependency data are loaded; absent in paths that only run the ordinary gates. */
+  readonly consent?: ConsentState;
 }
 
 /** The Research_Item a unit belongs to, through its Parent chain. */
@@ -244,7 +278,111 @@ function gates(change: ChangeSet, state: GateState, after: ProjectionInput, comp
       });
     }
   }
+
+  // R23.17, R48.2, R48.4: a hold blocks any widening of a covered unit, and a widening of a Consenting_Member's
+  // view needs that Member's unused, unwithdrawn consent covering the exact proposed snapshot.
+  failures.push(...consentAndHoldGates(change, state, after));
   return failures;
+}
+
+const presentationOf = (key: UnitKey, input: ProjectionInput): 'summary_only' | 'full_content' | undefined => {
+  const unit = input.units.find((candidate) => unitKey(candidate.id) === key);
+  return unit?.type === 'research_item' ? unit.item.presentation : undefined;
+};
+
+/** The exact values applied to a unit, read from the projected state, for the consent snapshot (R23.20). */
+function appliedValues(key: UnitKey, after: ProjectionInput): ConsentValues {
+  const id = idOf(key);
+  const unit = after.units.find((candidate) => candidate.id === id);
+  const project = after.projects.find((candidate) => projectKey(candidate.id) === key);
+  const line = unit?.disclosureLine ?? project?.disclosureLine;
+  const summary = unit?.type === 'research_item' ? unit.item.publicSummary : undefined;
+  return {
+    level: unit?.level ?? project?.level ?? 'not_published',
+    ...(presentationOf(key, after) === undefined ? {} : { presentation: presentationOf(key, after)! }),
+    ...(summary === undefined ? {} : { publicSummary: summary }),
+    ...(line === undefined ? {} : { disclosureLine: line }),
+  };
+}
+
+/** The keys a change touches, as unit or Project keys. */
+function touchedKeys(change: ChangeSet): UnitKey[] {
+  return [...new Set([
+    ...(change.units ?? []).map((entry) => entry.key),
+    ...(change.moves ?? []).map((move) => unitKey(move.itemId)),
+    ...(change.attachmentMoves ?? []).map((move) => unitKey(move.unitId)),
+  ])];
+}
+
+function consentAndHoldGates(change: ChangeSet, state: GateState, after: ProjectionInput): GateFailure[] {
+  const failures: GateFailure[] = [];
+  const consent = state.consent;
+  if (!consent) return failures;
+  const members = new Map(after.members.map((member) => [member.id, member]));
+  const holdFor = new Map(consent.holds.map((coverage) => [coverage.key, coverage.holds]));
+
+  for (const key of touchedKeys(change)) {
+    if (!widens(state.input, after, key)) continue;
+
+    // R48.4: a Confidentiality_Hold covering the unit blocks any widening until lifted or overridden.
+    const holds = holdFor.get(key) ?? [];
+    if (holds.length > 0) {
+      failures.push({
+        key, reason: 'hold', offerWithheld: false,
+        message: 'A Confidentiality_Hold covers this unit; nothing it covers may be published until the hold is lifted or overridden.',
+        details: holds.map((hold) => `${members.get(hold.memberId)?.displayName ?? hold.memberId}: ${hold.note}`),
+      });
+      continue;
+    }
+
+    // R23.17: a change to a Project's level needs no consent; a unit's widening needs its Consenting_Member's consent.
+    const consentingMember = consent.consentingMember(key);
+    if (consentingMember === undefined || consentingMember === state.requesterId) continue;
+
+    const values = appliedValues(key, after);
+    // The current dependency manifest binds the snapshot; a consent signed against a stale manifest will not match.
+    const snapshot = approvedSnapshot(after, key, values, consent.dependencies);
+    const result = coverWidening(consent.consents, snapshot);
+    if (!result.covered) {
+      failures.push({
+        key, reason: 'owner_consent', memberId: consentingMember, offerWithheld: false,
+        message: `${members.get(consentingMember)?.displayName ?? 'The Consenting_Member'} has given no Publication_Consent covering this change; offer a Publication_Proposal.`,
+        details: result.consideredIds,
+      });
+    }
+  }
+  return failures;
+}
+
+/** One widening unit the apply must account for: the Consenting_Member's live consent it spends, and the keys. */
+export interface WideningConsent {
+  readonly key: UnitKey;
+  /** The Consenting_Member whose consent covers the widening. */
+  readonly memberId: string;
+  /** The live consent the apply spends (marks `used_at`); it covered the resulting snapshot at gate time. */
+  readonly consentId: string;
+}
+
+/**
+ * The widening units whose Consenting_Member is another Member, each with the consent that covers the widening,
+ * for the apply to recheck and spend (R23.17, R23.23, R23.24). The caller first runs `checkGates`; when it passes,
+ * every such widening is covered, so each entry here carries a covering consent id. A Project change and a widening
+ * the acting Member consents to for their own unit need no consent and are not returned.
+ */
+export function wideningConsents(change: ChangeSet, state: GateState): readonly WideningConsent[] {
+  const consent = state.consent;
+  if (!consent) return [];
+  const after = applyChange(state.input, change);
+  const entries: WideningConsent[] = [];
+  for (const key of touchedKeys(change)) {
+    if (!widens(state.input, after, key)) continue;
+    const consentingMember = consent.consentingMember(key);
+    if (consentingMember === undefined || consentingMember === state.requesterId) continue;
+    const snapshot = approvedSnapshot(after, key, appliedValues(key, after), consent.dependencies);
+    const result = coverWidening(consent.consents, snapshot);
+    if (result.covered) entries.push({ key, memberId: consentingMember, consentId: result.consentId });
+  }
+  return entries;
 }
 
 /** Every reason to refuse the whole change; an empty list means it may be applied (R23.5, R23.14, R26.14, R33.4, R34.2, R46.17, R47.9). */

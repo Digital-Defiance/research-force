@@ -17,6 +17,8 @@ import type { JobHandler, JsonValue } from '../do/jobs';
 export interface DeletionParams { readonly unitId: ULID; readonly rootId: ULID; readonly scope: 'item' | 'reply' }
 export interface DeletionTarget extends DeletionParams {
   readonly projectId: ULID; readonly kind: ItemKind | null; readonly identifier: string | null; readonly reason: string;
+  /** Extra writes a caller folds into the same commit, such as the Dissent Notification_Event of a note's deletion (R42.4). */
+  readonly onBatch?: (batch: GuardedBatch) => void;
 }
 /** Where the job is, with the counts so far, which it reports as its progress. */
 interface Cursor {
@@ -64,6 +66,7 @@ export async function requestDeletion(c: Context<ApiEnv>, target: DeletionTarget
     ? await c.env.RF_CORE.prepare("SELECT id FROM units WHERE root_id = ?1 AND unit_type IN ('research_item', 'attachment')").bind(target.rootId).all<{ id: string }>()
     : await c.env.RF_CORE.prepare("SELECT id FROM units WHERE parent_id = ?1 AND unit_type = 'attachment'").bind(target.unitId).all<{ id: string }>()).results;
   await removeQuestionEntries(c.env.RF_CORE, batch, named.map((row) => row.id), 'The Research Item or Attachment was permanently deleted.');
+  target.onBatch?.(batch);
   await batch
     .insert(jobs, { id: jobId, type: 'deletion', state: 'queued', requestedBy: actor, params, createdAt: now, updatedAt: now })
     .outbox('jobs', `job:${jobId}`)
@@ -147,6 +150,21 @@ export const deletionJob: JobHandler = {
           ELSE 'specified' END
           WHERE EXISTS (SELECT 1 FROM reproduction_attempts a WHERE a.run_id = compute_packages.run_id AND a.package_version = compute_packages.package_version AND a.attempt_run_id IN (SELECT value FROM json_each(?1)))`).bind(list),
         db.prepare('DELETE FROM reproduction_attempts WHERE run_id IN (SELECT value FROM json_each(?1)) OR attempt_run_id IN (SELECT value FROM json_each(?1))').bind(list),
+        // An Edit_Proposal belongs to the record it edits; deleting the record removes its proposals and their history (R57, R60.1).
+        db.prepare('DELETE FROM edit_proposal_events WHERE proposal_id IN (SELECT id FROM edit_proposals WHERE target_id IN (SELECT value FROM json_each(?1)))').bind(list),
+        db.prepare('DELETE FROM edit_proposals WHERE target_id IN (SELECT value FROM json_each(?1))').bind(list),
+        // Consents, Confidentiality_Holds, and Dual_Approvals belong to the record they concern; deleting it removes them and their history (R48.9, R49.7, R60.1).
+        db.prepare('DELETE FROM publication_consents WHERE unit_id IN (SELECT value FROM json_each(?1)) OR root_id IN (SELECT value FROM json_each(?1))').bind(list),
+        db.prepare('DELETE FROM confidentiality_holds WHERE unit_id IN (SELECT value FROM json_each(?1)) OR root_id IN (SELECT value FROM json_each(?1))').bind(list),
+        db.prepare('DELETE FROM dual_approvals WHERE target_id IN (SELECT value FROM json_each(?1)) OR root_id IN (SELECT value FROM json_each(?1))').bind(list),
+        // Permission_Evidence and its covered identities, uses, and withdrawals belong to the record the grant concerns; deleting it removes them and their history (R51.13, R60.1).
+        db.prepare('DELETE FROM permission_evidence_withdrawals WHERE evidence_id IN (SELECT id FROM permission_evidence WHERE unit_id IN (SELECT value FROM json_each(?1)) OR root_id IN (SELECT value FROM json_each(?1)))').bind(list),
+        ...['permission_evidence_items', 'permission_evidence_uses'].map((table) => db.prepare(`DELETE FROM ${table} WHERE evidence_id IN (SELECT id FROM permission_evidence WHERE unit_id IN (SELECT value FROM json_each(?1)) OR root_id IN (SELECT value FROM json_each(?1)))`).bind(list)),
+        db.prepare('DELETE FROM permission_evidence_items WHERE unit_id IN (SELECT value FROM json_each(?1))').bind(list),
+        db.prepare('DELETE FROM permission_evidence WHERE unit_id IN (SELECT value FROM json_each(?1)) OR root_id IN (SELECT value FROM json_each(?1))').bind(list),
+        // Personal navigation that points at a deleted unit goes with it; the Member's own list simply no longer holds it (R58.4, R60.1).
+        db.prepare('DELETE FROM bookmarks WHERE target_id IN (SELECT value FROM json_each(?1)) OR target_root_id IN (SELECT value FROM json_each(?1))').bind(list),
+        db.prepare('DELETE FROM follows WHERE target_id IN (SELECT value FROM json_each(?1)) OR target_root_id IN (SELECT value FROM json_each(?1))').bind(list),
         db.prepare('DELETE FROM question_entries WHERE question_id IN (SELECT value FROM json_each(?1))').bind(list),
         db.prepare('DELETE FROM question_groups WHERE question_id IN (SELECT value FROM json_each(?1))').bind(list),
         db.prepare(`DELETE FROM revisions WHERE target_type = 'unit' AND target_id IN (SELECT value FROM json_each(?1)) AND NOT (kind = 'deletion' AND target_id = ?2)`).bind(list, params.unitId),

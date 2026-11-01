@@ -30,6 +30,10 @@ import { authorize } from '../auth/authorize';
 import type { PermissionCheck } from '../auth/authorize';
 import { addedMentions, mentionIssues, mentionRecipients } from '../discussion/mentions';
 import { notifyMentions } from '../notifications/fanout';
+import { readHolds } from '../disclosure/holds';
+import type { HoldView } from '../disclosure/holds';
+import { dissentDeletionSql, dissentReadSql, readItemDissent } from '../dissent/display';
+import type { DissentDisplay } from '../dissent/display';
 import { accessChoice, refuseUnreadable, writeAccessGrants } from './access';
 import type { NamedMember } from './access';
 import { KIND_ADAPTERS } from './kinds';
@@ -112,6 +116,10 @@ export interface LoadedItem {
   readonly reviews: readonly ReviewView[];
   /** The viewer's New_Flag or Updated_Flag on the Item and its Group_Note as they stand now, before the page clears them (R18.10). */
   readonly flags: ReadonlyMap<ULID, 'new' | 'updated'>;
+  /** The active Confidentiality_Holds on the Item, shown to every Member who can read it (R48.5). */
+  readonly holds: readonly HoldView[];
+  /** The Dissent_Notes on the Log_Summary, shown directly after it: non-withdrawn, then withdrawn, then Deletion records (R42.3, R42.8, R42.11). */
+  readonly dissent: DissentDisplay;
   /** Further response data that the kind shows the viewer, such as a Research_Question's readable entries. */
   readonly extra: Readonly<Record<string, unknown>>;
 }
@@ -162,12 +170,17 @@ export async function loadItem(c: Context<ApiEnv>, id: string, readAttempt = 0):
   };
   const adapter = KIND_ADAPTERS[base.kind];
   const people = [...new Set([base.ownerId, ...base.credit.flatMap((entry) => ('member' in entry ? [entry.member] : []))])];
+  const itemJson = JSON.stringify([id]);
   const results = await c.get('accountant').track(db.batch([
     ...adapter.load(db, id),
     db.prepare('SELECT member_id AS id, display_name AS displayName FROM profiles WHERE member_id IN (SELECT value FROM json_each(?1))').bind(JSON.stringify(people)),
     db.prepare('SELECT v.id, v.name FROM profile_specialties ps JOIN config_values v ON v.id = ps.value_id WHERE ps.member_id = ?1 ORDER BY v.position').bind(base.ownerId),
+    // The item page shows every Dissent_Note on the Log_Summary: non-withdrawn and withdrawn, with a Deletion record in
+    // a deleted note's place, directly after the Log_Summary (R42.3, R42.8, R42.11).
+    db.prepare(dissentReadSql(1, { withWithdrawn: true })).bind(itemJson),
+    db.prepare(dissentDeletionSql(1)).bind(itemJson),
   ]));
-  const kindResults = results.slice(0, -2);
+  const kindResults = results.slice(0, -4);
   const read = adapter.read(kindResults, base);
   const hydrated = await resolveItemFields(db, id, { ...read.fields, ...(base.logSummary ? { logSummary: base.logSummary } : {}) });
   const { logSummary: hydratedSummary, ...hydratedFields } = hydrated;
@@ -187,11 +200,13 @@ export async function loadItem(c: Context<ApiEnv>, id: string, readAttempt = 0):
     base, fields: normalized(fields), children, extra: shown?.extra ?? {},
     groupNote: note ? { id: note.id, rev: note.rev, level: note.level, unclassified: note.classification === 'unclassified', ownerId: note.ownerId, withdrawn: note.withdrawnAt !== null, text: richText(note.text, note.spans)! } : null,
     project: { id: base.projectId, name: projectName, level: projectLevel },
-    names: new Map(rowsOf<{ id: ULID; displayName: string }>(results.at(-2)).map((person) => [person.id, person.displayName])),
-    specialties: rowsOf<{ id: ULID; name: string }>(results.at(-1)),
+    names: new Map(rowsOf<{ id: ULID; displayName: string }>(results.at(-4)).map((person) => [person.id, person.displayName])),
+    specialties: rowsOf<{ id: ULID; name: string }>(results.at(-3)),
     accessMembers: rowsOf<NamedMember>(grantRows),
     reviews: readItemReviews(reviewRows, addresseeRows),
     flags: new Map(rowsOf<{ id: ULID; flag: 'new' | 'updated' }>(flagRows).map((row) => [row.id, row.flag])),
+    holds: (await readHolds(c, [id])).get(id as ULID) ?? [],
+    dissent: readItemDissent(results.at(-2), results.at(-1)),
   };
 }
 
@@ -215,6 +230,9 @@ export function itemResponse(item: LoadedItem) {
     id: base.id, kind: base.kind, identifier: base.identifier, rev: base.rev, createdAt: base.createdAt,
     project: { id: item.project.id, name: item.project.name },
     title: base.title, ...(base.logSummary ? { logSummary: base.logSummary } : {}),
+    // The Dissent_Notes on the Log_Summary, directly after it: non-withdrawn oldest first, then withdrawn with date and
+    // reason, then a Deletion record in each permanently deleted note's place (R42.3, R42.8, R42.11).
+    dissent: item.dissent,
     ...item.fields,
     ...item.extra,
     ...(sections === undefined ? {} : {
@@ -236,6 +254,7 @@ export function itemResponse(item: LoadedItem) {
     reviews: item.reviews,
     pendingReview: pending.has(base.id),
     flag: item.flags.get(base.id) ?? null,
+    holds: item.holds,
   };
 }
 
@@ -364,7 +383,7 @@ export async function createItem(c: Context<ApiEnv>, kind: ItemKind, body: unkno
  * A Journal_Entry's new Entry_Sections can come from the parts of a staged save. A Restoration needs no mark, and the
  * Entry_Sections it adds back keep their ids (R22.5). Resolves to whether anything was saved.
  */
-export async function editItem(c: Context<ApiEnv>, current: LoadedItem, body: unknown, staged?: StagedSections, restoration?: Restoration): Promise<boolean> {
+export async function editItem(c: Context<ApiEnv>, current: LoadedItem, body: unknown, staged?: StagedSections, restoration?: Restoration, options: { readonly authorizeOnly?: boolean; readonly contentOnly?: boolean } = {}): Promise<boolean> {
   const { rev, mark, statusReason, links, evidence, ...patch } = objectBody(body);
   const envelope = parse(editEnvelope, { rev, mark, statusReason, links, evidence });
   if (restoration && (envelope.mark || envelope.statusReason !== undefined)) throw new Error('A Restoration carries no mark or status reason.');
@@ -380,6 +399,9 @@ export async function editItem(c: Context<ApiEnv>, current: LoadedItem, body: un
   if (envelope.mark?.mark === 'correction') checks.push({ permission: 'item.correct', target });
   if ((envelope.links?.length ?? 0) + (envelope.evidence?.length ?? 0) > 0 || hasEntries(patch['groups'])) checks.push({ permission: 'link.add' });
   await authorize(c, checks);
+  // A dry run (proposal decline eligibility, R57.6) stops here: the actor is authorized for every field the edit would
+  // change — content, the Log_Summary only as its Owner, and a Correction — which is what makes them able to act on it.
+  if (options.authorizeOnly) return false;
 
   const issues: FieldIssue[] = [];
   if (Object.hasOwn(patch, 'kind') && patch['kind'] !== base.kind) issues.push({ field: 'kind', rule: 'The kind of a Research Item cannot change.' });
@@ -429,6 +451,12 @@ export async function editItem(c: Context<ApiEnv>, current: LoadedItem, body: un
   const sectionsChange = staged ? stagedSectionChange(sections, staged) : null;
   const changesStatus = changes.some((change) => change.fieldClass === 'status');
   if (envelope.statusReason !== undefined && !changesStatus) refuse([{ field: 'statusReason', rule: 'A reason is given only with a status change.' }]);
+  // A content Edit_Proposal carries only content and detail edits; a Status_Change, Withdrawal, or Disclosure_Change
+  // has its own gated workflow and is never routed through a proposal (R57.4).
+  if (options.contentOnly) {
+    const routed = changes.filter((change) => change.fieldClass === 'status' || change.fieldClass === 'withdrawal' || change.fieldClass === 'disclosure');
+    if (routed.length > 0) refuse(routed.map((change) => ({ field: change.field, rule: 'A status, withdrawal, or disclosure change cannot be made through an edit proposal; use its own action.' })));
+  }
   const rules: KindRules = (await adapter.rules?.(c, {
     id: base.id, before, after, base, links: linked.links, statusReason: envelope.statusReason, mark: envelope.mark,
   })) ?? { issues: [] };

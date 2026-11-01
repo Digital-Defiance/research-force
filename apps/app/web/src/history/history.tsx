@@ -8,7 +8,7 @@ import { RichTextView } from '../editor/RichTextView';
 import { KIND_FIELDS } from '../items/forms/model';
 import { useApi } from '../api';
 import { useSession } from '../session';
-import type { AccessPoint, FieldDifference, HistoryEntry, HistoryStateView, ItemHistoryView, ItemView, WordPart } from '../types';
+import type { AccessPoint, DualApprovalView, FieldDifference, HistoryEntry, HistoryStateView, ItemHistoryView, ItemView, WordPart } from '../types';
 import { Button, formatDate, levelName, LoadState, Notice, PersonLink, SaveFailure, SelectField, useLoad } from '../ui';
 
 export const REVISION_KIND_NAMES: Readonly<Record<string, string>> = {
@@ -18,7 +18,7 @@ export const REVISION_KIND_NAMES: Readonly<Record<string, string>> = {
 const UNIT_FIELD_LABELS: Readonly<Record<string, string>> = {
   title: 'Title', logSummary: 'Log Summary', sections: 'Entry Sections', disclosureLevel: 'Disclosure level', classificationState: 'Classification',
   disclosureLine: 'Disclosure line', publicPresentation: 'Public presentation', withdrawnAt: 'Withdrawn on', withdrawnBy: 'Withdrawn by', withdrawalReason: 'Withdrawal reason',
-  accessLevel: 'Who can read', accessMembers: 'Access list',
+  accessLevel: 'Who can read', accessMembers: 'Access list', hold: 'Confidentiality hold',
 };
 
 /** The name of a field of this kind of Item, or of an Entry_Section by its position in `order`. */
@@ -115,6 +115,7 @@ export function HistoryList({ item, entries, selected, onSelect }: {
           {entry.restoredPoint !== null && <p>{`Restored to: ${restoredName(entry.restoredPoint)}`}</p>}
           {entry.reason !== null && <p>{`Reason: ${entry.reason}`}</p>}
           {entry.access !== undefined && <p>{`Before: ${describeAccess(entry.access.before)}. After: ${describeAccess(entry.access.after)}.`}</p>}
+          {entry.kind === 'access_change' && entry.fields.includes('hold') && <p>This Access change placed, lifted, or overrode a Confidentiality hold; it changed no Disclosure level.</p>}
           {entry.fields.length > 0 && <p className="rf-meta">{`Changed: ${entry.fields.map((field) => fieldLabel(item, field)).join(', ')}`}</p>}
           <Button variant="quiet" onClick={() => onSelect(entry.id)} disabled={selected === entry.id}>
             {selected === entry.id ? 'Shown below' : 'Show the record as it was after this'}
@@ -199,6 +200,35 @@ function canRestore(session: ReturnType<typeof useSession>, item: ItemView): boo
   return session.me.member.id === item.owner.id || session.me.member.roleId === ROLE_IDS.administrator;
 }
 
+const DUAL_ACTION_NAMES: Readonly<Record<string, string>> = {
+  hold_override: 'Hold Override', access_widen: 'Access widen (departed Owner)', consent_on_behalf: 'Publication Consent on behalf of a Revoked Member',
+};
+const DUAL_STATE_NAMES: Readonly<Record<string, string>> = { open: 'Open', approved: 'Approved', declined: 'Declined', withdrawn: 'Withdrawn', lapsed: 'Lapsed' };
+
+/** The Dual_Approvals that concern the Item, open or closed, with their reasons and outcome, kept in history (R48.9, R49.7). */
+export function DualApprovalHistory({ approvals }: { readonly approvals: readonly DualApprovalView[] }) {
+  if (approvals.length === 0) return null;
+  return (
+    <section aria-label="Dual approvals">
+      <h2>Dual approvals</h2>
+      <ul className="rf-list">
+        {approvals.map((approval) => (
+          <li key={approval.id} className="rf-section">
+            <p>
+              <strong>{DUAL_ACTION_NAMES[approval.action] ?? approval.action}</strong>{' '}
+              <span className="rf-status">{DUAL_STATE_NAMES[approval.state] ?? approval.state}</span>
+            </p>
+            <p>{'Proposed by '}<PersonLink person={approval.proposer} />{` at ${formatDate(approval.proposedAt)}: ${approval.proposalReason}`}</p>
+            {approval.decidedBy !== null && (
+              <p>{`${DUAL_STATE_NAMES[approval.state] ?? approval.state} by `}<PersonLink person={approval.decidedBy} />{approval.decidedAt === null ? '' : ` at ${formatDate(approval.decidedAt)}`}{approval.decisionReason === null ? '' : `: ${approval.decisionReason}`}</p>
+            )}
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 /** An Item's history: the Revisions, the state after a chosen point, comparisons, and Restoration. */
 export function ItemHistoryPage({ id }: { readonly id: string }) {
   const session = useSession();
@@ -252,6 +282,7 @@ export function ItemHistoryPage({ id }: { readonly id: string }) {
         <h2>Revisions</h2>
         <HistoryList item={current} entries={entries} selected={point} onSelect={(next) => { setPoint(next); setRestoring(undefined); setOutcome(undefined); }} />
       </section>
+      <DualApprovalHistory approvals={history.data.dualApprovals ?? []} />
     </div>
   );
 }

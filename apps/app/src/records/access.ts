@@ -12,11 +12,15 @@ import type { ValidationContext } from '@researchforce/domain/schemas/common';
 import { ACCESS_LEVELS, isULID } from '@researchforce/domain/types';
 import type { AccessLevel, Level, MemberStatus, Timestamp, ULID } from '@researchforce/domain/types';
 import { canonicalJson } from '@researchforce/kernel/views';
+import type { PublicView, UnitKey } from '@researchforce/kernel/views';
+import { diffViews } from '@researchforce/kernel/preview';
+import type { ProjectionInput, UnitRecord } from '@researchforce/kernel/input';
 import type { ApiEnv } from '../api/app';
 import { ApiError } from '../api/errors';
 import type { FieldIssue } from '../api/errors';
 import { parse } from '../api/input';
 import { authorizeRead, permissionContext } from '../auth/authorize';
+import { loadProjectionInput } from '../kernel-input';
 import { notifyAdministrators } from '../notifications/fanout';
 import { visibleTo } from './submissions';
 
@@ -92,7 +96,13 @@ interface ItemPlan {
   readonly gaining: readonly ULID[]; readonly resets: readonly ResetRow[];
   readonly refusal?: string;
 }
-interface Plan { readonly items: readonly ItemPlan[]; readonly members: ReadonlyMap<ULID, MemberRow>; readonly add: readonly ULID[]; readonly remove: readonly ULID[] }
+/** A Public_View a restriction removes, named so the Member sees exactly what the public will no longer see (R47.9). */
+export interface RemovedView { readonly key: UnitKey; readonly rootId: ULID; readonly tag: PublicView['tag']; readonly path: string | null; readonly title: string }
+interface Plan {
+  readonly items: readonly ItemPlan[]; readonly members: ReadonlyMap<ULID, MemberRow>; readonly add: readonly ULID[]; readonly remove: readonly ULID[];
+  /** The Public_Views that disappear when the planned restrictions apply, by the kernel's `diffViews` (R47.9). */
+  readonly removedViews: readonly RemovedView[];
+}
 
 const sorted = (ids: Iterable<ULID>): ULID[] => [...ids].sort();
 const sameList = (a: readonly string[], b: readonly string[]): boolean => a.length === b.length && a.every((id, index) => id === b[index]);
@@ -168,7 +178,55 @@ async function plan(c: Context<ApiEnv>, itemIds: readonly string[], change: Chan
       ...(refusal === undefined ? {} : { refusal }),
     };
   });
-  return { items, members, add, remove };
+  const removedViews = await removedViewsFor(c, items);
+  return { items, members, add, remove, removedViews };
+}
+
+const idOfKey = (key: UnitKey): string => key.slice(2);
+/** A removed view's own title, where its tag carries one; an Entry_Section, Reply, or Dissent_Note has none of its own. */
+function viewTitle(view: PublicView): string | undefined {
+  if (view.tag === 'research_item' || view.tag === 'attachment') return view.title;
+  if (view.tag === 'project') return view.name;
+  if (view.tag === 'withheld') return view.line.kindOfMaterial;
+  return undefined;
+}
+
+/**
+ * The Public_Views every planned restriction removes (R47.9): a Restricted Research_Item publishes nothing under it, so
+ * the projection of the restricting roots with `restricted` set drops exactly those views. Loads the roots' projection
+ * input once and compares it with the kernel's `diffViews`; a view present before and absent after is a removed view.
+ */
+async function removedViewsFor(c: Context<ApiEnv>, items: readonly ItemPlan[]): Promise<RemovedView[]> {
+  const restricting = items.filter((item) => item.changed && item.to.level === 'restricted' && item.from.level !== 'restricted');
+  if (restricting.length === 0) return [];
+  const restrictedIds = new Set(restricting.map((item) => item.id as string));
+  const accountant = c.get('accountant');
+  const { input } = await loadProjectionInput(c.env.RF_CORE, [...restrictedIds], c.get('now'), { track: accountant.track.bind(accountant) });
+  const restrict = (unit: UnitRecord): UnitRecord =>
+    unit.type === 'research_item' && restrictedIds.has(unit.id) ? { ...unit, item: { ...unit.item, restricted: true } } : unit;
+  const after: ProjectionInput = { ...input, units: input.units.map(restrict) };
+  const contentLicence = c.get('contentLicence');
+  const byId = new Map(input.units.map((unit) => [unit.id, unit]));
+  const rootOf = (id: string): string | undefined => {
+    const seen = new Set<string>();
+    for (let unit = byId.get(id); unit && !seen.has(unit.id); unit = unit.parentId === undefined ? undefined : byId.get(unit.parentId)) {
+      if (unit.type === 'research_item') return unit.id;
+      seen.add(unit.id);
+    }
+    return undefined;
+  };
+  const removed = diffViews(input, after, { contentLicence }).changed.flatMap((change): RemovedView[] => {
+    if (change.before === undefined || change.after !== undefined) return [];
+    const rootId = change.key.startsWith('p:') ? undefined : rootOf(idOfKey(change.key));
+    if (rootId === undefined || !restrictedIds.has(rootId)) return [];
+    const title = viewTitle(change.before);
+    return [{
+      key: change.key, rootId: rootId as ULID, tag: change.before.tag,
+      path: 'path' in change.before && change.before.path !== undefined ? change.before.path : null,
+      title: title ?? items.find((item) => item.id === rootId)?.title ?? '',
+    }];
+  });
+  return removed.sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
 }
 
 async function sha256(text: string): Promise<string> {
@@ -197,7 +255,7 @@ async function previewOf(result: Plan) {
   }));
   const summary = { items: changed.map((item) => ({ id: item.id, from: item.from, to: item.to, gaining: item.gaining })), resets: resets.map((unit) => [unit.unitId, unit.level]) };
   return {
-    items, gaining: named(gaining, result.members), resets, statement: ACCESS_STATEMENT,
+    items, gaining: named(gaining, result.members), resets, removedViews: result.removedViews, statement: ACCESS_STATEMENT,
     confirmation: needsConfirmation ? await sha256(canonicalJson(summary)) : null,
   };
 }

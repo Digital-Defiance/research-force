@@ -28,13 +28,14 @@ export const workFilterSchema = z.strictObject({
   priority: z.array(z.enum(WORK_PRIORITIES)).min(1).max(WORK_PRIORITIES.length).optional(),
   responsible: member.optional(),
   assignee: member.optional(),
+  project: z.string().refine(isULID, 'Choose a Project.').optional(),
   question: z.string().refine(isULID, 'Choose a Research Question.').optional(),
   dueFrom: day.optional(),
   dueTo: day.optional(),
   after: z.string().max(64).optional(),
 });
 export type WorkFilter = z.output<typeof workFilterSchema>;
-const KEYS = ['view', 'state', 'priority', 'responsible', 'assignee', 'question', 'dueFrom', 'dueTo', 'after'] as const;
+const KEYS = ['view', 'state', 'priority', 'responsible', 'assignee', 'project', 'question', 'dueFrom', 'dueTo', 'after'] as const;
 /** The filters in a query string; `state` and `priority` take comma-separated lists, and empty values are ignored. */
 export function workFilterFromQuery(query: Readonly<Record<string, string>>): unknown {
   return Object.fromEntries(KEYS.flatMap((key) => {
@@ -102,6 +103,8 @@ export async function readWorkList(c: Context<ApiEnv>, scope: { readonly project
   const where = [`${visibleTo('u', '?1')}`, 'NOT EXISTS (SELECT 1 FROM deletions x WHERE x.unit_id IN (u.id, u.root_id))', 'u.withdrawn_at IS NULL'];
   if (scope.projectId !== undefined) where.push(`u.project_id = ${bind(scope.projectId)}`);
   if (scope.mine) where.push(mine);
+  // On the Member's own work, a Project filter narrows across Projects; a Project scope already fixes it.
+  if (filter.project !== undefined && scope.projectId === undefined) where.push(`u.project_id = ${bind(filter.project)}`);
   if (filter.state !== undefined) where.push(`w.state IN (SELECT value FROM json_each(${bind(JSON.stringify(filter.state))}))`);
   else if (filter.view !== undefined || scope.mine) where.push(open);
   if (filter.priority !== undefined) where.push(`w.priority IN (SELECT value FROM json_each(${bind(JSON.stringify(filter.priority))}))`);

@@ -16,7 +16,8 @@ export const GUARD_CODES = [
   'rev', 'evidence', 'superseding', 'last_admin', 'chain_tip', 'decision_open', 'preview_fresh', 'log_summary_owner', 'dissent_unique', 'frozen',
   'upload_ready', 'upload_limit', 'reply_parent', 'review_eligible', 'reviewer_eligible', 'review_open', 'access_owner',
   'decision_participant', 'decision_wording', 'acknowledgement_version', 'work_state', 'work_cycle',
-  'derivation_cycle', 'derivation_tip',
+  'derivation_cycle', 'derivation_tip', 'draft_author', 'proposal_state', 'personal_owner', 'personal_limit',
+  'consent_valid', 'hold_free', 'dual_open', 'dual_distinct', 'evidence_covered',
 ] as const;
 export type GuardCode = typeof GUARD_CODES[number];
 /** HTTP status and the rule each guard enforces, for the API's refusal (design "Guards"). */
@@ -45,12 +46,30 @@ export const GUARD_RULES: Readonly<Record<GuardCode, { readonly status: 409 | 42
   work_cycle: { status: 422, rule: 'A Work_Item cannot depend, directly or through others, on itself (R52.3).' },
   derivation_cycle: { status: 422, rule: 'An artifact cannot be derived, directly or through others, from itself (R55.2).' },
   derivation_tip: { status: 409, rule: 'This artifact already has a newer derivation, or was derived by someone else a moment ago; reload it and try again (R55.2).' },
+  draft_author: { status: 409, rule: 'This draft changed after you opened it; reopen it and try again (R57.1).' },
+  proposal_state: { status: 409, rule: 'This proposal changed after you opened it; reopen it and try again (R57.5, R57.6).' },
+  personal_owner: { status: 409, rule: 'This entry changed after you opened it; reopen your list and try again (R58.2).' },
+  personal_limit: { status: 422, rule: 'You have reached the limit for this personal list (R58.2).' },
+  consent_valid: { status: 422, rule: 'The Consenting_Member’s consent does not cover this change, or it was withdrawn, used, or made stale by a later change (R23.23, R23.24).' },
+  hold_free: { status: 422, rule: 'A Confidentiality_Hold covers this item and nothing it covers may be published until the hold is lifted or overridden (R48.4).' },
+  dual_open: { status: 409, rule: 'This approval changed after you read it; its action no longer applies or it is no longer open (R49.4).' },
+  dual_distinct: { status: 422, rule: 'An approval needs a second, different currently Active Administrator (R49.3, R49.8).' },
+  evidence_covered: { status: 422, rule: 'No current Permission_Evidence covers this material or use; record a grant or send a request first (R51.9).' },
 });
 
 /** The change sequence after the batch's second statement has incremented it. */
 export const CHANGE_SEQ: SQL = sql`(SELECT v FROM counters WHERE k = 'change')`;
 const INCREMENT_CHANGE = "UPDATE counters SET v = v + 1 WHERE k = 'change'";
 const FROZEN_GUARD = "INSERT INTO _g_frozen (x) SELECT NULL WHERE NOT ((SELECT v FROM counters WHERE k = 'frozen') = 0)";
+/**
+ * The durable public invalidation epoch, read as 0 before it is first bumped. The epoch lives in the same
+ * `counters` table as `change`; a confidentiality-affecting save increments it in the same batch as its
+ * `publish` outbox row, so every deployment, file copy, and verify transition can fence against the epoch
+ * current when it ran and never resurrect suppressed output (R24.16, design "Publisher"). `bumpEpoch` is
+ * self-initializing (upsert), so no `epoch` seed row or migration is needed on existing databases.
+ */
+export const EPOCH: SQL = sql`(SELECT coalesce((SELECT v FROM counters WHERE k = 'epoch'), 0))`;
+const INCREMENT_EPOCH = "INSERT INTO counters (k, v) VALUES ('epoch', 1) ON CONFLICT (k) DO UPDATE SET v = v + 1";
 /** Strings above about 2 MB are refused by D1, so each json_each parameter stays well below that. */
 const BULK_JSON_LIMIT = 1_000_000;
 
@@ -232,6 +251,17 @@ export class GuardedBatch {
     this.#topics.add(topic);
     return this.#push(sql`INSERT INTO outbox (topic, scope, change_seq, created_at)
       SELECT ${topic}, value, ${CHANGE_SEQ}, ${this.actor.now} FROM json_each(${JSON.stringify(distinct)}) ORDER BY key`);
+  }
+
+  /**
+   * Increment the public invalidation epoch in this batch, the same transaction that writes the save and its
+   * `publish` outbox row (R24.16). A confidentiality-affecting save (a removal or edit of already-public
+   * material) calls this so the Publisher's generations and `rf-ops`'s deploy checks fence against it: a stale
+   * generation or a late provider answer can never restore the suppressed view. Calling it more than once in a
+   * batch still advances the epoch exactly once, so one save that covers many units bumps it a single time.
+   */
+  bumpEpoch(): this {
+    return this.defer('bump-epoch', (batch) => batch.#push(sql.raw(INCREMENT_EPOCH)));
   }
 
   /**

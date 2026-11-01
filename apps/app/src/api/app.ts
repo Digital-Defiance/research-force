@@ -40,6 +40,7 @@ import { projectCoverageRoutes, runCoverageRoutes, scopeRoutes } from './routes/
 import { decisionsRoutes } from './routes/decisions';
 import { derivationsRoutes } from './routes/derivations';
 import { linksRoutes } from './routes/links';
+import { listsRoutes } from './routes/lists';
 import { partiesRoutes } from './routes/parties';
 import { projectsRoutes } from './routes/projects';
 import { reviewsRoutes } from './routes/reviews';
@@ -50,6 +51,14 @@ import { valueSetsRoutes } from './routes/value-sets';
 import { questionsRoutes } from './routes/questions';
 import { workListRoutes } from './routes/work-lists';
 import { workRoutes } from './routes/work';
+import { draftRecoveryRoutes, draftsRoutes } from './routes/drafts';
+import { proposalsRoutes } from './routes/proposals';
+import { personalRoutes } from './routes/personal';
+import { disclosureRoutes } from './routes/disclosure';
+import { evidenceRoutes, unitEvidenceRoutes } from './routes/evidence';
+import { dualApprovalsRoutes } from './routes/dual';
+import { importsRoutes } from './routes/imports';
+import { dissentRoutes } from './routes/dissent';
 
 export interface ApiConfig {
   /** Only the controlled local entrypoint supplies developer routes. */
@@ -156,6 +165,7 @@ export function createApi(config: ApiConfig): Hono<ApiEnv> {
   v1.route('/members', memberProfileRoutes);
   v1.route('/projects', projectsRoutes);
   v1.route('/links', linksRoutes);
+  v1.route('/lists', listsRoutes);
   v1.route('/citations', citationsRoutes);
   v1.route('/runs', computeRoutes);
   v1.route('/runs', runCoverageRoutes);
@@ -165,6 +175,10 @@ export function createApi(config: ApiConfig): Hono<ApiEnv> {
   v1.route('/derivations', derivationsRoutes);
   v1.route('/work', workRoutes);
   v1.route('/', workListRoutes);
+  v1.route('/drafts', draftsRoutes);
+  v1.route('/proposals', proposalsRoutes);
+  v1.route('/me', personalRoutes);
+  v1.route('/ops', draftRecoveryRoutes);
   v1.route('/questions', questionsRoutes);
   v1.route('/parties', partiesRoutes);
   v1.route('/', discussionRoutes);
@@ -175,9 +189,15 @@ export function createApi(config: ApiConfig): Hono<ApiEnv> {
   v1.route('/items', itemsRoutes);
   v1.route('/access', accessRoutes);
   v1.route('/reviews', reviewsRoutes);
+  v1.route('/disclosure', disclosureRoutes);
+  v1.route('/evidence', evidenceRoutes);
+  v1.route('/units', unitEvidenceRoutes);
+  v1.route('/dual-approvals', dualApprovalsRoutes);
   v1.route('/stages', stagesRoutes);
   v1.route('/value-sets', valueSetsRoutes);
   v1.route('/settings', settingsRoutes);
+  v1.route('/imports', importsRoutes);
+  v1.route('/dissent', dissentRoutes);
   app.route('/api/v1', v1);
 
   app.notFound((c) => {

@@ -68,7 +68,16 @@ describe('seed migration', () => {
     const services = SEED_POLICY_SECTIONS.find((section) => section.sectionKey === 'services_that_process_data')!.text;
     expect(services).toContain('Microsoft 365');
     expect(services).toContain('Workers AI');
-    expect(STATE_MAILBOX_RESIDUAL_COPIES).toBe(false);
+    // The residual Microsoft 365 retention is now verified and disclosed on the Privacy page (R20.24).
+    expect(STATE_MAILBOX_RESIDUAL_COPIES).toBe(true);
+    expect(services).toContain('single-item recovery');
+    expect(services).toContain('message traces');
+    // The scoped bearer download-link exception is visible to Members in the policy (R1.3).
+    const members = SEED_POLICY_SECTIONS.find((section) => section.sectionKey === 'members')!.text;
+    expect(members).toContain('download link');
+    // The content licence and recovery/provider inputs are required before the launch gates (R1.3, R20.24).
+    const licence = SEED_POLICY_SECTIONS.find((section) => section.sectionKey === 'further_notes')!.text;
+    expect(licence).toContain('launch gates do not pass');
   });
 
   it('makes no claim for a particular installation and leaves bootstrap values out', () => {

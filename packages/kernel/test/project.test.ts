@@ -127,6 +127,23 @@ describe('project', () => {
     expect(projection.views.get('u:a')).toMatchObject({ full: { dissent: [{ key: 'u:d1' }, { key: 'u:d2' }] } });
   });
 
+  it('treats a Restricted Research_Item root like a Not_Published ancestor, so it and everything under it get no Public_View (R23.1, R47.9)', () => {
+    const projection = projectDetailed(state([
+      item('r', { kind: 'topic', body: rich('Body'), restricted: true }),
+      section('s', 'r', 'Section text'),
+      attachment('f', 'r'),
+      dissent('d', 'r', 'A dissent'),
+      item('open', { kind: 'topic', body: rich('Open body') }),
+    ]));
+    for (const key of ['u:r', 'u:s', 'u:f', 'u:d']) {
+      expect(projection.levels.get(key)).toBe('not_published');
+      expect(projection.views.has(key)).toBe(false);
+    }
+    // A sibling Research_Item that is not Restricted still projects normally.
+    expect(projection.levels.get('u:open')).toBe('public');
+    expect(projection.views.get('u:open')).toMatchObject({ tag: 'research_item', key: 'u:open' });
+  });
+
   it('shows a Cross_Link to a Withheld unit as its Disclosure_Line and leaves out links to Not_Published units', () => {
     const projection = projectDetailed(state([
       item('a', { kind: 'topic', body: rich('Body') }),

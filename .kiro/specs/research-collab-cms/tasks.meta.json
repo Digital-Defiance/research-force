@@ -1,0 +1,1942 @@
+{
+  "pbtResults": {
+    "37.4 Write property test for manifest parsing and validation": {
+      "status": "passed",
+      "lastRunTimestamp": 1793505760189
+    }
+  },
+  "executionHistory": {
+    "31.1 Implement projection input loading and the preview API in `apps/app/src/kernel-input.ts` and `apps/app/src/disclosure/preview.ts`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397392374
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793469224081
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793470099628
+      }
+    ],
+    "31.2 Implement the apply API in `apps/app/src/disclosure/apply.ts`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397392450
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793471452312
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793472159521
+      }
+    ],
+    "31.3 Implement the classification and public-overview lists in `apps/app/src/api/routes/disclosure.ts`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397392552
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793472163650
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793472544227
+      }
+    ],
+    "31.4 Implement Publication_Request proposal, apply, and decline in `apps/app/src/reviews/publication.ts`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397392624
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793481202879
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793481723289
+      }
+    ],
+    "31.5 Implement the rights and consent rules in `apps/app/src/disclosure/rights.ts`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397392694
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793481727068
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793482492095
+      }
+    ],
+    "31.6 Implement item moves in `apps/app/src/records/move.ts` and `POST /items/{id}/move`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397392764
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793482499393
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793483159116
+      }
+    ],
+    "31.7 Build the disclosure screens in `apps/app/web/src/disclosure/`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397392863
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793483167657
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793484323448
+      }
+    ],
+    "31.8 Write property test for independent Disclosure_Levels": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397392933
+      }
+    ],
+    "31.9 Write property test for Unclassified units": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397393007
+      }
+    ],
+    "31.10 Write property test for publication gates": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397393081
+      }
+    ],
+    "31.11 Write property test for rights and consent invariants": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397393159
+      }
+    ],
+    "31.12 Write property test for public addresses": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397393227
+      }
+    ],
+    "31.13 Write property test for the Review_Request state machine": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397393293
+      }
+    ],
+    "31.14 Write property test for item moves": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397393366
+      }
+    ],
+    "31.15 Write property test for Log_Summary rules": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397393429
+      }
+    ],
+    "32.1 Implement the `rf-ops` site deployment in `apps/ops/src/deploy.ts`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397393509
+      }
+    ],
+    "32.2 Implement the Publisher projection step in `apps/app/src/do/publisher.ts`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397393573
+      }
+    ],
+    "32.3 Implement planning and rendering in `apps/app/src/publisher/plan.ts` and `apps/app/src/publisher/render.ts`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397393648
+      }
+    ],
+    "32.4 Implement public file copies in `apps/app/src/publisher/files.ts`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397393718
+      }
+    ],
+    "32.5 Implement urgency, deployment, and verification in `apps/app/src/publisher/deploy.ts`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397393790
+      }
+    ],
+    "32.6 Write property test for Publisher convergence": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397393858
+      }
+    ],
+    "32.7 Write integration tests for publication timing and alerts": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397393921
+      }
+    ],
+    "33. Checkpoint - Ensure all tests pass": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397394000
+      }
+    ],
+    "34.1 Implement the `Budget` Durable Object in `apps/app/src/do/budget.ts` and `apps/app/src/budget/status.ts`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397394068
+      }
+    ],
+    "34.2 Implement the WAF switch in `apps/ops/src/waf.ts`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397394142
+      }
+    ],
+    "34.3 Implement submission sessions and files in `apps/submit/src/index.ts` and `apps/submit/src/sessions.ts`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397394210
+      }
+    ],
+    "34.4 Implement the submit endpoint in `apps/submit/src/submit.ts`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397394282
+      }
+    ],
+    "34.5 Implement the public form scripts in `apps/site-shell/src/form.ts` and update `apps/site-shell/src/search.ts`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397394361
+      }
+    ],
+    "34.6 Write property test for Outside_Submission limits": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397394432
+      }
+    ],
+    "35.1 Implement the Moderation_Queue API in `apps/app/src/moderation/queue.ts` and `apps/app/src/api/routes/moderation.ts`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397394517
+      }
+    ],
+    "35.2 Implement Moderation_Decisions in `apps/app/src/moderation/decide.ts`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397394584
+      }
+    ],
+    "35.3 Implement Response_Links in `apps/submit/src/respond.ts` and `apps/site-shell/src/respond.ts`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397394656
+      }
+    ],
+    "35.4 Implement Response_Target Reminders in `apps/app/src/moderation/reminders.ts`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397394722
+      }
+    ],
+    "35.5 Implement the moderation retention sweeps in `apps/app/src/moderation/retention.ts`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397394791
+      }
+    ],
+    "35.6 Build the moderation screens in `apps/app/web/src/moderation/`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397394868
+      }
+    ],
+    "35.7 Write property test for not-found responses": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397394939
+      }
+    ],
+    "35.8 Write property test for Project choice": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397395017
+      }
+    ],
+    "35.9 Write property test for Response_Links": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397395083
+      }
+    ],
+    "35.10 Write property test for Moderation_Decisions": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397395149
+      }
+    ],
+    "35.11 Write integration tests for moderation flows": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397395216
+      }
+    ],
+    "35.12 Implement Contact_Reviews and submitter corrections in `apps/app/src/moderation/contact-review.ts`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397395281
+      }
+    ],
+    "35.13 Build the Contact_Review screens in `apps/app/web/src/moderation/contact-review.tsx`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397395359
+      }
+    ],
+    "36.1 Implement the journal import job in `apps/app/src/jobs/journal-import.ts` and `POST /imports/journal`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397395427
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793495556477
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793496172766
+      }
+    ],
+    "36.2 Implement the attachment import in `apps/app/src/jobs/journal-import.ts`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397395508
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793496176216
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793496834366
+      }
+    ],
+    "36.3 Build the journal import screen in `apps/app/web/src/imports/journal.tsx`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397395573
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793496838485
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793498266092
+      }
+    ],
+    "36.4 Write integration tests for the journal import": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397395646
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793498270171
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793498712662
+      }
+    ],
+    "37.1 Implement the Manifest_Parser in `packages/manifest/src/parse.ts`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397395706
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793498828023
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793499880510
+      }
+    ],
+    "37.2 Implement the Manifest_Printer in `packages/manifest/src/print.ts`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397395776
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793499884236
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793500117560
+      }
+    ],
+    "37.3 Write property test for the manifest round trip": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397395851
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793500121552
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793500642864
+      }
+    ],
+    "37.4 Write property test for manifest parsing and validation": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397395923
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793500646759
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793505787759
+      }
+    ],
+    "37.5 Implement Bulk_Import validation in `apps/app/src/jobs/bulk-validate.ts`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397396026
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793505880582
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793506403489
+      }
+    ],
+    "37.6 Implement the Bulk_Import job in `apps/app/src/jobs/bulk-import.ts` and `POST /imports/bulk`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397396102
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793506412681
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793507181598
+      }
+    ],
+    "37.7 Build the Bulk_Import screen in `apps/app/web/src/imports/bulk.tsx`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397396172
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793507188866
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793507600487
+      }
+    ],
+    "37.8 Write property test for import idempotency and mapping": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397396241
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793507607902
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793508239167
+      }
+    ],
+    "37.9 Write property test for import reports": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397396306
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793508242776
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793508746697
+      }
+    ],
+    "37.10 Write property test for atomic saves": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397396371
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793508751155
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793509240997
+      }
+    ],
+    "37.11 Write property test for budget gates": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397396448
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793509245195
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793509586408
+      }
+    ],
+    "38.1 Implement the export templates and data files in `packages/public-render/src/export/`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397396519
+      }
+    ],
+    "38.2 Implement the Public_Archive_Export job in `apps/app/src/jobs/export.ts`, `POST /exports`, and `GET /exports`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397396600
+      }
+    ],
+    "38.3 Implement package volume streaming in `apps/dl/src/tar.ts`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397396667
+      }
+    ],
+    "38.4 Implement the Internal_Backup job in `apps/app/src/jobs/backup.ts` and `POST /backups`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397396736
+      }
+    ],
+    "38.5 Implement restore in `apps/app/src/jobs/restore.ts` and `POST /restores`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397396799
+      }
+    ],
+    "38.6 Build the export and backup screens in `apps/app/web/src/exports/`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397396866
+      }
+    ],
+    "38.7 Write property test for Item_Identifiers": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397396940
+      }
+    ],
+    "38.8 Write property test for the export JSON round trip": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397397007
+      }
+    ],
+    "38.9 Write property test for export snapshots": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397397075
+      }
+    ],
+    "38.10 Write property test for backup and restore": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397397146
+      }
+    ],
+    "38.11 Write property test for package retention and staleness": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397397226
+      }
+    ],
+    "38.12 Write property test for retention sweeps": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397397292
+      }
+    ],
+    "38.13 Write property test for character preservation": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397397359
+      }
+    ],
+    "39. Checkpoint - Ensure all tests pass": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397397442
+      }
+    ],
+    "40.1 Implement the Project_Log in `apps/app/src/projects/log.ts` and `GET /projects/{id}/log`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397397523
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793509599412
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793511212099
+      }
+    ],
+    "40.2 Implement the Workspace lists in `apps/app/src/lists/` and `apps/app/src/api/routes/lists.ts`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397397589
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793511220850
+      },
+      {
+        "executionId": "002b3ed5-1843-492e-ba73-a3c635de74ba",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793546478185
+      },
+      {
+        "executionId": "002b3ed5-1843-492e-ba73-a3c635de74ba",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793547309229
+      }
+    ],
+    "40.3 Build the Project_Log and list screens in `apps/app/web/src/lists/` and `apps/app/web/src/projects/log.tsx`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397397656
+      },
+      {
+        "executionId": "002b3ed5-1843-492e-ba73-a3c635de74ba",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793547316943
+      },
+      {
+        "executionId": "002b3ed5-1843-492e-ba73-a3c635de74ba",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793547871031
+      }
+    ],
+    "40.4 Write property test for query and date-range validation": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397397716
+      },
+      {
+        "executionId": "002b3ed5-1843-492e-ba73-a3c635de74ba",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793548185109
+      },
+      {
+        "executionId": "002b3ed5-1843-492e-ba73-a3c635de74ba",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793548545913
+      }
+    ],
+    "40.5 Write property test for Workspace lists": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397397810
+      },
+      {
+        "executionId": "002b3ed5-1843-492e-ba73-a3c635de74ba",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793548554448
+      },
+      {
+        "executionId": "002b3ed5-1843-492e-ba73-a3c635de74ba",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793549008060
+      }
+    ],
+    "41.1 Implement the Dissent_Note API in `apps/app/src/dissent/dissent.ts` and `apps/app/src/api/routes/dissent.ts`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397397899
+      },
+      {
+        "executionId": "c9b4c602-5e45-4ae9-bbf2-cd2d8e5d17fb",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793549443244
+      },
+      {
+        "executionId": "c9b4c602-5e45-4ae9-bbf2-cd2d8e5d17fb",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793550231505
+      }
+    ],
+    "41.2 Implement Dissent_Note display in `apps/app/src/dissent/display.ts` and update `apps/app/src/projects/log.ts`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397397968
+      },
+      {
+        "executionId": "c9b4c602-5e45-4ae9-bbf2-cd2d8e5d17fb",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793550240213
+      },
+      {
+        "executionId": "c9b4c602-5e45-4ae9-bbf2-cd2d8e5d17fb",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793551680391
+      }
+    ],
+    "41.3 Build the Dissent_Note screens in `apps/app/web/src/dissent/`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397398035
+      },
+      {
+        "executionId": "c9b4c602-5e45-4ae9-bbf2-cd2d8e5d17fb",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793551688101
+      },
+      {
+        "executionId": "c9b4c602-5e45-4ae9-bbf2-cd2d8e5d17fb",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793552230945
+      }
+    ],
+    "41.4 Write property test for new Disclosure_Units": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397398106
+      }
+    ],
+    "41.5 Write property test for permanent deletion": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397398173
+      }
+    ],
+    "41.6 Write property test for event recipients": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397398243
+      }
+    ],
+    "41.7 Write property test for Dissent_Notes": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397398309
+      }
+    ],
+    "42.1 Implement the AI draft API in `apps/app/src/ai/drafts.ts`, `GET /ai/status`, and `POST /ai/drafts`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397398384
+      }
+    ],
+    "42.2 Implement draft output shaping in `packages/domain/src/ai-output.ts`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397398450
+      }
+    ],
+    "42.3 Record AI provenance on save in `apps/app/src/records/pipeline.ts`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397398531
+      }
+    ],
+    "42.4 Build the editor draft controls in `apps/app/web/src/editor/ai-draft.tsx`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397398594
+      }
+    ],
+    "42.5 Write property test for the AI allocation": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397398665
+      }
+    ],
+    "42.6 Write property test for AI input and output": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397398740
+      }
+    ],
+    "42.7 Write property test for AI provenance": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397398807
+      }
+    ],
+    "43.1 Implement Policy_Section editing in `apps/app/src/policy/policy.ts` and `GET/PUT /policy/{page}`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397398872
+      }
+    ],
+    "43.2 Implement the Responsible_Person designation and alert in `apps/app/src/policy/responsible.ts`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397398940
+      }
+    ],
+    "43.3 Implement Policy_Page generated content and last-updated dates in `apps/app/src/publisher/policy-pages.ts`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397399011
+      }
+    ],
+    "43.4 Build the policy, settings, and value-set screens in `apps/app/web/src/admin/`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397399083
+      }
+    ],
+    "43.5 Write the print stylesheet in `packages/design/src/print.css`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397399149
+      }
+    ],
+    "43.6 Complete accessibility and layout across `packages/design` and `apps/app/web`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397399211
+      }
+    ],
+    "43.7 Write the Playwright presentation tests in `tests/presentation/`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397399282
+      }
+    ],
+    "43.8 Configure Lighthouse CI in `lighthouserc.json`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397399344
+      }
+    ],
+    "43.9 Write property test for concurrent saves": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397399434
+      }
+    ],
+    "43.10 Write property test for reminder and alert schedules": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397399507
+      }
+    ],
+    "43.11 Write property test for the People page and Responsible_Person statement": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397399590
+      }
+    ],
+    "43.12 Write property test for last-updated dates": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397399665
+      }
+    ],
+    "44.1 Implement the analytics queries in `apps/ops/src/analytics.ts`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397399757
+      }
+    ],
+    "44.2 Implement usage alerts in `apps/app/src/usage/alerts.ts`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397399824
+      }
+    ],
+    "44.3 Write property test for usage alerts": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397399913
+      }
+    ],
+    "45.1 Implement the Workspace security headers in `apps/app/src/api/security-headers.ts` and `apps/app/web/public/_headers`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397399985
+      }
+    ],
+    "45.2 Implement the Public_Site headers in `packages/public-render/src/headers.ts`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397400066
+      }
+    ],
+    "45.3 Write security tests in `tests/security/`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397400144
+      }
+    ],
+    "45.4 Write the CI smoke checks in `tools/smoke/`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397400211
+      }
+    ],
+    "46.1 Implement metrics and the operations status endpoint in `apps/app/src/metrics.ts` and `GET /api/v1/ops/status`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397400294
+      }
+    ],
+    "46.2 Write the performance test harness in `tests/perf/`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397400366
+      }
+    ],
+    "47. Checkpoint - Ensure all tests pass": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397400431
+      }
+    ],
+    "48.1 Write the Cloudflare resources as code in `infra/cloudflare/resources.ts` and `infra/cloudflare/provision.ts`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397400499
+      }
+    ],
+    "48.2 Write the Microsoft 365 setup script in `infra/m365/Setup-ResearchForceMail.ps1`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397400561
+      }
+    ],
+    "48.3 Write the DNS records and their check in `infra/dns/records.ts` and `tools/check-email-dns.ts`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397400636
+      }
+    ],
+    "48.4 Write the deployment and bootstrap scripts in `scripts/deploy.ts`, `tools/bootstrap.ts`, and `.github/workflows/ci.yml`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397400694
+      }
+    ],
+    "48.5 Write the staging verification suites in `tests/staging/` and `infra/m365/Verify-ResearchForceMail.ps1`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397400766
+      }
+    ],
+    "48.6 User setup checklist (needs Cloudflare account access)": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397400834
+      }
+    ],
+    "48.7 User setup checklist (needs Microsoft 365 administrator access)": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397400901
+      }
+    ],
+    "48.8 User setup checklist (needs DNS access for researchforce.org)": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397400983
+      }
+    ],
+    "48.9 Activate only production scopes with passing launch evidence": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397401055
+      }
+    ],
+    "48.10 Prepare the reusable source release and independent-installation guide": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397401125
+      }
+    ],
+    "48.11 Bootstrap an isolated staging installation for provider verification": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397401199
+      }
+    ],
+    "48.12 Execute and retain complete staging and team acceptance evidence": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397401265
+      }
+    ],
+    "49. Final checkpoint - Ensure all tests pass": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397401334
+      }
+    ],
+    "52.4 Implement access changes in `apps/app/src/records/access.ts`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397401405
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793477532725
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793477943243
+      }
+    ],
+    "52.5 Treat Restricted roots as Not_Published in the kernel": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397401491
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793471245982
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793471445824
+      }
+    ],
+    "52.6 Build the access screens in `apps/app/web/src/access/`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397401558
+      },
+      {
+        "executionId": "002b3ed5-1843-492e-ba73-a3c635de74ba",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793547944229
+      },
+      {
+        "executionId": "002b3ed5-1843-492e-ba73-a3c635de74ba",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793548177260
+      }
+    ],
+    "53.1 Implement the move API in `apps/app/src/files/move.ts` and `POST /attachments/{id}/move`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397401635
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793487889219
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793493897754
+      }
+    ],
+    "53.2 Build the move dialog in `apps/app/web/src/files/move.tsx`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397401717
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793493901069
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793494172537
+      }
+    ],
+    "53.3 Write property test for Attachment moves": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397401809
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793494184604
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793495475915
+      }
+    ],
+    "54.1 Add the consent, hold, and approval data": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397401881
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793420547090
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793468231661
+      }
+    ],
+    "54.2 Add the widening test and the new gates to the kernel and `loadProjectionInput`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397401956
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793470103829
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793471238205
+      }
+    ],
+    "54.3 Implement Publication_Proposals and consents in `apps/app/src/reviews/proposals.ts`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397402033
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793472551830
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793473116981
+      }
+    ],
+    "54.4 Implement Confidentiality_Holds in `apps/app/src/disclosure/holds.ts`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397402107
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793473123672
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793474059853
+      }
+    ],
+    "54.5 Implement Dual_Approvals in `apps/app/src/reviews/dual.ts`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397402184
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793474063487
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793477522531
+      }
+    ],
+    "54.6 Build the consent, hold, and approval screens in `apps/app/web/src/disclosure/` and `apps/app/web/src/reviews/`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397402268
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793477950133
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793478980723
+      }
+    ],
+    "54.7 Write property test for publication consent": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397402350
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793478987837
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793480340298
+      }
+    ],
+    "54.8 Write property test for Confidentiality_Holds": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397402426
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793480343772
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793480835980
+      }
+    ],
+    "54.9 Write property test for Dual_Approvals": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397402500
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793480839573
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793481196001
+      }
+    ],
+    "55.4 Render Research_Questions on the Public_Site in `packages/public-render` and `apps/app/src/publisher/plan.ts`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397402566
+      }
+    ],
+    "55.5 Write property test for Research_Questions": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397402650
+      }
+    ],
+    "56.1 Add the consent request data": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397402733
+      }
+    ],
+    "56.2 Implement sending in `apps/app/src/consent/requests.ts`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397402816
+      }
+    ],
+    "56.3 Implement answering and withdrawal in `apps/submit/src/consent.ts` and `packages/db/src/consent/answer.ts`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397402890
+      }
+    ],
+    "56.4 Build the Consent_Page and Change_Link page in `apps/site-shell/src/consent.ts`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397402956
+      }
+    ],
+    "56.5 Limit emailed consent to the content shown": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397403026
+      }
+    ],
+    "56.6 Implement reminders, expiry, and token clean-up in `apps/app/src/consent/sweep.ts`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397403114
+      }
+    ],
+    "56.7 Build the Consent_Request screens in `apps/app/web/src/consent/`": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397403181
+      }
+    ],
+    "56.8 Write property test for consent links": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397403260
+      }
+    ],
+    "56.9 Write property test for consent coverage": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397403334
+      }
+    ],
+    "56.10 Write integration tests for Consent_Requests": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397403410
+      }
+    ],
+    "58.1 Define versioned authenticated backup formats and encryption adapters": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397403477
+      }
+    ],
+    "58.2 Implement automatic independent copies, verification and tiered retention": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397403549
+      }
+    ],
+    "58.3 Implement leased freeze, watchdog and file retention pins": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397403617
+      }
+    ],
+    "58.4 Implement restore preflight, bootstrap reconciliation and owned checkpoints": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397403685
+      }
+    ],
+    "58.5 Write fresh-environment recovery tooling and rehearse RPO/RTO": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397403765
+      }
+    ],
+    "58.6 Write property and regression tests for independent recovery points": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397403827
+      }
+    ],
+    "58.7 Write property and regression tests for freeze and restore crash safety": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397403900
+      }
+    ],
+    "59.1 Implement durable publication epochs and fenced external operations": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397403975
+      },
+      {
+        "executionId": "c9b4c602-5e45-4ae9-bbf2-cd2d8e5d17fb",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793552335936
+      },
+      {
+        "executionId": "c9b4c602-5e45-4ae9-bbf2-cd2d8e5d17fb",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793553279379
+      }
+    ],
+    "59.2 Prepare independent edge containment and health/incident handling": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397404040
+      },
+      {
+        "executionId": "c9b4c602-5e45-4ae9-bbf2-cd2d8e5d17fb",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793553295481
+      },
+      {
+        "executionId": "c9b4c602-5e45-4ae9-bbf2-cd2d8e5d17fb",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793553667018
+      }
+    ],
+    "59.3 Implement profile-aware admission, rejected-traffic accounting and shedding": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397404131
+      },
+      {
+        "executionId": "c9b4c602-5e45-4ae9-bbf2-cd2d8e5d17fb",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793553695275
+      },
+      {
+        "executionId": "c9b4c602-5e45-4ae9-bbf2-cd2d8e5d17fb",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793553973362
+      }
+    ],
+    "59.4 Write mandatory distributed abuse and removal-failure staging scenarios": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397404198
+      }
+    ],
+    "59.5 Write property and regression tests for publication generations and suppression": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397404275
+      }
+    ],
+    "59.6 Write property and regression tests for certified reserve accounting": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397404342
+      }
+    ],
+    "64.1 Implement author-scoped durable draft storage and recovery": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397404414
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397420104
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793401925381
+      }
+    ],
+    "64.2 Implement revision-bound proposed diffs and guarded acceptance": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397404483
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793401928712
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793407854977
+      }
+    ],
+    "64.3 Build draft resumption and proposal review screens": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397404560
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793407860996
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793408506480
+      }
+    ],
+    "64.4 Write property and regression tests for durable drafts": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397404635
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793408512764
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793409238391
+      }
+    ],
+    "64.5 Write property and regression tests for proposed edits": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397404707
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793409241507
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793410811496
+      }
+    ],
+    "65.1 Implement personal bookmarks, saved queries, follows and recipient union": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397404776
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793410820279
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793412918593
+      }
+    ],
+    "65.2 Build My_Work and authorized team dashboards": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397404841
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793412921930
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793415695846
+      }
+    ],
+    "65.3 Write property and regression tests for navigation and follows": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397404928
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793416716228
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793420531900
+      }
+    ],
+    "66.2 Implement release creation, validation and publication through the kernel": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397405001
+      }
+    ],
+    "66.3 Build release and version-citation screens and offline export verification": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397405081
+      }
+    ],
+    "66.4 Write property and regression tests for research releases": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397405151
+      }
+    ],
+    "67.2 Implement independent health, recovery-age, removal and spend alerts": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397405224
+      }
+    ],
+    "67.3 Implement reference-safe operational retention and growth reporting": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397405298
+      }
+    ],
+    "67.4 Write property and regression tests for release and compatibility gates": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397405364
+      }
+    ],
+    "68.1 Add shared Permission_Evidence and manual/emailed grant coverage": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397405451
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793468241190
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793469212206
+      }
+    ],
+    "68.2 Build evidence recording, precise permission requests and policy text": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397405524
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793484330863
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793485622306
+      }
+    ],
+    "68.3 Write property and regression tests for permission evidence coverage": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397405595
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793485629178
+      },
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793487674148
+      }
+    ],
+    "68.4 Enforce team-archive and public-launch acceptance evidence": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793397405668
+      }
+    ],
+    "64. Build durable drafts and authorized proposed edits": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793410811565
+      }
+    ],
+    "65. Build personal navigation and team work dashboards": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793420531987
+      }
+    ],
+    "54. Build Owner consent, Confidentiality_Holds, and Dual_Approvals": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793481196058
+      }
+    ],
+    "53. Build Attachment moves": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793495475985
+      }
+    ],
+    "36. Build the journal and attachment migration service": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793498712726
+      }
+    ],
+    "37. Build the Bulk_Import with the Manifest_Parser and Manifest_Printer": [
+      {
+        "executionId": "e69d8c39-2697-4e63-beb0-850190500aca",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793509586474
+      }
+    ],
+    "52. Build restricted access inside the team": [
+      {
+        "executionId": "002b3ed5-1843-492e-ba73-a3c635de74ba",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793548177316
+      }
+    ],
+    "40. Build the Project_Log and the Workspace lists": [
+      {
+        "executionId": "002b3ed5-1843-492e-ba73-a3c635de74ba",
+        "chatSessionId": "sess_f6f1b94e-9c72-4d65-a8f1-32ef3f2a5fb6",
+        "timestamp": 1793549008136
+      }
+    ]
+  }
+}

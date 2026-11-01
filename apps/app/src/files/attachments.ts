@@ -18,6 +18,9 @@ import { authorize } from '../auth/authorize';
 import { validationContext } from '../records/items';
 import { markEarlierVersions } from '../records/citations';
 import { commitSave, diffFields } from '../records/pipeline';
+import type { FieldChange } from '../records/pipeline';
+import { permitsPublication, savingDowngradesAttachment, writeRightsDowngrade } from '../disclosure/rights';
+import type { DowngradeTarget } from '../disclosure/rights';
 import { addSubmission, commitWithIdentifiers, visibleTo } from '../records/submissions';
 import type { UploadRow } from './uploads';
 import { refuseSuperseded, versionChain, versionConflict } from './versions';
@@ -143,11 +146,27 @@ export async function editAttachment(c: Context<ApiEnv>, id: string, body: unkno
   const context = await validationContext(c, { rightsStatusId: [before.rightsStatusId as ULID] });
   const input = parse(z.strictObject({ rev: z.int().positive(), metadata: attachmentMetadataSchema(context, true), mark: editMarkSchema }), body);
   const old = { title: before.title, caption: before.caption ?? undefined, origin: before.origin, rightsStatusId: before.rightsStatusId, rightsHolder: before.rightsHolder ?? undefined, rightsTerms: before.rightsTerms ?? undefined };
-  // Rights changes on Public files use task 31's disclosure workflow, to ensure publication downgrades are atomic.
-  if (before.level === 'public' && ['rightsStatusId', 'rightsHolder', 'rightsTerms'].some((field) => old[field as keyof typeof old] !== input.metadata[field as keyof typeof input.metadata])) throw new ApiError('validation', { fields: [{ field: 'metadata.rightsStatusId', rule: 'Rights changes on a Public Attachment require the disclosure workflow.' }] });
-  const fields = diffFields(old, input.metadata, { title: 'content', caption: 'content', origin: 'content', rightsStatusId: 'content', rightsHolder: 'content', rightsTerms: 'content' });
+  const fields: FieldChange[] = diffFields(old, input.metadata, { title: 'content', caption: 'content', origin: 'content', rightsStatusId: 'content', rightsHolder: 'content', rightsTerms: 'content' });
+  // R33.5: a save that sets a non-permitting Rights_Status on an Attachment whose own Disclosure_Level is Public
+  // downgrades it to Withheld in the same batch, with a file-kind-and-date Disclosure_Line, a Disclosure_Change by
+  // the saving Member, and an Item_Update for every Administrator. Whether the new value permits publication is read
+  // from the value it names; the `rights` gate (R33.4) separately refuses widening such an Attachment to Public.
+  const nextPermits = permitsPublication(await rightsValuePermits(c, input.metadata.rightsStatusId));
+  const rightsChanged = input.metadata.rightsStatusId !== before.rightsStatusId;
+  const downgrade = rightsChanged && savingDowngradesAttachment(before.level, nextPermits);
+  if (downgrade) fields.push({ field: 'disclosureLevel', before: 'public', after: 'withheld', fieldClass: 'disclosure' });
   if (fields.length === 0) return;
+  const target: DowngradeTarget = { unitId: id as ULID, rootId: before.rootId as ULID, fileKind: before.fileKind, uploadedAt: before.uploadedAt };
   await commitSave(c, { target: { type: 'unit', id, rootId: before.rootId }, startedFrom: input.rev, change: { fields, mark: { mark: input.mark.mark, ...(input.mark.reason === undefined ? {} : { reason: input.mark.reason }) } },
-    write(batch) { batch.update(attachments, { ...input.metadata, caption: input.metadata.caption ?? null, rightsHolder: input.metadata.rightsHolder ?? null, rightsTerms: input.metadata.rightsTerms ?? null }, eq(attachments.unitId, id))
-      .update(units, {}, and(eq(units.id, id), eq(units.unitType, 'attachment'))!); }, outbox: [['search', `unit:${id}`], ['publish', `unit:${id}`]] });
+    write(batch) {
+      batch.update(attachments, { ...input.metadata, caption: input.metadata.caption ?? null, rightsHolder: input.metadata.rightsHolder ?? null, rightsTerms: input.metadata.rightsTerms ?? null }, eq(attachments.unitId, id))
+        .update(units, {}, and(eq(units.id, id), eq(units.unitType, 'attachment'))!);
+      if (downgrade) writeRightsDowngrade(batch, target);
+    }, outbox: [['search', `unit:${id}`], ['publish', `unit:${id}`]] });
+}
+
+/** The `permits_publication` flag of a Rights_Status value, for the R33.5 downgrade decision; a missing value yields null. */
+async function rightsValuePermits(c: Context<ApiEnv>, rightsStatusId: string): Promise<number | null> {
+  const row = await c.get('accountant').track(c.env.RF_CORE.prepare('SELECT permits_publication AS permits FROM config_values WHERE id = ?1').bind(rightsStatusId).all<{ permits: number | null }>());
+  return row.results[0]?.permits ?? null;
 }

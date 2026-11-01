@@ -4,7 +4,8 @@ import { FlagMark, useFlagSnapshot, useRecordViews } from '../activity/activity'
 import { useApi } from '../api';
 import { useSession } from '../session';
 import { Button, formatDate, LoadState, Notice, SaveFailure, SelectField, TextField, useLoad } from '../ui';
-import type { ValueSets } from '../types';
+import type { MemberRow, ValueSets } from '../types';
+import { AttachmentMoveDialog } from './move';
 import { FilePreview } from './preview';
 import { UploadFields, useUploads } from './upload';
 interface ChainEntry { id: string; title: string; position: number; uploadedAt: string; ownerId: string; displayName: string | null; viewed: boolean; last: boolean; flag: 'new' | 'updated' | null; supersedesId: string | null }
@@ -57,6 +58,7 @@ function MetadataForm({ attachment, onSaved }: { readonly attachment: Attachment
 }
 export function AttachmentPage({ id }: { readonly id: string }) {
   const loaded = useLoad<AttachmentData>(`/attachments/${id}`); const session = useSession();
+  const members = useLoad<{ members: MemberRow[] }>('/members');
   const [editing, setEditing] = useState(false);
   const entries = loaded.data ? [{ id, flag: loaded.data.attachment.flag }, ...loaded.data.chain] : []; const flagOf = useFlagSnapshot(entries);
   useRecordViews(loaded.data ? [id] : undefined);
@@ -74,5 +76,6 @@ export function AttachmentPage({ id }: { readonly id: string }) {
     <section className="rf-section"><h2>Versions</h2><ol>{chain.map((entry) => <li key={entry.id}><Link to={`/attachments/${entry.id}`}>{entry.title}</Link>{' '}<FlagMark flag={flagOf(entry.id)} />{` — version ${entry.position}, uploaded ${formatDate(entry.uploadedAt)} by ${entry.displayName ?? entry.ownerId}${entry.viewed ? ' (viewing)' : ''}${entry.last ? ' (last)' : ''}`}</li>)}</ol></section>
     {canEdit && <div className="rf-actions"><Link to={`/attachments/${id}/version`}>Add a new version</Link><Button onClick={() => setEditing((old) => !old)}>Edit metadata</Button></div>}
     {editing && <MetadataForm attachment={a} onSaved={() => { setEditing(false); loaded.reload(); }} />}
+    <AttachmentMoveDialog attachmentId={id} parentId={a.parentId} members={members.data?.members ?? []} onMoved={() => loaded.reload()} />
   </article>;
 }

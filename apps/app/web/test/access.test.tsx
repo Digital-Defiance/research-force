@@ -16,6 +16,7 @@ const ITEM = makeItem({ kind: 'finding', access: restricted([BEN]) });
 const PREVIEW: AccessPreviewView = {
   items: [{ id: ITEM.id, identifier: ITEM.identifier, title: ITEM.title, changed: true, from: { level: 'whole_team', members: [] }, to: { level: 'restricted', members: [BEN] } }],
   gaining: [], resets: [{ unitId: ITEM.id, rootId: ITEM.id, unitType: 'research_item', identifier: ITEM.identifier, title: ITEM.title, level: 'public' }],
+  removedViews: [{ key: `u:${ITEM.id}`, rootId: ITEM.id, tag: 'research_item', path: `/r/${ITEM.identifier}`, title: ITEM.title }],
   statement: ACCESS_STATEMENT, confirmation: 'c1',
 };
 const radio = (dialog: HTMLElement, name: string) => within(dialog).getByRole('radio', { name });
@@ -79,6 +80,8 @@ describe('who can read an item', () => {
     expect(preview.textContent).toContain('RF-0001 A synthetic record: Whole team → Restricted, Access list: Ben Sample');
     expect(preview.textContent).toContain('These would become Not published, and their public pages would be removed:');
     expect(preview.textContent).toContain('RF-0001 A synthetic record (Public)');
+    expect(preview.textContent).toContain('The public would no longer see these pages:');
+    expect((within(preview).getByRole('link', { name: ITEM.title }) as HTMLAnchorElement).getAttribute('href')).toBe(`/r/${ITEM.identifier}`);
     fireEvent.click(within(dialog).getByRole('button', { name: 'Confirm the change' }));
     await waitFor(() => expect(changed).toBe(1));
     expect(api.writes().map((call) => call.body)).toEqual([

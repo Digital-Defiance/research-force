@@ -6,6 +6,7 @@ import { sweepFollowUps } from './notifications/reminders';
 import { kickAll } from './outbox';
 import { sweepUploads } from './files/uploads';
 import { sweepStages } from './records/stages';
+import { sweepDrafts } from './records/drafts';
 
 /** The two Cron Triggers in `wrangler.jsonc` (design "Cron Triggers"). */
 export const EVERY_MINUTE = '* * * * *';
@@ -23,6 +24,7 @@ export const HOURLY_SWEEPS: readonly Sweep[] = [
   { name: 'staging_rows', run: (env, now) => sweepStages(env.RF_CORE, now) },
   { name: 'follow_up_reminders', run: sweepFollowUps },
   { name: 'decision_revisits', run: sweepDecisionRevisits },
+  { name: 'inactive_drafts', run: (env, now) => sweepDrafts(env, now) },
 ];
 
 /** Run every sweep; one that fails is logged and the rest still run. */

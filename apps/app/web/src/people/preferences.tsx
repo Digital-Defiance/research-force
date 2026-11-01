@@ -13,7 +13,7 @@ type EmailMode = typeof EMAIL_MODES[number];
 const EMAIL_MODE_NAMES: Readonly<Record<EmailMode, string>> = { immediate: 'Immediately', daily_digest: 'In the Daily Digest', off: 'Off' };
 const EVENT_TYPE_NAMES: Readonly<Record<EventType, string>> = {
   new_submission: 'New Submissions', item_update: 'Updates to Items', reply: 'Replies', mention: 'Mentions', review_requested: 'Review requests',
-  review_completed: 'Completed reviews', outside_submission: 'Outside Submissions', reminder: 'Reminders', system_alert: 'System Alerts', dissent: 'Dissent Notes', work_assigned: 'Work assignments', work_update: 'Work updates',
+  review_completed: 'Completed reviews', outside_submission: 'Outside Submissions', reminder: 'Reminders', system_alert: 'System Alerts', dissent: 'Dissent Notes', work_assigned: 'Work assignments', work_update: 'Work updates', proposal: 'Edit proposals', follow_update: 'Followed records',
 };
 const HOURS = Array.from({ length: 24 }, (_unused, hour) => ({ value: String(hour), label: `${String(hour).padStart(2, '0')}:00` }));
 

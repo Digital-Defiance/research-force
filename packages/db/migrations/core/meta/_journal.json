@@ -155,6 +155,48 @@
       "when": 1793391727524,
       "tag": "0021_coverage_and_reproduction",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "6",
+      "when": 1793398706804,
+      "tag": "0022_durable_drafts",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "6",
+      "when": 1793404209766,
+      "tag": "0023_proposed_edits",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "6",
+      "when": 1793410000000,
+      "tag": "0024_personal_navigation",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "6",
+      "when": 1793467198679,
+      "tag": "0025_publication_consent",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "6",
+      "when": 1793468581422,
+      "tag": "0026_permission_evidence",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "6",
+      "when": 1793475156029,
+      "tag": "0027_dual_withdraw",
+      "breakpoints": true
     }
   ]
 }

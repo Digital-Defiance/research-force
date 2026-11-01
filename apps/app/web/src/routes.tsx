@@ -18,15 +18,30 @@ import { PreferencesPage } from './people/preferences';
 import { OwnProfilePage, ProfileForm } from './people/profile';
 import { ProfilePage } from './people/view';
 import { CoverageScreen } from './compute/coverage';
+import { DraftsPage } from './drafts/drafts';
+import { ProposalPage, ProposalsListPage, ProposeEditPage } from './proposals/proposals';
 import { EditProjectPage, ProjectForm } from './projects/form';
 import { ProjectHistoryPage } from './projects/history';
 import { ProjectsPage } from './projects/list';
 import { WorkListScreen } from './work/work-list';
+import { MyWorkPage } from './me/dashboard';
+import { SavedNavigationPage } from './me/saved';
+import { TeamDashboardPage } from './me/team';
 import { CitationCurationScreen } from './citations/panel';
 import { ReviewQueuePage } from './reviews/reviews';
+import { ProposalScreen } from './reviews/proposal';
+import { PublicationRequestScreen } from './disclosure/publication-request';
+import { UnclassifiedScreen, PublicOverviewScreen } from './disclosure/records';
+import { EvidenceEditorScreen } from './evidence/editor';
+import { CurationQueueScreen } from './evidence/queue';
+import { JournalImportScreen } from './imports/journal';
+import { BulkImportScreen } from './imports/bulk';
+import { DualApprovalsPage } from './reviews/dual';
 import { SearchScreen } from './search/search';
+import { ProjectLogRoute, ProjectLogScreen } from './projects/log';
+import { ArchivalRequestsScreen, CorrespondencesScreen, FindingsScreen, HypothesesScreen, RunsScreen } from './lists/lists';
 import { SessionContext, sessionFor } from './session';
-import type { Me, Role } from './types';
+import type { Me, MemberRow, Role } from './types';
 import { LoadState, Notice, useLoad } from './ui';
 
 /** Workspace-wide notices, shown on every page (R28.9, R28.10). */
@@ -51,10 +66,24 @@ export function Header() {
         <nav aria-label="Workspace">
           <ul className="rf-nav__list">
             <li><Link className="rf-nav__link" to="/projects">Projects</Link></li>
+            <li><Link className="rf-nav__link" to="/log">Project log</Link></li>
+            <li><Link className="rf-nav__link" to="/lists/findings">Findings</Link></li>
+            <li><Link className="rf-nav__link" to="/lists/runs">Runs</Link></li>
+            <li><Link className="rf-nav__link" to="/lists/hypotheses">Hypotheses</Link></li>
+            <li><Link className="rf-nav__link" to="/lists/correspondences">Correspondences</Link></li>
+            <li><Link className="rf-nav__link" to="/lists/archival-requests">Archival requests</Link></li>
             <li><Link className="rf-nav__link" to="/me/work">My work</Link></li>
+            <li><Link className="rf-nav__link" to="/me/drafts">My drafts</Link></li>
+            <li><Link className="rf-nav__link" to="/me/saved">Saved</Link></li>
             <li><Link className="rf-nav__link" to="/search">Search</Link></li>
             <li><Link className="rf-nav__link" to="/members">Members</Link></li>
             <li><Link className="rf-nav__link" to="/reviews">Review queue</Link></li>
+            <li><Link className="rf-nav__link" to="/dual-approvals">Dual approvals</Link></li>
+            <li><Link className="rf-nav__link" to="/disclosure/unclassified">Unclassified</Link></li>
+            <li><Link className="rf-nav__link" to="/disclosure/public-units">Public overview</Link></li>
+            <li><Link className="rf-nav__link" to="/evidence/queue">Evidence queue</Link></li>
+            <li><Link className="rf-nav__link" to="/imports/journal">Import a journal</Link></li>
+            <li><Link className="rf-nav__link" to="/imports/bulk">Import a manifest</Link></li>
             <li><Link className="rf-nav__link" to="/me/profile">Your Profile</Link></li>
             <li><Link className="rf-nav__link" to="/me/preferences">Notification settings</Link></li>
           </ul>
@@ -125,6 +154,10 @@ function ProjectWorkRoute() {
   const { id = '' } = useParams();
   return <WorkListScreen key={id} projectId={id} />;
 }
+function ProjectDashboardRoute() {
+  const { id = '' } = useParams();
+  return <TeamDashboardPage key={id} projectId={id} />;
+}
 function ProjectCitationsRoute() {
   const { id = '' } = useParams();
   return <CitationCurationScreen key={id} projectId={id} />;
@@ -136,6 +169,36 @@ function ProjectCoverageRoute() {
 function SubmissionItemsRoute() {
   const { id = '' } = useParams();
   return <SubmissionItemsScreen key={id} id={id} />;
+}
+function ProposeEditRoute() {
+  const { id = '' } = useParams();
+  const [search] = useSearchParams();
+  const rebase = search.get('rebase');
+  return <ProposeEditPage key={`${id}:${rebase ?? ''}`} rootId={id} rebaseId={rebase ?? undefined} />;
+}
+function ProposalsListRoute() {
+  const { id = '' } = useParams();
+  return <ProposalsListPage key={id} rootId={id} />;
+}
+function ProposalRoute() {
+  const { id = '' } = useParams();
+  return <ProposalPage key={id} id={id} />;
+}
+function ProposalRoute2() {
+  const { id = '' } = useParams();
+  const members = useLoad<{ members: MemberRow[] }>('/members');
+  if (!members.data) return <LoadState error={members.error} />;
+  return <ProposalScreen key={id} id={id} members={members.data.members} />;
+}
+function EvidenceEditorRoute() {
+  const { id = '' } = useParams();
+  return <EvidenceEditorScreen key={id} id={id} />;
+}
+function PublicationRequestRoute() {
+  const { id = '' } = useParams();
+  const members = useLoad<{ members: MemberRow[] }>('/members');
+  if (!members.data) return <LoadState error={members.error} />;
+  return <PublicationRequestScreen key={id} id={id} members={members.data.members} />;
 }
 /** The opaque address in a notification email: a Root_Item, optionally with the Reply (a Group_Note) to scroll to (R20.6, R41.12). */
 function GoRoute() {
@@ -158,6 +221,10 @@ export function WorkspaceRoutes() {
       <Route path="/items/:id" element={<ItemRoute />} />
       <Route path="/items/:id/edit" element={<EditItemRoute />} />
       <Route path="/items/:id/history" element={<ItemHistoryRoute />} />
+      <Route path="/items/:id/propose" element={<ProposeEditRoute />} />
+      <Route path="/items/:id/proposals" element={<ProposalsListRoute />} />
+      <Route path="/proposals/:id" element={<ProposalRoute />} />
+      <Route path="/publication-proposals/:id" element={<ProposalRoute2 />} />
       <Route path="/items/:id/withdraw" element={<WithdrawRoute />} />
       <Route path="/items/:id/delete" element={<DeleteRoute />} />
       <Route path="/members" element={<MembersPage />} />
@@ -169,10 +236,28 @@ export function WorkspaceRoutes() {
       <Route path="/projects/:id/edit" element={<EditProjectRoute />} />
       <Route path="/projects/:id/history" element={<ProjectHistoryRoute />} />
       <Route path="/projects/:id/work" element={<ProjectWorkRoute />} />
+      <Route path="/projects/:id/dashboard" element={<ProjectDashboardRoute />} />
       <Route path="/projects/:id/citations" element={<ProjectCitationsRoute />} />
       <Route path="/projects/:id/coverage" element={<ProjectCoverageRoute />} />
-      <Route path="/me/work" element={<WorkListScreen />} />
+      <Route path="/projects/:id/log" element={<ProjectLogRoute />} />
+      <Route path="/log" element={<ProjectLogScreen />} />
+      <Route path="/lists/findings" element={<FindingsScreen />} />
+      <Route path="/lists/runs" element={<RunsScreen />} />
+      <Route path="/lists/hypotheses" element={<HypothesesScreen />} />
+      <Route path="/lists/correspondences" element={<CorrespondencesScreen />} />
+      <Route path="/lists/archival-requests" element={<ArchivalRequestsScreen />} />
+      <Route path="/me/work" element={<MyWorkPage />} />
+      <Route path="/me/saved" element={<SavedNavigationPage />} />
+      <Route path="/me/drafts" element={<DraftsPage />} />
       <Route path="/reviews" element={<ReviewQueuePage />} />
+      <Route path="/publication-requests/:id" element={<PublicationRequestRoute />} />
+      <Route path="/disclosure/unclassified" element={<UnclassifiedScreen />} />
+      <Route path="/disclosure/public-units" element={<PublicOverviewScreen />} />
+      <Route path="/evidence/queue" element={<CurationQueueScreen />} />
+      <Route path="/imports/journal" element={<JournalImportScreen />} />
+      <Route path="/imports/bulk" element={<BulkImportScreen />} />
+      <Route path="/evidence/units/:id" element={<EvidenceEditorRoute />} />
+      <Route path="/dual-approvals" element={<DualApprovalsPage />} />
       <Route path="/search" element={<SearchScreen />} />
       <Route path="/go/:ref" element={<GoRoute />} />
       <Route path="/notifications" element={<NotificationCentre />} />

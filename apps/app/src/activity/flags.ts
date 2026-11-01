@@ -88,6 +88,19 @@ export function recordItemActivity(batch: GuardedBatch, entry: ActivityEntry): G
       UNION SELECT ${id}, 'project', u.project_id FROM units u WHERE u.id = ${itemOf(entry.targetId)}`);
 }
 
+/**
+ * The single Activity_Feed entry a journal or attachment import adds when it finishes: the importing Administrator, the
+ * finish time, and the numbers of Journal_Entries, Entry_Sections, and Attachments created, scoped to the import's
+ * Submission (R26.9). Unlike `announceSubmission` it sets no New_Flags and queues no Notification_Events, so the
+ * imported, still-Unclassified Items never flag or notify anyone until an Administrator classifies them.
+ */
+export function recordImportActivity(batch: GuardedBatch, submissionId: ULID, counts: { readonly entries: number; readonly sections: number; readonly attachments: number }): GuardedBatch {
+  const { actor } = batch;
+  const id = newULID(actor.now);
+  return batch.run(sql`INSERT INTO activity (id, at, actor_id, kind, submission_id, counts)
+    VALUES (${id}, ${actor.now}, ${actor.id}, 'journal_import', ${submissionId}, ${JSON.stringify({ entries: counts.entries, sections: counts.sections, attachments: counts.attachments })})`);
+}
+
 /** One Activity_Feed entry for an event that concerns a Project or a Policy_Page rather than an Item (R39.11, R46.31). */
 export function recordTargetActivity(batch: GuardedBatch, entry: ActivityEntry & { readonly targetType: 'project' | 'policy_page'; readonly projectId?: string }): GuardedBatch {
   const { actor } = batch;
