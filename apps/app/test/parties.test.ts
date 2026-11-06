@@ -53,7 +53,7 @@ beforeEach(async () => {
 describe('creating External_Parties', () => {
   it('creates a named External_Party with the flag off and a party outbox row', async () => {
     const party = await created({ name: 'A Synthetic Archive' });
-    expect(party).toEqual({ id: party.id, name: 'A Synthetic Archive', doNotName: false, genericLabel: null, createdAt: at, rev: 1 });
+    expect(party).toEqual({ id: party.id, name: 'A Synthetic Archive', doNotName: false, genericLabel: null, contactEmail: null, contactEmailErasedBy: null, contactEmailErasedAt: null, createdAt: at, rev: 1 });
     expect(await core().prepare('SELECT name_fold FROM external_parties WHERE id = ?1').bind(party.id).first('name_fold')).toBe('a synthetic archive');
     expect((await core().prepare('SELECT topic, scope FROM outbox').all()).results).toEqual([{ topic: 'publish', scope: `party:${party.id}` }]);
     expect((await (await call(api, bindings, tokens.contributor, 'GET', '/parties')).json<{ parties: PartyRecord[] }>()).parties).toEqual([party]);
@@ -107,6 +107,31 @@ describe('editing External_Parties', () => {
     const off = await edit('admin', party, { rev: 5, doNotName: false });
     expect((await off.json<{ party: PartyRecord }>()).party).toMatchObject({ doNotName: false, genericLabel: 'a person', rev: 6 });
     expect((await core().prepare('SELECT scope FROM outbox ORDER BY seq').all<{ scope: string }>()).results.map((row) => row.scope)).toEqual(Array(3).fill(`party:${party.id}`));
+  });
+
+  it('records a Contact_Email only for Administrators and erases it recording the Administrator and time but not the value (R2.5, R51.1)', async () => {
+    // Only an Administrator may record a Contact_Email on creation (R2.5, R51.1).
+    expect((await create('contributor', { name: 'A Correspondent', contactEmail: 'c@example.test' })).status).toBe(403);
+    const admined = await created({ name: 'A Correspondent', contactEmail: 'party@example.test' }, 'admin');
+    expect(admined).toMatchObject({ contactEmail: 'party@example.test', contactEmailErasedBy: null, contactEmailErasedAt: null });
+    // A malformed address is refused by the same rule used elsewhere for emails.
+    expect((await create('admin', { name: 'B', contactEmail: 'not valid@x' })).status).toBe(422);
+
+    const party = await created({ name: 'A Rights Holder' }, 'admin');
+    // A Contributor cannot set or change a Contact_Email by edit either.
+    expect((await edit('contributor', party, { rev: 1, contactEmail: 'x@example.test' })).status).toBe(403);
+    const set = await edit('admin', party, { rev: 1, contactEmail: 'holder@example.test' });
+    expect((await set.json<{ party: PartyRecord }>()).party).toMatchObject({ contactEmail: 'holder@example.test', contactEmailErasedBy: null, contactEmailErasedAt: null, rev: 2 });
+
+    // Erasing records who and when but never the value, and only an Administrator may do it.
+    expect((await edit('contributor', party, { rev: 2, contactEmail: null })).status).toBe(403);
+    const adminId = await core().prepare('SELECT id FROM members WHERE email = ?1').bind('admin@example.test').first<string>('id');
+    const erased = await edit('admin', party, { rev: 2, contactEmail: null });
+    expect((await erased.json<{ party: PartyRecord }>()).party).toMatchObject({ contactEmail: null, contactEmailErasedBy: adminId, contactEmailErasedAt: at, rev: 3 });
+    expect(await core().prepare('SELECT contact_email FROM external_parties WHERE id = ?1').bind(party.id).first('contact_email')).toBe(null);
+    // Recording a fresh address after an erasure clears the erasure stamp.
+    const reset = await edit('admin', party, { rev: 3, contactEmail: 'new@example.test' });
+    expect((await reset.json<{ party: PartyRecord }>()).party).toMatchObject({ contactEmail: 'new@example.test', contactEmailErasedBy: null, contactEmailErasedAt: null, rev: 4 });
   });
 
   it('renames with a new fold, answers unchanged saves without writing, and refuses stale or unknown ones', async () => {

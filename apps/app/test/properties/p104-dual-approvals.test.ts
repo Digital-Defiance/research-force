@@ -221,8 +221,16 @@ describe('Property 104: Dual_Approvals need two different active Administrators'
           // and only while a second Administrator; the proposer and a Contributor cannot (R49.3).
           const isSecondAdmin = current.who === 'colleague' && model.twoAdmins;
           if (!isSecondAdmin) {
+            // A Revoked approver (the Owner `author` after revokeOwner, or the proposer `admin` after revokeProposer) is
+            // refused by the membership check before the handler, with a bare `forbidden` and no detail (R2.9); an active
+            // non-approver reaches the handler and is refused `not_approver` (R49.3). Either way nothing is applied.
+            const approverRevoked = (current.who === 'author' && model.ownerRevoked) || (current.who === 'admin' && model.proposerRevoked);
             expect(response.status, `${label}: non-approver refused`).toBe(403);
-            expect((await response.json<{ details: { rule: string } }>()).details.rule, `${label}: not_approver`).toBe('not_approver');
+            if (approverRevoked) {
+              expect((await response.json<{ error: string }>()).error, `${label}: revoked member refused (R2.9)`).toBe('forbidden');
+            } else {
+              expect((await response.json<{ details: { rule: string } }>()).details.rule, `${label}: not_approver`).toBe('not_approver');
+            }
             expect((await stateOf(open.id))?.state, `${label}: proposal stays open`).toBe('open');
             continue;
           }

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { GuardedBatch, GuardViolation } from '@researchforce/db/batch';
+import { AI_MODEL, AI_MODEL_VERSION, draftTextHash } from '@researchforce/domain/ai';
 import { newULID } from '@researchforce/domain/identifiers';
 import type { HistoryState } from '@researchforce/domain/history';
 import type { FieldDifference } from '@researchforce/domain/compare';
@@ -8,12 +9,13 @@ import { JOB_HANDLERS } from '../src/do/jobs';
 import type { JsonValue, SliceResult } from '../src/do/jobs';
 import '../src/jobs/deletion';
 import { writeLinks } from '../src/records/links';
-import { errorOf, itemWorld, rich, V } from './items';
+import { errorOf, itemBody, itemWorld, rich, V } from './items';
 import type { ItemView } from './items';
 import { addElement, addSubmissionRow } from './units';
 
 const world = itemWorld();
-interface Entry { id: string; kind: string; memberId: ULID; displayName: string | null; at: string; reason: string | null; restoredPoint: string | null; sectionId: string | null; fields: string[] }
+interface Provenance { model: string; version: string; differs: boolean }
+interface Entry { id: string; kind: string; memberId: ULID; displayName: string | null; at: string; reason: string | null; restoredPoint: string | null; sectionId: string | null; fields: string[]; ai?: Record<string, Provenance> }
 interface History { entries: Entry[]; point?: string; state?: HistoryState }
 type Sections = { id: ULID; content: { text: string }; disclosure: { level: string } }[];
 
@@ -365,5 +367,48 @@ describe('DELETE /replies/{id}', () => {
     const item = await world.created('author', 'topic');
     expect((await world.request('admin', 'DELETE', `/replies/${item.id}`, { reason: 'Synthetic.' })).status).toBe(404);
     expect((await world.request('admin', 'DELETE', '/replies/not-an-id', { reason: 'Synthetic.' })).status).toBe(404);
+  });
+});
+
+describe('AI provenance on save (R44.6)', () => {
+  const draftOf = (text: string) => ({ logSummary: { model: AI_MODEL, version: AI_MODEL_VERSION, draftSha256: draftTextHash(text) } });
+
+  it('records the model, version, and differs:false on the creation when the saved Log_Summary matches the placed draft', async () => {
+    const created = await world.created('author', 'topic', { logSummary: rich('Synthetic summary of a topic.'), ai: draftOf('Synthetic summary of a topic.') });
+    const { entries } = await history(created.id);
+    const creation = entries.at(-1)!;
+    expect(creation.id).toBe('creation');
+    expect(creation.ai).toEqual({ logSummary: { model: AI_MODEL, version: AI_MODEL_VERSION, differs: false } });
+  });
+
+  it('records differs:true when the Log_Summary was edited after the draft was placed', async () => {
+    // The Member placed a draft but saved different text: the SHA-256 of the saved text differs from the sent draft hash.
+    const created = await world.created('author', 'topic', { logSummary: rich('An edited summary.'), ai: draftOf('The original drafted summary.') });
+    const creation = (await history(created.id)).entries.at(-1)!;
+    expect(creation.ai).toEqual({ logSummary: { model: AI_MODEL, version: AI_MODEL_VERSION, differs: true } });
+  });
+
+  it('records no provenance for a field with no draft', async () => {
+    const created = await world.created('author', 'topic', { logSummary: rich('Synthetic summary of a topic.') });
+    expect((await history(created.id)).entries.at(-1)!.ai).toBeUndefined();
+  });
+
+  it('records provenance on the Revision of an edited Log_Summary and shows it in history', async () => {
+    const created = await world.created('author', 'topic');
+    // Edit the Log_Summary, sending the draft the Member placed; the saved text matches it, so differs:false.
+    await saved(await world.edit('author', created.id, { rev: 1, logSummary: rich('A redrafted summary.'), mark: { mark: 'minor_edit' }, ai: draftOf('A redrafted summary.') }));
+    // A second edit where the saved text differs from the placed draft, so differs:true.
+    await saved(await world.edit('author', created.id, { rev: 2, logSummary: rich('A hand-finished summary.'), mark: { mark: 'minor_edit' }, ai: draftOf('A machine draft that was then rewritten.') }));
+    const { entries } = await history(created.id);
+    expect(entries.map((entry) => entry.ai)).toEqual([
+      { logSummary: { model: AI_MODEL, version: AI_MODEL_VERSION, differs: true } },
+      { logSummary: { model: AI_MODEL, version: AI_MODEL_VERSION, differs: false } },
+      undefined,
+    ]);
+  });
+
+  it('refuses a draft hash that is not 64 lowercase hex characters', async () => {
+    const response = await world.create('author', 'topic', itemBody('topic', world.projectId, { ai: { logSummary: { model: AI_MODEL, version: AI_MODEL_VERSION, draftSha256: 'not-a-hash' } } }));
+    expect(response.status).toBe(422);
   });
 });

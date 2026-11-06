@@ -126,6 +126,71 @@ describe('provision dry-run planner', () => {
     }
   });
 
+  it('enumerates every expected resource kind for both environments', () => {
+    // D1 (×3), R2 bucket create + public-access toggle, CORS, lifecycle, custom domain, the five zone
+    // rule kinds, both zone settings, the Access list/app/policy, Turnstile and the Worker domains —
+    // asserted as summaries so a dropped resource kind fails loudly, per environment.
+    const summaryHas = (needle: string) => calls.some((c) => c.summary.includes(needle));
+    const endpointHas = (needle: string) => calls.some((c) => c.endpoint.includes(needle));
+    for (const [prodName, stagingName] of [
+      ['rf-core', 'rf-core-staging'],
+      ['rf-search', 'rf-search-staging'],
+      ['rf-public', 'rf-public-staging'],
+    ] as const) {
+      expect(summaryHas(`Create D1 database ${prodName}`)).toBe(true);
+      expect(summaryHas(`Create D1 database ${stagingName}`)).toBe(true);
+    }
+    expect(summaryHas('Create R2 bucket rf-private')).toBe(true);
+    expect(summaryHas('Set r2.dev public access off for rf-private')).toBe(true);
+    expect(endpointHas('/r2/buckets/rf-private/cors')).toBe(true);
+    expect(endpointHas('/r2/buckets/rf-private/lifecycle')).toBe(true);
+    expect(endpointHas('/r2/buckets/rf-public/domains/custom')).toBe(true);
+    expect(endpointHas('http_request_dynamic_redirect')).toBe(true);
+    expect(endpointHas('http_request_cache_settings')).toBe(true);
+    expect(endpointHas('http_response_headers_transform')).toBe(true);
+    expect(endpointHas('http_request_firewall_custom')).toBe(true);
+    expect(endpointHas('http_ratelimit')).toBe(true);
+    expect(summaryHas('Zone setting bot_fight_mode = off')).toBe(true);
+    expect(summaryHas('Zone setting always_online = off')).toBe(true);
+    expect(summaryHas('Create Access list rf-members')).toBe(true);
+    expect(summaryHas('Create Access application research-force-workspace')).toBe(true);
+    expect(summaryHas('Allow policy allow-rf-members')).toBe(true);
+    expect(summaryHas('Turnstile widget rf-submit-turnstile')).toBe(true);
+    for (const worker of ['rf-app', 'rf-submit', 'rf-dl']) {
+      expect(summaryHas(`to Worker ${worker}`)).toBe(true);
+    }
+  });
+
+  it('prints the planned calls on --dry-run (text) and performs no account access', () => {
+    // No Cloudflare base URL is embedded anywhere in the plan or its serialization.
+    const serialized = JSON.stringify(calls);
+    expect(serialized).not.toContain('api.cloudflare.com');
+    expect(serialized).not.toMatch(/https?:\/\/[^:]*cloudflare\.com/u);
+    // The default text dry-run prints the banner plus one header line per planned call.
+    const result = runNode(['infra/cloudflare/provision.ts', '--dry-run']);
+    expect(result.status).toBe(0);
+    expect(result.stderr).toBe('');
+    expect(result.stdout).toContain('No account access, nothing provisioned.');
+    expect(result.stdout).toContain(`${calls.length} planned Cloudflare API call(s)`);
+    // Every planned call's summary appears in the printed output.
+    for (const call of calls) expect(result.stdout).toContain(call.summary);
+    // Only placeholder identifiers are printed; no real account/zone id can appear.
+    expect(result.stdout).toContain(':accountId');
+    expect(result.stdout).toContain(':zoneId');
+  });
+
+  it('plans a single environment with --env and only that environment', () => {
+    const prodOnly = planApiCalls(undefined, undefined, ['production']);
+    const stagingOnly = planApiCalls(undefined, undefined, ['staging']);
+    expect(prodOnly.length + stagingOnly.length).toBe(calls.length);
+    expect(prodOnly.every((c) => !c.summary.includes('-staging'))).toBe(true);
+    expect(stagingOnly.some((c) => c.summary.includes('-staging'))).toBe(true);
+    const result = runNode(['infra/cloudflare/provision.ts', '--dry-run', '--env', 'production']);
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain('for: production');
+    expect(result.stdout).not.toContain('rf-core-staging');
+  });
+
   it('runs --dry-run --json with exit 0 and a parseable plan via the CLI', () => {
     const result = runNode(['infra/cloudflare/provision.ts', '--dry-run', '--json']);
     expect(result.status).toBe(0);
@@ -147,10 +212,33 @@ describe('check-secrets missing detection', () => {
     const byWorker = Object.fromEntries(reports.map((r) => [r.worker, r]));
     expect(byWorker['rf-app']!.missingSecrets).toContain('GRAPH_CERT_KEY');
     expect(byWorker['rf-app']!.missingSecrets.length).toBe(10);
-    expect(byWorker['rf-submit']!.missingSecrets).toEqual(['TURNSTILE_SECRET']);
+    expect(byWorker['rf-submit']!.missingSecrets).toEqual(['TURNSTILE_SECRET', 'R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY']);
+    expect(byWorker['rf-submit']!.missingVars).toEqual(['R2_ACCOUNT_ID', 'PRIVATE_BUCKET_NAME']);
     expect(byWorker['rf-dl']!.missingSecrets).toEqual(['DOWNLOAD_HMAC_KEY']);
-    expect(byWorker['rf-ops']!.missingSecrets).toEqual(['CF_ACCESS_API_TOKEN']);
-    expect(byWorker['rf-ops']!.missingVars).toEqual(['CF_ACCOUNT_ID', 'ACCESS_MEMBER_LIST_ID']);
+    expect(byWorker['rf-ops']!.missingSecrets).toEqual([
+      'CF_ACCESS_API_TOKEN',
+      'CF_ANALYTICS_API_TOKEN',
+      'CF_SITE_DEPLOY_API_TOKEN',
+      'CONTAINMENT_API_TOKEN',
+      'INCIDENT_ALERT_TOKEN',
+      'CF_SUBMIT_WAF_API_TOKEN',
+    ]);
+    expect(byWorker['rf-ops']!.missingVars).toEqual([
+      'CF_ACCOUNT_ID',
+      'ACCESS_MEMBER_LIST_ID',
+      'CF_SITE_SCRIPT_NAME',
+      'CF_PUBLIC_ZONE_ID',
+      'APP_HOST',
+      'CF_PUBLIC_DENY_RULESET_ID',
+      'CF_PUBLIC_DENY_RULE_IDS',
+      'CONTAINMENT_PROBE_URL',
+      'PLAN_CAN_DENY',
+      'INCIDENT_ALERT_WEBHOOK_URL',
+      'HEALTH_CHECK_ENDPOINTS',
+      'CF_SUBMIT_ZONE_ID',
+      'CF_SUBMIT_BLOCK_RULESET_ID',
+      'CF_SUBMIT_BLOCK_RULE_ID',
+    ]);
     expect(hasMissing(reports)).toBe(true);
   });
 

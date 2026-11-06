@@ -8,6 +8,7 @@ import { canonicalJson, unitKey } from '@researchforce/kernel/views';
 import type { PublicView, UnitKey } from '@researchforce/kernel/views';
 import type { ItemKind, ULID } from '@researchforce/domain/types';
 import { fc, FC_RUNS } from '@researchforce/testing/fc';
+import { TEST_PUBLIC_COPY } from '@researchforce/testing/site';
 import { loadProjectionInput } from '../../src/kernel-input';
 import { renderSiteBuild } from '../../src/publisher/render';
 import { runProjectionSlice } from '../../src/publisher/projection';
@@ -257,7 +258,7 @@ describe('Property 15: Publisher convergence', () => {
     // The rendered file set and manifest are a pure function of the current views, so two paths to the same
     // final views produce byte-identical manifests (R24.4, R29.1, R40.4).
     await fc.assert(fc.asyncProperty(fc.array(fc.constantFrom(...KINDS), { minLength: 1, maxLength: 4 }), async (kinds) => {
-      const renderDeps = () => ({ core: core(), public: pub(), privateBucket: priv(), licence: LICENCE, shellAssets: [] });
+      const renderDeps = () => ({ core: core(), public: pub(), privateBucket: priv(), licence: LICENCE, publicCopy: TEST_PUBLIC_COPY, shellAssets: [] });
       const manifestSnapshot = async (): Promise<[string, string, number][]> =>
         (await pub().prepare('SELECT path, hash, size FROM site_files ORDER BY path').all<{ path: string; hash: string; size: number }>())
           .results.map((row) => [row.path, row.hash, row.size]);

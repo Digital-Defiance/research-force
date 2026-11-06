@@ -33,6 +33,19 @@ describe('the evidence curation queue', () => {
     renderScreen(<CurationQueueScreen />, { client: api.client, administrator: true });
     expect(await screen.findByText(/has a verified grant/)).toBeTruthy();
   });
+
+  it('renders rows in a data table and shows an empty state when a client filter matches nothing, without a new request', async () => {
+    const unit = { id: UNIT_ID, kind: 'source', identifier: 'RF-0001', title: 'A synthetic source', rootItem: { id: ROOT_ID, identifier: 'RF-0001', title: 'A root' }, project: { id: 'P1', name: 'Project one' }, reason: 'no_grant' } as const;
+    const api = fakeApi({ 'GET /projects': json({ projects: [] }), 'GET /disclosure/evidence-queue': json(queue([unit])) });
+    renderScreen(<CurationQueueScreen />, { client: api.client, administrator: true });
+    expect((await screen.findByRole('table')).querySelectorAll('tbody tr')).toHaveLength(1);
+    expect(screen.getAllByRole('columnheader').map((header) => header.textContent)).toEqual(['Unit', 'Kind', 'Root item', 'Project', 'Reason', 'Actions']);
+    const before = api.calls.length;
+    fireEvent.change(screen.getByLabelText('Search loaded units'), { target: { value: 'zzz-nothing' } });
+    expect(screen.getByText(/No loaded units match/)).toBeTruthy();
+    expect(screen.queryByRole('table')).toBeNull();
+    expect(api.calls.length).toBe(before);
+  });
 });
 
 describe('the manual evidence editor', () => {

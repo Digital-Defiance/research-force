@@ -121,6 +121,8 @@ function reference(member: PermissionMember, map: RolePermissionMap, permission:
     case 'backup.manage': return scope === 'any' && administrator;
     case 'party.doNotName.off': return scope === 'any' && administrator;
     case 'draft.recover': return scope === 'any' && administrator;
+    // Only the Administrator Role may send Consent_Requests and record or erase a Contact_Email (R2.5, R51.1).
+    case 'consent.request': case 'party.contact': return scope === 'any' && administrator;
     case 'access.restrict': return t?.type === 'research_item' && scoped(t.ownerId);
     case 'access.widen': return t?.type === 'research_item' && ownOnly(t.ownerId);
     case 'attachment.move': return t?.type === 'attachment' && scoped(t.ownerId);

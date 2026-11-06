@@ -19,6 +19,8 @@ const put = (who: Who, body: unknown) => world.request(who, 'PUT', '/settings', 
 const values = async () => Object.fromEntries(Object.entries(await settings()).map(([key, setting]) => [key, setting.value]));
 const privacyRevisions = async () => (await world.core().prepare("SELECT kind, member_id AS m, at, prev FROM revisions WHERE target_type = 'policy_page' AND target_id = 'privacy' ORDER BY seq").all<{ kind: string; m: string; at: string; prev: string }>()).results
   .map((row) => ({ ...row, prev: JSON.parse(row.prev) as unknown }));
+const privacyActivity = async () => (await world.core().prepare("SELECT kind, actor_id AS actorId, target_type AS targetType, target_id AS targetId FROM activity WHERE target_type = 'policy_page' AND target_id = 'privacy' ORDER BY id").all<{ kind: string; actorId: string; targetType: string; targetId: string }>()).results;
+const epoch = async () => (await world.core().prepare("SELECT coalesce((SELECT v FROM counters WHERE k = 'epoch'), 0) AS v").first<{ v: number }>())!.v;
 
 describe('reading settings', () => {
   it('shows every setting with its value, default, and allowed range to every Member', async () => {
@@ -88,7 +90,8 @@ describe('changing settings', () => {
 });
 
 describe('the Responsible_Person', () => {
-  it('lets an Administrator designate only an active Member, recording a Privacy page Revision with the previous person', async () => {
+  it('lets an Administrator designate only an active Member, recording a Privacy page Revision with the previous person, one Activity entry, and an urgent publish', async () => {
+    const epochBefore = await epoch();
     expect((await put('admin', { responsiblePerson: world.ids.colleague })).status).toBe(200);
     expect((await settings())['responsiblePerson']).toMatchObject({ value: world.ids.colleague, updatedBy: world.ids.admin });
     expect((await put('admin', { responsiblePerson: world.ids.author, followUpInterval: 31 })).status).toBe(200);
@@ -98,11 +101,22 @@ describe('the Responsible_Person', () => {
       { kind: 'minor_edit', m: world.ids.admin, at: world.at, prev: { responsiblePerson: world.ids.colleague } },
     ]);
     expect((await world.core().prepare("SELECT scope FROM outbox WHERE topic = 'publish' ORDER BY seq").all()).results).toEqual([{ scope: 'policy:privacy' }, { scope: 'policy:privacy' }]);
+    // One Activity_Feed entry per real change, as a Policy_Section change is listed (R46.37).
+    expect(await privacyActivity()).toEqual([
+      { kind: 'policy_change', actorId: world.ids.admin, targetType: 'policy_page', targetId: 'privacy' },
+      { kind: 'policy_change', actorId: world.ids.admin, targetType: 'policy_page', targetId: 'privacy' },
+    ]);
+    // The publish is urgent: each change advances the public invalidation epoch (R46.38).
+    expect(await epoch()).toBe(epochBefore + 2);
+    // A no-op (author is already the Responsible_Person) records no Revision, Activity, publish, or epoch bump.
     expect((await put('admin', { followUpInterval: 32 })).status).toBe(200);
     expect(await privacyRevisions()).toHaveLength(2);
+    expect(await privacyActivity()).toHaveLength(2);
+    expect(await epoch()).toBe(epochBefore + 2);
   });
 
   it('refuses Members who are not Administrators and inactive Members, recording no Revision', async () => {
+    const epochBefore = await epoch();
     const revoked = await addMember(world.core(), 'gone@example.test', 'revoked', world.at);
     const pending = await addMember(world.core(), 'soon@example.test', 'pending', world.at);
     for (const candidate of [world.ids.colleague, revoked, 'nobody']) expect((await put('author', { responsiblePerson: candidate })).status, candidate).toBe(403);
@@ -116,6 +130,8 @@ describe('the Responsible_Person', () => {
       expect((await errorOf(await put('admin', { responsiblePerson: candidate }))).fields).toEqual([{ field: 'responsiblePerson', rule: 'Select an active Member as the Responsible Person.' }]);
     }
     expect(await privacyRevisions()).toEqual([]);
+    expect(await privacyActivity()).toEqual([]);
+    expect(await epoch()).toBe(epochBefore);
     expect((await settings())['responsiblePerson']!.value).toBeNull();
   });
 });

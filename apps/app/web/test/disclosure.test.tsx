@@ -156,9 +156,14 @@ describe('the Unclassified list', () => {
     });
     renderScreen(<UnclassifiedScreen />, { client: api.client, administrator: true });
     expect(await screen.findByText('42 Disclosure Units are Unclassified.')).toBeTruthy();
-    expect(within(screen.getByRole('region', { name: 'Per root item' })).getByText('RF-0001: 30')).toBeTruthy();
-    expect(within(screen.getByRole('region', { name: 'Per import' })).getByText('Journal import 2026-10-01: 10')).toBeTruthy();
-    expect(within(screen.getByRole('region', { name: 'Per accepted outside submission' })).getByText('SUB-2026-0007: 2')).toBeTruthy();
+    const table = screen.getByRole('table', { name: 'Unclassified units by group' });
+    const rowFor = (label: string) => within(table).getByText(label).closest('tr')!;
+    expect(within(rowFor('RF-0001')).getByText('Root item')).toBeTruthy();
+    expect(within(rowFor('RF-0001')).getByText('30')).toBeTruthy();
+    expect(within(table).getByRole('link', { name: 'RF-0001' }).getAttribute('href')).toBe('/items/RT1');
+    expect(within(rowFor('Journal import 2026-10-01')).getByText('10')).toBeTruthy();
+    expect(within(rowFor('SUB-2026-0007')).getByText('Accepted outside submission')).toBeTruthy();
+    expect(within(table).getByRole('link', { name: 'SUB-2026-0007' }).getAttribute('href')).toBe('/moderation/OS1');
     expect(screen.getByText(/A Confidentiality Hold covers some of these records/u)).toBeTruthy();
   });
 
@@ -175,6 +180,34 @@ describe('the Unclassified list', () => {
     fireEvent.change(screen.getByLabelText('Project'), { target: { value: 'PRJ1' } });
     expect(await screen.findByText('5 Disclosure Units are Unclassified.')).toBeTruthy();
   });
+
+  it('shows an empty state when nothing is Unclassified and when the client filter matches nothing', async () => {
+    const api = fakeApi({
+      'GET /projects': { projects: [] },
+      'GET /members': { members: MEMBERS },
+      'GET /disclosure/unclassified': { total: 0, byRootItem: [], byImport: [], byOutsideSubmission: [], holds: [] },
+    });
+    renderScreen(<UnclassifiedScreen />, { client: api.client, administrator: true });
+    expect(await screen.findByText(/No Unclassified unit belongs to/u)).toBeTruthy();
+    expect(screen.queryByRole('table')).toBeNull();
+  });
+
+  it('narrows the grouped counts with a client filter without a new request', async () => {
+    const api = fakeApi({
+      'GET /projects': { projects: [] },
+      'GET /members': { members: MEMBERS },
+      'GET /disclosure/unclassified': { total: 3, byRootItem: [{ id: 'RT1', label: 'RF-0001', count: 1 }, { id: 'RT2', label: 'RF-0002', count: 2 }], byImport: [], byOutsideSubmission: [], holds: [] },
+    });
+    renderScreen(<UnclassifiedScreen />, { client: api.client, administrator: true });
+    await screen.findByRole('link', { name: 'RF-0002' });
+    const calls = api.calls.length;
+    fireEvent.change(screen.getByLabelText('Filter groups'), { target: { value: '0001' } });
+    expect(screen.queryByRole('link', { name: 'RF-0002' })).toBeNull();
+    expect(screen.getByRole('link', { name: 'RF-0001' })).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Filter groups'), { target: { value: 'zzz' } });
+    expect(screen.getByText('No group matches the filter.')).toBeTruthy();
+    expect(api.calls.length).toBe(calls);
+  });
 });
 
 describe('the public overview', () => {
@@ -190,11 +223,12 @@ describe('the public overview', () => {
       },
     });
     renderScreen(<PublicOverviewScreen />, { client: api.client, administrator: true });
-    const list = await screen.findByRole('list');
-    expect(within(list).getByRole('link', { name: 'RF-0001: A record' }).getAttribute('href')).toBe(`/items/${ITEM_ID}`);
-    expect(list.textContent).toContain('Public');
-    expect(list.textContent).toContain('Withheld');
-    expect(list.textContent).toContain('Rights: Unknown (does not permit publication)');
+    const table = await screen.findByRole('table', { name: 'Public and Withheld Disclosure Units' });
+    expect(within(table).getByRole('link', { name: 'RF-0001: A record' }).getAttribute('href')).toBe(`/items/${ITEM_ID}`);
+    for (const header of ['Kind', 'Project', 'Root item', 'Rights', 'Effective', 'Last projected']) expect(within(table).getByRole('columnheader', { name: header })).toBeTruthy();
+    expect(table.textContent).toContain('Public');
+    expect(table.textContent).toContain('Withheld');
+    expect(table.textContent).toContain('Unknown (does not permit publication)');
   });
 
   it('pages and filters by Effective_Disclosure (R23.8)', async () => {
@@ -211,6 +245,21 @@ describe('the public overview', () => {
     expect(await screen.findByRole('link', { name: 'u:B: r' })).toBeTruthy();
     fireEvent.change(screen.getByLabelText('Effective disclosure'), { target: { value: 'withheld' } });
     expect(await screen.findByRole('link', { name: 'u:C: r' })).toBeTruthy();
+  });
+
+  it('shows an empty state on no units and when the client filter matches nothing, without a new request', async () => {
+    const empty = fakeApi({ 'GET /projects': { projects: [] }, 'GET /disclosure/public-units': { items: [], next: null } });
+    const { unmount } = renderScreen(<PublicOverviewScreen />, { client: empty.client, administrator: true });
+    expect(await screen.findByText('No Public or Withheld Disclosure Unit matches.')).toBeTruthy();
+    unmount();
+    const row = { key: 'u:A', kind: 'finding', effective: 'public', project: { id: 'PRJ1', name: 'P' }, rootItem: { id: 'A', identifier: 'RF-1', title: 'r' }, rights: null, lastProjectedAt: '2026-10-22T10:00:00.000Z' };
+    const api = fakeApi({ 'GET /projects': { projects: [] }, 'GET /disclosure/public-units': { items: [row], next: null } });
+    renderScreen(<PublicOverviewScreen />, { client: api.client, administrator: true });
+    await screen.findByRole('link', { name: 'RF-1: r' });
+    const calls = api.calls.length;
+    fireEvent.change(screen.getByLabelText('Filter loaded units'), { target: { value: 'zzz' } });
+    expect(screen.getByText('No loaded Disclosure Unit matches the filter.')).toBeTruthy();
+    expect(api.calls.length).toBe(calls);
   });
 });
 

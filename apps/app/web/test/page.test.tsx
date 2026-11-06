@@ -12,6 +12,17 @@ const show = (item: ItemView, extra: Partial<ItemPageData> = {}) => renderScreen
 const terms = (section: HTMLElement) => [...section.querySelectorAll('dt')].map((term) => [term.textContent, term.nextElementSibling?.textContent]);
 
 describe('the item page', () => {
+  it('presents a single h1 title and a breadcrumb to existing ancestor routes (R6.1, R6.3, R6.4)', () => {
+    const item = makeItem({ kind: 'topic', title: 'A synthetic record' });
+    show(item);
+    const headings = screen.getAllByRole('heading', { level: 1 });
+    expect(headings).toHaveLength(1);
+    expect(headings[0]!.textContent).toBe('A synthetic record');
+    const trail = within(screen.getByRole('navigation', { name: 'Breadcrumb' }));
+    expect(trail.getByRole('link', { name: 'Projects' }).getAttribute('href')).toBe('/projects');
+    expect(trail.getByRole('link', { name: item.project.name }).getAttribute('href')).toBe(`/projects/${item.project.id}/log`);
+  });
+
   it('shows a Finding’s status and Scope_Caveat with its claim, and the superseding Finding with the status (R5.6, R5.10)', () => {
     show(makeItem({ kind: 'finding', claim: rich('The tiles repeat.'), scopeCaveat: rich('Only for the sample.'), statusValueId: BUILT_IN_VALUE_IDS.findingSuperseded, supersededById: 'NEWER' }));
     const claim = screen.getByRole('region', { name: 'Claim' });

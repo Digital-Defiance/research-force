@@ -4,6 +4,7 @@ import { versionCitation } from '@researchforce/domain/releases';
 import { NewReleasePage, ReleasePage, ReleasesListPage } from '../src/releases/releases';
 import type { ReleaseArtifactView, ReleaseView } from '../src/types';
 import { fakeApi, json, renderScreen } from './helpers';
+import type { Handler } from './helpers';
 
 const REL = '01J0000000000000000000RL01';
 const NEXT = '01J0000000000000000000RL02';
@@ -25,7 +26,7 @@ function release(overrides: Partial<ReleaseView> = {}): ReleaseView {
   };
 }
 
-const view = (rel: ReleaseView, extra: Record<string, unknown> = {}) => ({ [`GET /releases/${rel.id}`]: () => json({ release: rel }), ...extra });
+const view = (rel: ReleaseView, extra: Record<string, Handler> = {}) => ({ [`GET /releases/${rel.id}`]: () => json({ release: rel }), ...extra });
 
 describe('the releases list (R59.1)', () => {
   it('lists each release with its state and sealed date, and offers a new release', async () => {

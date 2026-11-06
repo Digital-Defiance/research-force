@@ -8,7 +8,7 @@ import { SessionContext, sessionFor } from '../src/session';
 import type { Me, Role } from '../src/types';
 
 export interface Call { readonly method: string; readonly path: string; readonly headers: Headers; readonly body: unknown; readonly raw: string | undefined }
-type Handler = ((call: Call) => unknown) | Response | object;
+export type Handler = ((call: Call) => unknown) | Response | object;
 
 export const json = (body: unknown, status = 200): Response => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 export const failure = (status: number, error: string, extra: Record<string, unknown> = {}): Response => json({ error, ...extra }, status);

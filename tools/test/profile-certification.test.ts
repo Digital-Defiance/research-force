@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { certificationReport } from '../certify-profile';
-import { growthForecast, installationProfileSchema } from '../src/profile-certification';
+import { growthForecast, installationProfileSchema, measuredGrowthReport } from '../src/profile-certification';
 
 const example = (name = 'Free_Qualified'): unknown => JSON.parse(readFileSync(new URL(`../../infra/profiles/${name}.example.json`, import.meta.url), 'utf8'));
 
@@ -42,5 +42,24 @@ describe('installation resource certification', () => {
     expect(first).toMatchObject({ years: 1, recoveryPointBytes: 48, independentBackupBytes: 48 * 34, transientBytes: 96, fullRecoveryTransferBytes: 48, totalStoredBytes: 7 * 12 + 48 * 34 + 96 });
     input.growth.originals.annualBytes = Number.MAX_SAFE_INTEGER;
     expect(() => growthForecast(input)).toThrow(/safe byte arithmetic/);
+  });
+
+  it('reports measured current (year 0) plus the 1/3/5-year forecast, each counting all current/transient copies (task 67.3, R28.8, R28.17, R60.7)', () => {
+    const input = installationProfileSchema.parse(example());
+    const report = measuredGrowthReport(input);
+    // Year 0 is the MEASURED current corpus: every category equals its measured initial bytes, no annual growth added.
+    expect(report.measuredCurrent.years).toBe(0);
+    expect(report.measuredCurrent.bytes.originals).toBe(input.growth.originals.initialBytes);
+    // The measured current total counts all current/transient copies and the independent-backup tiers (14+8+12 = 34).
+    const recoveryPoint = input.growth.originals.initialBytes + input.growth.derivatives.initialBytes + input.growth.metadata.initialBytes + input.growth.history.initialBytes;
+    const storedNow = input.growth.originals.initialBytes + input.growth.derivatives.initialBytes + input.growth.metadata.initialBytes + input.growth.history.initialBytes + input.growth.publicCopies.initialBytes + input.growth.releases.initialBytes + input.growth.exports.initialBytes;
+    expect(report.measuredCurrent.transientBytes).toBe(recoveryPoint * input.growth.transientCopies);
+    expect(report.measuredCurrent.independentBackupBytes).toBe(recoveryPoint * 34 * input.growth.independentBackupCopies);
+    expect(report.measuredCurrent.totalStoredBytes).toBe(storedNow + report.measuredCurrent.transientBytes + report.measuredCurrent.independentBackupBytes);
+    // The forecast points are exactly the 1/3/5-year forecast, so the report does not rebuild the forecaster.
+    expect(report.forecasts).toEqual(growthForecast(input));
+    expect(report.forecasts.map((f) => f.years)).toEqual([1, 3, 5]);
+    // The copy model ties the report to the operational-retention transient window and the backup tiers.
+    expect(report.copyModel).toMatchObject({ transientDays: 7, transientCopies: input.growth.transientCopies, independentBackupTiers: 34 });
   });
 });

@@ -1,6 +1,7 @@
 import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { EditorView } from '@codemirror/view';
+import { AI_MODEL, AI_MODEL_VERSION, draftTextHash } from '@researchforce/domain/ai';
 import { BUILT_IN_VALUE_IDS, LOCKED_VALUE_IDS } from '@researchforce/domain/value-sets';
 import { CreateItemForm, EditItemForm, NewItemPage } from '../src/items/forms/ItemForm';
 import { createBody, editBody, emptyValue, fieldsFor, initialValues, KIND_FIELDS, needsMark, toApi, valuesFromItem } from '../src/items/forms/model';
@@ -242,5 +243,55 @@ describe('editing a Research_Item', () => {
     expect(sessionStorage.getItem(`${UNSENT_PREFIX}item:${run.id}:edit`)).toContain('"tiles"');
     fireEvent.click(screen.getByRole('button', { name: 'Remove count 1' }));
     expect(screen.queryByLabelText(/^Count 1 name/u)).toBeNull();
+  });
+
+  it('reorders Entry Sections with Move buttons disabled at the ends, a button alternative to dragging (R45.5)', async () => {
+    const dis = { level: 'not_published' as const, effective: 'not_published' as const };
+    const journal = makeItem({ kind: 'journal_entry', title: 'A day', sections: [
+      { id: 'A', content: rich('First section.'), rev: 1, disclosure: dis },
+      { id: 'B', content: rich('Second section.'), rev: 1, disclosure: dis },
+      { id: 'C', content: rich('Third section.'), rev: 1, disclosure: dis },
+    ] });
+    const api = fakeApi({ [`PATCH /items/${journal.id}`]: { item: journal } });
+    renderScreen(<EditItemForm item={journal} data={FORM_DATA} onReload={() => undefined} />, { client: api.client });
+    expect(editorFor('Entry Section 1').state.doc.toString()).toBe('First section.');
+    // The first section cannot move up, the last cannot move down.
+    expect((screen.getByRole('button', { name: 'Move Entry Section 1 up' }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole('button', { name: 'Move Entry Section 3 down' }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole('button', { name: 'Move Entry Section 1 down' }) as HTMLButtonElement).disabled).toBe(false);
+    fireEvent.click(screen.getByRole('button', { name: 'Move Entry Section 1 down' }));
+    expect(editorFor('Entry Section 1').state.doc.toString()).toBe('Second section.');
+    expect(editorFor('Entry Section 2').state.doc.toString()).toBe('First section.');
+    fireEvent.click(screen.getByLabelText('Minor edit'));
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(api.writes()).toHaveLength(1));
+    expect(api.writes()[0]!.body).toEqual({ rev: 3, sections: [
+      { id: 'B', content: rich('Second section.') }, { id: 'A', content: rich('First section.') }, { id: 'C', content: rich('Third section.') },
+    ], mark: { mark: 'minor_edit' } });
+  });
+
+  it('places an accepted AI draft into the Log_Summary and sends its provenance in the save’s ai envelope (R44.5, R44.6)', async () => {
+    const topic = makeItem({ kind: 'topic', body: rich('A body.'), logSummary: rich('An old summary.') });
+    const api = fakeApi({
+      'GET /ai/status': json({ available: true }),
+      'POST /ai/drafts': json({ draft: 'A neutral AI draft.', model: AI_MODEL, truncatedInput: false, quotationNotice: false }),
+      [`PATCH /items/${topic.id}`]: { item: topic },
+    });
+    renderScreen(<EditItemForm item={topic} data={FORM_DATA} onReload={() => undefined} />, { client: api.client });
+    // The control sits beside the Log_Summary; request a draft, held apart from the field.
+    fireEvent.click(await screen.findByRole('button', { name: 'Request an AI draft' }));
+    expect(await screen.findByText('A neutral AI draft.')).toBeTruthy();
+    // The existing Log_Summary is non-empty, so accepting asks before replacing.
+    fireEvent.click(screen.getByRole('button', { name: 'Accept the draft' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Replace and place the draft' }));
+    expect(editorFor('Log Summary').state.doc.toString()).toBe('A neutral AI draft.');
+    fireEvent.click(screen.getByLabelText('Minor edit'));
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(api.writes().some((call) => call.method === 'PATCH')).toBe(true));
+    const patch = api.writes().find((call) => call.method === 'PATCH')!;
+    expect(patch.body).toMatchObject({
+      logSummary: rich('A neutral AI draft.'),
+      ai: { logSummary: { model: AI_MODEL, version: AI_MODEL_VERSION, draftSha256: draftTextHash('A neutral AI draft.') } },
+    });
   });
 });

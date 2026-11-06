@@ -88,7 +88,14 @@ it('holds an automatic scoped read lease until a streaming reader closes and blo
   const actualNow = asTimestamp(new Date().toISOString());
   await expect(collectField(db, reference.id, actualNow)).rejects.toThrow(/retained/);
   await reader.return(undefined); await collectField(db, reference.id, actualNow);
-  await db.prepare("UPDATE counters SET v=1 WHERE k='frozen'").run();
+  // A LIVE Internal_Backup write-freeze lease (covering `now`) blocks preparing a new field version (R36.14); it is
+  // released once the lease is marked incomplete, and preparation resumes.
+  const leaseExpiry = new Date(Date.parse(now) + 30_000).toISOString();
+  const leaseDeadline = new Date(Date.parse(now) + 120_000).toISOString();
+  await db.prepare(`INSERT INTO write_freeze_leases (only, job_id, generation, acquired_at, expires_at, deadline_at, heartbeat_at, snapshot_seq, state)
+    VALUES (1, 'field-freeze-job', 1, ?1, ?2, ?3, ?1, 1, 'held')
+    ON CONFLICT (only) DO UPDATE SET job_id = 'field-freeze-job', generation = 1, acquired_at = ?1, expires_at = ?2, deadline_at = ?3, heartbeat_at = ?1, state = 'held'`)
+    .bind(now, leaseExpiry, leaseDeadline).run();
   try { await expect(prepareField(db, owner, { text: 'frozen', spans: [] }, now)).rejects.toThrow(/paused/); }
-  finally { await db.prepare("UPDATE counters SET v=0 WHERE k='frozen'").run(); }
+  finally { await db.prepare("UPDATE write_freeze_leases SET state = 'incomplete' WHERE only = 1").run(); }
 });

@@ -86,7 +86,7 @@ async function addLogItem(place: { projectId: ULID; ownerId: ULID }, options: {
   await new GuardedBatch(core(), { id: place.ownerId, now: options.createdAt })
     .insert(units, {
       id, unitType: 'research_item', projectId: place.projectId, rootId: id, ownerId: place.ownerId,
-      credit: options.credit ?? [{ member: place.ownerId }], submissionId, createdAt: options.createdAt,
+      credit: [...(options.credit ?? [{ member: place.ownerId }])], submissionId, createdAt: options.createdAt,
     })
     .insert(researchItems, {
       unitId: id, kind, itemIdentifier: identifier, projectId: place.projectId, title: `Item ${id}`,
@@ -156,7 +156,7 @@ describe('Property 65: Workspace lists filter by conjunction and page losslessly
       itemKind: fc.option(fc.constantFrom(...KINDS), { nil: undefined }),
       member: fc.option(fc.constantFrom('author', 'colleague', 'admin') as fc.Arbitrary<Who>, { nil: undefined }),
       specialty: fc.option(fc.constantFrom(SPECIALTY, CRYPTANALYSIS), { nil: undefined }),
-      range: fc.option(fc.tuple(fc.constantFrom(...KEYS), fc.constantFrom(...KEYS)).map(([a, b]) => (a <= b ? [a, b] : [b, a]) as const), { nil: undefined }),
+      range: fc.option(fc.tuple(fc.constantFrom(...KEYS), fc.constantFrom(...KEYS)).map(([a, b]) => (a <= b ? ([a, b] as const) : ([b, a] as const))), { nil: undefined }),
       viewer: fc.constantFrom('author', 'colleague', 'admin') as fc.Arbitrary<Who>,
     });
 
@@ -332,7 +332,7 @@ describe('Property 65: Workspace lists filter by conjunction and page losslessly
       fc.array(fc.record({
         direction: fc.option(fc.constantFrom(...DIRECTIONS), { nil: undefined }),
         party: fc.option(fc.constant(true), { nil: undefined }),
-        range: fc.option(fc.tuple(fc.constantFrom(...DATES), fc.constantFrom(...DATES)).map(([a, b]) => (a <= b ? [a, b] : [b, a]) as const), { nil: undefined }),
+        range: fc.option(fc.tuple(fc.constantFrom(...DATES), fc.constantFrom(...DATES)).map(([a, b]) => (a <= b ? ([a, b] as const) : ([b, a] as const))), { nil: undefined }),
         viewer: fc.constantFrom('author', 'colleague', 'admin') as fc.Arbitrary<Who>,
       }), { minLength: 2, maxLength: 5 }),
       async (specs, filters) => {

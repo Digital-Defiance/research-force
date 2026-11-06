@@ -30,7 +30,7 @@ describe('the access fields of a new Research_Item', () => {
     expect(within(region).queryByRole('group', { name: 'Access list' })).toBeNull();
     fireEvent.click(within(region).getByRole('radio', { name: 'Restricted' }));
     const list = within(region).getByRole('group', { name: 'Access list' });
-    expect(within(list).getAllByRole('checkbox').map((box) => box.parentElement!.textContent)).toEqual(['Ben Sample', `${PENDING.toLowerCase()}@example.test`]);
+    expect(within(list).getAllByRole('checkbox').map((box) => box.closest('.rf-field')!.textContent)).toEqual(['Ben Sample', `${PENDING.toLowerCase()}@example.test`]);
     fireEvent.click(within(list).getByRole('checkbox', { name: 'Ben Sample' }));
     fireEvent.click(screen.getByRole('button', { name: 'Submit' }));
     await waitFor(() => expect(api.writes()).toHaveLength(1));
@@ -101,7 +101,7 @@ describe('who can read an item', () => {
     renderScreen(<AccessSummary item={ITEM} members={MEMBERS} onChanged={() => undefined} />, { client: api.client });
     fireEvent.click(screen.getByRole('button', { name: 'Change who can read' }));
     const dialog = screen.getByRole('dialog', { name: 'Change who can read' });
-    expect(within(within(dialog).getByRole('group', { name: 'Remove from the Access list' })).getAllByRole('checkbox').map((box) => box.parentElement!.textContent)).toEqual(['Ben Sample']);
+    expect(within(within(dialog).getByRole('group', { name: 'Remove from the Access list' })).getAllByRole('checkbox').map((box) => box.closest('.rf-field')!.textContent)).toEqual(['Ben Sample']);
     fireEvent.click(within(dialog).getByRole('button', { name: 'Check what this changes' }));
     expect((await within(dialog).findByRole('region', { name: 'What this change does' })).textContent).toContain('These Members would gain read access: Ada Example.');
     fireEvent.click(within(dialog).getByRole('button', { name: 'Confirm the change' }));

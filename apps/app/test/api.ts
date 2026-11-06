@@ -39,7 +39,7 @@ export interface TestApi {
 }
 export function testApi(
   access: TestAccess, server: KeyServer, now: Date,
-  options: { readonly cache?: Cache | null; readonly ops?: FakeOps; readonly contentLicence?: string; readonly kick?: ApiConfig['kick']; readonly localRoutes?: ApiConfig['localRoutes'] } = {},
+  options: { readonly cache?: Cache | null; readonly ops?: FakeOps; readonly contentLicence?: string; readonly kick?: ApiConfig['kick']; readonly localRoutes?: ApiConfig['localRoutes']; readonly opsStatusSources?: ApiConfig['opsStatusSources'] } = {},
 ): TestApi {
   const clock = { now };
   const lines: string[] = [];
@@ -48,6 +48,7 @@ export function testApi(
   const app = createApi({
     access, keys, workspaceOrigin: WORKSPACE, log: createLogger((line) => lines.push(line)), clock: () => clock.now, ops, contentLicence: options.contentLicence ?? '',
     ...(options.kick ? { kick: options.kick } : {}), ...(options.localRoutes ? { localRoutes: options.localRoutes } : {}),
+    ...(options.opsStatusSources ? { opsStatusSources: options.opsStatusSources } : {}),
   });
   return { app, keys, lines, clock, ops };
 }

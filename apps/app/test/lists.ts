@@ -31,7 +31,7 @@ async function base(place: Place, kind: ItemKind, options: ItemOptions): Promise
   const submissionId = await addSubmissionRow(place.core, ownerId, createdAt, options.completed ?? true);
   const batch = new GuardedBatch(place.core, { id: ownerId, now: createdAt })
     .insert(units, {
-      id, unitType: 'research_item', projectId, rootId: id, ownerId, credit: options.credit ?? [{ member: ownerId }], submissionId, createdAt,
+      id, unitType: 'research_item', projectId, rootId: id, ownerId, credit: [...(options.credit ?? [{ member: ownerId }])], submissionId, createdAt,
       ...(options.withdrawn ? { withdrawnAt: createdAt, withdrawnBy: ownerId, withdrawalReason: 'Synthetic withdrawal.' } : {}),
     })
     .insert(researchItems, {

@@ -53,6 +53,23 @@ describe('prose literals', () => {
     ].join('\n');
     expect(proseLiteralIssues('example.ts', source)).toEqual([]);
   });
+
+  it('leaves a SQL template continuation fragment (split by an interpolation) alone, as it is code not prose', () => {
+    // A `db.prepare(`...${unitFilter}...`)` template splits into head/middle/tail text nodes; a tail fragment carries
+    // no leading SQL keyword but is still code (a value-list and SQL clause keywords), so it must not be flagged.
+    const source = [
+      'const q = db.prepare(`SELECT j.id FROM units u JOIN jobs j ON j.id = s.job_id',
+      "  WHERE ${unitFilter} AND s.job_id IS NOT NULL AND j.type IN ('journal_import', 'bulk_import')`);",
+    ].join('\n');
+    expect(proseLiteralIssues('example.ts', source)).toEqual([]);
+  });
+
+  it('still flags real prose that contains an abbreviation and a straight quotation mark', () => {
+    // The SQL-continuation signals must not mask genuine human prose: an abbreviation like "e.g." plus a straight
+    // quote is still a copy issue (a false negative here would hide real prose).
+    const source = 'export const m = `Only Members, e.g. the "active" ones, can read this page here.`;';
+    expect(proseLiteralIssues('example.ts', source).map((issue) => issue.where)).toEqual(['example.ts:1']);
+  });
 });
 
 it('finds no issues in the repository', () => {

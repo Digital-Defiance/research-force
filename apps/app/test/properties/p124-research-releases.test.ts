@@ -13,6 +13,7 @@ import {
 } from '@researchforce/domain/release-export';
 import type { VersionCitation } from '@researchforce/domain/releases';
 import { fc, FC_RUNS } from '@researchforce/testing/fc';
+import { TEST_PUBLIC_COPY } from '@researchforce/testing/site';
 import type { ULID } from '@researchforce/domain/types';
 import { runProjectionSlice } from '../../src/publisher/projection';
 import type { ProjectionDeps } from '../../src/publisher/projection';
@@ -69,7 +70,7 @@ const pubBucket = (): R2Bucket => world.bindings.RF_PUBLIC_BUCKET;
 const env = (): Env => world.bindings;
 const NOW = () => world.at;
 const projectionDeps = (): ProjectionDeps => ({ core: core(), public: pub() });
-const renderDeps = () => ({ core: core(), public: pub(), privateBucket: priv(), licence: LICENCE, shellAssets: [] });
+const renderDeps = () => ({ core: core(), public: pub(), privateBucket: priv(), licence: LICENCE, publicCopy: TEST_PUBLIC_COPY, shellAssets: [] });
 const gen = (run: string, epoch: number): Generation => ({ run, epoch });
 
 let serial = 0;

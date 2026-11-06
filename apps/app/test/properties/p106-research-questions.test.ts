@@ -9,6 +9,7 @@ import { BUILT_IN_VALUE_IDS } from '@researchforce/domain/value-sets';
 import type { ULID } from '@researchforce/domain/types';
 import { byClass, find, findAll, readPage, textOf } from '@researchforce/testing/html';
 import { fc, FC_RUNS } from '@researchforce/testing/fc';
+import { TEST_PUBLIC_COPY } from '@researchforce/testing/site';
 import { renderSiteBuild } from '../../src/publisher/render';
 import { runProjectionSlice } from '../../src/publisher/projection';
 import type { ProjectionDeps } from '../../src/publisher/projection';
@@ -42,7 +43,7 @@ import { addElement, addProject, addSubmissionRow, resetRecords } from '../units
  */
 
 const ADDRESSES = BUILT_IN_VALUE_IDS.relationAddresses;
-const RELATED = BUILT_IN_VALUE_IDS.relationRelated;
+const RELATED = BUILT_IN_VALUE_IDS.relationEvidenceFor; // an ordinary (non-Addresses) relation label
 /** The disclosure a target settles on; `withheld` carries a Disclosure_Line, `restricted` stays off the public site. */
 type Level = 'public' | 'withheld' | 'not_published' | 'restricted';
 const LEVELS: readonly Level[] = ['public', 'withheld', 'not_published', 'restricted'];
@@ -55,7 +56,7 @@ const priv = (): R2Bucket => world.bindings.RF_PRIVATE_BUCKET;
 const NOW = () => world.at;
 const deps = (): ProjectionDeps => ({ core: core(), public: pub() });
 const LICENCE = { name: 'Synthetic Licence 1.0', url: 'https://licence.example.test/1.0' } as const;
-const renderDeps = () => ({ core: core(), public: pub(), privateBucket: priv(), licence: LICENCE, shellAssets: [] });
+const renderDeps = () => ({ core: core(), public: pub(), privateBucket: priv(), licence: LICENCE, publicCopy: TEST_PUBLIC_COPY, shellAssets: [] });
 
 beforeEach(async () => {
   await core().batch([core().prepare("DELETE FROM outbox WHERE topic = 'publish'"), core().prepare("DELETE FROM counters WHERE k = 'epoch'")]);

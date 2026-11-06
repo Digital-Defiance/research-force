@@ -2,11 +2,11 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { describe, expect, it } from 'vitest';
 import { MemoryRouter } from 'react-router';
 import { ApiContext } from '../src/api';
-import { Workspace } from '../src/routes';
+import { AppShell } from '../src/shell/app-shell';
 import { BUILT_IN, failure, fakeApi, makeMe } from './helpers';
 
 const renderAt = (api: ReturnType<typeof fakeApi>, route: string) => render(
-  <ApiContext.Provider value={api.client}><MemoryRouter initialEntries={[route]}><Workspace /></MemoryRouter></ApiContext.Provider>,
+  <ApiContext.Provider value={api.client}><MemoryRouter initialEntries={[route]}><AppShell /></MemoryRouter></ApiContext.Provider>,
 );
 const base = {
   'GET /me': makeMe(), 'GET /roles': { roles: BUILT_IN }, 'GET /members': { members: [] }, 'GET /projects': { projects: [] },
@@ -19,6 +19,16 @@ const result = {
 };
 
 describe('the search screen', () => {
+  it('presents a single h1 title and a breadcrumb to an existing ancestor route (R6.1, R6.3, R6.4)', async () => {
+    renderAt(fakeApi({ ...base }), '/search');
+    await screen.findByLabelText(/Search for/u);
+    const headings = screen.getAllByRole('heading', { level: 1 });
+    expect(headings).toHaveLength(1);
+    expect(headings[0]!.textContent).toBe('Search');
+    const trail = within(screen.getByRole('navigation', { name: 'Breadcrumb' }));
+    expect(trail.getByRole('link', { name: 'Workspace' }).getAttribute('href')).toBe('/');
+  });
+
   it('shows each result with its markers, project, disclosure, and a highlighted, labelled excerpt (R21.7)', async () => {
     const api = fakeApi({ ...base, 'GET /search': { results: [result], next: null } });
     renderAt(api, '/search?q=harbour');

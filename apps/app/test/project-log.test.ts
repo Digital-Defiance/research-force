@@ -45,7 +45,7 @@ async function addLogItem(options: {
   const batch = new GuardedBatch(core, { id: options.ownerId, now: options.createdAt })
     .insert(units, {
       id, unitType: 'research_item', projectId: options.projectId, rootId: id, ownerId: options.ownerId,
-      credit: options.credit ?? [{ member: options.ownerId }], submissionId, createdAt: options.createdAt,
+      credit: [...(options.credit ?? [{ member: options.ownerId }])], submissionId, createdAt: options.createdAt,
       ...(options.withdrawn ? { withdrawnAt: options.createdAt, withdrawnBy: options.ownerId, withdrawalReason: 'Synthetic withdrawal.' } : {}),
     })
     .insert(researchItems, {
@@ -110,12 +110,12 @@ describe('GET /projects/:id/log', () => {
       projectId: world.projectId, ownerId: world.ids.author, logDateKey: '1943-05-05', createdAt: at('2026-10-27T10:00:00.000Z'),
       kind: 'finding', credit: [{ member: world.ids.author }, outside], withdrawn: true,
     });
-    const [entry] = (await log('colleague', world.projectId)).entries;
+    const entry = (await log('colleague', world.projectId)).entries[0]!;
     expect(entry).toMatchObject({
       type: 'item', id: item.id, kind: 'finding', identifier: item.identifier,
       logDate: { value: '1943-05-05', approx: false }, owner: { id: world.ids.author }, link: `/items/${item.id}`,
     });
-    if (entry!.type !== 'item') throw new Error('expected an item entry');
+    if (entry.type !== 'item') throw new Error('expected an item entry');
     expect(entry.owner.displayName).toBe(`Member ${world.ids.author}`);
     expect(entry.credit).toEqual([{ member: { id: world.ids.author, displayName: `Member ${world.ids.author}` } }, outside]);
     expect(entry.withdrawal).toMatchObject({ reason: 'Synthetic withdrawal.', by: { id: world.ids.author } });
@@ -138,8 +138,8 @@ describe('GET /projects/:id/log', () => {
     const first = await addDissent(item.id, world.ids.colleague, at('2026-10-28T09:00:00.000Z'), { text: 'The earlier dissent.' });
     const second = await addDissent(item.id, world.ids.admin, at('2026-10-28T10:00:00.000Z'), { text: 'The later dissent.' });
     await addDissent(item.id, world.ids.author, at('2026-10-28T11:00:00.000Z'), { withdrawn: true, text: 'A withdrawn dissent.' });
-    const [entry] = (await log('colleague', world.projectId)).entries;
-    if (entry!.type !== 'item') throw new Error('expected an item entry');
+    const entry = (await log('colleague', world.projectId)).entries[0]!;
+    if (entry.type !== 'item') throw new Error('expected an item entry');
     expect(entry.dissent.map((note) => note.id)).toEqual([first, second]);
     expect(entry.dissent[0]).toMatchObject({ author: { id: world.ids.colleague, displayName: `Member ${world.ids.colleague}` }, text: { text: 'The earlier dissent.', spans: [] } });
   });

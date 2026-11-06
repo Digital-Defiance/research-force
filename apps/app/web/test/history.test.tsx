@@ -52,6 +52,17 @@ describe('the history list', () => {
     expect(within(items[2]!).getByRole('link', { name: 'Ben Sample' }).getAttribute('href')).toBe(`/members/${OTHER_ID}`);
   });
 
+  it('shows the AI provenance of a record, with the model, version, and whether the saved text differs (R44.6)', async () => {
+    const entries: HistoryEntry[] = [
+      entry('R1', 'minor_edit', { fields: ['logSummary'], ai: { logSummary: { model: '@cf/google/gemma-4-26b-a4b-it', version: '2024-06', differs: true } } }),
+      entry('creation', 'creation', { ai: { logSummary: { model: '@cf/google/gemma-4-26b-a4b-it', version: '2024-06', differs: false } } }),
+    ];
+    renderScreen(<ItemHistoryPage id={ITEM.id} />, { client: historyApi({ [`GET /items/${ITEM.id}/history`]: { entries } }).client });
+    const list = await screen.findByRole('region', { name: 'Revisions' });
+    expect(within(list).getByText('Log Summary: began as an AI draft from @cf/google/gemma-4-26b-a4b-it (version 2024-06); the saved text differs from the AI draft.')).toBeTruthy();
+    expect(within(list).getByText('Log Summary: began as an AI draft from @cf/google/gemma-4-26b-a4b-it (version 2024-06); the saved text is unchanged from the AI draft.')).toBeTruthy();
+  });
+
   it('shows the record as it was after a chosen point and restores it with the restore dialog (R22.5)', async () => {
     const api = historyApi({ [`POST /items/${ITEM.id}/restore`]: { restored: true, item: ITEM } });
     renderScreen(<ItemHistoryPage id={ITEM.id} />, { client: api.client });

@@ -199,8 +199,14 @@ describe('R36.9 restore pauses the Publisher', () => {
     await makePublic(finding.id);
     await publishRow(`root:${finding.id}`);
 
-    // A restore holds rf-core frozen: a kick must open no run and drain nothing (R36.16, R59.3).
-    await core().prepare("INSERT INTO counters (k, v) VALUES ('frozen', 1) ON CONFLICT (k) DO UPDATE SET v = 1").run();
+    // A restore holds rf-core frozen with a LIVE write-freeze lease: a kick must open no run and drain nothing. The
+    // Publisher reads the live-lease predicate at wall-clock time, so the window spans around the real clock (R36.16,
+    // R59.3, R36.14).
+    const nowMs = Date.now();
+    await core().prepare(`INSERT INTO write_freeze_leases (only, job_id, generation, acquired_at, expires_at, deadline_at, heartbeat_at, snapshot_seq, state)
+      VALUES (1, 'restore-job', 1, ?1, ?2, ?3, ?1, 1, 'held')
+      ON CONFLICT (only) DO UPDATE SET state = 'held', acquired_at = ?1, expires_at = ?2, deadline_at = ?3, heartbeat_at = ?1`)
+      .bind(new Date(nowMs - 60_000).toISOString(), new Date(nowMs + 600_000).toISOString(), new Date(nowMs + 600_000).toISOString()).run();
     await kick(world.bindings, ['publish'], createLogger());
     // Give the (no-op) kick a moment; nothing should change while frozen.
     await new Promise((resolve) => setTimeout(resolve, 100));
@@ -208,8 +214,8 @@ describe('R36.9 restore pauses the Publisher', () => {
     expect(await pub().prepare('SELECT count(*) AS n FROM publish_runs').first<{ n: number }>().then((r) => r!.n)).toBe(0); // no run opened
     expect(await runPhase()).toBeNull(); // the DO opened no run
 
-    // The restore clears: a fresh kick resumes the run, which projects the view and converges (drains the row).
-    await core().prepare("UPDATE counters SET v = 0 WHERE k = 'frozen'").run();
+    // The restore clears: the lease is released, so a fresh kick resumes the run and converges (drains the row).
+    await core().prepare("UPDATE write_freeze_leases SET state = 'released' WHERE only = 1").run();
     // Inject a fake OPS so the full run loop (project → deploy → verify → finish) can complete under the harness.
     await runInDurableObject(stub(), (instance: Publisher) => instance.setOpsForTest(fakeOps({ probe: () => 'absent' })));
     await kick(world.bindings, ['publish'], createLogger());

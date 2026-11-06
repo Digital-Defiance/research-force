@@ -219,7 +219,13 @@ describe('restore quarantine', () => {
     const finding = await world.created('author', 'finding');
     await makePublic(finding.id);
     await publishRow(`root:${finding.id}`);
-    await core().prepare("INSERT INTO counters (k, v) VALUES ('frozen', 1) ON CONFLICT (k) DO UPDATE SET v = 1").run();
+    // A LIVE Internal_Backup write-freeze lease (covering NOW()) holds rf-core frozen; the Publisher processes nothing.
+    const expiry = new Date(Date.parse(NOW()) + 30_000).toISOString();
+    const deadline = new Date(Date.parse(NOW()) + 120_000).toISOString();
+    await core().prepare(`INSERT INTO write_freeze_leases (only, job_id, generation, acquired_at, expires_at, deadline_at, heartbeat_at, snapshot_seq, state)
+      VALUES (1, 'restore-job', 1, ?1, ?2, ?3, ?1, 1, 'held')
+      ON CONFLICT (only) DO UPDATE SET state = 'held', acquired_at = ?1, expires_at = ?2, deadline_at = ?3, heartbeat_at = ?1`)
+      .bind(NOW(), expiry, deadline).run();
     try {
       const result = await runProjectionSlice(deps(), gen('r1', 0), NOW());
       expect(result).toMatchObject({ processed: 0, more: false });
@@ -227,7 +233,7 @@ describe('restore quarantine', () => {
       // The publish rows stay pending until the restore clears.
       expect(await core().prepare("SELECT count(*) AS n FROM outbox WHERE topic = 'publish' AND done_at IS NULL").first('n')).toBe(1);
     } finally {
-      await core().prepare("UPDATE counters SET v = 0 WHERE k = 'frozen'").run();
+      await core().prepare("UPDATE write_freeze_leases SET state = 'incomplete' WHERE only = 1").run();
     }
   });
 });

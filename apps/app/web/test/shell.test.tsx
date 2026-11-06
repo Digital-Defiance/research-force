@@ -3,26 +3,27 @@ import { describe, expect, it } from 'vitest';
 import { MemoryRouter } from 'react-router';
 import { ApiContext } from '../src/api';
 import type { ApiClient } from '../src/api';
-import { Workspace } from '../src/routes';
+import { AppShell } from '../src/shell/app-shell';
 import { BUILT_IN, fakeApi, makeMe } from './helpers';
 
 const renderWorkspace = (client: ApiClient, route = '/') => render(
   <ApiContext.Provider value={client}>
-    <MemoryRouter initialEntries={[route]}><Workspace /></MemoryRouter>
+    <MemoryRouter initialEntries={[route]}><AppShell /></MemoryRouter>
   </ApiContext.Provider>,
 );
 
 describe('the Workspace shell', () => {
   it('links ResearchForce in the header to the Workspace start page (R45.2)', async () => {
     renderWorkspace(fakeApi({ 'GET /me': makeMe(), 'GET /roles': { roles: BUILT_IN }, 'GET /projects/P1/history': { history: [] } }).client, '/projects/P1/history');
-    const brand = within(screen.getByRole('banner')).getByRole('link', { name: 'ResearchForce' });
+    // The Design Suite TopMenu renders the brand as the home link (R45.2).
+    const brand = await screen.findByRole('link', { name: 'ResearchForce home' });
     expect(brand.getAttribute('href')).toBe('/');
     expect(await screen.findByRole('heading', { name: 'Project history' })).toBeTruthy();
   });
 
   it('offers a Submission of every kind on the start page and reports unknown pages', async () => {
     const view = renderWorkspace(fakeApi({ 'GET /me': makeMe(), 'GET /roles': { roles: BUILT_IN } }).client);
-    const submit = await screen.findByRole('region', { name: 'Submit' });
+    const submit = (await screen.findByRole('heading', { name: 'Submit a new record' })).closest('.rf-card') as HTMLElement;
     expect(within(submit).getByRole('link', { name: 'Finding' }).getAttribute('href')).toBe('/items/new/finding');
     expect(within(submit).getAllByRole('link')).toHaveLength(10);
     expect(within(submit).getByRole('link', { name: 'Decision Record' })).toBeTruthy();

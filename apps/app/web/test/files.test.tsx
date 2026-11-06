@@ -125,7 +125,7 @@ describe('uploads that survive a reload', () => {
     renderScreen(<ScopedHarness />, { client: api.client });
     await screen.findByText('Upload complete');
     expect((await screen.findAllByText(/before this file finished uploading/u)).length).toBeGreaterThan(0);
-    const reasons = within(screen.getByText('Files are not ready to submit').parentElement!);
+    const reasons = within(screen.getByText('Files are not ready to submit').closest('.rf-notice') as HTMLElement);
     expect(reasons.getByText(/Cut-off\.txt: The page was reloaded/u)).toBeTruthy(); expect(reasons.queryByText(/Finished\.txt/u)).toBeNull();
   });
 
@@ -156,7 +156,7 @@ describe('uploads that survive a reload', () => {
     expect(api.calls.filter((call) => call.path === '/uploads/upload-1/complete')).toHaveLength(1);
     expect(api.calls.some((call) => call.path === '/operations/upload-complete-upload-1')).toBe(true);
     fireEvent.submit(screen.getByRole('button', { name: 'Submit' }).closest('form')!);
-    const notice = screen.getByText('Files are not ready to submit').parentElement!.parentElement!;
+    const notice = screen.getByText('Files are not ready to submit').closest('[tabindex="-1"]') as HTMLElement;
     expect(document.activeElement).toBe(notice); expect(within(notice).getByText('Synthetic.txt: Origin must contain 1 to 5,000 characters.')).toBeTruthy();
   });
 });

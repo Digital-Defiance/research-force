@@ -56,6 +56,8 @@ describe('rf-ops Access sync', () => {
   it('exposes only the narrow RPC methods and no fetch handler', () => {
     expect(Object.getOwnPropertyNames(Ops.prototype).sort()).toEqual([
       'addMember',
+      'backupAgeAlert',
+      'certifyHealth',
       'constructor',
       'containPublicHosts',
       'containmentCapabilities',
@@ -66,6 +68,8 @@ describe('rf-ops Access sync', () => {
       'removeMember',
       'revokeSessions',
       'setSubmitBlock',
+      'spendAlert',
+      'usage',
       'verifyContainment',
     ]);
     expect('fetch' in Ops.prototype).toBe(false);

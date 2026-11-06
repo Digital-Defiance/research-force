@@ -45,6 +45,15 @@ describe('the Project log screen', () => {
     await waitFor(() => expect(api.writes().some((call) => call.path === '/views' && (call.body as { unitIds: string[] }).unitIds.includes('U1'))).toBe(true));
   });
 
+  it('has a single h1 and a breadcrumb back to the Projects list (R6.1, R6.3)', async () => {
+    const api = fakeApi({ ...base, 'GET /projects/log': { projectId: 'P1', order: 'newest', entries: [], next: null }, 'POST /views': { ok: true } });
+    renderLog(api);
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
+    const crumbs = screen.getByRole('navigation', { name: 'Breadcrumb' });
+    expect(within(crumbs).getByRole('link', { name: 'Projects' }).getAttribute('href')).toBe('/projects');
+    await waitFor(() => expect(screen.getByText('No entries match.')).toBeTruthy());
+  });
+
   it('shows the "no Log Summary recorded" notice and a Deletion record (R43.3, R43.7)', async () => {
     const api = fakeApi({ ...base, 'GET /projects/log': { projectId: 'P1', order: 'newest', entries: [itemEntry({ id: 'U2', logSummary: null }), deletionEntry], next: null }, 'POST /views': { ok: true } });
     renderLog(api);

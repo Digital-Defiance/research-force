@@ -58,7 +58,10 @@ describe('email DNS records data', () => {
     expect(emailDnsRecords.dmarc.host).toBe('_dmarc.researchforce.org');
     expect(emailDnsRecords.dmarc.value).toContain('p=none');
     expect(emailDnsRecords.dmarc.value).toContain(`rua=mailto:${DMARC_RUA_ADDRESS}`);
-    expect(DMARC_RUA_ADDRESS).not.toBe(SENDING_ADDRESS);
+    expect(emailDnsRecords.dmarc.ruaAddress).toBe(DMARC_RUA_ADDRESS);
+    // The rua address must differ from the Sending_Address so report mail never loops back (R20.23).
+    // records.ts enforces this at import time; importing the module above would have thrown otherwise.
+    expect(DMARC_RUA_ADDRESS.toLowerCase()).not.toBe(SENDING_ADDRESS.toLowerCase());
   });
 
   it('is deeply frozen', () => {
@@ -114,6 +117,54 @@ describe('check-email-dns CLI with an injected fake resolver', () => {
     expect(result.exitCode).not.toBe(0);
     expect(result.output).toContain('FAIL DKIM selector2');
     expect(result.output).toContain('OK   DKIM selector1');
+  });
+
+  it('fails and names the specific DKIM selector when its CNAME points elsewhere', async () => {
+    const resolver = fakeResolver({
+      txt: {
+        [emailDnsRecords.spf.host]: [[emailDnsRecords.spf.value]],
+        [emailDnsRecords.dmarc.host]: [[emailDnsRecords.dmarc.value]],
+      },
+      cname: {
+        [emailDnsRecords.dkim[0]!.host]: [emailDnsRecords.dkim[0]!.target],
+        // selector2 resolves, but to someone else's target (e.g. a stray/attacker CNAME).
+        [emailDnsRecords.dkim[1]!.host]: ['selector2-impostor._domainkey.evil.example.com'],
+      },
+    });
+    const result = await runCli([], { resolver });
+    expect(result.exitCode).not.toBe(0);
+    expect(result.output).toContain('FAIL DKIM selector2');
+    expect(result.output).toContain(emailDnsRecords.dkim[1]!.target);
+    expect(result.output).toContain('evil.example.com');
+    expect(result.output).toContain('OK   DKIM selector1');
+  });
+
+  it('fails and names the DMARC record when it is absent entirely', async () => {
+    const resolver = fakeResolver({
+      txt: {
+        [emailDnsRecords.spf.host]: [[emailDnsRecords.spf.value]],
+        // No TXT published at _dmarc.<domain> → the lookup rejects (ENOTFOUND).
+      },
+      cname: Object.fromEntries(emailDnsRecords.dkim.map((dkim) => [dkim.host, [dkim.target]])),
+    });
+    const result = await runCli([], { resolver });
+    expect(result.exitCode).not.toBe(0);
+    expect(result.output).toContain('FAIL DMARC');
+    expect(result.output).toContain('OK   SPF');
+  });
+
+  it('fails and names the DMARC record when a p=none record omits the rua', async () => {
+    const resolver = fakeResolver({
+      txt: {
+        [emailDnsRecords.spf.host]: [[emailDnsRecords.spf.value]],
+        [emailDnsRecords.dmarc.host]: [['v=DMARC1; p=none']],
+      },
+      cname: Object.fromEntries(emailDnsRecords.dkim.map((dkim) => [dkim.host, [dkim.target]])),
+    });
+    const result = await runCli([], { resolver });
+    expect(result.exitCode).not.toBe(0);
+    expect(result.output).toContain('FAIL DMARC');
+    expect(result.output).toContain('rua');
   });
 
   it('fails and names the DMARC record when the rua equals the Sending_Address', async () => {

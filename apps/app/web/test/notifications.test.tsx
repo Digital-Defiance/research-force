@@ -2,11 +2,11 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { MemoryRouter } from 'react-router';
 import { ApiContext } from '../src/api';
-import { Workspace } from '../src/routes';
+import { AppShell } from '../src/shell/app-shell';
 import { BUILT_IN, fakeApi, makeMe } from './helpers';
 
 const renderAt = (api: ReturnType<typeof fakeApi>, route: string) => render(
-  <ApiContext.Provider value={api.client}><MemoryRouter initialEntries={[route]}><Workspace /></MemoryRouter></ApiContext.Provider>,
+  <ApiContext.Provider value={api.client}><MemoryRouter initialEntries={[route]}><AppShell /></MemoryRouter></ApiContext.Provider>,
 );
 const base = { 'GET /me': makeMe(), 'GET /roles': { roles: BUILT_IN }, 'GET /me/badges': { counts: {}, total: 0, unreadNotifications: 2 } };
 const entry = (over: Record<string, unknown>) => ({

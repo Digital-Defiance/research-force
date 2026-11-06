@@ -235,3 +235,96 @@ describe('external mail operations', () => {
   });
 });
 
+
+describe('the acknowledgement to a Submitter (R31.5, R46.22)', () => {
+  let seq = 0;
+  const queueAcknowledgement = async (type: string, reference: string, email = 'ada@example.test') => {
+    const tag = String(seq++).padStart(2, '0');
+    const subId = asULID(`01M5ZACK00000000000000SB${tag}`.slice(0, 26));
+    const emailId = asULID(`01M5ZACK00000000000000EM${tag}`.slice(0, 26));
+    const at = new Date(START).toISOString();
+    const licence = type === 'removal_request' ? null : 'Synthetic Content Licence 1.0';
+    await world.core().prepare(`INSERT INTO outside_submissions (id, reference, type, message, name, email, licence_agreed, received_at, state, rev, updated_seq)
+      VALUES (?1, ?2, ?3, 'm', 'Ada', ?4, ?5, ?6, 'queued', 1, 0)`).bind(subId, reference, type, email, licence, at).run();
+    await world.core().prepare(`INSERT INTO outgoing_emails (id, kind, recipient, outside_submission_id, payload_ref, state, created_at, sendable_at, updated_seq)
+      VALUES (?1, 'acknowledgement', ?2, ?3, ?4, 'queued', ?5, ?5, 0)`).bind(emailId, email, subId, `acknowledgement:${subId}`, at).run();
+    return { subId, emailId };
+  };
+
+  it('sends a fixed-text acknowledgement with the Submission_Reference and the submission time in UTC', async () => {
+    fake = new FakeProvider();
+    await queueAcknowledgement('comment', 'RS-AAAAA-BBBBB');
+    await mailer().run(START);
+    const sent = fake.sent.find((m) => m.to === 'ada@example.test' && m.subject.includes('RS-AAAAA-BBBBB'));
+    expect(sent).toBeDefined();
+    expect(sent!.text).toContain('RS-AAAAA-BBBBB');
+    expect(sent!.text).toContain('UTC');
+    // A Comment is not a Correction or Removal_Request, so no Response_Target statement appears.
+    expect(sent!.text).not.toContain('first decision');
+  });
+
+  it('states the Response_Target for a Correction and a Removal_Request only (R46.22)', async () => {
+    fake = new FakeProvider();
+    await queueAcknowledgement('correction', 'RS-CCCCC-DDDDD', 'correction@example.test');
+    await queueAcknowledgement('removal_request', 'RS-EEEEE-FFFFF', 'removal@example.test');
+    await mailer().run(START);
+    const correction = fake.sent.find((m) => m.subject.includes('RS-CCCCC-DDDDD'));
+    const removal = fake.sent.find((m) => m.subject.includes('RS-EEEEE-FFFFF'));
+    expect(correction!.text).toContain('14 days');
+    expect(removal!.text).toContain('14 days');
+    expect(removal!.text).toContain('removal request');
+  });
+});
+
+describe('the decision email to a Submitter (R32.9, R32.10, R32.11)', () => {
+  let seq = 0;
+  const queueDecision = async (opts: { kind: 'decision' | 'more_information'; decisionKind: 'accepted' | 'rejected' | 'more_information_requested'; text: string; type?: string; responseUrl?: string; email?: string; reference?: string }) => {
+    const tag = String(seq++).padStart(2, '0');
+    const subId = asULID(`01M5ZDEC00000000000000SB${tag}`.slice(0, 26));
+    const decId = asULID(`01M5ZDEC00000000000000DC${tag}`.slice(0, 26));
+    const emailId = asULID(`01M5ZDEC00000000000000EM${tag}`.slice(0, 26));
+    const at = new Date(START).toISOString();
+    const email = opts.email ?? 'ada@example.test';
+    const reference = opts.reference ?? `RS-DEC-${tag}`;
+    const type = opts.type ?? 'material';
+    const licence = type === 'removal_request' ? null : 'Synthetic Content Licence 1.0';
+    const final = opts.decisionKind !== 'more_information_requested' ? 1 : 0;
+    await world.core().prepare(`INSERT INTO outside_submissions (id, reference, type, message, name, email, licence_agreed, received_at, state, rev, updated_seq)
+      VALUES (?1, ?2, ?3, 'm', 'Ada', ?4, ?5, ?6, 'queued', 1, 0)`).bind(subId, reference, type, email, licence, at).run();
+    await world.core().prepare(`INSERT INTO moderation_decisions (id, outside_submission_id, kind, final, admin_id, at, text)
+      VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)`).bind(decId, subId, opts.decisionKind, final, world.ids.admin, at, opts.text).run();
+    const payloadRef = `${opts.kind}:${decId}${opts.responseUrl ? `:${opts.responseUrl}` : ''}`;
+    await world.core().prepare(`INSERT INTO outgoing_emails (id, kind, recipient, outside_submission_id, payload_ref, state, created_at, sendable_at, updated_seq)
+      VALUES (?1, ?2, ?3, ?4, ?5, 'queued', ?6, ?6, 0)`).bind(emailId, opts.kind, email, subId, payloadRef, at).run();
+    return { subId, emailId, reference };
+  };
+
+  it('sends the confirmed decision text to the Submitter address only, with the reference', async () => {
+    fake = new FakeProvider();
+    const { reference } = await queueDecision({ kind: 'decision', decisionKind: 'accepted', text: 'Accepted with thanks, Ada.', reference: 'RS-DEC-ACC' });
+    await mailer().run(START);
+    const sent = fake.sent.find((m) => m.subject.includes('RS-DEC-ACC'));
+    expect(sent).toBeDefined();
+    expect(sent!.to).toBe('ada@example.test');
+    expect(sent!.text).toContain('Accepted with thanks, Ada.');
+    expect(sent!.text).toContain(reference);
+  });
+
+  it('carries the Response_Link in a More_Information_Requested email', async () => {
+    fake = new FakeProvider();
+    await queueDecision({ kind: 'more_information', decisionKind: 'more_information_requested', text: 'Please send the scan.', responseUrl: 'https://submit.example.test/respond#TOKEN123', reference: 'RS-DEC-MIR' });
+    await mailer().run(START);
+    const sent = fake.sent.find((m) => m.subject.includes('RS-DEC-MIR'));
+    expect(sent!.text).toContain('Please send the scan.');
+    expect(sent!.text).toContain('https://submit.example.test/respond#TOKEN123');
+  });
+
+  it('phrases a Removal_Request acceptance as the action taken', async () => {
+    fake = new FakeProvider();
+    await queueDecision({ kind: 'decision', decisionKind: 'accepted', type: 'removal_request', text: 'We removed the record.', reference: 'RS-DEC-RM' });
+    await mailer().run(START);
+    const sent = fake.sent.find((m) => m.subject.includes('RS-DEC-RM'));
+    expect(sent!.subject.toLowerCase()).toContain('removal request');
+    expect(sent!.text).toContain('We removed the record.');
+  });
+});

@@ -8,6 +8,9 @@ import type { ManifestEntry, PlannedFile } from '../src/publisher/plan';
 import { headersFile, loadSiteInput, renderSiteBuild } from '../src/publisher/render';
 import { runProjectionSlice } from '../src/publisher/projection';
 import type { ProjectionDeps } from '../src/publisher/projection';
+import { TEST_PUBLIC_COPY, TEST_PUBLIC_COPY_INPUT } from '@researchforce/testing/site';
+import { PublicCopyError } from '@researchforce/design/installation';
+import { publicCopyOf } from '../src/publisher/public-copy';
 import { itemWorld } from './items';
 
 const LICENCE = { name: 'Synthetic Licence 1.0', url: 'https://licence.example.test/1.0' } as const;
@@ -100,7 +103,7 @@ const pub = () => world.bindings.RF_PUBLIC;
 const priv = () => world.bindings.RF_PRIVATE_BUCKET;
 const NOW = () => world.at;
 const projectionDeps = (): ProjectionDeps => ({ core: core(), public: pub() });
-const renderDeps = () => ({ core: core(), public: pub(), privateBucket: priv(), licence: LICENCE, shellAssets: [] });
+const renderDeps = () => ({ core: core(), public: pub(), privateBucket: priv(), licence: LICENCE, publicCopy: TEST_PUBLIC_COPY, shellAssets: [] });
 const gen = (run: string, epoch: number): Generation => ({ run, epoch });
 
 const makePublic = async (id: ULID): Promise<void> => {
@@ -127,14 +130,44 @@ describe('loadSiteInput', () => {
     await publishRow(`project:${world.projectId}`);
     await runProjectionSlice(projectionDeps(), gen('r1', 0), NOW());
 
-    const input = await loadSiteInput({ core: core(), public: pub(), licence: LICENCE });
+    const input = await loadSiteInput({ core: core(), public: pub(), licence: LICENCE, publicCopy: TEST_PUBLIC_COPY });
     expect(input.views.has(unitKey(finding.id))).toBe(true);
     expect(input.projectOrder).toContain(`p:${world.projectId}`);
     expect(input.licence).toEqual(LICENCE);
+    expect(input.publicCopy).toEqual(TEST_PUBLIC_COPY);
     // The seeded Policy_Sections are present for every page.
     expect(input.policy.about.sections.length).toBeGreaterThan(0);
     expect(input.policy.privacy.sections.some((section) => section.key === 'your_requests' || section.required)).toBe(true);
     expect(input.retention.length).toBeGreaterThan(0);
+  });
+});
+
+describe('publicCopyOf and the Installation_Public_Copy refusal gate (R46.41, R46.42)', () => {
+  it('parses and validates a configured PUBLIC_COPY env binding', () => {
+    const validated = publicCopyOf({ PUBLIC_COPY: JSON.stringify(TEST_PUBLIC_COPY_INPUT) });
+    expect(validated.name).toBe(TEST_PUBLIC_COPY.name);
+    expect(validated.digest).toBe(TEST_PUBLIC_COPY.digest);
+  });
+
+  it('refuses when PUBLIC_COPY is unset, empty, unparseable, or partial, with no ResearchForce.org fallback', () => {
+    for (const env of [{}, { PUBLIC_COPY: '' }, { PUBLIC_COPY: '  ' }, { PUBLIC_COPY: 'not json' }]) {
+      expect(() => publicCopyOf(env)).toThrow(PublicCopyError);
+    }
+    const partial = JSON.stringify({ ...TEST_PUBLIC_COPY_INPUT, name: '', principles: [] });
+    expect(() => publicCopyOf({ PUBLIC_COPY: partial })).toThrow(PublicCopyError);
+  });
+
+  it('refuses to assemble the render deps when the public copy is unconfigured, rather than falling back silently', async () => {
+    const finding = await world.created('author', 'finding');
+    await makePublic(finding.id);
+    await publishRow(`project:${world.projectId}`);
+    await runProjectionSlice(projectionDeps(), gen('r1', 0), NOW());
+    // The Publisher DO's #publicCopy() resolves deps.publicCopy through publicCopyOf(env); an unconfigured env throws
+    // there, so renderSiteBuild is never reached and no files are produced from a ResearchForce.org fallback.
+    expect(() => publicCopyOf({})).toThrow(PublicCopyError);
+    // A validated bundle lets the same render proceed and produce files.
+    const result = await renderSiteBuild({ ...renderDeps(), publicCopy: publicCopyOf({ PUBLIC_COPY: JSON.stringify(TEST_PUBLIC_COPY_INPUT) }) }, NOW());
+    expect(result.fileCount).toBeGreaterThan(0);
   });
 });
 

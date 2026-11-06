@@ -7,6 +7,7 @@ import { exportPackages, members } from '@researchforce/db/schema/core';
 import { newULID } from '@researchforce/domain/identifiers';
 import { ROLE_IDS } from '@researchforce/domain/permissions';
 import { asTimestamp } from '@researchforce/domain/types';
+import type { ULID } from '@researchforce/domain/types';
 import type { D1Migration } from 'cloudflare:test';
 import { download } from '../src/index';
 import type { Env } from '../src/index';
@@ -17,7 +18,7 @@ const te = new TextEncoder();
 const at = asTimestamp('2026-10-27T18:00:00.000Z');
 const instant = new Date(at).getTime();
 const secret = 'synthetic-hmac-key-for-volume-tests';
-let memberId: string;
+let memberId: ULID;
 
 /** Parse a ustar+pax tar back into its members (shared minimal reader shape with tar.test.ts). */
 function readTar(bytes: Uint8Array): { name: string; data: Uint8Array }[] {

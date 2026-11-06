@@ -131,6 +131,23 @@ describe('revisionsFor', () => {
   it('refuses a content change without a mark', () => {
     expect(() => revisionsFor(target, { fields: [position(1)] })).toThrow();
   });
+  it('records each field\'s AI provenance on the Revision that carries that field (R44.6)', () => {
+    const change: ChangeSet = {
+      fields: [
+        { field: 'logSummary', before: text('A'), after: text('B'), fieldClass: 'content' },
+        { field: 'note', before: 1, after: 2, fieldClass: 'detail' },
+      ],
+      mark: { mark: 'minor_edit' },
+      ai: { logSummary: { model: 'm', version: 'v', differs: true } },
+    };
+    expect(revisionsFor(target, change)).toEqual([
+      { ...common, kind: 'minor_edit', reason: null, prev: { logSummary: text('A'), note: 1 }, restoredPoint: null, ai: { logSummary: { model: 'm', version: 'v', differs: true } } },
+    ]);
+  });
+  it('omits the ai field entirely when no covered field had a draft', () => {
+    const change: ChangeSet = { fields: [position(1)], mark: { mark: 'minor_edit' }, ai: { note: { model: 'm', version: 'v', differs: false } } as never };
+    expect(revisionsFor(target, change)[0]).not.toHaveProperty('ai');
+  });
 });
 
 describe('commitSave', () => {

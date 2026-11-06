@@ -79,7 +79,7 @@ describe('files in a new Item across a reload', () => {
     fireEvent.change(itemTitle(), { target: { value: 'A topic' } });
     fireEvent.submit(submit().closest('form')!);
     expect(writes(second, '/topics')).toHaveLength(0);
-    expect(within(screen.getByText('Files are not ready to submit').parentElement!).getByText(/Synthetic\.txt: The page was reloaded/u)).toBeTruthy();
+    expect(within(screen.getByText('Files are not ready to submit').closest('.rf-notice') as HTMLElement).getByText(/Synthetic\.txt: The page was reloaded/u)).toBeTruthy();
     fireEvent.change(screen.getByLabelText('Select Synthetic.txt again'), { target: { files: [new File(['abc'], 'Synthetic.txt')] } });
     await screen.findByText('Upload complete');
     expect((screen.getByLabelText('Origin (required)') as HTMLTextAreaElement).value).toBe('Origin kept.');
@@ -98,7 +98,7 @@ describe('files in a new Item across a reload', () => {
     fireEvent.change(title, { target: { value: 'A topic' } });
     fireEvent.submit(title.closest('form')!);
     expect(writes(api, '/topics')).toHaveLength(0);
-    expect(document.activeElement).toBe(screen.getByText('Files are not ready to submit').parentElement!.parentElement);
+    expect(document.activeElement).toBe(screen.getByText('Files are not ready to submit').closest('[tabindex="-1"]'));
     expect(within(document.activeElement as HTMLElement).getByText(/Synthetic\.txt: The file is still uploading\./u)).toBeTruthy();
   });
 

@@ -89,6 +89,9 @@ it('would see a leak: an authorized Member’s own response does carry the file 
 });
 
 afterAll(() => {
-  // The matrix gate: the adapter is registered for the required channel and really reached the production handler.
-  expect(liveChannelProblems([adapter])).toEqual([]);
+  // This suite owns the rf-dl live channel only: assert its adapter is registered, bound to the production handler,
+  // and really reached it. The full REQUIRED_LIVE_CHANNELS matrix (which also needs the rf-submit adapter from that
+  // Worker's own suite) is the task-68.4 final gate's job, run once with every suite's adapter — checking the whole
+  // matrix here would always miss the channels other suites own (R60.1, R60.4).
+  expect(liveChannelProblems([adapter], [required!])).toEqual([]);
 });

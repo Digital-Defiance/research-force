@@ -47,7 +47,7 @@ describe('real migration and recovery rehearsals', () => {
     try {
       expect(output.report.productionCertified).toBe(false);
       expect(output.report.priorReleasedVersionsAvailable).toEqual([]);
-      expect(output.report.results.filter((r) => r.store === 'core').map((r) => r.checkpoint)).toEqual([27, 26, 25]);
+      expect(output.report.results.filter((r) => r.store === 'core').map((r) => r.checkpoint)).toEqual([40, 39, 38]);
       expect(output.report.results.every((r) => r.restoreReopened && r.seedVerified)).toBe(true);
       expect(output.report.results.every((r) => /^[a-f0-9]{64}$/.test(r.recoveryCopySha256))).toBe(true);
     } finally { rmSync(output.directory, { recursive: true, force: true }); }
@@ -75,7 +75,7 @@ describe('real migration and recovery rehearsals', () => {
       expect(() => adoptSchema(db, ROOT, manifest, 'core', 7)).toThrow(/DDL/);
       adoptSchema(db, ROOT, manifest, 'core', 8);
       expect(() => adoptSchema(db, ROOT, manifest, 'core', 8)).toThrow(/already/);
-      expect(applyUpgrade(db, ROOT, manifest, 'core', { phase: 'expand' }).applied).toEqual(['0009_files', '0010_logical_fields', '0011_operation_keys', '0012_research_questions', '0013_evidence_citations', '0014_decision_records', '0015_research_releases', '0016_work_items', '0017_work_assignment_history', '0018_artifact_derivations', '0019_decision_state_history', '0020_compute_packages', '0021_coverage_and_reproduction', '0022_durable_drafts', '0023_proposed_edits', '0024_personal_navigation', '0025_publication_consent', '0026_permission_evidence', '0027_dual_withdraw']);
+      expect(applyUpgrade(db, ROOT, manifest, 'core', { phase: 'expand' }).applied).toEqual(['0009_files', '0010_logical_fields', '0011_operation_keys', '0012_research_questions', '0013_evidence_citations', '0014_decision_records', '0015_research_releases', '0016_work_items', '0017_work_assignment_history', '0018_artifact_derivations', '0019_decision_state_history', '0020_compute_packages', '0021_coverage_and_reproduction', '0022_durable_drafts', '0023_proposed_edits', '0024_personal_navigation', '0025_publication_consent', '0026_permission_evidence', '0027_dual_withdraw', '0028_clammy_justin_hammer', '0029_warm_pepper_potts', '0030_consent_email_kind', '0031_consent_confirmation_email_kind', '0032_consent_token_deletion', '0033_woozy_siren', '0034_write_freeze_lease', '0035_backup_recovery_points', '0036_restore_checkpoints', '0037_restores', '0038_operational_failure_aggregates', '0039_policy_generated_content', '0040_usage_alert_state']);
       expect(applyUpgrade(db, ROOT, manifest, 'core', { phase: 'expand' }).applied).toEqual([]);
       db.exec("UPDATE _rf_release_migrations SET sha256='changed' WHERE revision=8");
       expect(() => applyUpgrade(db, ROOT, manifest, 'core', { phase: 'expand' })).toThrow(/divergent/);

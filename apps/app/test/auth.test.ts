@@ -140,14 +140,23 @@ describe('sessions', () => {
 
   it('pauses a Pending Member’s activation while saving is frozen, without creating a session', async () => {
     await addMember(bindings.RF_CORE, 'invited@example.test', 'pending', at);
-    await bindings.RF_CORE.prepare("UPDATE counters SET v = 1 WHERE k = 'frozen'").run();
+    // A LIVE Internal_Backup write-freeze lease (the activation save checks the live-lease predicate at request time,
+    // so the window spans well around the real clock) pauses the Pending Member's activation with the frozen 503.
+    const nowMs = Date.now();
+    const start = new Date(nowMs - 60_000).toISOString();
+    const expiry = new Date(nowMs + 600_000).toISOString();
+    const deadline = new Date(nowMs + 600_000).toISOString();
+    await bindings.RF_CORE.prepare(`INSERT INTO write_freeze_leases (only, job_id, generation, acquired_at, expires_at, deadline_at, heartbeat_at, snapshot_seq, state)
+      VALUES (1, 'backup-job', 1, ?1, ?2, ?3, ?1, 1, 'held')
+      ON CONFLICT (only) DO UPDATE SET state = 'held', acquired_at = ?1, expires_at = ?2, deadline_at = ?3, heartbeat_at = ?1`)
+      .bind(start, expiry, deadline).run();
     try {
       const response = await me(await token('invited@example.test'));
       expect([response.status, await response.json()]).toEqual([503, { error: 'frozen' }]);
       expect(await bindings.RF_CORE.prepare("SELECT status FROM members WHERE email_lc = 'invited@example.test'").first('status')).toBe('pending');
       expect(await sessionRows()).toEqual([]);
     } finally {
-      await bindings.RF_CORE.prepare("UPDATE counters SET v = 0 WHERE k = 'frozen'").run();
+      await bindings.RF_CORE.prepare("UPDATE write_freeze_leases SET state = 'incomplete' WHERE only = 1").run();
     }
   });
 });

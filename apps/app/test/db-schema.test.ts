@@ -191,13 +191,19 @@ describe('guarded batch helper', () => {
     expect(admins.results.every(({ id: adminId }) => adminId !== last)).toBe(true);
   });
 
-  it('refuses writes during a backup freeze unless the batch opts out', async () => {
+  it('refuses writes while an Internal_Backup holds a live write-freeze lease, unless the batch opts out', async () => {
     const memberId = await addMember(ROLE_IDS.contributor);
-    await new GuardedBatch(core, { id: null, now }, { ignoreFreeze: true }).run(sql`UPDATE counters SET v = 1 WHERE k = 'frozen'`).commit();
+    // A LIVE lease (covering `now`) blocks ordinary saves with the `frozen` 503 rule; an `ignoreFreeze` batch opts out.
+    const expiry = new Date(Date.parse(now) + 30_000).toISOString();
+    const deadline = new Date(Date.parse(now) + 120_000).toISOString();
+    await core.prepare(`INSERT INTO write_freeze_leases (only, job_id, generation, acquired_at, expires_at, deadline_at, heartbeat_at, snapshot_seq, state)
+      VALUES (1, 'backup-job', 1, ?1, ?2, ?3, ?1, 1, 'held')
+      ON CONFLICT (only) DO UPDATE SET state = 'held', acquired_at = ?1, expires_at = ?2, deadline_at = ?3, heartbeat_at = ?1`)
+      .bind(now, expiry, deadline).run();
     try {
       expect(await refusal(new GuardedBatch(core, { id: memberId, now }).update(members, { inviteEmailState: 'sent' }, eq(members.id, memberId)).commit())).toMatchObject({ code: 'frozen', status: 503 });
     } finally {
-      await new GuardedBatch(core, { id: null, now }, { ignoreFreeze: true }).run(sql`UPDATE counters SET v = 0 WHERE k = 'frozen'`).commit();
+      await core.prepare("UPDATE write_freeze_leases SET state = 'incomplete' WHERE only = 1").run();
     }
     await new GuardedBatch(core, { id: memberId, now }).update(members, { inviteEmailState: 'sent' }, eq(members.id, memberId)).commit();
   });

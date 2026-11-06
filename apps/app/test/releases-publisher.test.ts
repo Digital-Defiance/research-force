@@ -9,6 +9,7 @@ import { currentPublicAttachments, liveFileCopies, fileOpsFor } from '../src/pub
 import { runFileOps } from '../src/publisher/files';
 import type { DeletionRetryState } from '../src/publisher/files';
 import type { Env } from '../src/env';
+import { TEST_PUBLIC_COPY } from '@researchforce/testing/site';
 import { itemWorld } from './items';
 import { completedUpload, configureFiles, fileInput } from './files';
 
@@ -29,7 +30,7 @@ const pubBucket = () => world.bindings.RF_PUBLIC_BUCKET;
 const env = (): Env => world.bindings;
 const NOW = () => world.at;
 const projectionDeps = (): ProjectionDeps => ({ core: core(), public: pub() });
-const renderDeps = () => ({ core: core(), public: pub(), privateBucket: priv(), licence: LICENCE, shellAssets: [] });
+const renderDeps = () => ({ core: core(), public: pub(), privateBucket: priv(), licence: LICENCE, publicCopy: TEST_PUBLIC_COPY, shellAssets: [] });
 const gen = (run: string, epoch: number): Generation => ({ run, epoch });
 
 let serial = 0;

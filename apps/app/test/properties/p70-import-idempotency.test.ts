@@ -104,7 +104,7 @@ const partyArb = fc.oneof(
 );
 const accessArb = fc.oneof(
   { weight: 1, arbitrary: fc.constant({ own: false as const }) },
-  { weight: 1, arbitrary: fc.subarray(WHO, { minLength: 1, maxLength: 3 }).map((members) => ({ own: true as const, members })) },
+  { weight: 1, arbitrary: fc.subarray([...WHO], { minLength: 1, maxLength: 3 }).map((members) => ({ own: true as const, members })) },
 );
 const kindArb = fc.constantFrom<Kind>('finding', 'hypothesis', 'source');
 

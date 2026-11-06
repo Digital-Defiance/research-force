@@ -63,7 +63,11 @@ describe('the request list', () => {
   it('shows every request in either state with requester, addressees, note, time, and the review (R17.11)', () => {
     renderScreen(<ReviewList reviews={reviews} sectionNumber={(id) => (id === 'SEC2' ? 2 : undefined)} onChanged={() => undefined} />, { client: fakeApi({}).client });
     const [open, role, , held, done, publication] = articles();
-    expect(open!.textContent).toBe('Needs review This recordRequested by Ben Sample on 2026-10-20 10:00 UTCAddressed to: Ada Example (Member)Please check the dates.Review noteOptional; at most 2,000 characters.Mark reviewed');
+    expect(open!.textContent).toContain('Needs review');
+    expect(open!.textContent).toContain('Requested by Ben Sample on 2026-10-20 10:00 UTC');
+    expect(open!.textContent).toContain('Addressed to: Ada Example (Member)');
+    expect(open!.textContent).toContain('Please check the dates.');
+    expect(within(open!).getByRole('button', { name: 'Mark reviewed' })).toBeTruthy();
     expect(role!.textContent).toContain('Addressed to: Administrator (Role), Cryptanalysis (Specialty)');
     expect(held!.textContent).toContain('Entry Section 2');
     expect(done!.textContent).toBe('Reviewed This recordRequested by Ben Sample on 2026-10-20 10:00 UTCAddressed to: Ada Example (Member)Please check the dates.Reviewed by Ada Example on 2026-10-21 09:30 UTCDates match.');
@@ -144,8 +148,22 @@ describe('the review queue', () => {
     expect(screen.getAllByRole('link').filter((link) => link.getAttribute('href')?.startsWith('/items/')).map((link) => [link.textContent, link.getAttribute('href')])).toEqual([
       ['Record RF-0001: A synthetic record', `/items/${ITEM_ID}`], ['Entry Section of RF-0001: An entry', `/items/${ITEM_ID}#section-S2`],
     ]);
-    expect(articles()[0]!.textContent).toContain('Requested by Ben Sample on 2026-10-20 10:00 UTC');
-    expect(articles()[0]!.textContent).toContain('Please check the dates.');
+    const rows = screen.getAllByRole('row').slice(1);
+    expect(rows).toHaveLength(2);
+    expect(rows[0]!.textContent).toContain('Ben Sample');
+    expect(rows[0]!.textContent).toContain('2026-10-20 10:00 UTC');
+    expect(rows[0]!.textContent).toContain('Please check the dates.');
+  });
+
+  it('filters the loaded requests on the client and says when none match, without a new request', async () => {
+    const api = fakeApi({ 'GET /reviews/queue': { reviews: [review('FIRST')] } });
+    renderScreen(<ReviewQueuePage />, { client: api.client });
+    await screen.findByRole('table');
+    const calls = api.calls.length;
+    fireEvent.change(screen.getByLabelText('Filter review requests'), { target: { value: 'zzz-no-such' } });
+    expect(screen.getByText('No Review Requests match the filter.')).toBeTruthy();
+    expect(screen.queryByRole('table')).toBeNull();
+    expect(api.calls.length).toBe(calls);
   });
 
   it('says when nothing is waiting', async () => {
@@ -164,7 +182,7 @@ describe('reviews on the item page', () => {
       ],
     });
     const view = renderScreen(<ItemDetails data={{ item, valueSets: VALUE_SETS, parties: [PARTY], members: MEMBERS, links: [], backlinks: [], thread: [] }} />, { client: fakeApi({}).client });
-    expect(view.container.querySelector('header')!.textContent).toContain('Review pending');
+    expect(view.container.querySelector('header:not(.rf-page-header)')!.textContent).toContain('Review pending');
     expect(screen.getByRole('region', { name: 'Entry Section 1' }).textContent).not.toContain('Review pending');
     expect(screen.getByRole('region', { name: 'Entry Section 2' }).textContent).toContain('Review pending');
     expect(screen.getByRole('region', { name: 'Entry Section 2' }).id).toBe('section-S2');

@@ -48,7 +48,7 @@ async function addDissentAt(itemId: ULID, authorId: ULID, at: Timestamp, text: s
 }
 const at = (iso: string): Timestamp => iso as Timestamp;
 const itemRev = (id: string) => world.core().prepare('SELECT rev FROM units WHERE id = ?1').bind(id).first<number>('rev');
-const dissentOf = (item: ItemView) => item['dissent'] as DissentDisplayView;
+const dissentOf = (item: ItemView) => item['dissent'] as unknown as DissentDisplayView;
 
 async function runDeletion(jobId: string): Promise<void> {
   const row = (await world.core().prepare('SELECT params, requested_by AS requestedBy FROM jobs WHERE id = ?1').bind(jobId).first<{ params: string; requestedBy: ULID }>())!;

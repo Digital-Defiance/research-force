@@ -87,7 +87,7 @@ describe('Property 28: Saves are all-or-nothing', () => {
 
         if (attempt.kind === 'commit') {
           const batch = new GuardedBatch(core, { id: owner, now });
-          const written = Array.from({ length: attempt.items }, (_item, index) => writeItem(batch, owner, projects[index % projects.length]));
+          const written = Array.from({ length: attempt.items }, (_item, index) => writeItem(batch, owner, projects[index % projects.length]!));
           await batch.commit();
           // The save applied: every intended row is present and the change counter advanced by one.
           for (const { unitId } of written) {
@@ -103,7 +103,7 @@ describe('Property 28: Saves are all-or-nothing', () => {
         let error: unknown;
         try {
           const batch = new GuardedBatch(core, { id: owner, now });
-          const written = Array.from({ length: attempt.items }, (_item, index) => writeItem(batch, owner, projects[index % projects.length]));
+          const written = Array.from({ length: attempt.items }, (_item, index) => writeItem(batch, owner, projects[index % projects.length]!));
           if (attempt.kind === 'guard') {
             // R4.1: a stale `rev` guard (its condition is false) aborts the whole batch after the writes before it.
             batch.guard('rev', sql`EXISTS (SELECT 1 FROM units WHERE id = ${seed.unitId} AND rev = ${99})`);
