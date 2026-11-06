@@ -42,7 +42,7 @@ The JSON graph at the end is the single scheduling source. Checked leaf tasks fo
 
 Tasks 26/27 code already exist in the inherited baseline; feature additions still extend their event/preference/recipient rules. The graph linearizes shared helpers before callers: 55.2 before moves, field-version/idempotency before new records, permission coverage before apply, codec/preflight before restore, and publication/permission gates before serving releases. Every authoritative new table is registered for backup/format migrations when added. This is an implementation schedule, not authorization to activate a paid service, publish content, or ingest sole-copy research before its release evidence passes.
 
-Canonical phases: `collaboration` → `privacy` → `imports_and_log` → `publication` → `outside_and_ai` → `recovery` → `release_tooling` → `staging_and_acceptance` → `production_activation`
+Canonical phases: `staging_and_acceptance` → `production_activation`
 
 ## Tasks
 
@@ -757,7 +757,7 @@ Canonical phases: `collaboration` → `privacy` → `imports_and_log` → `publi
     - Local R2 refuses a part or object with a wrong checksum; completion with a mismatched size fails the file; the sweep deletes only abandoned uploads
     - _Requirements: 12.7, 12.8, 12.10_
 
-- [ ] 31. Build disclosure changes, previews, classification, Publication_Requests, rights and consent rules, and item moves
+- [x] 31. Build disclosure changes, previews, classification, Publication_Requests, rights and consent rules, and item moves
   - [x] 31.1 Implement projection input loading and the preview API in `apps/app/src/kernel-input.ts` and `apps/app/src/disclosure/preview.ts`
     - `loadProjectionInput(roots)`, the only code that turns `rf-core` rows into kernel input, including Parties, Do_Not_Name flags, registered Member emails, consent, rights, Licence_Agreements, and Cross_Link neighbours
     - It reads `research_items.access_level` into the `restricted` flag that task 52.5 added to the kernel input; the access preview of task 52.4, which until then lists the units whose level a restriction resets, then also renders the Public_Views the restriction removes with `diffViews`
@@ -785,28 +785,28 @@ Canonical phases: `collaboration` → `privacy` → `imports_and_log` → `publi
   - [x] 31.7 Build the disclosure screens in `apps/app/web/src/disclosure/`
     - The disclosure dialog with the preview (changed views, Party names, Dissent_Notes that will not be Public, Licence_Agreement states, gate failures with Withheld offers), set selection up to 1,000 units, the Public_Summary editor pre-filled from the Log_Summary when empty or from a Publication_Request being applied, the Unclassified list, the public overview, Publication_Request apply and decline, the move dialog, and Consent_Status, Do_Not_Name, and Generic_Label on Correspondence pages and previews
     - _Requirements: 23.6, 23.8, 23.11, 23.12, 26.8, 34.7, 41.13_
-  - [ ] 31.8 Write property test for independent Disclosure_Levels
+  - [x] 31.8 Write property test for independent Disclosure_Levels
     - **Property 2: Own Disclosure_Levels are independent of ancestors**
     - **Validates: Requirements 4.8, 9.3, 23.3, 39.12**
-  - [ ] 31.9 Write property test for Unclassified units
+  - [x] 31.9 Write property test for Unclassified units
     - **Property 4: Unclassified units stay Not_Published and classification is selective**
     - **Validates: Requirements 26.5, 26.6, 26.7**
-  - [ ] 31.10 Write property test for publication gates
+  - [x] 31.10 Write property test for publication gates
     - **Property 12: Publication gates reject the whole change**
     - **Validates: Requirements 23.5, 23.14, 26.7, 26.14, 33.4, 34.2, 46.17**
-  - [ ] 31.11 Write property test for rights and consent invariants
+  - [x] 31.11 Write property test for rights and consent invariants
     - **Property 13: Rights and consent invariants hold after every save**
     - **Validates: Requirements 9.6, 33.3, 33.5, 33.8, 34.1, 34.3**
-  - [ ] 31.12 Write property test for public addresses
+  - [x] 31.12 Write property test for public addresses
     - **Property 19: Public addresses are stable and content-free**
     - **Validates: Requirements 29.6, 29.7, 29.8, 39.6, 40.3, 40.8**
-  - [ ] 31.13 Write property test for the Review_Request state machine
+  - [x] 31.13 Write property test for the Review_Request state machine
     - **Property 48: Review_Requests follow their state machine**
     - **Validates: Requirements 17.3, 17.4, 17.5, 17.8, 17.9, 17.10**
-  - [ ] 31.14 Write property test for item moves
+  - [x] 31.14 Write property test for item moves
     - **Property 77: Moving a Research_Item changes only its Project**
     - **Validates: Requirements 39.1, 39.12**
-  - [ ] 31.15 Write property test for Log_Summary rules
+  - [x] 31.15 Write property test for Log_Summary rules
     - **Property 79: Log_Summary rules**
     - **Validates: Requirements 41.1, 41.2, 41.5, 41.13**
 
@@ -841,7 +841,7 @@ Canonical phases: `collaboration` → `privacy` → `imports_and_log` → `publi
 - [ ] 33. Checkpoint - Ensure all tests pass
   - Run `npm test` (`vitest --run`) and `npm run lint`; ensure all tests pass, ask the user if questions arise.
 
-- [ ] 34. Build the `Budget` Durable Object and the public submission API in `rf-submit`
+- [x] 34. Build the `Budget` Durable Object and the public submission API in `rf-submit`
   - [x] 34.1 Implement the `Budget` Durable Object in `apps/app/src/do/budget.ts` and `apps/app/src/budget/status.ts`
     - Use 59.3's profile-aware reserve/settlement and provider-level accounting helpers for per-UTC-day Public_Traffic requests, rows read, and rows written with `admit()` and `report(rows)`; when a counter reaches the Public_Traffic_Budget minus a 2% margin, refuse further public requests with a fixed "unavailable until 00:00 UTC" response that uses no D1 query, ask `rf-ops` to enable the WAF block rule for `submit.researchforce.org`, and rewrite `files.researchforce.org/status.json`; `PUBLIC_SEARCH_FOLLOWS_BUDGET = false` in `status.ts` keeps static search available; dynamic form and addressed-view status are separate
     - The 00:00 UTC cron resets the counters, disables the WAF rule, and rewrites `status.json`; network-address counters stored only as HMAC-SHA-256 under a daily key with hourly counts, deleted with the key within 24 hours; an AI Neuron ledger of reservations and settlements; Recipient_Cap usage reported by the `Mailer`
@@ -849,66 +849,66 @@ Canonical phases: `collaboration` → `privacy` → `imports_and_log` → `publi
   - [x] 34.2 Implement the WAF switch in `apps/ops/src/waf.ts`
     - `setSubmitBlock(enabled)` toggling the pre-created custom rule that blocks `submit.researchforce.org` at the edge
     - _Requirements: 28.5, 28.6_
-  - [ ] 34.3 Implement submission sessions and files in `apps/submit/src/index.ts` and `apps/submit/src/sessions.ts`
+  - [x] 34.3 Implement submission sessions and files in `apps/submit/src/index.ts` and `apps/submit/src/sessions.ts`
     - Every request passes the `Budget` gate first; `POST /v1/sessions` verifies a Turnstile token with `siteverify` (one use, 300 seconds) and opens a 128-bit session that expires after 2 hours; `POST /v1/sessions/{id}/files` checks the Public_Upload_Size_Limit, 10 files and 500 MB per Outside_Submission, and 1 GB per day, then returns a presigned PUT to `rf-private/outside/{session}/{file}` signing length and SHA-256; `…/complete` confirms size and checksum
     - Hourly sweep deleting uploaded files that are not part of a complete Outside_Submission 24 hours after upload
     - _Requirements: 31.3, 31.4, 31.8, 31.10, 31.12_
-  - [ ] 34.4 Implement the submit endpoint in `apps/submit/src/submit.ts`
+  - [x] 34.4 Implement the submit endpoint in `apps/submit/src/submit.ts`
     - Validate the fields, the licence agreement for types other than Removal_Request, and the Project or General_Choice (a nonexistent and a non-Public Project get the same refusal); count 5 complete Outside_Submissions per hour per hashed network address, 3 per day per email address, and 20 per day in total; require every added file to be complete; store the Outside_Submission with its page reference as text that is never looked up and the chosen Project or General_Choice in one batch
     - Respond within 5 seconds with the Submission_Reference and time, queue the acknowledgement (stating the Response_Target for Corrections and Removal_Requests), and create Outside_Submission events for every Administrator, plus one for the Responsible_Person on a Removal_Request, with the shared builder in `packages/db/src/events/outside.ts`
     - Compose every response only from fixed text, the reference, the time, the Visitor's own validation results and limits, and confirmed Administrator text; register `rf-submit` responses in `packages/testing/src/public-channels.ts`
     - _Requirements: 31.2, 31.4, 31.5, 31.6, 31.7, 31.9, 31.12, 31.14, 32.1, 32.3, 32.17, 46.20, 46.22, 46.36_
-  - [ ] 34.5 Implement the public form scripts in `apps/site-shell/src/form.ts` and update `apps/site-shell/src/search.ts`
+  - [x] 34.5 Implement the public form scripts in `apps/site-shell/src/form.ts` and update `apps/site-shell/src/search.ts`
     - Submission_Type choice, the licence agreement checkbox (never preselected, absent for Removal_Request), the Project list of Public Projects in Project_Order plus the General_Choice with the page's preselection, Turnstile in managed mode, uploads with progress, retry, and removal, every field and fully uploaded file kept after a refusal or failure, unsent input in `sessionStorage`, and the confirmation with reference and time
     - The form script reads its admission status and shows "unavailable until 00:00 UTC" when exhausted; the search script retains static search and treats confidentiality containment separately
     - _Requirements: 28.10, 28.11, 31.1, 31.10, 31.11, 31.13, 45.5, 45.18_
-  - [ ] 34.6 Write property test for Outside_Submission limits
+  - [x] 34.6 Write property test for Outside_Submission limits
     - **Property 88: Outside_Submission limits**
     - **Validates: Requirements 31.4, 31.12**
 
-- [ ] 35. Build the Moderation_Service
-  - [ ] 35.1 Implement the Moderation_Queue API in `apps/app/src/moderation/queue.ts` and `apps/app/src/api/routes/moderation.ts`
+- [x] 35. Build the Moderation_Service
+  - [x] 35.1 Implement the Moderation_Queue API in `apps/app/src/moderation/queue.ts` and `apps/app/src/api/routes/moderation.ts`
     - `GET /moderation` for active Members only, with Submission_Reference, type, Project or General_Choice, state, text, Submitter details, files, referenced page, receipt time, and for Corrections and Removal_Requests the receipt date and the Response_Target end date (receipt plus 14 days) in the viewer's zone with an overdue mark while undecided; no network address appears; Project filters
     - _Requirements: 2.8, 32.1, 32.2, 32.17, 39.14, 46.20, 46.24_
-  - [ ] 35.2 Implement Moderation_Decisions in `apps/app/src/moderation/decide.ts`
+  - [x] 35.2 Implement Moderation_Decisions in `apps/app/src/moderation/decide.ts`
     - Every decision returns the exact email text first and applies only after confirmation; messages and reasons up to 5,000 characters; the `decision_open` guard refuses a decision after an Accepted or Rejected one and shows the recorded decision; decision rows are never changed and record Administrator, time, text, and created Items; emails go only to the address in that Outside_Submission
     - Accept for Material, Correction, or Comment creates the selected Items (at least one; Research_Items with Log_Summaries, Replies, or Attachments on existing or newly created Parents), credited to the Submitter's name and affiliation, Not_Published and Unclassified, in the Outside_Submission's Project unless another is chosen (a choice is required for the General_Choice), all-or-nothing, as one Submission by the accepting Administrator
     - Removal_Requests need a statement of 1 to 5,000 characters, record the elements named as changed, and create no Item; More_Information_Requested sends the message and a Response_Link valid for 30 days; Reject and an accepted Removal_Request store the dates for deleting files within 24 hours and erasing the email address 90 to 91 days later; outcome emails go through the `Mailer`, and a finally failed Submitter email shows on the Outside_Submission
     - _Requirements: 32.4, 32.5, 32.6, 32.9, 32.10, 32.11, 32.12, 32.13, 32.15, 32.16, 32.18, 41.2, 46.23, 46.33_
-  - [ ] 35.3 Implement Response_Links in `apps/submit/src/respond.ts` and `apps/site-shell/src/respond.ts`
+  - [x] 35.3 Implement Response_Links in `apps/submit/src/respond.ts` and `apps/site-shell/src/respond.ts`
     - The token travels in the URL fragment; `POST /v1/respond/check`, Turnstile sessions, files, and submit; refusal on a failed Bot_Check, the size or Outside_Submission limits counted as one Outside_Submission, expiry after 30 days, an earlier response, or an Accepted or Rejected decision; an accepted response is attached with its receipt time and creates Outside_Submission events for every Administrator, plus the Responsible_Person on a Removal_Request
     - _Requirements: 32.7, 32.14, 46.36_
-  - [ ] 35.4 Implement Response_Target Reminders in `apps/app/src/moderation/reminders.ts`
+  - [x] 35.4 Implement Response_Target Reminders in `apps/app/src/moderation/reminders.ts`
     - The hourly sweep creates a Reminder for every Administrator 10, 14, 21, 28, and every further 7 days after receipt of an undecided Correction or Removal_Request, stating the Submission_Type and the days since receipt and opening the Outside_Submission
     - _Requirements: 46.24, 46.25_
-  - [ ] 35.5 Implement the moderation retention sweeps in `apps/app/src/moderation/retention.ts`
+  - [x] 35.5 Implement the moderation retention sweeps in `apps/app/src/moderation/retention.ts`
     - Delete the files of rejected Outside_Submissions and accepted Removal_Requests, including Response_Link files, within 24 hours; erase Submitter email addresses on their stored dates; delete Response_Link token hashes 30 days after expiry
     - _Requirements: 32.8, 46.26_
-  - [ ] 35.6 Build the moderation screens in `apps/app/web/src/moderation/`
+  - [x] 35.6 Build the moderation screens in `apps/app/web/src/moderation/`
     - The queue with filters and overdue marks, the Outside_Submission view with the Attachment previews, decision forms with the email text confirmation, the acceptance builder for Items, Parents, Projects, and Log_Summaries, the Removal_Request statement with changed elements, and failed-email notices
     - _Requirements: 14.8, 32.10, 32.17, 46.23, 46.24_
-  - [ ] 35.7 Write property test for not-found responses
+  - [x] 35.7 Write property test for not-found responses
     - **Property 7: Not_Published and nonexistent are indistinguishable**
     - **Validates: Requirements 24.7, 25.6, 31.6, 31.14, 40.10**
-  - [ ] 35.8 Write property test for Project choice
+  - [x] 35.8 Write property test for Project choice
     - **Property 78: Project choice and preselection**
     - **Validates: Requirements 31.13, 32.18, 39.2, 39.3**
-  - [ ] 35.9 Write property test for Response_Links
+  - [x] 35.9 Write property test for Response_Links
     - **Property 89: Response_Link validity**
     - **Validates: Requirements 32.14**
-  - [ ] 35.10 Write property test for Moderation_Decisions
+  - [x] 35.10 Write property test for Moderation_Decisions
     - **Property 90: Moderation decisions are final, credited, and append-only**
     - **Validates: Requirements 32.4, 32.13, 32.16, 46.23**
-  - [ ] 35.11 Write integration tests for moderation flows
+  - [x] 35.11 Write integration tests for moderation flows
     - Acceptance creates one Submission with flags and New_Submission events; More_Information_Requested emails a Response_Link; decisions apply only after confirmation; rejection schedules file deletion and email erasure
     - _Requirements: 32.5, 32.6, 32.8, 32.9, 32.10_
-  - [ ] 35.12 Implement Contact_Reviews and submitter corrections in `apps/app/src/moderation/contact-review.ts`
+  - [x] 35.12 Implement Contact_Reviews and submitter corrections in `apps/app/src/moderation/contact-review.ts`
     - Store `contact_review_due_at` on acceptance of an Outside_Submission other than a Removal_Request (acceptance plus 12 months, from the retention constants in `packages/domain`); the hourly sweep marks due Outside_Submissions whose email is still held, and once a day creates one Reminder per Administrator listing those that became due that day, marks those due for 30 days or more as overdue, and repeats their Reminder every 30 days until a Contact_Review is recorded
     - `POST /moderation/{id}/contact-review` with Keep and a reason of 1 to 1,000 characters (next due date 12 months later) or Erase (erasure within 24 hours), appended to `contact_reviews` and never changed; both keep the Submitter_Attribution and the submitted text
     - `POST /moderation/{id}/contact` corrects the Submitter_Attribution or the Submitter_Contact, or erases the Submitter_Contact, at any time, with a reason, appending to `submitter_corrections` with the previous values except an erased contact; a corrected Submitter_Attribution becomes the Credit of every Item created from the Outside_Submission, with a Minor_Edit Revision on each
     - Register the Reminder in `fanout.ts`; include `contact_reviews` and `submitter_corrections` in the Internal_Backup table list of task 38.4; update `retentionRows()` with the separate attribution and contact rows
     - _Requirements: 32.19, 32.20, 32.21, 32.22, 46.19_
-  - [ ] 35.13 Build the Contact_Review screens in `apps/app/web/src/moderation/contact-review.tsx`
+  - [x] 35.13 Build the Contact_Review screens in `apps/app/web/src/moderation/contact-review.tsx`
     - The due and overdue marks and filter in the Moderation_Queue, the Contact_Review form with Keep and Erase, the correction form on the Outside_Submission view, and the history of Contact_Reviews and corrections
     - _Requirements: 32.19, 32.20, 32.21, 32.22_
 
@@ -970,7 +970,7 @@ Canonical phases: `collaboration` → `privacy` → `imports_and_log` → `publi
     - **Property 81: Budget gates admit only what the budget allows**
     - **Validates: Requirements 28.5, 37.14**
 
-- [ ] 38. Build the Export_Service: Public_Archive_Exports, Internal_Backups, and restore
+- [x] 38. Build the Export_Service: Public_Archive_Exports, Internal_Backups, and restore
   - [x] 38.1 Implement the export templates and data files in `packages/public-render/src/export/`
     - The public templates with relative links; an index page with start time, Export_Scope, and links to everything; the About, Methods, and Licence pages as of the start time with last-updated dates; CSS, fonts, and their licence notices under `assets/`; no search page
     - `data/archive.json` with every value each view shows, character for character, ISO 8601 dates at recorded precision, presented Cross_Links, each Research_Item's Project, and each child's Parent and position; `data/research-items.csv` and `data/attachments.csv`; `LICENSE.txt`; `MANIFEST.json` and `SHA256SUMS`; register the outputs in `packages/testing/src/public-channels.ts`
@@ -983,38 +983,38 @@ Canonical phases: `collaboration` → `privacy` → `imports_and_log` → `publi
   - [x] 38.3 Implement package volume streaming in `apps/dl/src/tar.ts`
     - Stream packages as POSIX tar volumes with pax headers for UTF-8 names and at most 900 objects per volume, only through Download_Links
     - _Requirements: 28.8, 35.9, 36.2_
-  - [ ] 38.4 Implement the Internal_Backup job in `apps/app/src/jobs/backup.ts` and `POST /backups`
+  - [x] 38.4 Implement the Internal_Backup job in `apps/app/src/jobs/backup.ts` and `POST /backups`
     - Use the renewable freeze/read-retention lease helpers from 58.3 for the consistent bounded snapshot; every API/cron/raw SQL/outbox writer checks the shared live lease. Snapshot expiry/overrun invalidates the package and permits safe writers; never leave a bare frozen counter indefinitely.
     - Back up the versioned authoritative table inventory and field/file manifests: research, identity, policy, access/holds/approvals/permission evidence, Question/work/decision/citation/derivation/compute/release objects, author-scoped drafts and navigation, and retained idempotency result identities. Exclude derived flags/views, notifications/events, mail queues/sessions, transient staging and network counters; never replay pending external sends.
     - Seal the authenticated format/schema/version/count/hash manifest defined in 58.1, copy immutable files under read leases or invalidate when deletion supersedes the lease, and report every missing/mismatched element. Independent schedules, encryption/copy verification and retention are task 58.2; requested staging packages expire after seven days, not the independent retained recovery points.
     - _Requirements: 28.8, 36.1, 36.2, 36.3, 36.6, 36.7, 36.11, 36.12, 36.13, 36.14, 47.15, 48.11, 49.7, 60.1_
-  - [ ] 38.5 Implement restore in `apps/app/src/jobs/restore.ts` and `POST /restores`
+  - [x] 38.5 Implement restore in `apps/app/src/jobs/restore.ts` and `POST /restores`
     - Use 58.4 preflight to authenticate/decrypt the manifest and verify schema/format, all bytes, references/counts, destination eligibility and bootstrap identity before inserting research; browser hashes are supplementary. Accept the current and two prior released formats where available through explicit transforms.
     - Insert with restore-owned key/payload-hash checkpoints, skipping only identical rows already installed by the same restore; any other conflict fails with a report. Reconcile a temporary Administrator sharing an email but not an ID without losing the original Member IDs or attribution; never use unconditional INSERT OR IGNORE.
     - Resume each bounded stage after crashes without duplicate research or external sends. Remain quarantined with the Publisher paused until counts, hashes, references, current credentials/permissions and independent suppression ledger pass; rebuild derived data and require explicit authorized release of containment.
     - _Requirements: 36.4, 36.5, 36.8, 36.9, 36.10, 36.11, 36.13, 36.15, 36.16, 60.2, 60.5_
-  - [ ] 38.6 Build the export and backup screens in `apps/app/web/src/exports/`
+  - [x] 38.6 Build the export and backup screens in `apps/app/web/src/exports/`
     - Request an export with its scope; list exports with state, staleness labels, missing files, and deletion offers; Download_Links for volumes; backups and restores for Administrators only, with browser-side hashing of uploaded packages
     - _Requirements: 35.7, 35.9, 35.10, 36.2, 36.8_
-  - [ ] 38.7 Write property test for Item_Identifiers
+  - [x] 38.7 Write property test for Item_Identifiers
     - **Property 41: Item_Identifiers are well-formed, unique, and never reused**
     - **Validates: Requirements 15.1, 15.6**
-  - [ ] 38.8 Write property test for the export JSON round trip
+  - [x] 38.8 Write property test for the export JSON round trip
     - **Property 72: Export JSON round trip**
     - **Validates: Requirements 35.4**
-  - [ ] 38.9 Write property test for export snapshots
+  - [x] 38.9 Write property test for export snapshots
     - **Property 73: Exports contain exactly the snapshot and are self-contained**
     - **Validates: Requirements 35.1, 35.2, 35.3, 35.12**
-  - [ ] 38.10 Write property test for backup and restore
+  - [x] 38.10 Write property test for backup and restore
     - **Property 74: Backup and restore round trip**
     - **Validates: Requirements 36.1, 36.4, 36.5, 36.8, 36.10, 36.11**
-  - [ ] 38.11 Write property test for package retention and staleness
+  - [x] 38.11 Write property test for package retention and staleness
     - **Property 75: Package retention and staleness labels**
     - **Validates: Requirements 35.6, 35.7, 35.10, 36.6, 46.34, 36.3, 36.12**
-  - [ ] 38.12 Write property test for retention sweeps
+  - [x] 38.12 Write property test for retention sweeps
     - **Property 86: Retention sweeps act on time**
     - **Validates: Requirements 12.8, 31.8, 32.8, 32.19, 32.20, 32.21, 35.11, 36.3, 46.20, 46.26**
-  - [ ] 38.13 Write property test for character preservation
+  - [x] 38.13 Write property test for character preservation
     - **Property 92: Characters and digit strings survive storage and output**
     - **Validates: Requirements 7.2, 45.13**
 
@@ -1041,7 +1041,7 @@ Canonical phases: `collaboration` → `privacy` → `imports_and_log` → `publi
     - **Property 65: Workspace lists filter by conjunction and page losslessly**
     - **Validates: Requirements 3.4, 5.7, 7.6, 8.5, 9.7, 10.4, 18.8, 18.9, 23.8, 26.8, 39.14, 39.16, 43.1, 43.2, 43.4, 43.5**
 
-- [ ] 41. Build Dissent_Notes
+- [x] 41. Build Dissent_Notes
   - [x] 41.1 Implement the Dissent_Note API in `apps/app/src/dissent/dissent.ts` and `apps/app/src/api/routes/dissent.ts`
     - `POST /dissent` by an active Member other than the Owner on a Research_Item with a Log_Summary, withdrawn or not, recording text, author, time, and a snapshot of the Log_Summary's text and labels, Not_Published, with the `dissent_unique` guard; `PATCH /dissent/{id}` and `POST /dissent/{id}/withdraw` by the author only, with marks and reasons, a new snapshot on each text change, and refusal when the Log_Summary or the note changed since the editor opened, returning the current Log_Summary and the changes since
     - `DELETE /dissent/{id}` by Administrators with a reason, removing text, values, and Revisions and leaving a Deletion record; disclosure changes through the disclosure API; Restorations and Log_Summary changes never touch notes; Activity_Feed entries naming the Research_Item; the Dissent event rule in `fanout.ts`; search and publish outbox rows; package lists for deletions through the export indexes
@@ -1053,113 +1053,113 @@ Canonical phases: `collaboration` → `privacy` → `imports_and_log` → `publi
   - [x] 41.3 Build the Dissent_Note screens in `apps/app/web/src/dissent/`
     - Attach, edit, and withdraw forms with marks and reasons, the earlier-wording mark and comparison, the conflict view, and Administrator deletion and disclosure controls
     - _Requirements: 42.3, 42.9, 42.16, 42.17_
-  - [ ] 41.4 Write property test for new Disclosure_Units
+  - [x] 41.4 Write property test for new Disclosure_Units
     - **Property 3: New Disclosure_Units start Not_Published**
     - **Validates: Requirements 13.5, 23.2, 23.15, 26.4, 32.4, 33.2, 37.5, 39.4, 42.1**
-  - [ ] 41.5 Write property test for permanent deletion
+  - [x] 41.5 Write property test for permanent deletion
     - **Property 36: Permanent deletion removes the subtree and leaves only a tombstone**
     - **Validates: Requirements 15.8, 16.10, 22.7, 22.8, 42.11, 42.18, 43.7**
-  - [ ] 41.6 Write property test for event recipients
+  - [x] 41.6 Write property test for event recipients
     - **Property 54: Recipients follow the event rules**
     - **Validates: Requirements 17.4, 17.6, 19.1, 19.2, 19.3, 19.4, 19.8, 23.7, 23.13, 32.3, 39.9, 39.10, 42.4, 46.36**
-  - [ ] 41.7 Write property test for Dissent_Notes
+  - [x] 41.7 Write property test for Dissent_Notes
     - **Property 80: Dissent_Notes stay attached to the wording they concern**
     - **Validates: Requirements 42.1, 42.2, 42.3, 42.8, 42.9, 42.14**
 
-- [ ] 42. Build AI drafting
-  - [ ] 42.1 Implement the AI draft API in `apps/app/src/ai/drafts.ts`, `GET /ai/status`, and `POST /ai/drafts`
+- [x] 42. Build AI drafting
+  - [x] 42.1 Implement the AI draft API in `apps/app/src/ai/drafts.ts`, `GET /ai/status`, and `POST /ai/drafts`
     - Check the AI_Drafting_Setting, the Permission for the field, and that the requesting Member Can_Read the Research_Item (R47.4); select the input in Workspace display order (Research_Item fields, Entry_Sections, Group_Note, Attachment metadata, never file contents), using the editor's unsaved text where open; cut it to the AI_Input_Limit and flag left-out text; send nothing for empty input
     - Reserve the worst-case Neurons in `Budget` and refuse when used plus reserved would exceed 10,000 minus a 300-Neuron margin; `GET /ai/status` offers drafting only while the remaining Neurons cover one worst-case draft at the current limit; call `@cf/google/gemma-4-26b-a4b-it` (fallback `@cf/meta/llama-3.1-8b-instruct-fp8-fast`) through the `AI` binding with an allow-list of Cloudflare-hosted models and no AI Gateway, logging, caching, or batch API, a fixed system prompt, `max_tokens` 800 or 200, and a 30-second deadline; settle the reservation with the reported usage; store and log neither prompts nor drafts; refuse Public_Traffic, imports, and restores
     - _Requirements: 28.14, 28.15, 44.1, 44.2, 44.3, 44.4, 44.9, 44.10, 44.11, 44.12, 44.13, 44.17, 44.18, 47.4_
-  - [ ] 42.2 Implement draft output shaping in `packages/domain/src/ai-output.ts`
+  - [x] 42.2 Implement draft output shaping in `packages/domain/src/ai-output.ts`
     - Cut drafts at the last sentence or word boundary within 2,000, 100, or 200 characters, remove Markdown headings, add no label, return only kind and note for Disclosure_Line drafts, and flag the quotation-mark notice when a listed quotation mark stands at the start or after a space, line break, or opening bracket
     - _Requirements: 44.2, 44.7, 44.8, 44.14_
-  - [ ] 42.3 Record AI provenance on save in `apps/app/src/records/pipeline.ts`
+  - [x] 42.3 Record AI provenance on save in `apps/app/src/records/pipeline.ts`
     - The client sends the model id and version and the SHA-256 of the last placed draft for each field; the creation or Revision records them with whether the saved text differs; history views show these details
     - _Requirements: 44.6_
-  - [ ] 42.4 Build the editor draft controls in `apps/app/web/src/editor/ai-draft.tsx`
+  - [x] 42.4 Build the editor draft controls in `apps/app/web/src/editor/ai-draft.tsx`
     - The request control only when the status allows, with the "turned off" or "resumes at 00:00 UTC" notice otherwise; the draft held only in the tab's editor memory and shown apart from the field; accept places the text, asks before replacing, and leaves the field unsaved; discard or a new draft removes the old one; the quotation-mark notice next to the draft and then the field until saved; "no AI_Draft was produced" on errors, empty output, or timeout, with late answers discarded
     - _Requirements: 44.4, 44.5, 44.8, 44.10, 44.11, 44.12, 44.16, 44.17_
-  - [ ] 42.5 Write property test for the AI allocation
+  - [x] 42.5 Write property test for the AI allocation
     - **Property 83: AI requests never exceed the allocation**
     - **Validates: Requirements 28.14, 44.10, 44.11, 44.17**
-  - [ ] 42.6 Write property test for AI input and output
+  - [x] 42.6 Write property test for AI input and output
     - **Property 84: AI input selection and output shaping**
     - **Validates: Requirements 44.1, 44.2, 44.3, 44.7, 44.8, 44.14, 44.18**
-  - [ ] 42.7 Write property test for AI provenance
+  - [x] 42.7 Write property test for AI provenance
     - **Property 85: AI provenance is recorded on save**
     - **Validates: Requirements 44.6**
 
-- [ ] 43. Complete the Design_System and build Policy_Page editing
-  - [ ] 43.1 Implement Policy_Section editing in `apps/app/src/policy/policy.ts` and `GET/PUT /policy/{page}`
+- [x] 43. Complete the Design_System and build Policy_Page editing
+  - [x] 43.1 Implement Policy_Section editing in `apps/app/src/policy/policy.ts` and `GET/PUT /policy/{page}`
     - Preview the page exactly as the Public_Site renders it and apply only on confirmation; record a Revision with Minor_Edit or Correction and reason; refuse a missing mark, an invalid reason, an empty required section, more than 20,000 characters, or a conflicting Revision, keeping the input and listing Revisions since; no route adds, removes, renames, or reorders sections; one Activity_Feed entry linking to the page's history; a publish outbox row; history and comparisons as for Items
     - _Requirements: 46.27, 46.28, 46.30, 46.31, 46.32_
-  - [ ] 43.2 Implement the Responsible_Person designation and alert in `apps/app/src/policy/responsible.ts`
+  - [x] 43.2 Implement the Responsible_Person designation and alert in `apps/app/src/policy/responsible.ts`
     - Administrators designate only an active Member, others are refused with no Revision; the change is a Minor_Edit Revision of the Privacy page holding the previous person, an Activity_Feed entry, and an urgent publish; while the Responsible_Person is Revoked, the quarter-hour cron check sends every Administrator a System_Alert within 15 minutes and every 7 days
     - _Requirements: 46.35, 46.37, 46.38, 46.39, 46.40_
-  - [ ] 43.3 Implement Policy_Page generated content and last-updated dates in `apps/app/src/publisher/policy-pages.ts`
+  - [x] 43.3 Implement Policy_Page generated content and last-updated dates in `apps/app/src/publisher/policy-pages.ts`
     - People page input from active Members with Public_Profile On through `projectProfile`, the Methods list from the value sets and Methods_Terms, the Licence page's Content_Licence name, the Retention_Table from `retentionRows()`, and the Responsible_Person's display name; each page's last-updated date is the UTC date of the latest section change, fixed-text version date, or change of generated content detected by hash comparison
     - _Requirements: 46.5, 46.6, 46.7, 46.11, 46.19, 46.29, 46.38_
-  - [ ] 43.4 Build the policy, settings, and value-set screens in `apps/app/web/src/admin/`
+  - [x] 43.4 Build the policy, settings, and value-set screens in `apps/app/web/src/admin/`
     - Policy_Page editors with preview and confirmation, history and comparisons, the Responsible_Person setting, the settings screen with allowed ranges, and the value-set screens with retire, rename, publication marks, and Public_Descriptions
     - _Requirements: 19.2, 33.8, 46.13, 46.27, 46.37_
-  - [ ] 43.5 Write the print stylesheet in `packages/design/src/print.css`
+  - [x] 43.5 Write the print stylesheet in `packages/design/src/print.css`
     - Hide navigation, the search box, pagination, buttons, and form fields; keep link texts; wrap wide tables, code, and display mathematics within the page; print the page address in full from `data-url`; keep the footer statements; always use the light scheme on A4 and US Letter
     - _Requirements: 45.9_
-  - [ ] 43.6 Complete accessibility and layout across `packages/design` and `apps/app/web`
+  - [x] 43.6 Complete accessibility and layout across `packages/design` and `apps/app/web`
     - Landmarks and a skip link, focus never hidden by sticky headers, button alternatives to every drag action including Entry_Section reordering, consistent help placement, no re-entry of information within a process, labelled errors with suggestions, reduced motion, MathML, and keyboard-operable preview controls; fluid layout from 320 to 2,560 CSS pixels with wide tables, code, mathematics, and previews scrolling inside their own containers
     - _Requirements: 45.5, 45.7_
-  - [ ] 43.7 Write the Playwright presentation tests in `tests/presentation/`
+  - [x] 43.7 Write the Playwright presentation tests in `tests/presentation/`
     - axe-core on every page type in both colour schemes; a viewport sweep from 320 to 2,560 pixels with no horizontal page scroll, overlap, or clipping; print to PDF on A4 and US Letter compared with the page text; colour-scheme switching without reload; a privacy crawl recording network requests and cookies or storage; visual regression of every component through both renderers
     - _Requirements: 45.1, 45.5, 45.7, 45.9, 45.16, 45.17, 45.18_
-  - [ ] 43.8 Configure Lighthouse CI in `lighthouserc.json`
+  - [x] 43.8 Configure Lighthouse CI in `lighthouserc.json`
     - 20 loads per representative public page under the Reference_Mobile_Profile with an empty cache, asserting the 75th percentiles of Largest Contentful Paint, Cumulative Layout Shift, and Interaction to Next Paint
     - _Requirements: 45.8_
-  - [ ] 43.9 Write property test for concurrent saves
+  - [x] 43.9 Write property test for concurrent saves
     - **Property 29: Concurrent saves from one base are serialized**
     - **Validates: Requirements 4.9, 22.10, 32.16, 42.16, 46.28**
-  - [ ] 43.10 Write property test for reminder and alert schedules
+  - [x] 43.10 Write property test for reminder and alert schedules
     - **Property 87: Reminder and alert schedules**
     - **Validates: Requirements 10.3, 35.5, 36.7, 46.24, 46.25, 46.40**
-  - [ ] 43.11 Write property test for the People page and Responsible_Person statement
+  - [x] 43.11 Write property test for the People page and Responsible_Person statement
     - **Property 95: People page and Responsible_Person statement**
     - **Validates: Requirements 46.5, 46.6, 46.35, 46.38**
-  - [ ] 43.12 Write property test for last-updated dates
+  - [x] 43.12 Write property test for last-updated dates
     - **Property 98: Policy_Page last-updated dates**
     - **Validates: Requirements 46.29**
 
-- [ ] 44. Build usage monitoring and System_Alerts
-  - [ ] 44.1 Implement the analytics queries in `apps/ops/src/analytics.ts`
+- [x] 44. Build usage monitoring and System_Alerts
+  - [x] 44.1 Implement the analytics queries in `apps/ops/src/analytics.ts`
     - `usage()` querying the Cloudflare GraphQL Analytics API for Worker requests, D1 rows read and written and storage per database, R2 storage and Class A and B operations, and Workers AI Neurons
     - _Requirements: 19.10_
-  - [ ] 44.2 Implement usage alerts in `apps/app/src/usage/alerts.ts`
+  - [x] 44.2 Implement usage alerts in `apps/app/src/usage/alerts.ts`
     - Every 15 minutes combine the analytics with the `Budget` figures for the Public_Traffic_Budget, the AI_Allocation, and the Recipient_Cap; a state machine per allowance and period raises one System_Alert for every Administrator, naming the allowance and the percentage, each time usage rises from below 80% to 80% or more
     - _Requirements: 19.10, 28.2_
-  - [ ] 44.3 Write property test for usage alerts
+  - [x] 44.3 Write property test for usage alerts
     - **Property 82: Usage alerts fire on upward crossings**
     - **Validates: Requirements 19.10**
 
-- [ ] 45. Add security headers and hardening checks
-  - [ ] 45.1 Implement the Workspace security headers in `apps/app/src/api/security-headers.ts` and `apps/app/web/public/_headers`
+- [x] 45. Add security headers and hardening checks
+  - [x] 45.1 Implement the Workspace security headers in `apps/app/src/api/security-headers.ts` and `apps/app/web/public/_headers`
     - The Workspace Content-Security-Policy from the design, `Referrer-Policy: no-referrer`, `Cross-Origin-Opener-Policy: same-origin`, HSTS with preload, `X-Content-Type-Options: nosniff`, and a minimal `Permissions-Policy`
     - _Requirements: 14.6, 45.17_
-  - [ ] 45.2 Implement the Public_Site headers in `packages/public-render/src/headers.ts`
+  - [x] 45.2 Implement the Public_Site headers in `packages/public-render/src/headers.ts`
     - Generate `_headers` with the public Content-Security-Policy, the additions for form pages only (`submit.researchforce.org`, the R2 S3 endpoint, `challenges.cloudflare.com`), `Referrer-Policy: strict-origin-when-cross-origin`, HSTS, `nosniff`, and `Permissions-Policy`; no header or script sets a cookie
     - Cloudflare Web Analytics stays off at launch through `WEB_ANALYTICS = false` in the same module; turning it on adds only its cookieless beacon to the policy, and the Privacy page must then name the service
     - _Requirements: 45.17, 45.18, 45.19_
-  - [ ] 45.3 Write security tests in `tests/security/`
+  - [x] 45.3 Write security tests in `tests/security/`
     - Run browser tests against actual rf-dl/public-file delivery and previews with HTML, SVG, PDF and polyglots, checking no script or accepted cross-origin request runs as the Member, including CSP and resource-limit failure paths; test Member-bound link expiry, revocation, current restricted access, wrong object and purpose.
     - Exercise the real channel adapters with generated canaries; a registered constant refusal alone is not evidence. These tests are mandatory for the team-file and public-release gates.
     - _Requirements: 14.6, 14.10, 25.5, 25.6, 60.4_
-  - [ ] 45.4 Write the CI smoke checks in `tools/smoke/`
+  - [x] 45.4 Write the CI smoke checks in `tools/smoke/`
     - No route accepts file bodies and none returns renditions; the AI model allow-list holds only Cloudflare-hosted models and no AI Gateway is configured; no secret appears in the repository; every font and icon has a licence that allows self-hosting and export; the Policy_Section list matches Requirement 46.32
     - _Requirements: 12.5, 14.9, 20.20, 44.9, 45.20, 46.32_
 
-- [ ] 46. Add observability
-  - [ ] 46.1 Implement metrics and the operations status endpoint in `apps/app/src/metrics.ts` and `GET /api/v1/ops/status`
+- [x] 46. Add observability
+  - [x] 46.1 Implement metrics and the operations status endpoint in `apps/app/src/metrics.ts` and `GET /api/v1/ops/status`
     - Structured metric events per route (requests, CPU time, D1 rows), Publisher lag from save to deploy and to verified removal, Mailer queue depth, held time, and delays against the time limits, AI Neurons per day, and Public_Traffic_Budget use; an Administrator-only summary endpoint
     - _Requirements: 24.11, 28.2, 28.3_
-  - [ ] 46.2 Write the performance test harness in `tests/perf/`
+  - [x] 46.2 Write the performance test harness in `tests/perf/`
     - Certify the selected Resource_Profile against the Reference_Archive and worst-case Unicode/spans/chunks, 100-file submissions, draft/proposal graphs, common-term 50 MB search with large result pages, 1,000-unit previews, publisher epochs/removal, and retained/transient export/backup/release copies.
     - Measure CPU, binding calls, statements, encoded bytes, peak memory, D1 growth and full transfer size, distinguishing provider limits from chosen safety margins. Reproduce 1/3/5-year growth scenarios and the 30-minute distributed invalid-download/public-API Abuse_Profile with concurrent authorized saves/downloads and a removal.
     - Record maxima, percentile data, profile/version/assumptions and pass/fail evidence; keep <=24-hour verified independent RPO and <=8-hour reference restore evidence. A profile that fails cannot be advertised or deployed for that scope.
@@ -1168,23 +1168,23 @@ Canonical phases: `collaboration` → `privacy` → `imports_and_log` → `publi
   - Run `npm test` (`vitest --run`) and `npm run lint`; ensure all tests pass, ask the user if questions arise.
 
 - [ ] 48. Prepare deployment configuration and the setup checklists
-  - [ ] 48.1 Write the Cloudflare resources as code in `infra/cloudflare/resources.ts` and `infra/cloudflare/provision.ts`
+  - [x] 48.1 Write the Cloudflare resources as code in `infra/cloudflare/resources.ts` and `infra/cloudflare/provision.ts`
     - D1 databases; R2 buckets with CORS (PUT from the Workspace and apex origins with checksum headers), the lifecycle rule that aborts multipart uploads after one day, `r2.dev` off, and the `files.researchforce.org` custom domain; the `www` redirect, the "bypass cache" rule and response header rule on `files`, the disabled WAF block rule for `submit`, and the rate-limiting rule for `submit` and `dl`; Bot Fight Mode and Always Online off; Worker custom domains; the Access application (24-hour session, cookie settings, one-time PIN, Google, and GitHub, the `rf-members` list and allow policy); the managed-mode Turnstile widget
     - `provision.ts --dry-run` prints the planned API calls without account access; `infra/secrets.ts` lists every secret per Worker and `tools/check-secrets.ts` reports missing ones
     - _Requirements: 1.1, 1.3, 25.2, 25.3, 28.5, 31.3, 45.18_
-  - [ ] 48.2 Write the Microsoft 365 setup script in `infra/m365/Setup-ResearchForceMail.ps1`
+  - [x] 48.2 Write the Microsoft 365 setup script in `infra/m365/Setup-ResearchForceMail.ps1`
     - Create the shared mailbox named ResearchForce at the Sending_Address; register the app with a certificate credential and no organization-wide Mail.Send consent; create the Exchange service principal, a management scope matching only the mailbox, and the "Application Mail.Send" role assignment with that scope, then run `Test-ServicePrincipalAuthorization`; turn single item recovery off, set the shortest deleted-item retention, and apply no holds; add a transport rule that rejects inbound mail to the address with an explanation of how to respond
     - _Requirements: 20.19, 20.21, 20.24, 45.21_
-  - [ ] 48.3 Write the DNS records and their check in `infra/dns/records.ts` and `tools/check-email-dns.ts`
+  - [x] 48.3 Write the DNS records and their check in `infra/dns/records.ts` and `tools/check-email-dns.ts`
     - SPF `v=spf1 include:spf.protection.outlook.com -all`, the DKIM CNAMEs as DNS-only records, and DMARC `p=none` with reports to an address other than the Sending_Address; the check resolves and validates all three
     - _Requirements: 20.22, 20.23_
-  - [ ] 48.4 Write the deployment and bootstrap scripts in `scripts/deploy.ts`, `tools/bootstrap.ts`, and `.github/workflows/ci.yml`
+  - [x] 48.4 Write the deployment and bootstrap scripts in `scripts/deploy.ts`, `tools/bootstrap.ts`, and `.github/workflows/ci.yml`
     - Implement the explicit compatible rollout: additive expansion, compatible Worker deployment, bounded backfill/verification, switch read paths, contraction only after old consumers and the recovery window end. Record Worker/schema/backup compatibility and safe rollback or forward-recovery versions; CI runs all mandatory evidence for the selected scope, not npm run ci alone.
     - Bootstrap validated installation identity, origins, initial Project and Responsible_Person. Consume task 48.10’s validated `Installation_Public_Copy`, record its version/digest in bootstrap and site-build state, initialize “About the group” from its configured prose, and refuse a partial or changed-without-release bundle.
     - Require the owner-configured Content_Licence before publication/agreement collection; require an approved Operating_Profile/budget, independent recovery destination/key custody, initial fresh restore and containment capability for the applicable production gates. Provisioning does not infer permission to buy plans, publish research, or select a content licence.
     - Use task 67 compatibility manifests and task 68 launch-gate checks; this script is built before operator setup and calls the completed gate checker at execution. A Workspace-only deployment must have public dynamic endpoints disabled until their own gate passes.
     - _Requirements: 2.2, 26.1, 40.12, 46.37, 46.41, 46.42, 28.1, 28.4, 36.12, 36.17, 60.3, 60.4, 60.5_
-  - [ ] 48.5 Write the staging verification suites in `tests/staging/` and `infra/m365/Verify-ResearchForceMail.ps1`
+  - [x] 48.5 Write the staging verification suites in `tests/staging/` and `infra/m365/Verify-ResearchForceMail.ps1`
     - Make real staging verification mandatory for its deployment scope: Access redirects and scoped bearer exceptions; real single/multipart R2 checksum/CORS behavior; Graph least privilege, credential rotation, SPF/DKIM/DMARC, acceptance versus delivery, MIME/plain text and residual provider retention; Turnstile and addressed snapshots.
     - Certify public change timing and independently verified containment across pages/index/files/People/policy/release assets; inject deploy/quota failures and old-generation retries; run the distributed Abuse_Profile while Members save/download and compare measured resource/spend reserve.
     - Rehearse independent encrypted backup/key recovery and fresh restore with bootstrap identity conflict, older schema, crash/resume and a later suppression. Keep sanitized evidence; missing operator infrastructure blocks the applicable gate rather than skipping tests.
@@ -1203,7 +1203,7 @@ Canonical phases: `collaboration` → `privacy` → `imports_and_log` → `publi
     - Before enabling the public site, compare the rendered production home and About pages with `docs/instance/researchforce-org-content.md`: exact masthead/strapline, Mission paragraph, three About paragraphs, seven Principles and their order; verify their configured version/digest is in the deployed site manifest and a copy-only release invalidates every affected output.
     - Enable public research only after the public gate and normal content approvals, and enable outside submissions/emailed grants/AI only after their provider/privacy gates and configured settings. Verify production deny controls and independent health/recovery alerts. No setup step infers permission to buy a service or publish particular research.
     - _Requirements: 26.4, 26.11, 27.7, 28.17, 36.12, 36.17, 40.12, 46.41, 46.42, 60.3, 60.4, 60.5, 60.9_
-  - [ ] 48.10 Prepare the reusable source release and independent-installation guide
+  - [x] 48.10 Prepare the reusable source release and independent-installation guide
     - Add a typed, versioned and digest-addressed `Installation_Public_Copy` and wire it through the public header/home/About renderers, metadata, page last-updated inputs, site-build manifest input and policy-page export. Validate a complete masthead name, strapline, Mission statement, About prose and ordered Principles. ResearchForce.org uses `docs/instance/researchforce-org-content.md` verbatim; fixtures and other installations provide different complete bundles, with no ResearchForce.org fallback.
     - Document installation configuration, migration and upgrade steps, and the separate software/content licensing boundaries; include the MIT licence and required third-party notices in software distributions.
     - Verify the shared configuration and renderers with a synthetic second installation whose domain, identity, masthead, strapline, Mission, About prose, Principles, policy statements, first Project, and chosen content licence differ from ResearchForce.org; verify missing/partial public copy or content-licence configuration refuses site generation, publication and agreement collection, and verify no ResearchForce.org organizational wording leaks into its rendered pages or export.
@@ -1348,40 +1348,40 @@ Canonical phases: `collaboration` → `privacy` → `imports_and_log` → `publi
     - **Property 106: Research_Question entries are valid and follow their targets**
     - **Validates: Requirements 50.1, 50.2, 50.4, 50.5, 50.6, 50.7**
 
-- [ ] 56. Build emailed Consent_Requests
-  - [ ] 56.1 Add the consent request data
+- [x] 56. Build emailed Consent_Requests
+  - [x] 56.1 Add the consent request data
     - The next migration adds `external_parties.contact_email`, `consent_requests`, `consent_request_items`, `consent_answers`, `consent_withdrawals`, and the guard table `_g_consent_link_open`; add the code to `GUARD_CODES`; add the Permissions `consent.request` and `party.contact` for Administrators
     - Contact_Email on the External_Party form and API (at most 254 characters, local-part@domain), shown only to Members, with erasure that records the Administrator and time but not the value
     - _Requirements: 2.5, 51.1_
-  - [ ] 56.2 Implement sending in `apps/app/src/consent/requests.ts`
+  - [x] 56.2 Implement sending in `apps/app/src/consent/requests.ts`
     - `POST /consent-requests/preview` runs the checks of R51.3 and renders each unit's Consent_Page snapshot with `public-render` and the kernel under the proposed values (the Party's name as it would appear for publication requests; public fields and file name but never the file for rights requests), returning the email text, the snapshots, and a preview token
     - `POST /consent-requests` stores the request, the items with snapshots and SHA-256 digests, the token hash, and the expiry; sets Consent_Status Requested unless Granted; and queues the email through the `Mailer` against the Recipient_Cap; `GET /consent-requests` and `POST /consent-requests/{id}/cancel`
     - The email template in `packages/public-render/src/email/consent.ts` with the subject "ResearchForce: request for permission to publish", registered in `packages/testing/src/public-channels.ts`
     - _Requirements: 51.2, 51.3, 51.4, 51.11_
-  - [ ] 56.3 Implement answering and withdrawal in `apps/submit/src/consent.ts` and `packages/db/src/consent/answer.ts`
+  - [x] 56.3 Implement answering and withdrawal in `apps/submit/src/consent.ts` and `packages/db/src/consent/answer.ts`
     - `POST /v1/consent/view` and `POST /v1/consent/change/view` return the stored snapshot and options for a usable token and the one fixed "no longer valid" response otherwise, writing nothing; `POST /v1/consent/answer` and `POST /v1/consent/change` need a Turnstile token and pass the `Budget` gate
     - The shared batch builder: `consent_link_open` guard, answer or withdrawal rows, Consent_Status, Do_Not_Name and Generic_Label, and Rights_Status changes with Revisions attributed to the requesting Administrator and naming the answer, the downgrades of R33.5 and R34.3, Item_Update events, a `publish` outbox row, and the confirmation email with a Change_Link valid for 12 months
     - Register the `rf-submit` consent responses in `packages/testing/src/public-channels.ts` as an addressed channel
     - _Requirements: 51.5, 51.6, 51.7, 51.8, 51.10, 51.12, 51.14_
-  - [ ] 56.4 Build the Consent_Page and Change_Link page in `apps/site-shell/src/consent.ts`
+  - [x] 56.4 Build the Consent_Page and Change_Link page in `apps/site-shell/src/consent.ts`
     - Static shells at `/consent` and `/consent/change` with `noindex` and no caching; the token from the URL fragment; the snapshot for each element with its answer options, a one-answer-for-all control, the optional Generic_Label and comment, Turnstile in managed mode, and the confirmation; the "no longer valid" notice with a link to the Outside_Submission_Form
     - _Requirements: 51.5, 51.6, 51.10, 51.12, 51.14_
-  - [ ] 56.5 Limit emailed consent to the content shown
+  - [x] 56.5 Limit emailed consent to the content shown
     - Consent_Statuses and Rights_Statuses set through a Consent_Answer record the answer item; `checkGates` and the records pipeline refuse a change for which `widens(snapshotView, after, unit)` holds with every ancestor treated as Public, naming the element and the answer and offering a new Consent_Request; manual and emailed grants both use exact Permission_Evidence coverage; a status edit alone grants nothing
     - _Requirements: 51.9_
-  - [ ] 56.6 Implement reminders, expiry, and token clean-up in `apps/app/src/consent/sweep.ts`
+  - [x] 56.6 Implement reminders, expiry, and token clean-up in `apps/app/src/consent/sweep.ts`
     - The hourly sweep sends the one reminder at 14 days, marks requests expired at 30 days without changing any status, and deletes Consent_Link and Change_Link token hashes 30 days after expiry; update `retentionRows()` with the Contact_Email and Consent_Request rows; add the consent tables to the Internal_Backup table list of task 38.4, without token hashes
     - _Requirements: 46.19, 51.11, 51.13_
-  - [ ] 56.7 Build the Consent_Request screens in `apps/app/web/src/consent/`
+  - [x] 56.7 Build the Consent_Request screens in `apps/app/web/src/consent/`
     - The request dialog from a Correspondence, Source, Attachment, or External_Party page (Party, kind, elements, proposed values, message) with the email and Consent_Page preview and confirmation; the request list with states; and requests, answers, comments, and withdrawals on the External_Party's page and each element's page
     - _Requirements: 51.2, 51.13_
-  - [ ] 56.8 Write property test for consent links
+  - [x] 56.8 Write property test for consent links
     - **Property 107: Consent links record only explicit answers and change exactly what was asked**
     - **Validates: Requirements 51.3, 51.4, 51.5, 51.6, 51.7, 51.8, 51.10, 51.11, 51.12**
-  - [ ] 56.9 Write property test for consent coverage
+  - [x] 56.9 Write property test for consent coverage
     - **Property 108: Emailed consent covers only what the person was shown**
     - **Validates: Requirements 51.9**
-  - [ ] 56.10 Write integration tests for Consent_Requests
+  - [x] 56.10 Write integration tests for Consent_Requests
     - A scanner-style GET of the link changes nothing; an answer sets the statuses and sends the confirmation; a refusal on a Public Correspondence withholds it; an expired, cancelled, or used link gets the fixed notice; a withdrawal through the Change_Link downgrades and keeps Do_Not_Name on
     - _Requirements: 51.5, 51.8, 51.10, 51.12_
 
@@ -1425,40 +1425,40 @@ Canonical phases: `collaboration` → `privacy` → `imports_and_log` → `publi
     - Keep the local R2 checksum/multipart cases and make the real R2/CORS rehearsal mandatory in 48.5; run the old item/history/search suites through the new field readers.
     - _Requirements: 4.10, 4.11, 12.7, 12.11, 14.4, 14.10, 18.13, 28.10, 60.4, 60.9_
 
-- [ ] 58. Establish independent encrypted recovery and fault-safe restore
-  - [ ] 58.1 Define versioned authenticated backup formats and encryption adapters
+- [x] 58. Establish independent encrypted recovery and fault-safe restore
+  - [x] 58.1 Define versioned authenticated backup formats and encryption adapters
     - Implement the bounded codec/manifest interfaces in `packages/manifest/src/backup/`, a schema/table inventory registry and compatibility transforms, with authenticated root manifests, exact field/file hashes/counts and external trust fingerprints.
     - Select and pin a maintained implementation of a reviewed streaming authenticated-encryption format in an interoperability spike before freezing format v1; run independent decrypt/read vectors, browser/workerd/CLI memory tests and corruption tests. Do not invent a cryptographic protocol.
     - Define independent recovery custodian/key wrapping, rotation and restoration identifiers; document key custody outside production and forbid secrets in packages/logs. Current and two preceding released schema readers are supported where those releases exist.
     - _Requirements: 36.1, 36.8, 36.13, 36.16, 60.5_
-  - [ ] 58.2 Implement automatic independent copies, verification and tiered retention
+  - [x] 58.2 Implement automatic independent copies, verification and tiered retention
     - Add scheduled snapshots at least every 12 hours, authenticated encrypted transfer to an operator-configured independent account/destination, and an operator-run offline transfer option; only independent inventory plus decryption/integrity verification counts as an RPO point.
     - Keep 14 daily/8 weekly/12 monthly complete points with successor verification before expiry. Track the 18-hour warning and 24-hour RPO breach through independent alerts; include copies/transient data in the storage/spend model. Requested staging expiry remains seven days.
     - Require explicit destination, budget and recovery-key configuration plus an initial fresh restore before sole-copy research custody. Persist minimal authenticated suppression generations independently, with no deleted bodies.
     - _Requirements: 28.4, 28.8, 36.3, 36.7, 36.12, 36.13, 36.16, 60.6, 60.7_
-  - [ ] 58.3 Implement leased freeze, watchdog and file retention pins
+  - [x] 58.3 Implement leased freeze, watchdog and file retention pins
     - Add job-owned monotonic freeze/read leases and shared write predicates; renew a 30-second lease within 10 seconds and enforce the 120-second certified snapshot window. Inventory and retrofit API, cron, raw SQL, job and outbox writes so none bypass the live lease. Permit only the owning renewal/control/checkpoint exception and prove it cannot alter snapshotted research rows.
     - Mark a lost/overrun snapshot incomplete, release writers safely, and provide an independently authenticated recovery command with a reason/audit trail. Pin needed immutable files until copied or explicitly invalidate the snapshot for a higher-priority privacy deletion.
     - Inject crashes, missed heartbeats, quota exhaustion, failed R2 writes and deletion races after every snapshot page; no stale generation can claim completion.
     - _Requirements: 28.10, 36.6, 36.14, 60.2, 60.6_
-  - [ ] 58.4 Implement restore preflight, bootstrap reconciliation and owned checkpoints
+  - [x] 58.4 Implement restore preflight, bootstrap reconciliation and owned checkpoints
     - Build the codec/version/reference/hash/count preflight and current/two-prior schema transforms for task 38.5. Match the verified bootstrap Administrator to the intended backed-up Member identity before research insertion; reject conflicting email/ID mappings.
     - Checkpoint restore-owned canonical row hashes and insert-or-verify rather than insert-or-ignore; report conflicting destinations and unexpected duplicates. Quarantine restored data until validation and independently known suppressions pass, with no notification or external-send replay.
     - _Requirements: 36.4, 36.5, 36.8, 36.9, 36.10, 36.15, 36.16, 60.5_
-  - [ ] 58.5 Write fresh-environment recovery tooling and rehearse RPO/RTO
+  - [x] 58.5 Write fresh-environment recovery tooling and rehearse RPO/RTO
     - Implement `tools/recovery/rehearse.ts` and the operator runbook using independent inventory, keys and replacement infrastructure; exercise loss of the production account, older format, different bootstrap ID with the same email, corruption, every checkpoint interruption, and a post-snapshot withdrawal.
     - Record sanitized manifests/counts/hashes, independent-copy age, elapsed restore time and failures against <=24-hour RPO/<=8-hour Reference_Archive RTO. Schedule quarterly and pre-breaking-change rehearsals; neither a package download nor an application-only alert is acceptance.
     - _Requirements: 36.12, 36.13, 36.15, 36.16, 36.17, 60.4, 60.6, 60.9_
-  - [ ] 58.6 Write property and regression tests for independent recovery points
+  - [x] 58.6 Write property and regression tests for independent recovery points
     - Use independent models and fault injection in `apps/app/test/properties/p111-independent-recovery.test.ts`; cover the concrete scenarios in the design, including current-access and maximum encoded-input cases. This owning property file does not replace browser/staging tests.
     - **Property 111: Independent recovery points satisfy retention and verification**
     - **Validates: Requirements 36.3, 36.7, 36.12, 36.13, 36.17**
-  - [ ] 58.7 Write property and regression tests for freeze and restore crash safety
+  - [x] 58.7 Write property and regression tests for freeze and restore crash safety
     - Use independent models and fault injection in `apps/app/test/properties/p112-freeze-restore.test.ts`; cover the concrete scenarios in the design, including current-access and maximum encoded-input cases. This owning property file does not replace browser/staging tests.
     - **Property 112: Freeze and restore recovery never accepts mixed state**
     - **Validates: Requirements 36.8, 36.14, 36.15, 36.16, 60.5**
 
-- [ ] 59. Certify publication epochs, containment and bounded public abuse
+- [x] 59. Certify publication epochs, containment and bounded public abuse
   - [x] 59.1 Implement durable publication epochs and fenced external operations
     - Increment the public invalidation epoch in the originating transaction; add job/deploy/file operation identities, generation guards, urgent preemption and rf-ops serialized expected-epoch checks used by tasks 32.1–32.5.
     - A late provider response or old retry cannot restore a suppressed file, promote stale assets unchecked, or reopen containment. Reconcile ambiguous version promotion against actual provider state and keep denial until the latest authorized generation verifies.
@@ -1471,15 +1471,15 @@ Canonical phases: `collaboration` → `privacy` → `imports_and_log` → `publi
     - Distinguish admitted public work, charged rejected/invalid-download invocations and provider/account totals; reserve bounded in-flight D1/work capacity before admission and settle actual use. Edge controls and profile headroom must include distributed syntactically valid but invalid-signature download tokens.
     - Keep static public search independent of optional API-budget status; dynamic forms and addressed views have separate admission. Retain the Member/removal reserve without representing an in-Worker check as preventing the invocation charge; do not auto-upgrade services.
     - _Requirements: 28.1, 28.3, 28.4, 28.5, 28.6, 28.7, 28.8, 28.11, 28.17, 60.7_
-  - [ ] 59.4 Write mandatory distributed abuse and removal-failure staging scenarios
+  - [x] 59.4 Write mandatory distributed abuse and removal-failure staging scenarios
     - Certify the initial 100 requests/second, 1,000-source, 30-minute distributed flood with ten Members saving/downloading and a hold during a long addition run. Measure the declared reserve, >=99.9% authorized interactive success and removal/containment under available control paths.
     - Inject provider outage, exhausted quotas, false HEAD results, stale job and late deploy response; prove fixed denial has no canaries and cannot block the app. A failed Free_Qualified profile disables that scope until an approved stronger profile/isolation passes.
     - _Requirements: 24.16, 24.17, 28.5, 28.6, 28.7, 28.17, 60.4, 60.7_
-  - [ ] 59.5 Write property and regression tests for publication generations and suppression
+  - [x] 59.5 Write property and regression tests for publication generations and suppression
     - Use independent models and fault injection in `apps/app/test/properties/p113-publication-epochs.test.ts`; cover the concrete scenarios in the design, including current-access and maximum encoded-input cases. This owning property file does not replace browser/staging tests.
     - **Property 113: Publication generations never reintroduce suppressed material**
     - **Validates: Requirements 24.16, 24.17, 59.3, 60.6**
-  - [ ] 59.6 Write property and regression tests for certified reserve accounting
+  - [x] 59.6 Write property and regression tests for certified reserve accounting
     - Use independent models and fault injection in `apps/app/test/properties/p114-certified-admission.test.ts`; cover the concrete scenarios in the design, including current-access and maximum encoded-input cases. This owning property file does not replace browser/staging tests.
     - **Property 114: Admission and shedding preserve the certified reserve**
     - **Validates: Requirements 28.1, 28.3, 28.4, 28.5, 28.6, 28.7, 28.8, 28.11, 28.17, 60.7**
@@ -1623,26 +1623,26 @@ Canonical phases: `collaboration` → `privacy` → `imports_and_log` → `publi
     - **Property 124: Research releases preserve manifests and current suppression**
     - **Validates: Requirements 59.1, 59.2, 59.3, 59.4, 59.5**
 
-- [ ] 67. Implement compatibility, independent operations and retention assurance
+- [x] 67. Implement compatibility, independent operations and retention assurance
   - [x] 67.1 Implement compatible release manifests and upgrade/recovery tooling
     - Add versioned release/schema/backup compatibility declarations, expand/contract scripts, bounded backfill/checkpoints and rollback/forward-recovery checks; reject incompatible Worker/schema rollout combinations and unsupported backup readers.
     - Test current and two prior released schemas where available, seeded/bootstrap identity, stored field versions and indexes/triggers through upgrades, and restore rehearsal before any destructive contraction. Record the deployed versions and accepted recovery window.
     - _Requirements: 36.16, 60.3, 60.5_
     - Acceptance: compatibility/candidate manifests, preflight/recovery checks, local expand/backfill/contract scripts and seven seeded SQLite-copy upgrade rehearsals pass; source/test fingerprints and executed evidence are in `docs/acceptance/task-evidence.json`. Production deployment, authenticated backup readers and independent restore certification remain their downstream tasks.
-  - [ ] 67.2 Implement independent health, recovery-age, removal and spend alerts
+  - [x] 67.2 Implement independent health, recovery-age, removal and spend alerts
     - Prepare provider-native/independent external checks and operator-controlled notification delivery without rf-core or Graph queue dependence, plus credential-loss, identity outage, freeze/quota/failed-migration and containment runbooks.
     - Keep payloads free of research text, bearer links and recovery secrets, certify actual endpoint/control availability and document the separate trusted credential custody. Setup remains an explicit operator action.
     - _Requirements: 28.4, 36.7, 36.17, 60.6_
-  - [ ] 67.3 Implement reference-safe operational retention and growth reporting
+  - [x] 67.3 Implement reference-safe operational retention and growth reporting
     - Expire reconciled outbox/side-effect payloads and closed checkpoints at 30 days and aggregate failure metadata at 90 days, retaining required immutable research history, exact-version refs/evidence, suppressed identifiers and content-free operation tombstones.
     - Integrate warned draft expiry and independently retained recovery suppression, report 1/3/5-year measured growth including all current/transient copies, and prove cleanup cannot remove a live citation, release, proposal or backup dependency.
     - _Requirements: 28.8, 28.17, 57.2, 60.7, 60.8_
-  - [ ] 67.4 Write property and regression tests for release and compatibility gates
+  - [x] 67.4 Write property and regression tests for release and compatibility gates
     - Use independent models and fault injection in `tools/test/properties/p125-release-assurance.test.ts`; cover the concrete scenarios in the design, including current-access and maximum encoded-input cases. This owning property file does not replace browser/staging tests.
     - **Property 125: Release gates and compatibility evidence cannot be bypassed**
     - **Validates: Requirements 60.1, 60.3, 60.4, 60.5, 60.6, 60.7, 60.8, 60.9**
 
-- [ ] 68. Complete permission-evidence policy and mandatory release gates
+- [x] 68. Complete permission-evidence policy and mandatory release gates
   - [x] 68.1 Add shared Permission_Evidence and manual/emailed grant coverage
     - Add immutable grant/evidence/source/document/version/hash/use/naming/authority/expiry/withdrawal rows and common coverage helpers. Legacy hand-set statuses become unverified legacy evidence pending curation; do not invent historical grants or silently publish uncovered material.
     - Provide exact snapshot coverage helpers for 54's Owner consents and dual eligibility, Withheld neutral-name fallback and existing Do_Not_Name precedence; changing a status does not grant unlimited rights. Extend backup/recovery/release schema readers and suppression indexes.
@@ -1655,7 +1655,7 @@ Canonical phases: `collaboration` → `privacy` → `imports_and_log` → `publi
     - Use independent models and fault injection in `apps/app/test/properties/p126-permission-evidence.test.ts`; cover the concrete scenarios in the design, including current-access and maximum encoded-input cases. This owning property file does not replace browser/staging tests.
     - **Property 126: Permission evidence covers only the exact authorized use**
     - **Validates: Requirements 51.9, 51.15, 51.16, 51.17, 51.18, 23.23, 23.24, 49.8**
-  - [ ] 68.4 Enforce team-archive and public-launch acceptance evidence
+  - [x] 68.4 Enforce team-archive and public-launch acceptance evidence
     - Implement gate manifests and checks for the mandatory R60.4 matrix; a source file, checked box or unit-only result is not substitute evidence. Team archive requires independent encrypted recovery/fresh restore, exact privacy, drafts/files, text, concurrency/lost-response and keyboard/capacity checks.
     - Public launch additionally requires real rights/consent/holds/dual approvals, public-channel canaries, browser file safety, presentation/accessibility, static index/removal/containment, provider setup and the distributed Abuse_Profile. Missing licence, independent keys/destination, profile approval or failed control paths block that scope.
     - Run and record the R60.9 local synthetic team walkthroughs, and wire protected real import/staging rehearsals into setup tasks 48.6–48.9; they must supply passing evidence before custodial use/public launch. Retain failure reports and explicit remediation tasks. The final checkpoint cannot skip any required acceptance suite.
@@ -1914,226 +1914,250 @@ This is the canonical scheduling and gate manifest. Phase names match the milest
     "63.1",
     "63.2",
     "63.3",
-    "63.4"
+    "63.4",
+    "31.1",
+    "31.2",
+    "31.3",
+    "31.4",
+    "31.5",
+    "31.6",
+    "31.7",
+    "31.8",
+    "31.9",
+    "31.10",
+    "31.11",
+    "31.12",
+    "31.13",
+    "31.14",
+    "31.15",
+    "32.1",
+    "32.2",
+    "32.3",
+    "32.4",
+    "32.5",
+    "32.6",
+    "32.7",
+    "34.1",
+    "34.2",
+    "34.3",
+    "34.4",
+    "34.5",
+    "34.6",
+    "35.1",
+    "35.2",
+    "35.3",
+    "35.4",
+    "35.5",
+    "35.6",
+    "35.7",
+    "35.8",
+    "35.9",
+    "35.10",
+    "35.11",
+    "35.12",
+    "35.13",
+    "36.1",
+    "36.2",
+    "36.3",
+    "36.4",
+    "37.1",
+    "37.2",
+    "37.3",
+    "37.4",
+    "37.5",
+    "37.6",
+    "37.7",
+    "37.8",
+    "37.9",
+    "37.10",
+    "37.11",
+    "38.1",
+    "38.2",
+    "38.3",
+    "38.4",
+    "38.5",
+    "40.1",
+    "40.2",
+    "40.3",
+    "40.4",
+    "40.5",
+    "41.1",
+    "41.2",
+    "41.3",
+    "41.4",
+    "41.5",
+    "41.6",
+    "41.7",
+    "42.1",
+    "42.2",
+    "42.3",
+    "42.4",
+    "42.5",
+    "42.6",
+    "42.7",
+    "52.4",
+    "52.5",
+    "52.6",
+    "53.1",
+    "53.2",
+    "53.3",
+    "54.1",
+    "54.2",
+    "54.3",
+    "54.4",
+    "54.5",
+    "54.6",
+    "54.7",
+    "54.8",
+    "54.9",
+    "55.4",
+    "55.5",
+    "56.1",
+    "56.2",
+    "56.3",
+    "56.4",
+    "56.5",
+    "56.6",
+    "56.7",
+    "56.8",
+    "56.9",
+    "56.10",
+    "58.1",
+    "58.2",
+    "58.3",
+    "58.4",
+    "59.1",
+    "59.2",
+    "59.3",
+    "64.1",
+    "64.2",
+    "64.3",
+    "64.4",
+    "64.5",
+    "65.1",
+    "65.2",
+    "65.3",
+    "66.2",
+    "66.3",
+    "66.4",
+    "68.1",
+    "68.2",
+    "68.3",
+    "38.6",
+    "38.7",
+    "38.8",
+    "38.9",
+    "38.10",
+    "38.11",
+    "38.12",
+    "38.13",
+    "58.6",
+    "58.7",
+    "67.2",
+    "67.3",
+    "43.1",
+    "43.2",
+    "43.3",
+    "43.4",
+    "43.5",
+    "43.6",
+    "43.7",
+    "43.8",
+    "43.9",
+    "43.10",
+    "43.11",
+    "43.12",
+    "44.1",
+    "44.2",
+    "44.3",
+    "45.1",
+    "45.2",
+    "45.3",
+    "45.4",
+    "46.1",
+    "59.5",
+    "59.6",
+    "48.1",
+    "48.2",
+    "48.3",
+    "48.5",
+    "48.10",
+    "68.4",
+    "67.4",
+    "48.4",
+    "46.2",
+    "58.5",
+    "59.4"
   ],
   "phases": {
-    "collaboration": {
-      "firstWave": 0,
-      "lastWave": 7
-    },
-    "privacy": {
-      "firstWave": 8,
-      "lastWave": 31
-    },
-    "imports_and_log": {
-      "firstWave": 32,
-      "lastWave": 55
-    },
-    "publication": {
-      "firstWave": 56,
-      "lastWave": 73
-    },
-    "outside_and_ai": {
-      "firstWave": 74,
-      "lastWave": 121
-    },
-    "recovery": {
-      "firstWave": 122,
-      "lastWave": 139
-    },
-    "release_tooling": {
-      "firstWave": 140,
-      "lastWave": 169
-    },
     "staging_and_acceptance": {
-      "firstWave": 170,
-      "lastWave": 177
+      "firstWave": 0,
+      "lastWave": 4
     },
     "production_activation": {
-      "firstWave": 178,
-      "lastWave": 178
+      "firstWave": 5,
+      "lastWave": 5
     }
   },
   "waves": [
-    {"id": 0, "phase": "collaboration", "dependsOn": [], "tasks": ["64.1"]},
-    {"id": 1, "phase": "collaboration", "dependsOn": [0], "tasks": ["64.2"]},
-    {"id": 2, "phase": "collaboration", "dependsOn": [1], "tasks": ["64.3"]},
-    {"id": 3, "phase": "collaboration", "dependsOn": [2], "tasks": ["64.4"]},
-    {"id": 4, "phase": "collaboration", "dependsOn": [3], "tasks": ["64.5"]},
-    {"id": 5, "phase": "collaboration", "dependsOn": [4], "tasks": ["65.1"]},
-    {"id": 6, "phase": "collaboration", "dependsOn": [5], "tasks": ["65.2"]},
-    {"id": 7, "phase": "collaboration", "dependsOn": [6], "tasks": ["65.3"]},
-    {"id": 8, "phase": "privacy", "dependsOn": [7], "tasks": ["54.1"]},
-    {"id": 9, "phase": "privacy", "dependsOn": [8], "tasks": ["68.1"]},
-    {"id": 10, "phase": "privacy", "dependsOn": [9], "tasks": ["31.1"]},
-    {"id": 11, "phase": "privacy", "dependsOn": [10], "tasks": ["54.2"]},
-    {"id": 12, "phase": "privacy", "dependsOn": [11], "tasks": ["52.5"]},
-    {"id": 13, "phase": "privacy", "dependsOn": [12], "tasks": ["31.2"]},
-    {"id": 14, "phase": "privacy", "dependsOn": [13], "tasks": ["31.3"]},
-    {"id": 15, "phase": "privacy", "dependsOn": [14], "tasks": ["54.3"]},
-    {"id": 16, "phase": "privacy", "dependsOn": [15], "tasks": ["54.4"]},
-    {"id": 17, "phase": "privacy", "dependsOn": [16], "tasks": ["54.5"]},
-    {"id": 18, "phase": "privacy", "dependsOn": [17], "tasks": ["52.4"]},
-    {"id": 19, "phase": "privacy", "dependsOn": [18], "tasks": ["54.6"]},
-    {"id": 20, "phase": "privacy", "dependsOn": [19], "tasks": ["54.7"]},
-    {"id": 21, "phase": "privacy", "dependsOn": [20], "tasks": ["54.8"]},
-    {"id": 22, "phase": "privacy", "dependsOn": [21], "tasks": ["54.9"]},
-    {"id": 23, "phase": "privacy", "dependsOn": [22], "tasks": ["31.4"]},
-    {"id": 24, "phase": "privacy", "dependsOn": [23], "tasks": ["31.5"]},
-    {"id": 25, "phase": "privacy", "dependsOn": [24], "tasks": ["31.6"]},
-    {"id": 26, "phase": "privacy", "dependsOn": [25], "tasks": ["31.7"]},
-    {"id": 27, "phase": "privacy", "dependsOn": [26], "tasks": ["68.2"]},
-    {"id": 28, "phase": "privacy", "dependsOn": [27], "tasks": ["68.3"]},
-    {"id": 29, "phase": "privacy", "dependsOn": [28], "tasks": ["53.1"]},
-    {"id": 30, "phase": "privacy", "dependsOn": [29], "tasks": ["53.2"]},
-    {"id": 31, "phase": "privacy", "dependsOn": [30], "tasks": ["53.3"]},
-    {"id": 32, "phase": "imports_and_log", "dependsOn": [31], "tasks": ["36.1"]},
-    {"id": 33, "phase": "imports_and_log", "dependsOn": [32], "tasks": ["36.2"]},
-    {"id": 34, "phase": "imports_and_log", "dependsOn": [33], "tasks": ["36.3"]},
-    {"id": 35, "phase": "imports_and_log", "dependsOn": [34], "tasks": ["36.4"]},
-    {"id": 36, "phase": "imports_and_log", "dependsOn": [35], "tasks": ["37.1"]},
-    {"id": 37, "phase": "imports_and_log", "dependsOn": [36], "tasks": ["37.2"]},
-    {"id": 38, "phase": "imports_and_log", "dependsOn": [37], "tasks": ["37.3"]},
-    {"id": 39, "phase": "imports_and_log", "dependsOn": [38], "tasks": ["37.4"]},
-    {"id": 40, "phase": "imports_and_log", "dependsOn": [39], "tasks": ["37.5"]},
-    {"id": 41, "phase": "imports_and_log", "dependsOn": [40], "tasks": ["37.6"]},
-    {"id": 42, "phase": "imports_and_log", "dependsOn": [41], "tasks": ["37.7"]},
-    {"id": 43, "phase": "imports_and_log", "dependsOn": [42], "tasks": ["37.8"]},
-    {"id": 44, "phase": "imports_and_log", "dependsOn": [43], "tasks": ["37.9"]},
-    {"id": 45, "phase": "imports_and_log", "dependsOn": [44], "tasks": ["37.10"]},
-    {"id": 46, "phase": "imports_and_log", "dependsOn": [45], "tasks": ["37.11"]},
-    {"id": 47, "phase": "imports_and_log", "dependsOn": [46], "tasks": ["40.1"]},
-    {"id": 48, "phase": "imports_and_log", "dependsOn": [47], "tasks": ["40.2"]},
-    {"id": 49, "phase": "imports_and_log", "dependsOn": [48], "tasks": ["40.3"]},
-    {"id": 50, "phase": "imports_and_log", "dependsOn": [49], "tasks": ["52.6"]},
-    {"id": 51, "phase": "imports_and_log", "dependsOn": [50], "tasks": ["40.4"]},
-    {"id": 52, "phase": "imports_and_log", "dependsOn": [51], "tasks": ["40.5"]},
-    {"id": 53, "phase": "imports_and_log", "dependsOn": [52], "tasks": ["41.1"]},
-    {"id": 54, "phase": "imports_and_log", "dependsOn": [53], "tasks": ["41.2"]},
-    {"id": 55, "phase": "imports_and_log", "dependsOn": [54], "tasks": ["41.3"]},
-    {"id": 56, "phase": "publication", "dependsOn": [55], "tasks": ["59.1"]},
-    {"id": 57, "phase": "publication", "dependsOn": [56], "tasks": ["59.2"]},
-    {"id": 58, "phase": "publication", "dependsOn": [57], "tasks": ["59.3"]},
-    {"id": 59, "phase": "publication", "dependsOn": [58], "tasks": ["32.1"]},
-    {"id": 60, "phase": "publication", "dependsOn": [59], "tasks": ["32.2"]},
-    {"id": 61, "phase": "publication", "dependsOn": [60], "tasks": ["32.3"]},
-    {"id": 62, "phase": "publication", "dependsOn": [61], "tasks": ["32.4"]},
-    {"id": 63, "phase": "publication", "dependsOn": [62], "tasks": ["32.5"]},
-    {"id": 64, "phase": "publication", "dependsOn": [63], "tasks": ["32.6"]},
-    {"id": 65, "phase": "publication", "dependsOn": [64], "tasks": ["32.7"]},
-    {"id": 66, "phase": "publication", "dependsOn": [65], "tasks": ["55.4"]},
-    {"id": 67, "phase": "publication", "dependsOn": [66], "tasks": ["55.5"]},
-    {"id": 68, "phase": "publication", "dependsOn": [67], "tasks": ["66.2"]},
-    {"id": 69, "phase": "publication", "dependsOn": [68], "tasks": ["66.3"]},
-    {"id": 70, "phase": "publication", "dependsOn": [69], "tasks": ["66.4"]},
-    {"id": 71, "phase": "publication", "dependsOn": [70], "tasks": ["38.3"]},
-    {"id": 72, "phase": "publication", "dependsOn": [71], "tasks": ["38.1"]},
-    {"id": 73, "phase": "publication", "dependsOn": [72], "tasks": ["38.2"]},
-    {"id": 74, "phase": "outside_and_ai", "dependsOn": [73], "tasks": ["34.1"]},
-    {"id": 75, "phase": "outside_and_ai", "dependsOn": [74], "tasks": ["34.2"]},
-    {"id": 76, "phase": "outside_and_ai", "dependsOn": [75], "tasks": ["34.3"]},
-    {"id": 77, "phase": "outside_and_ai", "dependsOn": [76], "tasks": ["34.4"]},
-    {"id": 78, "phase": "outside_and_ai", "dependsOn": [77], "tasks": ["34.5"]},
-    {"id": 79, "phase": "outside_and_ai", "dependsOn": [78], "tasks": ["34.6"]},
-    {"id": 80, "phase": "outside_and_ai", "dependsOn": [79], "tasks": ["35.1"]},
-    {"id": 81, "phase": "outside_and_ai", "dependsOn": [80], "tasks": ["35.2"]},
-    {"id": 82, "phase": "outside_and_ai", "dependsOn": [81], "tasks": ["35.3"]},
-    {"id": 83, "phase": "outside_and_ai", "dependsOn": [82], "tasks": ["35.4"]},
-    {"id": 84, "phase": "outside_and_ai", "dependsOn": [83], "tasks": ["35.5"]},
-    {"id": 85, "phase": "outside_and_ai", "dependsOn": [84], "tasks": ["35.6"]},
-    {"id": 86, "phase": "outside_and_ai", "dependsOn": [85], "tasks": ["56.1"]},
-    {"id": 87, "phase": "outside_and_ai", "dependsOn": [86], "tasks": ["56.2"]},
-    {"id": 88, "phase": "outside_and_ai", "dependsOn": [87], "tasks": ["56.3"]},
-    {"id": 89, "phase": "outside_and_ai", "dependsOn": [88], "tasks": ["56.4"]},
-    {"id": 90, "phase": "outside_and_ai", "dependsOn": [89], "tasks": ["56.5"]},
-    {"id": 91, "phase": "outside_and_ai", "dependsOn": [90], "tasks": ["56.6"]},
-    {"id": 92, "phase": "outside_and_ai", "dependsOn": [91], "tasks": ["56.7"]},
-    {"id": 93, "phase": "outside_and_ai", "dependsOn": [92], "tasks": ["56.8"]},
-    {"id": 94, "phase": "outside_and_ai", "dependsOn": [93], "tasks": ["56.9"]},
-    {"id": 95, "phase": "outside_and_ai", "dependsOn": [94], "tasks": ["56.10"]},
-    {"id": 96, "phase": "outside_and_ai", "dependsOn": [95], "tasks": ["35.7"]},
-    {"id": 97, "phase": "outside_and_ai", "dependsOn": [96], "tasks": ["35.8"]},
-    {"id": 98, "phase": "outside_and_ai", "dependsOn": [97], "tasks": ["35.9"]},
-    {"id": 99, "phase": "outside_and_ai", "dependsOn": [98], "tasks": ["35.10"]},
-    {"id": 100, "phase": "outside_and_ai", "dependsOn": [99], "tasks": ["35.11"]},
-    {"id": 101, "phase": "outside_and_ai", "dependsOn": [100], "tasks": ["35.12"]},
-    {"id": 102, "phase": "outside_and_ai", "dependsOn": [101], "tasks": ["35.13"]},
-    {"id": 103, "phase": "outside_and_ai", "dependsOn": [102], "tasks": ["42.1"]},
-    {"id": 104, "phase": "outside_and_ai", "dependsOn": [103], "tasks": ["42.2"]},
-    {"id": 105, "phase": "outside_and_ai", "dependsOn": [104], "tasks": ["42.3"]},
-    {"id": 106, "phase": "outside_and_ai", "dependsOn": [105], "tasks": ["42.4"]},
-    {"id": 107, "phase": "outside_and_ai", "dependsOn": [106], "tasks": ["42.5"]},
-    {"id": 108, "phase": "outside_and_ai", "dependsOn": [107], "tasks": ["42.6"]},
-    {"id": 109, "phase": "outside_and_ai", "dependsOn": [108], "tasks": ["42.7"]},
-    {"id": 110, "phase": "outside_and_ai", "dependsOn": [109], "tasks": ["31.8"]},
-    {"id": 111, "phase": "outside_and_ai", "dependsOn": [110], "tasks": ["31.9"]},
-    {"id": 112, "phase": "outside_and_ai", "dependsOn": [111], "tasks": ["31.10"]},
-    {"id": 113, "phase": "outside_and_ai", "dependsOn": [112], "tasks": ["31.11"]},
-    {"id": 114, "phase": "outside_and_ai", "dependsOn": [113], "tasks": ["31.12"]},
-    {"id": 115, "phase": "outside_and_ai", "dependsOn": [114], "tasks": ["31.13"]},
-    {"id": 116, "phase": "outside_and_ai", "dependsOn": [115], "tasks": ["31.14"]},
-    {"id": 117, "phase": "outside_and_ai", "dependsOn": [116], "tasks": ["31.15"]},
-    {"id": 118, "phase": "outside_and_ai", "dependsOn": [117], "tasks": ["41.4"]},
-    {"id": 119, "phase": "outside_and_ai", "dependsOn": [118], "tasks": ["41.5"]},
-    {"id": 120, "phase": "outside_and_ai", "dependsOn": [119], "tasks": ["41.6"]},
-    {"id": 121, "phase": "outside_and_ai", "dependsOn": [120], "tasks": ["41.7"]},
-    {"id": 122, "phase": "recovery", "dependsOn": [121], "tasks": ["58.1"]},
-    {"id": 123, "phase": "recovery", "dependsOn": [122], "tasks": ["58.3"]},
-    {"id": 124, "phase": "recovery", "dependsOn": [123], "tasks": ["38.4"]},
-    {"id": 125, "phase": "recovery", "dependsOn": [124], "tasks": ["58.2"]},
-    {"id": 126, "phase": "recovery", "dependsOn": [125], "tasks": ["58.4"]},
-    {"id": 127, "phase": "recovery", "dependsOn": [126], "tasks": ["38.5"]},
-    {"id": 128, "phase": "recovery", "dependsOn": [127], "tasks": ["38.6"]},
-    {"id": 129, "phase": "recovery", "dependsOn": [128], "tasks": ["38.7"]},
-    {"id": 130, "phase": "recovery", "dependsOn": [129], "tasks": ["38.8"]},
-    {"id": 131, "phase": "recovery", "dependsOn": [130], "tasks": ["38.9"]},
-    {"id": 132, "phase": "recovery", "dependsOn": [131], "tasks": ["38.10"]},
-    {"id": 133, "phase": "recovery", "dependsOn": [132], "tasks": ["38.11"]},
-    {"id": 134, "phase": "recovery", "dependsOn": [133], "tasks": ["38.12"]},
-    {"id": 135, "phase": "recovery", "dependsOn": [134], "tasks": ["38.13"]},
-    {"id": 136, "phase": "recovery", "dependsOn": [135], "tasks": ["58.6"]},
-    {"id": 137, "phase": "recovery", "dependsOn": [136], "tasks": ["58.7"]},
-    {"id": 138, "phase": "recovery", "dependsOn": [137], "tasks": ["67.2"]},
-    {"id": 139, "phase": "recovery", "dependsOn": [138], "tasks": ["67.3"]},
-    {"id": 140, "phase": "release_tooling", "dependsOn": [139], "tasks": ["43.1"]},
-    {"id": 141, "phase": "release_tooling", "dependsOn": [140], "tasks": ["43.2"]},
-    {"id": 142, "phase": "release_tooling", "dependsOn": [141], "tasks": ["43.3"]},
-    {"id": 143, "phase": "release_tooling", "dependsOn": [142], "tasks": ["43.4"]},
-    {"id": 144, "phase": "release_tooling", "dependsOn": [143], "tasks": ["43.5"]},
-    {"id": 145, "phase": "release_tooling", "dependsOn": [144], "tasks": ["43.6"]},
-    {"id": 146, "phase": "release_tooling", "dependsOn": [145], "tasks": ["43.7"]},
-    {"id": 147, "phase": "release_tooling", "dependsOn": [146], "tasks": ["43.8"]},
-    {"id": 148, "phase": "release_tooling", "dependsOn": [147], "tasks": ["43.9"]},
-    {"id": 149, "phase": "release_tooling", "dependsOn": [148], "tasks": ["43.10"]},
-    {"id": 150, "phase": "release_tooling", "dependsOn": [149], "tasks": ["43.11"]},
-    {"id": 151, "phase": "release_tooling", "dependsOn": [150], "tasks": ["43.12"]},
-    {"id": 152, "phase": "release_tooling", "dependsOn": [151], "tasks": ["44.1"]},
-    {"id": 153, "phase": "release_tooling", "dependsOn": [152], "tasks": ["44.2"]},
-    {"id": 154, "phase": "release_tooling", "dependsOn": [153], "tasks": ["44.3"]},
-    {"id": 155, "phase": "release_tooling", "dependsOn": [154], "tasks": ["45.1"]},
-    {"id": 156, "phase": "release_tooling", "dependsOn": [155], "tasks": ["45.2"]},
-    {"id": 157, "phase": "release_tooling", "dependsOn": [156], "tasks": ["45.3"]},
-    {"id": 158, "phase": "release_tooling", "dependsOn": [157], "tasks": ["45.4"]},
-    {"id": 159, "phase": "release_tooling", "dependsOn": [158], "tasks": ["46.1"]},
-    {"id": 160, "phase": "release_tooling", "dependsOn": [159], "tasks": ["59.5"]},
-    {"id": 161, "phase": "release_tooling", "dependsOn": [160], "tasks": ["59.6"]},
-    {"id": 162, "phase": "release_tooling", "dependsOn": [161], "tasks": ["48.1"]},
-    {"id": 163, "phase": "release_tooling", "dependsOn": [162], "tasks": ["48.2"]},
-    {"id": 164, "phase": "release_tooling", "dependsOn": [163], "tasks": ["48.3"]},
-    {"id": 165, "phase": "release_tooling", "dependsOn": [164], "tasks": ["48.5"]},
-    {"id": 166, "phase": "release_tooling", "dependsOn": [165], "tasks": ["48.10"]},
-    {"id": 167, "phase": "release_tooling", "dependsOn": [166], "tasks": ["68.4"]},
-    {"id": 168, "phase": "release_tooling", "dependsOn": [167], "tasks": ["67.4"]},
-    {"id": 169, "phase": "release_tooling", "dependsOn": [168], "tasks": ["48.4"]},
-    {"id": 170, "phase": "staging_and_acceptance", "dependsOn": [169], "tasks": ["48.6"]},
-    {"id": 171, "phase": "staging_and_acceptance", "dependsOn": [170], "tasks": ["48.7"]},
-    {"id": 172, "phase": "staging_and_acceptance", "dependsOn": [171], "tasks": ["48.8"]},
-    {"id": 173, "phase": "staging_and_acceptance", "dependsOn": [172], "tasks": ["48.11"]},
-    {"id": 174, "phase": "staging_and_acceptance", "dependsOn": [173], "tasks": ["58.5"]},
-    {"id": 175, "phase": "staging_and_acceptance", "dependsOn": [174], "tasks": ["59.4"]},
-    {"id": 176, "phase": "staging_and_acceptance", "dependsOn": [175], "tasks": ["46.2"]},
-    {"id": 177, "phase": "staging_and_acceptance", "dependsOn": [176], "tasks": ["48.12"]},
-    {"id": 178, "phase": "production_activation", "dependsOn": [177], "tasks": ["48.9"]}
+    {
+      "id": 0,
+      "phase": "staging_and_acceptance",
+      "dependsOn": [],
+      "tasks": [
+        "48.6"
+      ]
+    },
+    {
+      "id": 1,
+      "phase": "staging_and_acceptance",
+      "dependsOn": [
+        0
+      ],
+      "tasks": [
+        "48.7"
+      ]
+    },
+    {
+      "id": 2,
+      "phase": "staging_and_acceptance",
+      "dependsOn": [
+        1
+      ],
+      "tasks": [
+        "48.8"
+      ]
+    },
+    {
+      "id": 3,
+      "phase": "staging_and_acceptance",
+      "dependsOn": [
+        2
+      ],
+      "tasks": [
+        "48.11"
+      ]
+    },
+    {
+      "id": 4,
+      "phase": "staging_and_acceptance",
+      "dependsOn": [
+        3
+      ],
+      "tasks": [
+        "48.12"
+      ]
+    },
+    {
+      "id": 5,
+      "phase": "production_activation",
+      "dependsOn": [
+        4
+      ],
+      "tasks": [
+        "48.9"
+      ]
+    }
   ],
   "helperEdges": [
     [

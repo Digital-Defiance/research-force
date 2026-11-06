@@ -1,0 +1,526 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 Add the new component CSS to `packages/design/src/components.css`": [
+      {
+        "executionId": "fdff3f2d-33ce-4772-b477-d9bc2fa81f6d",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793759104408
+      },
+      {
+        "executionId": "fdff3f2d-33ce-4772-b477-d9bc2fa81f6d",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793759111948
+      },
+      {
+        "executionId": "fdff3f2d-33ce-4772-b477-d9bc2fa81f6d",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793759764392
+      }
+    ],
+    "1.2 Add neutral-tree builders in `packages/design/src/components/layout.ts` and `tabs.ts`": [
+      {
+        "executionId": "fdff3f2d-33ce-4772-b477-d9bc2fa81f6d",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793759104453
+      },
+      {
+        "executionId": "fdff3f2d-33ce-4772-b477-d9bc2fa81f6d",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793759767506
+      },
+      {
+        "executionId": "fdff3f2d-33ce-4772-b477-d9bc2fa81f6d",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793761646669
+      }
+    ],
+    "1.3 Write design-package builder tests in `packages/design/test/`": [
+      {
+        "executionId": "fdff3f2d-33ce-4772-b477-d9bc2fa81f6d",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793759104505
+      },
+      {
+        "executionId": "fdff3f2d-33ce-4772-b477-d9bc2fa81f6d",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793761652076
+      },
+      {
+        "executionId": "fdff3f2d-33ce-4772-b477-d9bc2fa81f6d",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793761877417
+      }
+    ],
+    "2. Build the Workspace React component wrappers in `apps/app/web/src/ui.tsx`": [
+      {
+        "executionId": "fdff3f2d-33ce-4772-b477-d9bc2fa81f6d",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793759104557
+      },
+      {
+        "executionId": "068e3eeb-52a7-4740-bb65-fd8e3902bc97",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793814843229
+      }
+    ],
+    "2.1 Implement `PageHeader`, `PageLayout`, and `Card` wrappers": [
+      {
+        "executionId": "fdff3f2d-33ce-4772-b477-d9bc2fa81f6d",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793759104593
+      },
+      {
+        "executionId": "fdff3f2d-33ce-4772-b477-d9bc2fa81f6d",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793761654946
+      },
+      {
+        "executionId": "fdff3f2d-33ce-4772-b477-d9bc2fa81f6d",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793761878265
+      }
+    ],
+    "2.2 Implement `DataTable`, `EmptyState`, and `LoadingSkeleton` wrappers": [
+      {
+        "executionId": "fdff3f2d-33ce-4772-b477-d9bc2fa81f6d",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793759104627
+      },
+      {
+        "executionId": "fdff3f2d-33ce-4772-b477-d9bc2fa81f6d",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793761881907
+      },
+      {
+        "executionId": "fdff3f2d-33ce-4772-b477-d9bc2fa81f6d",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793762003872
+      }
+    ],
+    "2.3 Implement the `Tabs` wrapper": [
+      {
+        "executionId": "fdff3f2d-33ce-4772-b477-d9bc2fa81f6d",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793759104662
+      },
+      {
+        "executionId": "fdff3f2d-33ce-4772-b477-d9bc2fa81f6d",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793762006520
+      },
+      {
+        "executionId": "fdff3f2d-33ce-4772-b477-d9bc2fa81f6d",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793762546206
+      }
+    ],
+    "2.4 Implement the `useClientFilterSort` hook": [
+      {
+        "executionId": "fdff3f2d-33ce-4772-b477-d9bc2fa81f6d",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793759104695
+      },
+      {
+        "executionId": "fdff3f2d-33ce-4772-b477-d9bc2fa81f6d",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793762548432
+      },
+      {
+        "executionId": "fdff3f2d-33ce-4772-b477-d9bc2fa81f6d",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793762952426
+      }
+    ],
+    "3. Checkpoint - component foundation green": [
+      {
+        "executionId": "fdff3f2d-33ce-4772-b477-d9bc2fa81f6d",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793759104733
+      },
+      {
+        "executionId": "068e3eeb-52a7-4740-bb65-fd8e3902bc97",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793814847210
+      }
+    ],
+    "4. Create the declarative navigation config in `apps/app/web/src/shell/nav-config.ts`": [
+      {
+        "executionId": "fdff3f2d-33ce-4772-b477-d9bc2fa81f6d",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793759104765
+      },
+      {
+        "executionId": "068e3eeb-52a7-4740-bb65-fd8e3902bc97",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793814851408
+      }
+    ],
+    "4.1 Define `NavLink`, `NavGroup`, and the `NAV_GROUPS` mapping": [
+      {
+        "executionId": "fdff3f2d-33ce-4772-b477-d9bc2fa81f6d",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793759104800
+      },
+      {
+        "executionId": "fdff3f2d-33ce-4772-b477-d9bc2fa81f6d",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793762957544
+      },
+      {
+        "executionId": "fdff3f2d-33ce-4772-b477-d9bc2fa81f6d",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793763582239
+      }
+    ],
+    "5. Implement `PrimaryNav` in `apps/app/web/src/shell/primary-nav.tsx`": [
+      {
+        "executionId": "fdff3f2d-33ce-4772-b477-d9bc2fa81f6d",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793759104837
+      },
+      {
+        "executionId": "068e3eeb-52a7-4740-bb65-fd8e3902bc97",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793814855553
+      }
+    ],
+    "5.1 Implement role-filtered, active-state, responsive navigation": [
+      {
+        "executionId": "fdff3f2d-33ce-4772-b477-d9bc2fa81f6d",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793759104883
+      },
+      {
+        "executionId": "fdff3f2d-33ce-4772-b477-d9bc2fa81f6d",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793763584930
+      },
+      {
+        "executionId": "70b3f477-52ef-4a02-987b-aee427afa3a1",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793764105003
+      },
+      {
+        "executionId": "70b3f477-52ef-4a02-987b-aee427afa3a1",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793764154173
+      }
+    ],
+    "6. Implement `AppShell` and rewire the frame in `apps/app/web/src/shell/app-shell.tsx`": [
+      {
+        "executionId": "fdff3f2d-33ce-4772-b477-d9bc2fa81f6d",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793759104915
+      },
+      {
+        "executionId": "068e3eeb-52a7-4740-bb65-fd8e3902bc97",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793814858704
+      }
+    ],
+    "6.1 Build `AppShell`, preserving the exact session gating": [
+      {
+        "executionId": "fdff3f2d-33ce-4772-b477-d9bc2fa81f6d",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793759104948
+      },
+      {
+        "executionId": "068e3eeb-52a7-4740-bb65-fd8e3902bc97",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793808220955
+      },
+      {
+        "executionId": "068e3eeb-52a7-4740-bb65-fd8e3902bc97",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793812229700
+      }
+    ],
+    "7. Implement the `Dashboard` in `apps/app/web/src/dashboard/dashboard.tsx`": [
+      {
+        "executionId": "fdff3f2d-33ce-4772-b477-d9bc2fa81f6d",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793759104983
+      },
+      {
+        "executionId": "068e3eeb-52a7-4740-bb65-fd8e3902bc97",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793814861951
+      }
+    ],
+    "7.1 Build the four regions plus new-record controls": [
+      {
+        "executionId": "fdff3f2d-33ce-4772-b477-d9bc2fa81f6d",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793759105037
+      },
+      {
+        "executionId": "068e3eeb-52a7-4740-bb65-fd8e3902bc97",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793812231982
+      },
+      {
+        "executionId": "068e3eeb-52a7-4740-bb65-fd8e3902bc97",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793812528875
+      }
+    ],
+    "8. Checkpoint - shell and dashboard green": [
+      {
+        "executionId": "fdff3f2d-33ce-4772-b477-d9bc2fa81f6d",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793759105075
+      },
+      {
+        "executionId": "068e3eeb-52a7-4740-bb65-fd8e3902bc97",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793814865401
+      }
+    ],
+    "9. Adopt `DataTable` + client filter/sort on the curator/admin queues": [
+      {
+        "executionId": "fdff3f2d-33ce-4772-b477-d9bc2fa81f6d",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793759105128
+      },
+      {
+        "executionId": "068e3eeb-52a7-4740-bb65-fd8e3902bc97",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793814868640
+      }
+    ],
+    "9.1 Rework the moderation queue (`apps/app/web/src/moderation/queue.tsx`)": [
+      {
+        "executionId": "fdff3f2d-33ce-4772-b477-d9bc2fa81f6d",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793759105161
+      },
+      {
+        "executionId": "068e3eeb-52a7-4740-bb65-fd8e3902bc97",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793812536938
+      },
+      {
+        "executionId": "068e3eeb-52a7-4740-bb65-fd8e3902bc97",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793812686717
+      }
+    ],
+    "9.2 Rework the review queue (`apps/app/web/src/reviews/reviews.tsx`, `/reviews/queue`)": [
+      {
+        "executionId": "fdff3f2d-33ce-4772-b477-d9bc2fa81f6d",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793759105199
+      },
+      {
+        "executionId": "068e3eeb-52a7-4740-bb65-fd8e3902bc97",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793812536896
+      },
+      {
+        "executionId": "068e3eeb-52a7-4740-bb65-fd8e3902bc97",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793812686085
+      }
+    ],
+    "9.3 Rework the disclosure screens (`apps/app/web/src/disclosure/records.tsx`)": [
+      {
+        "executionId": "fdff3f2d-33ce-4772-b477-d9bc2fa81f6d",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793759105248
+      },
+      {
+        "executionId": "068e3eeb-52a7-4740-bb65-fd8e3902bc97",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793812536967
+      },
+      {
+        "executionId": "068e3eeb-52a7-4740-bb65-fd8e3902bc97",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793812684460
+      }
+    ],
+    "9.4 Rework the evidence queue (`apps/app/web/src/evidence/queue.tsx`, `/evidence/queue`)": [
+      {
+        "executionId": "fdff3f2d-33ce-4772-b477-d9bc2fa81f6d",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793759105282
+      },
+      {
+        "executionId": "068e3eeb-52a7-4740-bb65-fd8e3902bc97",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793812538079
+      },
+      {
+        "executionId": "068e3eeb-52a7-4740-bb65-fd8e3902bc97",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793812684147
+      }
+    ],
+    "10. Roll `PageHeader`/`PageLayout` across the priority reading screens": [
+      {
+        "executionId": "fdff3f2d-33ce-4772-b477-d9bc2fa81f6d",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793759105318
+      },
+      {
+        "executionId": "068e3eeb-52a7-4740-bb65-fd8e3902bc97",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793814873105
+      }
+    ],
+    "10.1 Adopt `PageHeader` + reading `PageLayout` on Project and Project log screens": [
+      {
+        "executionId": "fdff3f2d-33ce-4772-b477-d9bc2fa81f6d",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793759105356
+      },
+      {
+        "executionId": "068e3eeb-52a7-4740-bb65-fd8e3902bc97",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793812538144
+      },
+      {
+        "executionId": "068e3eeb-52a7-4740-bb65-fd8e3902bc97",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793812685784
+      },
+      {
+        "executionId": "068e3eeb-52a7-4740-bb65-fd8e3902bc97",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793813130189
+      },
+      {
+        "executionId": "068e3eeb-52a7-4740-bb65-fd8e3902bc97",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793813368246
+      }
+    ],
+    "10.2 Adopt `PageHeader` + `PageLayout` on item/record and search screens": [
+      {
+        "executionId": "fdff3f2d-33ce-4772-b477-d9bc2fa81f6d",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793759105391
+      },
+      {
+        "executionId": "068e3eeb-52a7-4740-bb65-fd8e3902bc97",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793812711117
+      },
+      {
+        "executionId": "068e3eeb-52a7-4740-bb65-fd8e3902bc97",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793813044612
+      }
+    ],
+    "11.1 Add new component rows to `tests/presentation/visual-regression.spec.ts` and re-baseline the Workspace snapshots only": [
+      {
+        "executionId": "fdff3f2d-33ce-4772-b477-d9bc2fa81f6d",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793759105420
+      },
+      {
+        "executionId": "068e3eeb-52a7-4740-bb65-fd8e3902bc97",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793813372344
+      },
+      {
+        "executionId": "068e3eeb-52a7-4740-bb65-fd8e3902bc97",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793813586048
+      }
+    ],
+    "11.2 Confirm the full presentation suite and continuous-green checks pass": [
+      {
+        "executionId": "fdff3f2d-33ce-4772-b477-d9bc2fa81f6d",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793759105453
+      },
+      {
+        "executionId": "068e3eeb-52a7-4740-bb65-fd8e3902bc97",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793813589758
+      },
+      {
+        "executionId": "068e3eeb-52a7-4740-bb65-fd8e3902bc97",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793814835706
+      }
+    ],
+    "12. Final checkpoint - full suite green": [
+      {
+        "executionId": "fdff3f2d-33ce-4772-b477-d9bc2fa81f6d",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793759105487
+      },
+      {
+        "executionId": "068e3eeb-52a7-4740-bb65-fd8e3902bc97",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793814877044
+      }
+    ],
+    "1. Build the Design_System component foundation (CSS + neutral-tree builders)": [
+      {
+        "executionId": "fdff3f2d-33ce-4772-b477-d9bc2fa81f6d",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793761877460
+      }
+    ],
+    "2.5* Write RTL tests for the component wrappers in `apps/app/web/test/`": [
+      {
+        "executionId": "fdff3f2d-33ce-4772-b477-d9bc2fa81f6d",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793762952477
+      }
+    ],
+    "4.2* Write RTL/unit tests for `nav-config` in `apps/app/web/test/`": [
+      {
+        "executionId": "fdff3f2d-33ce-4772-b477-d9bc2fa81f6d",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793763582283
+      }
+    ],
+    "5.2* Write RTL tests for `PrimaryNav` in `apps/app/web/test/`": [
+      {
+        "executionId": "70b3f477-52ef-4a02-987b-aee427afa3a1",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793764154214
+      }
+    ],
+    "6.2* Write/adapt RTL tests for the shell in `apps/app/web/test/shell.test.tsx`": [
+      {
+        "executionId": "068e3eeb-52a7-4740-bb65-fd8e3902bc97",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793812229745
+      }
+    ],
+    "7.2* Write RTL tests for the dashboard in `apps/app/web/test/`": [
+      {
+        "executionId": "068e3eeb-52a7-4740-bb65-fd8e3902bc97",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793812528921
+      }
+    ],
+    "9.5* Write/adapt RTL tests for the reworked queues in `apps/app/web/test/`": [
+      {
+        "executionId": "068e3eeb-52a7-4740-bb65-fd8e3902bc97",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793812686757
+      }
+    ],
+    "10.3* Write/adapt RTL tests for the reading-screen adoption in `apps/app/web/test/`": [
+      {
+        "executionId": "068e3eeb-52a7-4740-bb65-fd8e3902bc97",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793813044653
+      }
+    ],
+    "11. Non-regression gate and deliberate visual-regression re-baseline": [
+      {
+        "executionId": "068e3eeb-52a7-4740-bb65-fd8e3902bc97",
+        "chatSessionId": "sess_5d5c87d3-89c5-41ab-a02b-391d878873a5",
+        "timestamp": 1793814835754
+      }
+    ]
+  }
+}
