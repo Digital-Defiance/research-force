@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useApi } from '../api';
 import { useSession } from '../session';
 import { hashFile } from '../files/upload';
-import { Button, LoadState, Notice, SaveFailure, SelectField, formatDate, useLoad } from '../ui';
+import { Button, LoadState, Notice, SaveFailure, SelectField, useLoad } from '../ui';
 
 /**
  * The Internal_Backup and restore screen (R36.1, R36.2, R36.8). Administrators only: the whole screen is gated on
@@ -78,32 +78,44 @@ async function fileSha256(file: File): Promise<string> {
   return (await hashFile(file, controller.signal)).sha256;
 }
 
-/** One backup row with its state, incomplete report, expiry, and download links. */
+/** A short date in the viewer's own time zone, e.g. "Nov 6, 2026, 2:28 PM PST". Falls back to the raw value if unparseable. */
+function whenLabel(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+}
+
+/** One finished backup: when it was taken, how long it is kept, and its download links (R36.2). */
 function BackupCard({ record }: { readonly record: BackupView }) {
   return (
     <section className="rf-section" aria-label={`Backup ${record.id}`}>
-      <h3>Backup</h3>
+      <h3>{`Backup from ${whenLabel(record.startedAt)}`}</h3>
       <p className="rf-meta">
-        State: <span className="rf-status">{backupStateName(record.state)}</span>. Started {formatDate(record.startedAt)}
-        {record.finishedAt === null ? '' : `; finished ${formatDate(record.finishedAt)}`}
-        {record.expiresAt === null ? '' : `; expires ${formatDate(record.expiresAt)}`}.
+        <span className="rf-status">{backupStateName(record.state)}</span>
+        {record.expiresAt === null ? '' : ` · kept until ${whenLabel(record.expiresAt)}`}
       </p>
-      {record.incomplete !== null && (
-        <Notice tone="warning" title="This backup could not include every element.">
-          <p>Each missing element and mismatched file was reported to the requesting administrator.</p>
-        </Notice>
-      )}
       {record.download.length > 0 && (
         <section className="rf-section" aria-label={`Download links for backup ${record.id}`}>
           <h4>Download</h4>
           <ul className="rf-list">
             {record.download.map((link, index) => (
-              <li key={link.url}><a href={link.url}>{`Volume ${index + 1}`}</a>{` (link expires ${formatDate(link.expiresAt)})`}</li>
+              <li key={link.url}><a href={link.url}>{record.download.length === 1 ? 'Download this backup' : `Download part ${index + 1}`}</a>{` (link works until ${whenLabel(link.expiresAt)}; reload the page for a new one)`}</li>
             ))}
           </ul>
         </section>
       )}
     </section>
+  );
+}
+
+/** One backup that could not include everything or did not finish: a single quiet line, never a download. */
+function FailedBackupRow({ record }: { readonly record: BackupView }) {
+  return (
+    <li aria-label={`Backup ${record.id}`}>
+      <span className="rf-status">{backupStateName(record.state)}</span>
+      {` ${whenLabel(record.startedAt)}`}
+      {record.incomplete !== null && <> · <span className="rf-meta">This backup could not include every element.</span></>}
+    </li>
   );
 }
 
@@ -134,16 +146,17 @@ function RestoreReportView({ report }: { readonly report: RestoreReport }) {
 }
 
 /** One restore row with its state, report, and, for a quarantined restore whose gates pass, the explicit release action. */
-function RestoreCard({ record, onRelease, busy }: { readonly record: RestoreView; readonly onRelease: (id: string) => void; readonly busy: boolean }) {
+function RestoreCard({ record, sourceLabel, onRelease, busy }: { readonly record: RestoreView; readonly sourceLabel: string; readonly onRelease: (id: string) => void; readonly busy: boolean }) {
   const canRelease = record.state === 'quarantined' && (record.report?.blockedBy === undefined || record.report.blockedBy.length === 0);
   return (
     <section className="rf-section" aria-label={`Restore ${record.id}`}>
-      <h3>Restore</h3>
+      <h3>{`Restore from ${sourceLabel}`}</h3>
       <p className="rf-meta">
-        State: <span className="rf-status">{restoreStateName(record.state)}</span>. From backup {record.sourceExportId}. Started {formatDate(record.startedAt)}
-        {record.finishedAt === null ? '' : `; finished ${formatDate(record.finishedAt)}`}.
+        <span className="rf-status">{restoreStateName(record.state)}</span>
+        {` · started ${whenLabel(record.startedAt)}`}
+        {record.finishedAt === null ? '' : `, finished ${whenLabel(record.finishedAt)}`}
       </p>
-      {record.releasedAt !== null && <p className="rf-meta">{`Released ${formatDate(record.releasedAt)}.`}</p>}
+      {record.releasedAt !== null && <p className="rf-meta">{`Released ${whenLabel(record.releasedAt)}.`}</p>}
       {record.state === 'quarantined' && (
         <Notice tone="warning" title="This restore is contained until it is released.">
           <p>The restored material stays out of the public site and the publisher stays paused until you release it.</p>
@@ -178,6 +191,8 @@ export function BackupsScreen() {
   if (backups.data === undefined || restores.data === undefined) return <LoadState error={backups.error ?? restores.error} />;
 
   const completeBackups = backups.data.backups.filter((backup) => backup.state === 'complete');
+  const otherBackups = backups.data.backups.filter((backup) => backup.state !== 'complete');
+  const backupLabels = new Map(backups.data.backups.map((backup) => [backup.id, whenLabel(backup.startedAt)] as const));
 
   const requestBackup = async () => {
     setBusy(true); setFailure(undefined); setBackupRequested(false);
@@ -214,35 +229,40 @@ export function BackupsScreen() {
   return (
     <div className="rf-stack">
       <h1>Backups and restores</h1>
-      <p className="rf-meta">A full backup of everything that an administrator can restore, so research can be recovered independently of platform time travel.</p>
+      <p className="rf-meta">A backup is a full, encrypted copy of everything. Take one, download it, and keep the file somewhere safe outside this service.</p>
       <SaveFailure error={failure} />
 
       <section className="rf-section" aria-label="Request a backup">
         <h2>Request a backup</h2>
-        <p className="rf-meta">A requested staging package is kept for seven days; the independent scheduled recovery points are retained separately.</p>
+        <p className="rf-meta">Backups are also taken automatically. A backup you request here is kept for seven days.</p>
         <div className="rf-actions"><Button variant="primary" disabled={busy} onClick={() => void requestBackup()}>Request the backup</Button></div>
         {backupRequested && <Notice tone="success" title="The backup was requested. It appears below once it starts." />}
       </section>
 
       <section className="rf-section" aria-label="Backups">
         <h2>Backups</h2>
-        {backups.data.backups.length === 0
-          ? <p className="rf-meta">There are no backups yet.</p>
-          : backups.data.backups.map((record) => <BackupCard key={record.id} record={record} />)}
+        {backups.data.backups.length === 0 && <p className="rf-meta">There are no backups yet.</p>}
+        {completeBackups.map((record) => <BackupCard key={record.id} record={record} />)}
+        {otherBackups.length > 0 && (
+          <details>
+            <summary>{`Backups that did not finish (${otherBackups.length})`}</summary>
+            <ul className="rf-list">{otherBackups.map((record) => <FailedBackupRow key={record.id} record={record} />)}</ul>
+          </details>
+        )}
       </section>
 
       <section className="rf-section" aria-label="Restore a backup">
         <h2>Restore a backup</h2>
-        <p className="rf-meta">Restore into an empty workspace. The restored material stays contained until you release it.</p>
+        <p className="rf-meta">Only for an empty, new workspace. A restore into a workspace that already has data is refused. Restored material stays contained until you release it.</p>
         <SelectField
           label="Backup package"
           value={sourceExportId}
           placeholder="Choose a complete backup"
-          options={completeBackups.map((backup) => ({ value: backup.id, label: `${backup.id} (started ${formatDate(backup.startedAt)})` }))}
+          options={completeBackups.map((backup) => ({ value: backup.id, label: `Backup from ${whenLabel(backup.startedAt)}` }))}
           onChange={setSourceExportId}
           required
         />
-        <p className="rf-field__hint">The browser hashes the chosen file and sends the checksum as a supplementary check. The server verifies the package itself.</p>
+        <p className="rf-field__hint">Optional. If you choose your downloaded file, the browser sends its checksum as an extra check. The server always verifies the backup itself.</p>
         <label className="rf-field">
           <span className="rf-field__label">Package file (optional)</span>
           <input type="file" onChange={(event) => { setPackageFile(event.target.files?.[0]); event.target.value = ''; }} />
@@ -256,7 +276,7 @@ export function BackupsScreen() {
         <h2>Restores</h2>
         {restores.data.restores.length === 0
           ? <p className="rf-meta">There are no restores yet.</p>
-          : restores.data.restores.map((record) => <RestoreCard key={record.id} record={record} onRelease={(id) => void release(id)} busy={busy} />)}
+          : restores.data.restores.map((record) => <RestoreCard key={record.id} record={record} sourceLabel={backupLabels.get(record.sourceExportId) ?? 'an earlier backup'} onRelease={(id) => void release(id)} busy={busy} />)}
       </section>
     </div>
   );

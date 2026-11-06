@@ -149,7 +149,7 @@ describe('the backups and restores screen', () => {
     });
     renderScreen(<BackupsScreen />, { client: api.client, administrator: true });
 
-    const card = await screen.findByRole('region', { name: `Backup ${BACKUP_ID}` });
+    const card = await screen.findByRole('listitem', { name: `Backup ${BACKUP_ID}` });
     expect(card.textContent).toContain('Incomplete');
     expect(screen.getByText('This backup could not include every element.')).toBeTruthy();
     const links = screen.getByRole('region', { name: `Download links for backup ${complete.id}` });
