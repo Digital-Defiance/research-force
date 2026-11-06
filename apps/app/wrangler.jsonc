@@ -16,7 +16,9 @@
     "PUBLIC_FILES_ORIGIN": "https://files.researchforce.org",
     "R2_ACCOUNT_ID": "48ca646fd701c00c0069952c95299dad",
     "PRIVATE_BUCKET_NAME": "rf-private",
-    "PUBLIC_BUCKET_NAME": "rf-public"
+    "PUBLIC_BUCKET_NAME": "rf-public",
+    "CONTENT_LICENCE_NAME": "CC BY 4.0",
+    "CONTENT_LICENCE_URL": "https://creativecommons.org/licenses/by/4.0/"
   },
   "d1_databases": [
     {
@@ -117,7 +119,9 @@
         "PUBLIC_FILES_ORIGIN": "https://files-staging.researchforce.org",
         "R2_ACCOUNT_ID": "48ca646fd701c00c0069952c95299dad",
         "PRIVATE_BUCKET_NAME": "rf-private-staging",
-        "PUBLIC_BUCKET_NAME": "rf-public-staging"
+        "PUBLIC_BUCKET_NAME": "rf-public-staging",
+        "CONTENT_LICENCE_NAME": "CC BY 4.0",
+        "CONTENT_LICENCE_URL": "https://creativecommons.org/licenses/by/4.0/"
       },
       "routes": [{ "pattern": "staging.researchforce.org", "custom_domain": true }],
       "d1_databases": [

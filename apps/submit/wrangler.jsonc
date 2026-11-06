@@ -35,7 +35,9 @@
   },
   "vars": {
     "R2_ACCOUNT_ID": "48ca646fd701c00c0069952c95299dad",
-    "PRIVATE_BUCKET_NAME": "rf-private"
+    "PRIVATE_BUCKET_NAME": "rf-private",
+    "CONTENT_LICENCE_NAME": "CC BY 4.0",
+    "CONTENT_LICENCE_URL": "https://creativecommons.org/licenses/by/4.0/"
   },
   "triggers": {
     // Hourly sweep of uploaded files not part of a complete Outside_Submission (R31.8).
@@ -76,7 +78,9 @@
       },
       "vars": {
         "R2_ACCOUNT_ID": "48ca646fd701c00c0069952c95299dad",
-        "PRIVATE_BUCKET_NAME": "rf-private-staging"
+        "PRIVATE_BUCKET_NAME": "rf-private-staging",
+        "CONTENT_LICENCE_NAME": "CC BY 4.0",
+        "CONTENT_LICENCE_URL": "https://creativecommons.org/licenses/by/4.0/"
       },
       "routes": [{ "pattern": "submit-staging.researchforce.org", "custom_domain": true }],
       // No staging Cron Triggers: the account limit of 5 is reserved for production.
