@@ -55,7 +55,36 @@ export type PreflightProblemKind =
   | 'size-mismatch'         // a stored file's byte length differs from its manifest entry (R36.8 "all bytes")
   | 'checksum-mismatch'     // a stored file/table part's SHA-256 differs from its manifest entry (R36.8)
   | 'count-mismatch'        // a manifest count does not match the body parts (R36.8)
-  | 'invalid-reference';    // a cross-table reference the restore needs does not resolve within the package (R36.8)
+  | 'invalid-reference'     // a cross-table reference the restore needs does not resolve within the package (R36.8)
+  | 'destination-not-empty'; // the destination already holds research or other Members, so it is not eligible (R36.4)
+
+/**
+ * The R36.4 "empty Research_CMS" eligibility check, run before the restore inserts anything. The destination is
+ * eligible only when it holds no Project, Item, Entry_Section, Dissent_Note, Revision, Cross_Link, Review_Request, or
+ * Outside_Submission (Items, Entry_Sections, and Dissent_Notes are all `units` rows), and no Member other than the
+ * restoring Administrator. A restore into a live installation could otherwise resurrect anything deleted since the
+ * backup, so a non-empty destination is refused with one problem per occupied kind. Counts only; no content is read.
+ */
+export async function destinationEligibility(core: D1Database, restoringMemberId: string): Promise<PreflightProblem[]> {
+  const checks: readonly (readonly [string, string])[] = [
+    ['projects', 'SELECT count(*) AS n FROM projects'],
+    ['units', 'SELECT count(*) AS n FROM units'],
+    ['revisions', 'SELECT count(*) AS n FROM revisions'],
+    ['cross_links', 'SELECT count(*) AS n FROM cross_links'],
+    ['review_requests', 'SELECT count(*) AS n FROM review_requests'],
+    ['outside_submissions', 'SELECT count(*) AS n FROM outside_submissions'],
+  ];
+  const results = await core.batch<{ n: number }>([
+    ...checks.map(([, sql]) => core.prepare(sql)),
+    core.prepare('SELECT count(*) AS n FROM members WHERE id <> ?1').bind(restoringMemberId),
+  ]);
+  const problems: PreflightProblem[] = [];
+  checks.forEach(([table], index) => {
+    if ((results[index]!.results[0]?.n ?? 0) > 0) problems.push({ kind: 'destination-not-empty', element: `table:${table}`, detail: 'the destination already holds rows here; restore only into an empty installation' });
+  });
+  if ((results[checks.length]!.results[0]?.n ?? 0) > 0) problems.push({ kind: 'destination-not-empty', element: 'table:members', detail: 'the destination has Members other than the restoring Administrator' });
+  return problems;
+}
 
 /** One structured preflight problem: its kind, the element it concerns, and a human-facing detail (no secret/PII). */
 export interface PreflightProblem {

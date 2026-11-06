@@ -232,16 +232,16 @@ describe('the restore fails closed on conflicts and faults, inserting/releasing 
   });
 
   it('a pre-existing different row at a key FAILS with a report, never a silent INSERT OR IGNORE', async () => {
-    await world.created('author', 'finding');
-    const backedUpAuthor = world.ids.author;
-    const { id: packageId } = await sealedPackage(async () => { /* the finding above is already seeded */ });
+    const { id: packageId } = await sealedPackage(async () => {
+      await world.created('author', 'finding');
+      await core().prepare("INSERT INTO settings (key, value, updated_at, updated_seq) VALUES ('test.conflict', 'original', ?1, 0)").bind(world.at).run();
+    });
     const bootstrapId = await freshEnvironmentWithBootstrap();
 
-    // Plant a DIFFERENT Member row at a backed-up Member's key (the author's original id, but a different email): when
-    // the restore reaches the `members` table the insert-or-verify decision must report an unexpected-duplicate
-    // conflict and FAIL the restore, never a silent INSERT OR IGNORE (R36.8).
-    await core().prepare("INSERT INTO members (id, email, email_lc, role_id, status, created_at, updated_seq) VALUES (?1, 'someone-else@example.test', 'someone-else@example.test', ?2, 'active', ?3, 0)")
-      .bind(backedUpAuthor, ROLE_IDS.contributor, world.at).run();
+    // Plant a DIFFERENT settings row at a backed-up key (settings are outside the emptiness check): when the restore
+    // reaches the `settings` table the insert-or-verify decision must report an unexpected-duplicate conflict and FAIL
+    // the restore, never a silent INSERT OR IGNORE (R36.8).
+    await core().prepare("INSERT INTO settings (key, value, updated_at, updated_seq) VALUES ('test.conflict', 'different', ?1, 0) ON CONFLICT(key) DO UPDATE SET value = 'different'").bind(world.at).run();
 
     const restoreId = await enqueueRestore(packageId, bootstrapId);
     await runRestore(restoreId);
@@ -249,7 +249,25 @@ describe('the restore fails closed on conflicts and faults, inserting/releasing 
     expect(restore?.state).toBe('failed');
     const report = JSON.parse(restore!.report) as { insertConflict?: { reason: string; table: string } };
     expect(report.insertConflict?.reason).toBe('unexpected-duplicate');
-    expect(report.insertConflict?.table).toBe('members');
+    expect(report.insertConflict?.table).toBe('settings');
+  });
+
+  it('a destination that already holds research or other Members is refused before anything is inserted (R36.4)', async () => {
+    const { id: packageId } = await sealedPackage(async () => { await world.created('author', 'finding'); });
+    const bootstrapId = await freshEnvironmentWithBootstrap();
+    const membersBefore = (await core().prepare('SELECT count(*) AS n FROM members').first<{ n: number }>())!.n;
+    // A second Member makes the destination non-empty.
+    await core().prepare("INSERT INTO members (id, email, email_lc, role_id, status, created_at, updated_seq) VALUES (?1, 'other@example.test', 'other@example.test', ?2, 'active', ?3, 0)")
+      .bind(newULID(world.at), ROLE_IDS.contributor, world.at).run();
+
+    const restoreId = await enqueueRestore(packageId, bootstrapId);
+    await runRestore(restoreId);
+    const restore = await core().prepare('SELECT state, report FROM restores WHERE id = ?1').bind(restoreId).first<{ state: string; report: string }>();
+    expect(restore?.state).toBe('failed');
+    const report = JSON.parse(restore!.report) as { problems?: { kind: string }[] };
+    expect((report.problems ?? []).some((p) => p.kind === 'destination-not-empty')).toBe(true);
+    expect((await core().prepare('SELECT count(*) AS n FROM units').first<{ n: number }>())!.n).toBe(0);
+    expect((await core().prepare('SELECT count(*) AS n FROM members').first<{ n: number }>())!.n).toBe(membersBefore + 1);
   });
 
   it('a bootstrap-identity conflict (ambiguous email) fails the restore', async () => {

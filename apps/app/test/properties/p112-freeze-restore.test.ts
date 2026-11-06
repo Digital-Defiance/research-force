@@ -524,7 +524,7 @@ describe('Property 112 Leg C — a rejected restore applies nothing and leaves t
       // An unsupported-schema fault seals the package at an ancient schema the current reader does not accept.
       if (fault === 'unsupported-schema') configureBackup('r-ancient');
       await world.created('author', 'finding');
-      const backedUpAuthor = world.ids.author;
+      await core().prepare("INSERT OR REPLACE INTO settings (key, value, updated_at, updated_seq) VALUES ('test.conflict', 'original', ?1, 0)").bind(world.at).run();
       const { id: packageId } = await (await world.request('admin', 'POST', '/backups', {})).json<{ id: ULID }>();
       expect(await runBackup(packageId)).toBe('complete');
       if (fault === 'unsupported-schema') configureBackup('r-test'); // the current reader does not list 'r-ancient'
@@ -540,10 +540,9 @@ describe('Property 112 Leg C — a rejected restore applies nothing and leaves t
         if (fault === 'flip-byte') { blob[blob.length - 1] = blob[blob.length - 1]! ^ 0xff; await priv().put(key(packageId, 'body.enc'), blob); }
         else await priv().put(key(packageId, 'body.enc'), blob.subarray(0, Math.max(0, blob.length - 16)));
       } else if (fault === 'conflicting-destination') {
-        // Plant a DIFFERENT Member row at a backed-up Member's key, so the insert-or-verify decision reports an
-        // unexpected-duplicate conflict and FAILS the restore rather than a silent INSERT OR IGNORE (R36.8).
-        await core().prepare("INSERT INTO members (id, email, email_lc, role_id, status, created_at, updated_seq) VALUES (?1, 'someone-else@example.test', 'someone-else@example.test', ?2, 'active', ?3, 0)")
-          .bind(backedUpAuthor, ROLE_IDS.contributor, world.at).run();
+        // Plant a DIFFERENT settings row at a backed-up key (outside the emptiness check), so the insert-or-verify
+        // decision reports an unexpected-duplicate conflict and FAILS the restore rather than a silent INSERT OR IGNORE (R36.8).
+        await core().prepare("INSERT OR REPLACE INTO settings (key, value, updated_at, updated_seq) VALUES ('test.conflict', 'different', ?1, 0)").bind(world.at).run();
       }
 
       const restoreId = await enqueueRestore(packageId, bootstrapId);

@@ -14,7 +14,7 @@ import type { ApiEnv } from '../api/app';
 import type { Env } from '../env';
 import { JOB_HANDLERS } from '../do/jobs';
 import type { JobHandler, JsonValue, SliceResult } from '../do/jobs';
-import { backupPreflight } from '../backup/preflight';
+import { backupPreflight, destinationEligibility } from '../backup/preflight';
 import type { PreflightProblem } from '../backup/preflight';
 import { reconcileBootstrapIdentity } from '../backup/reconcile';
 import type { BackedUpMember, ReconcileConflict } from '../backup/reconcile';
@@ -288,6 +288,10 @@ export const restoreJob: JobHandler = {
     if (cursor.phase === 'preflight') {
       const preflight = await backupPreflight(env, env.RF_PRIVATE_BUCKET, params.sourceExportId, registry);
       if (!preflight.ok) return fail(env, id, { problems: preflight.problems }, now);
+      // The destination must be an EMPTY installation (R36.4): refuse before inserting anything, so a restore into a
+      // live installation can never resurrect material deleted since the backup.
+      const occupied = await destinationEligibility(env.RF_CORE, job.requestedBy ?? '');
+      if (occupied.length > 0) return fail(env, id, { problems: occupied }, now);
       // Preflight passed: the package is authentic and every byte/reference/count checks out. Move to the bootstrap.
       return step(cursor, { phase: 'bootstrap' });
     }
