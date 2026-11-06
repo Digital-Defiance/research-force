@@ -95,7 +95,7 @@ function BackupCard({ record }: { readonly record: BackupView }) {
         {record.expiresAt === null ? '' : ` · kept until ${whenLabel(record.expiresAt)}`}
       </p>
       {record.download.length > 0 && (
-        <section className="rf-section" aria-label={`Download links for backup ${record.id}`}>
+        <section className="rf-section rf-nested" aria-label={`Download links for backup ${record.id}`}>
           <h4>Download</h4>
           <ul className="rf-list">
             {record.download.map((link, index) => (

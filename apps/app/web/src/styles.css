@@ -33,6 +33,15 @@ body {
   padding-block-start: var(--rf-space-md);
 }
 
+/* A block that belongs to the item above it: indented with a quiet rule down its left edge, no top divider. */
+.rf-section.rf-nested {
+  border-block-start: 0;
+  border-inline-start: var(--rf-border-width) solid var(--rf-colour-border);
+  margin-inline-start: var(--rf-space-lg);
+  padding-block-start: 0;
+  padding-inline-start: var(--rf-space-md);
+}
+
 .rf-meta {
   color: var(--rf-colour-text-muted);
 }
