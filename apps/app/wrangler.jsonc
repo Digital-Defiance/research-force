@@ -18,6 +18,8 @@
     "PRIVATE_BUCKET_NAME": "rf-private",
     "PUBLIC_BUCKET_NAME": "rf-public",
     // Independent backup copies are carried by hand to the operator's own drive (offline destination).
+    // Operator approval of the independent-backup storage budget (local drive: no storage cost).
+    "BACKUP_COPY_BUDGET_APPROVED": "true",
     "BACKUP_COPY_DESTINATION": "{\"kind\":\"offline\",\"label\":\"operator-local-drive\"}",
     "CONTENT_LICENCE_NAME": "CC BY 4.0",
     "CONTENT_LICENCE_URL": "https://creativecommons.org/licenses/by/4.0/"
