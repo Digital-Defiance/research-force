@@ -9,7 +9,7 @@
     {
       "binding": "RF_CORE",
       "database_name": "rf-core",
-      "database_id": "00000000-0000-4000-8000-000000000001",
+      "database_id": "5f5ba177-402d-4faf-a67b-fcbda09fa94d",
       "migrations_dir": "../../packages/db/migrations/core"
     }
   ],
@@ -46,5 +46,6 @@
   },
   "vars": {
     "WORKSPACE_ORIGIN": "https://app.researchforce.org"
-  }
+  },
+  "routes": [{ "pattern": "dl.researchforce.org", "custom_domain": true }]
 }

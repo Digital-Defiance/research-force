@@ -6,8 +6,12 @@
   "workers_dev": false,
   "preview_urls": false,
   // The durable external_operations record and the publication epoch live in rf-core (task 32.1, task 59.1).
+  "vars": {
+    "CF_ACCOUNT_ID": "48ca646fd701c00c0069952c95299dad",
+    "ACCESS_MEMBER_LIST_ID": "fd3597d8-69ff-4e7c-9616-77446e8a0f44"
+  },
   "d1_databases": [
-    { "binding": "RF_CORE", "database_name": "rf-core", "database_id": "rf-core" }
+    { "binding": "RF_CORE", "database_name": "rf-core", "database_id": "5f5ba177-402d-4faf-a67b-fcbda09fa94d" }
   ],
   "env": {
     "staging": {

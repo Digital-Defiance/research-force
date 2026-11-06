@@ -8,29 +8,33 @@
   "observability": {
     "enabled": true
   },
+  "routes": [{ "pattern": "app.researchforce.org", "custom_domain": true }],
   "vars": {
     "WORKSPACE_ORIGIN": "https://app.researchforce.org",
     "DOWNLOAD_ORIGIN": "https://dl.researchforce.org",
     "PUBLIC_SITE_ORIGIN": "https://researchforce.org",
-    "PUBLIC_FILES_ORIGIN": "https://files.researchforce.org"
+    "PUBLIC_FILES_ORIGIN": "https://files.researchforce.org",
+    "R2_ACCOUNT_ID": "48ca646fd701c00c0069952c95299dad",
+    "PRIVATE_BUCKET_NAME": "rf-private",
+    "PUBLIC_BUCKET_NAME": "rf-public"
   },
   "d1_databases": [
     {
       "binding": "RF_CORE",
       "database_name": "rf-core",
-      "database_id": "00000000-0000-4000-8000-000000000001",
+      "database_id": "5f5ba177-402d-4faf-a67b-fcbda09fa94d",
       "migrations_dir": "../../packages/db/migrations/core"
     },
     {
       "binding": "RF_SEARCH",
       "database_name": "rf-search",
-      "database_id": "00000000-0000-4000-8000-000000000002",
+      "database_id": "3b599490-1f42-45fa-8502-e32ebc5860f9",
       "migrations_dir": "../../packages/db/migrations/search"
     },
     {
       "binding": "RF_PUBLIC",
       "database_name": "rf-public",
-      "database_id": "00000000-0000-4000-8000-000000000003",
+      "database_id": "ddf0b4b8-f953-4724-a36e-77e21854694b",
       "migrations_dir": "../../packages/db/migrations/public"
     }
   ],
