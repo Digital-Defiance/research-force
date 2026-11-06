@@ -496,7 +496,12 @@ async function sealPackage(env: ApiEnv['Bindings'], id: string, cursor: Cursor, 
   const complete = !cursor.incomplete && misses.length === 0;
 
   // Group every package file into volume manifests of at most 900 members for rf-dl (R36.2, task 38.3).
-  const packagePaths = ['header.json', 'body.enc', 'manifest-fingerprint.txt', ...accumulator.files.map((file) => `files/${file.id}`)];
+  // The table body parts (rows > 0; an empty table has no part) must travel too, or the downloaded copy cannot restore or verify.
+  const packagePaths = [
+    'header.json', 'body.enc', 'manifest-fingerprint.txt',
+    ...accumulator.tables.filter((table) => table.rows > 0).map((table) => `body/${table.table}.jsonl`),
+    ...accumulator.files.map((file) => `files/${file.id}`),
+  ];
   const volumes = volumeManifests(packagePaths, (path) => `${prefix}/${path}`);
   const volumeKeys: string[] = [];
   for (let index = 0; index < volumes.length; index++) {
