@@ -12,6 +12,74 @@ export interface OpsAccess {
 }
 
 /**
+ * The narrow RPC surface of `rf-ops` for reading platform usage from the Cloudflare GraphQL Analytics API
+ * (task 44.1, R19.10). `rf-ops` is the SOLE holder of the account-scoped analytics-read token, exactly as it
+ * is the sole holder of the Access, deploy, WAF, and Containment tokens; `rf-app`'s usage-alert check (task
+ * 44.2, `apps/app/src/usage/alerts.ts`) reaches this over the OPS service binding rather than holding the
+ * analytics token itself. Like {@link OpsAccess}, the method throws when Cloudflare refuses, the GraphQL
+ * response carries `errors`, or the API cannot be reached; it throws a clear "not configured" error when the
+ * account id or analytics token is missing. The returned snapshot is metered counts only, never any research
+ * content.
+ */
+export interface OpsAnalytics {
+  /**
+   * Read a usage snapshot over the half-open window `[from, to)` (ISO-8601 timestamps): Worker requests, D1
+   * rows read/written and storage PER DATABASE, R2 storage and Class A / Class B operations, and Workers AI
+   * Neurons. The parse is defensive — a missing or empty analytics node reads as zero/empty rather than
+   * throwing — so a dataset with no activity in the window reports zero and never a gap.
+   */
+  usage(window: UsageWindow): Promise<UsageSnapshot>;
+}
+
+/** The half-open time window `[from, to)` a usage read aggregates over, as ISO-8601 timestamps (R19.10). */
+export interface UsageWindow {
+  /** Inclusive start of the window, an ISO-8601 timestamp (e.g. the UTC day start for a daily allowance). */
+  readonly from: string;
+  /** Exclusive end of the window, an ISO-8601 timestamp (e.g. the current instant). */
+  readonly to: string;
+}
+
+/** D1 rows read/written and current storage for a single database, keyed by its id/name (R19.10). */
+export interface D1DatabaseUsage {
+  /** The Cloudflare database id (`databaseId`) the analytics node is keyed by. */
+  readonly databaseId: string;
+  /** The D1 rows read in the window, summed across the database's analytics groups. */
+  readonly rowsRead: number;
+  /** The D1 rows written in the window, summed across the database's analytics groups. */
+  readonly rowsWritten: number;
+  /** The database's most recent reported stored bytes in the window (the latest storage sample, not a sum). */
+  readonly storedBytes: number;
+}
+
+/** R2 operations split by billing class: Class A (mutating/list) and Class B (read) (R19.10). */
+export interface R2OperationsUsage {
+  /** Class A operations (writes, lists, and other mutating calls) in the window. */
+  readonly classA: number;
+  /** Class B operations (reads) in the window. */
+  readonly classB: number;
+}
+
+/**
+ * A content-free platform usage snapshot read from the Cloudflare GraphQL Analytics API (task 44.1, R19.10),
+ * the input the usage-alert state machine (task 44.2) checks against the free-plan allowances. Every field is
+ * a metered count or byte total — never any research content.
+ */
+export interface UsageSnapshot {
+  /** The window this snapshot aggregates over, echoed back from the request. */
+  readonly window: UsageWindow;
+  /** Total Worker requests (invocations) across the account in the window. */
+  readonly workerRequests: number;
+  /** D1 rows read/written and storage PER DATABASE, keyed by database id, in a stable (id-sorted) order. */
+  readonly d1: readonly D1DatabaseUsage[];
+  /** R2 current stored bytes: the latest storage sample in the window across the account's buckets. */
+  readonly r2StoredBytes: number;
+  /** R2 operations in the window, split into Class A and Class B. */
+  readonly r2Operations: R2OperationsUsage;
+  /** Workers AI Neurons consumed in the window (the unit Cloudflare meters Workers AI usage in). */
+  readonly aiNeurons: number;
+}
+
+/**
  * Whether the configured platform plan can actually deny traffic on the public research hosts. The Publisher
  * relies on precreated edge Containment as the fallback when a removal is not verified in time (design
  * "Publisher" step 7, R24.16); if the plan cannot carry the required deny rules this is a public-launch
@@ -80,6 +148,119 @@ export interface OpsContainment {
    * operation identities and states (R28.6, R60.6).
    */
   declareIncident(incident: ConfidentialityIncident): Promise<void>;
+}
+
+/**
+ * The narrow RPC surface of `rf-ops` for the INDEPENDENT backup-age / RPO alert (task 58.2, R36.7, R28.4, R60.6;
+ * design "Internal_Backup and independent recovery": "it warns at 18 hours and declares an RPO breach at 24 hours").
+ * The backup RPO check (`apps/app/src/backup/rpo.ts`), run from the cron, calls this so the warning/breach reaches an
+ * out-of-band channel operable without the application D1 and its email queue (R60.6) — not only an in-app notice.
+ * Like {@link OpsContainment}, the method throws when the independent channel refuses or cannot be reached. The
+ * payload is content-free: it names the age and threshold only, never a research body, bearer link, or recovery
+ * secret (R28.6, R60.6).
+ */
+export interface OpsBackupAlert {
+  /**
+   * Declare a backup-age alert on the independent channel: a `warning` when the latest verified independent recovery
+   * point is older than the 18-hour warning threshold, a `breach` when older than the 24-hour RPO objective, repeated
+   * daily until resolved (R36.7). `cleared` withdraws a prior alert once a fresh verified point restores the RPO. The
+   * payload is content-free; `ageHours` and `thresholdHours` are rounded ages, never any research content.
+   */
+  backupAgeAlert(alert: BackupAgeAlert): Promise<void>;
+}
+
+/** The content-free backup-age alert sent to the independent channel (R36.7, R60.6): ages and state only, no content. */
+export interface BackupAgeAlert {
+  /** The alert level: a crossed 18-hour warning, a crossed 24-hour RPO breach, or a withdrawal once resolved. */
+  readonly level: 'warning' | 'breach' | 'cleared';
+  /** The age in whole hours of the latest verified independent recovery point, or null when none has ever verified. */
+  readonly ageHours: number | null;
+  /** The threshold in whole hours this alert level crosses (18 for a warning, 24 for a breach). */
+  readonly thresholdHours: number;
+}
+
+/**
+ * The narrow RPC surface of `rf-ops` for the INDEPENDENT health / availability alert (task 67.2, R60.6; design
+ * "Release assurance, maintenance, and independent operations": `infra/ops/` configures provider-native or
+ * independent external health checks whose delivery does not need `rf-core` or the Graph queue).
+ *
+ * This is a PROVIDER-NATIVE / INDEPENDENT external check: {@link OpsHealthAlert.certifyHealth} does not read a
+ * stored health flag — it HEADs the configured public/app endpoints out-of-band and reads the live Containment
+ * capability, then declares the result on the independent channel. It is therefore operable, and meaningful,
+ * even when the application D1 and its email queue are down (R60.6). Like {@link OpsContainment}, the method
+ * throws only when the independent channel itself refuses or cannot be reached; an unreachable *monitored*
+ * endpoint is a finding reported in the alert, not a throw. The payload is content-free: endpoint identities
+ * and reachability states only, never a research body, bearer link, or recovery secret (R28.6, R60.6).
+ */
+export interface OpsHealthAlert {
+  /**
+   * Run the independent external health check and declare the result on the independent channel. Certifies
+   * ACTUAL availability: each monitored endpoint is probed out-of-band and the Containment control path is
+   * read live, so a `down`/`degraded` result reflects real reachability, not a stored flag. Returns the
+   * certified report (also sent on the channel). Throws only when the independent channel refuses or is
+   * unreachable.
+   */
+  certifyHealth(): Promise<HealthReport>;
+}
+
+/** The reachability of a single monitored endpoint, as a fresh out-of-band HEAD reports it (R60.6). */
+export interface EndpointHealth {
+  /** A stable, content-free label for the endpoint (e.g. `app`, `public`), never a bearer link. */
+  readonly name: string;
+  /** Whether the endpoint answered a HEAD within the probe: served, denied (reachable but blocked), or unreachable. */
+  readonly state: 'up' | 'denied' | 'unreachable';
+}
+
+/**
+ * The content-free health report sent to the independent channel (R60.6): endpoint identities, reachability
+ * states, and whether the confidentiality-control path is actually available — never any research content,
+ * bearer link, or recovery secret. `controlAvailable` is read live from the Containment capability, so it
+ * certifies that denial can really be applied, not that a flag is set.
+ */
+export interface HealthReport {
+  /** The overall level: `ok` when every endpoint is reachable and control is available, else `degraded`/`down`. */
+  readonly level: 'ok' | 'degraded' | 'down';
+  /** The per-endpoint reachability, as freshly probed. */
+  readonly endpoints: readonly EndpointHealth[];
+  /** Whether the confidentiality-denial control path is actually available right now (live, not a stored flag). */
+  readonly controlAvailable: boolean;
+}
+
+/**
+ * The narrow RPC surface of `rf-ops` for the INDEPENDENT spend / budget alert (task 67.2, R28.4, R60.6; design
+ * "Capacity, cost, and public abuse budgets": alerts at 80% remain and the operator sees normal spend targets,
+ * independent backup costs, and projected overrun). The `Budget` Durable Object and the spend forecaster call
+ * this so a budget warning/breach reaches an out-of-band channel operable without the application D1 and its
+ * email queue (R60.6). Like {@link OpsBackupAlert}, the method throws when the independent channel refuses or
+ * cannot be reached; the payload is content-free — percentages and whole-currency amounts only, never a
+ * research body, bearer link, or recovery secret (R28.6, R60.6).
+ */
+export interface OpsSpendAlert {
+  /**
+   * Declare a spend/budget alert on the independent channel: a `warning` at the 80% approach threshold, a
+   * `breach` once the operator-approved budget or a provider daily quota is exceeded, and `cleared` to
+   * withdraw a prior alert once spend falls back within budget (R28.4). The payload is content-free:
+   * identities, percentages, and whole-currency amounts only.
+   */
+  spendAlert(alert: SpendAlert): Promise<void>;
+}
+
+/** The content-free spend/budget alert sent to the independent channel (R28.4, R60.6): amounts and states only. */
+export interface SpendAlert {
+  /** The alert level: an 80% approach warning, an over-budget/quota breach, or a withdrawal once back within budget. */
+  readonly level: 'warning' | 'breach' | 'cleared';
+  /** A stable, content-free label for what is being metered (e.g. `monthly_spend`, `workers_daily`, `d1_rows`). */
+  readonly meter: string;
+  /** The measured usage as a whole percentage of the operator-approved budget or provider daily quota. */
+  readonly usagePercent: number;
+  /**
+   * The budget this alert is measured against, in whole units of its {@link SpendAlert.currency} (USD cents or
+   * a provider daily count), so the operator can read the headroom without any research content. Null when the
+   * meter is a pure percentage with no fixed amount.
+   */
+  readonly budgetAmount: number | null;
+  /** The unit of {@link SpendAlert.budgetAmount}: `usd_cents` for monetary budgets, `count` for quota counts. */
+  readonly currency: 'usd_cents' | 'count';
 }
 
 /**

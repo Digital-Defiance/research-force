@@ -6,7 +6,7 @@ import type { ProjectView, WithheldView } from '@researchforce/kernel/views';
 import type { ResearchItemView, UnitKey } from '@researchforce/kernel/views';
 import { disclosureLine } from './blocks';
 import { KIND_LISTING_TITLES } from './format';
-import { SITE_NAME, type PageSpec } from './frame';
+import { siteName, type PageSpec } from './frame';
 import { kindListing, toPages } from './listings';
 import { PAGE_PATHS, paged, projectPaths } from './paths';
 import type { SiteInput } from './site';
@@ -32,12 +32,22 @@ function projectEntry(entry: ProjectEntry): ElementNode {
 export const NO_FEATURED_NOTICE = 'No project is featured at present.';
 const ALL_PROJECTS_LINK = (): ElementNode => element('p', {}, [element('a', { href: PAGE_PATHS.projects }, [text('All projects')])]);
 
-/** Featured_Projects that are Public or Withheld, in the Project_Order, or the no-featured notice (R40.1, R40.11). */
+/**
+ * The home page: the installation masthead name and strapline, the Mission statement, then Featured_Projects that are
+ * Public or Withheld in the Project_Order (or the no-featured notice), keeping the Mission before Featured Projects
+ * (R40.1, R40.11, R46.41). The masthead and Mission come from the validated Installation_Public_Copy.
+ */
 export function homePage(site: SiteInput): PageSpec {
   const featured = projectsInOrder(site).filter((entry) => site.featured.has(entry.key));
+  const { publicCopy } = site;
   return {
-    path: SITE_PATHS.home, title: SITE_NAME,
+    path: SITE_PATHS.home, title: siteName(site),
     body: [
+      element('p', { class: 'rf-home__strapline' }, [text(publicCopy.strapline)]),
+      element('section', { class: 'rf-home__mission', 'aria-labelledby': 'mission-heading' }, [
+        element('h2', { id: 'mission-heading' }, [text(publicCopy.mission.heading)]),
+        ...publicCopy.mission.paragraphs.map((paragraph) => element('p', {}, [text(paragraph)])),
+      ]),
       element('p', { class: 'rf-home__statement' }, GROUP_STATEMENT.paragraphs.map(text)),
       element('section', { class: 'rf-home__featured', 'aria-labelledby': 'featured-heading' }, [
         element('h2', { id: 'featured-heading' }, [text('Featured projects')]),

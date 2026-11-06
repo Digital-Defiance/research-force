@@ -1,4 +1,5 @@
 import type { ContentLicence } from '@researchforce/design/fixed-texts';
+import type { ValidatedInstallationPublicCopy } from '@researchforce/design/installation';
 import type { RetentionRow } from '@researchforce/domain/retention';
 import type { RichText } from '@researchforce/domain/richtext';
 import type { ValueSetKind } from '@researchforce/domain/value-sets';
@@ -50,7 +51,7 @@ export interface SiteAssets {
   readonly searchScript: string;
 }
 export const DEFAULT_ASSETS: SiteAssets = {
-  styles: ['/assets/tokens.css', '/assets/fonts.css', '/assets/components.css'],
+  styles: ['/assets/tokens.css', '/assets/fonts.css', '/assets/components.css', '/assets/print.css'],
   citationScript: '/assets/citation.js',
   formScript: '/assets/form.js',
   searchScript: '/assets/search.js',
@@ -70,6 +71,14 @@ export interface SiteInput {
   /** Creation times (ISO 8601) that break ties in listings (R40.4); never shown. */
   readonly createdAt: ReadonlyMap<UnitKey, string>;
   readonly licence: ContentLicence;
+  /**
+   * The installation's validated public copy: the masthead name and strapline, the Mission statement, the About
+   * prose, and the ordered Principles, with the content `digest` the Publisher records in the site-build manifest so
+   * a copy change invalidates every affected output (R40.12, R46.41). Always a validated bundle; the Publisher,
+   * export, and preview obtain it through `assertPublicCopy`, which refuses an unconfigured or partial copy with no
+   * ResearchForce.org fallback.
+   */
+  readonly publicCopy: ValidatedInstallationPublicCopy;
   /** The Public_Profiles the People page shows (R46.5), already limited to active Members with the setting On. */
   readonly profiles: readonly PublicProfileView[];
   readonly responsiblePerson: string;

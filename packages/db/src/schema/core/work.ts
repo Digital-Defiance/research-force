@@ -139,15 +139,116 @@ export const outsideSubmissions = sqliteTable('outside_submissions', {
   emailEraseAfter: text('email_erase_after'),
   emailErasedAt: text('email_erased_at'),
   filesDeletedAt: text('files_deleted_at'),
+  // The highest Response_Target reminder threshold (days since receipt) already reminded, so the hourly sweep
+  // creates each (submission, threshold) Reminder once even across repeated runs; NULL means none yet (R46.25).
+  responseTargetRemindedDay: integer('response_target_reminded_day'),
+  // When this accepted Outside_Submission's Submitter_Contact next falls due for a Contact_Review: the acceptance
+  // time (or the last Keep Contact_Review) plus 12 months, set only on accepting a non-Removal_Request (R32.19).
+  // NULL means no review is scheduled — a rejected, removed, or still-queued Outside_Submission, or one whose email
+  // has been erased so there is no longer a Submitter_Contact to review (R32.20).
+  contactReviewDueAt: text('contact_review_due_at'),
+  // The day index (days since the epoch) on which the Contact_Review sweep last reminded about this Outside_Submission,
+  // so the once-a-day "became due" Reminder and the every-30-days overdue repeat each go out once across hourly runs;
+  // NULL means it has become due but has not yet been reminded (R32.19, R32.21). Cleared to NULL on a Keep Contact_Review
+  // when a new due date is set, so the next cycle reminds afresh.
+  contactReviewRemindedDay: integer('contact_review_reminded_day'),
   ...versioned(),
 }, (t) => [
   uniqueIndex('outside_submissions_reference').on(t.reference),
   index('outside_submissions_queue').on(t.state, t.receivedAt),
   index('outside_submissions_erase').on(t.emailEraseAfter).where(sql`${t.emailErasedAt} IS NULL`),
+  // Contact_Review candidates: a scheduled due date whose email is still held, newest-reminded tracked for idempotency (R32.19).
+  index('outside_submissions_contact_review').on(t.contactReviewDueAt).where(sql`${t.contactReviewDueAt} IS NOT NULL AND ${t.emailErasedAt} IS NULL`),
   oneOf('outside_submissions_type_values', t.type, OUTSIDE_SUBMISSION_TYPES),
   oneOf('outside_submissions_state_values', t.state, OUTSIDE_SUBMISSION_STATES),
   check('outside_submissions_email_erasure', sql`${t.emailErasedAt} IS NULL OR ${t.email} IS NULL`),
   check('outside_submissions_licence', sql`(${t.type} = 'removal_request') = (${t.licenceAgreed} IS NULL)`),
+]);
+
+export const CONTACT_REVIEW_ACTIONS = ['keep', 'erase'] as const;
+export const SUBMITTER_CORRECTION_KINDS = ['attribution', 'contact'] as const;
+
+/**
+ * An append-only Contact_Review: the yearly decision an Administrator records for an accepted Outside_Submission
+ * whose Submitter_Contact is still held — Keep it for another 12 months with a reason, or Erase it (R32.19, R32.20).
+ * Rows are never updated: each review records its choice, the reason, the Administrator, and the time, so the whole
+ * sequence of reviews is the history. A Keep moves the Outside_Submission's `contact_review_due_at` 12 months on; an
+ * Erase schedules the Submitter_Contact's erasure within 24 hours. Both keep the Submitter_Attribution and the
+ * submitted text (R32.20). The raw migration adds the trigger that refuses an UPDATE or DELETE.
+ */
+export const contactReviews = sqliteTable('contact_reviews', {
+  id: text('id').primaryKey(),
+  outsideSubmissionId: text('outside_submission_id').notNull(),
+  action: text('action', { enum: CONTACT_REVIEW_ACTIONS }).notNull(),
+  /** 1 to 1,000 characters for a Keep; NULL for an Erase, which needs no reason (R32.20). */
+  reason: text('reason'),
+  adminId: text('admin_id').notNull(),
+  at: text('at').notNull(),
+}, (t) => [
+  index('contact_reviews_submission').on(t.outsideSubmissionId, t.at),
+  oneOf('contact_reviews_action_values', t.action, CONTACT_REVIEW_ACTIONS),
+  // A Keep carries a reason; an Erase carries none (R32.20).
+  check('contact_reviews_reason', sql`(${t.action} = 'keep') = (${t.reason} IS NOT NULL)`),
+]);
+
+/**
+ * An append-only Submitter correction: an Administrator's correction, at any time, of the Submitter_Attribution
+ * (the name and affiliation) or the Submitter_Contact (the email), or an erasure of the Submitter_Contact, with a
+ * reason (R32.22). Rows are never updated: each records the acting Administrator, the time, the reason, the new
+ * values, and the previous values — except that a previous erased Submitter_Contact is not kept (`prev_email` is
+ * NULL for a contact erasure). A corrected Submitter_Attribution is rewritten into the Credit of every Item created
+ * from the Outside_Submission, each with a Minor_Edit Revision (R32.22). The raw migration adds the append-only
+ * trigger.
+ */
+export const submitterCorrections = sqliteTable('submitter_corrections', {
+  id: text('id').primaryKey(),
+  outsideSubmissionId: text('outside_submission_id').notNull(),
+  kind: text('kind', { enum: SUBMITTER_CORRECTION_KINDS }).notNull(),
+  /** Whether a `contact` correction erased the Submitter_Contact rather than replacing it (R32.22). */
+  erased: flag('erased'),
+  /** The corrected name, for an `attribution` correction; NULL for a `contact` correction. */
+  newName: text('new_name'),
+  /** The corrected affiliation, for an `attribution` correction; NULL when the affiliation is cleared or for a `contact` correction. */
+  newAffiliation: text('new_affiliation'),
+  /** The corrected email, for a `contact` correction that replaced it; NULL for an erasure or an `attribution` correction. */
+  newEmail: text('new_email'),
+  /** The previous name, kept for an `attribution` correction (R32.22). */
+  prevName: text('prev_name'),
+  /** The previous affiliation, kept for an `attribution` correction when one was set. */
+  prevAffiliation: text('prev_affiliation'),
+  /** The previous email, kept for a `contact` correction that replaced it; NEVER kept for an erasure (R32.22). */
+  prevEmail: text('prev_email'),
+  adminId: text('admin_id').notNull(),
+  /** 1 to 1,000 characters (R32.22). */
+  reason: text('reason').notNull(),
+  at: text('at').notNull(),
+}, (t) => [
+  index('submitter_corrections_submission').on(t.outsideSubmissionId, t.at),
+  oneOf('submitter_corrections_kind_values', t.kind, SUBMITTER_CORRECTION_KINDS),
+  // An erasure is a contact correction; an attribution correction never erases.
+  check('submitter_corrections_erased', sql`${t.erased} = 0 OR ${t.kind} = 'contact'`),
+  // An erased Submitter_Contact is not kept, so no new or previous email is recorded for it (R32.22).
+  check('submitter_corrections_erase_values', sql`${t.erased} = 0 OR (${t.newEmail} IS NULL AND ${t.prevEmail} IS NULL)`),
+  // An attribution correction records a name and no email; a contact correction records no name or affiliation. An
+  // erased Submitter_Contact keeps no email either way, so a contact correction may hold no email (R32.22).
+  check('submitter_corrections_shape', sql`
+    (${t.kind} = 'attribution' AND ${t.newEmail} IS NULL AND ${t.prevEmail} IS NULL)
+    OR (${t.kind} = 'contact' AND ${t.newName} IS NULL AND ${t.newAffiliation} IS NULL AND ${t.prevName} IS NULL AND ${t.prevAffiliation} IS NULL)`),
+]);
+
+/**
+ * The moderation tables the Internal_Backup includes, and the columns it must omit (R32.19 to R32.22, R46.19).
+ *
+ * The Contact_Reviews and Submitter corrections of an accepted Outside_Submission are its history, kept as long as
+ * the Outside_Submission exists, so the backup carries the full rows. They hold no single-use secret, so nothing is
+ * excluded — the one personal datum a correction deliberately drops, a previously erased Submitter_Contact, is never
+ * stored in the first place (`prev_email` is NULL for an erasure), so a restore cannot resurrect it. The Internal_Backup
+ * job of task 38.4 is not yet implemented; it MUST consume this list so these tables are backed up. Add any later
+ * moderation table here rather than to the backup job itself, so the table list stays beside the schema that declares it.
+ */
+export const MODERATION_BACKUP_TABLES: readonly { readonly table: string; readonly excludeColumns: readonly string[] }[] = Object.freeze([
+  Object.freeze({ table: 'contact_reviews', excludeColumns: Object.freeze([]) }),
+  Object.freeze({ table: 'submitter_corrections', excludeColumns: Object.freeze([]) }),
 ]);
 
 export const outsideFiles = sqliteTable('outside_files', {

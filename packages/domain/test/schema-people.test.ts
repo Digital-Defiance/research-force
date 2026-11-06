@@ -53,6 +53,10 @@ describe('Projects and policy fields', () => {
     expect(policySectionSchema(false).safeParse(rt('x'.repeat(20_001))).success).toBe(false);
     expect(externalPartySchema().safeParse({ name: 'Archive', doNotName: true }).success).toBe(false);
     expect(externalPartySchema().safeParse({ name: 'Archive', doNotName: true, genericLabel: 'an archive' }).success).toBe(true);
+    // Contact_Email is optional and, when present, follows the same address rule as an invitation (R51.1).
+    expect(externalPartySchema().safeParse({ name: 'Archive', doNotName: false }).success).toBe(true);
+    expect(externalPartySchema().safeParse({ name: 'Archive', doNotName: false, contactEmail: 'archivist@example.test' }).success).toBe(true);
+    for (const contactEmail of ['not-an-email', 'a b@example.test', `${'a'.repeat(251)}@x.y`]) expect(externalPartySchema().safeParse({ name: 'Archive', doNotName: false, contactEmail }).success, contactEmail).toBe(false);
   });
 });
 

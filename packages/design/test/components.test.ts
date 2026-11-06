@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { labelTextFor } from '@researchforce/domain/label-marks';
 import { text, type ViewNode } from '@researchforce/domain/tree';
 import {
-  attachmentList, button, citationBlock, dataTable, disclosureLineBlock, dissentNoteBlock, formField, labelMark, linkButton, mainContent, notice,
-  pageWindow, pagination, siteFooter, siteHeader, statusBlock, ACCESS_DATE_PLACEHOLDER, FORM_FOOTER_LINK,
+  attachmentList, breadcrumb, button, card, citationBlock, dataTable, disclosureLineBlock, dissentNoteBlock, emptyState, formField, labelMark, linkButton,
+  mainContent, notice, pageHeader, pageLayout, pageWindow, pagination, siteFooter, siteHeader, skeleton, statusBlock, tabs, ACCESS_DATE_PLACEHOLDER, FORM_FOOTER_LINK,
 } from '../src/components/index';
 import { GROUP_STATEMENT, POLICY_PAGES, SITE_PATHS } from '../src/fixed-texts';
 import { renderToString } from '../src/render-string';
@@ -14,10 +14,10 @@ const visible = (node: ViewNode): string => renderToString(node).replace(/<[^>]*
   .replace(/&lt;/gu, '<').replace(/&gt;/gu, '>').replace(/&quot;/gu, '"').replace(/&#x27;/gu, "'").replace(/&amp;/gu, '&');
 
 describe('page frame', () => {
-  it('starts with a skip link to the main landmark and a ResearchForce link to the given home', () => {
-    const html = renderToString(siteHeader({ home: '/workspace', navigation: [{ label: 'Items', href: '/items', current: true }, { label: 'Logs', href: '/logs' }] }));
+  it('starts with a skip link to the main landmark and a masthead link to the given home', () => {
+    const html = renderToString(siteHeader({ home: '/workspace', name: 'Synthetic Collective', strapline: 'A visibly different strapline', navigation: [{ label: 'Items', href: '/items', current: true }, { label: 'Logs', href: '/logs' }] }));
     expect(html).toMatch(/^<a class="rf-skip-link" href="#main">Skip to main content<\/a><header/u);
-    expect(html).toContain('<a class="rf-header__brand" href="/workspace">ResearchForce</a>');
+    expect(html).toContain('<a class="rf-header__brand" href="/workspace"><span class="rf-header__name">Synthetic Collective</span><span class="rf-header__strapline">A visibly different strapline</span></a>');
     expect(html).toContain('<nav class="rf-nav" aria-label="Main">');
     expect(html).toContain('href="/items" aria-current="page">Items</a>');
     expect(html).not.toContain('href="/logs" aria-current');
@@ -134,5 +134,65 @@ describe('content blocks', () => {
     expect(visible(block)).toBe('Dissent note by D. Member · last saved 27 October 2026Written about an earlier wordingWithdrawn on 28 October 2026: ResolvedI disagree.');
     expect(renderToString(dissentNoteBlock({ authorName: 'E', savedAt: 't', body: [] }))).not.toMatch(/withdrawn|earlier|href/u);
     expect(renderToString(dissentNoteBlock({ authorName: 'E', savedAt: 't', body: [], earlierWording: {} }))).toContain('<p class="rf-dissent__earlier">Written about an earlier wording</p>');
+  });
+});
+
+describe('layout and page-header shells', () => {
+  it('renders the breadcrumb as a labelled nav ending in the current page marked aria-current (R6.3)', () => {
+    const html = renderToString(breadcrumb([{ label: 'Home', href: '/' }, { label: 'Projects', href: '/projects' }, { label: 'Alpha' }]));
+    expect(html).toBe('<nav class="rf-breadcrumb" aria-label="Breadcrumb"><ol>'
+      + '<li><a href="/">Home</a></li><li><a href="/projects">Projects</a></li><li><span aria-current="page">Alpha</span></li>'
+      + '</ol></nav>');
+    expect(renderToString(breadcrumb([{ label: 'Alpha' }], 'You are here'))).toMatch(/^<nav class="rf-breadcrumb" aria-label="You are here">/u);
+  });
+
+  it('renders the page header with its breadcrumb, single h1 title, description, and actions cluster (R6.1, R6.3, R6.4)', () => {
+    const html = renderToString(pageHeader({ title: 'Alpha', description: 'A project', breadcrumb: [{ label: 'Home', href: '/' }, { label: 'Alpha' }], actions: [text('X')] }));
+    expect(html).toMatch(/^<header class="rf-page-header"><nav class="rf-breadcrumb"/u);
+    expect(html).toContain('<h1>Alpha</h1>');
+    expect(html).toContain('<p class="rf-page-header__description">A project</p>');
+    expect(html).toContain('<div class="rf-actions">X</div>');
+    expect(renderToString(pageHeader({ title: 'Only' }))).toBe('<header class="rf-page-header"><h1>Only</h1></header>');
+    expect(renderToString(pageHeader({ title: 'Empty', breadcrumb: [], actions: [] }))).not.toMatch(/rf-breadcrumb|rf-actions|rf-page-header__description/u);
+  });
+
+  it('wraps a dense page in the chosen wide or two-column layout variant (R6.2, R6.5)', () => {
+    expect(renderToString(pageLayout('wide', [text('a')]))).toBe('<div class="rf-layout rf-layout--wide">a</div>');
+    expect(renderToString(pageLayout('split', [text('b')]))).toBe('<div class="rf-layout rf-layout--split">b</div>');
+  });
+});
+
+describe('content shells', () => {
+  it('groups content in a card with an optional linked heading and header extra (R7.1)', () => {
+    const html = renderToString(card({ heading: 'Reviews', headingHref: '/reviews', headingExtra: text('View all') }, [text('body')]));
+    expect(html).toBe('<section class="rf-card"><div class="rf-card__header"><h2><a href="/reviews">Reviews</a></h2>View all</div>body</section>');
+    expect(renderToString(card({ heading: 'Plain' }, [text('x')]))).toBe('<section class="rf-card"><div class="rf-card__header"><h2>Plain</h2></div>x</section>');
+    expect(renderToString(card({}, [text('x')]))).toBe('<section class="rf-card">x</section>');
+  });
+
+  it('shows an empty state with a message and an optional next action (R7.4)', () => {
+    expect(renderToString(emptyState('Nothing here', text('Add one')))).toBe('<div class="rf-empty"><p>Nothing here</p>Add one</div>');
+    expect(renderToString(emptyState('Nothing here'))).toBe('<div class="rf-empty"><p>Nothing here</p></div>');
+  });
+
+  it('exposes the tablist/tab/tabpanel roles and ARIA relationships, hiding inactive panels (R7.7)', () => {
+    const html = tabs([{ id: 'one', label: 'One', panel: [text('p1')] }, { id: 'two', label: 'Two', panel: [text('p2')] }], { label: 'Views' }).map(renderToString).join('');
+    expect(html).toContain('<div class="rf-tablist" role="tablist" aria-label="Views">');
+    expect(html).toContain('<button class="rf-tab" type="button" role="tab" id="tab-one" aria-controls="panel-one" aria-selected="true" tabindex="0">One</button>');
+    expect(html).toContain('<button class="rf-tab" type="button" role="tab" id="tab-two" aria-controls="panel-two" aria-selected="false" tabindex="-1">Two</button>');
+    expect(html).toContain('<div class="rf-tabpanel" role="tabpanel" id="panel-one" aria-labelledby="tab-one" tabindex="0">p1</div>');
+    expect(html).toContain('<div class="rf-tabpanel" role="tabpanel" id="panel-two" aria-labelledby="tab-two" tabindex="0" hidden="">p2</div>');
+    const second = tabs([{ id: 'one', label: 'One', panel: [] }, { id: 'two', label: 'Two', panel: [] }], { label: 'Views', selected: 'two' }).map(renderToString).join('');
+    expect(second).toContain('id="tab-two" aria-controls="panel-two" aria-selected="true" tabindex="0"');
+    expect(second).toContain('<div class="rf-tabpanel" role="tabpanel" id="panel-one" aria-labelledby="tab-one" tabindex="0" hidden="">');
+  });
+
+  it('renders a loading skeleton of aria-hidden rows beside a visually-hidden status message (R7.5)', () => {
+    const html = skeleton({ rows: 2, label: 'Loading reviews' }).map(renderToString).join('');
+    expect(html).toBe('<div class="rf-skeleton" aria-hidden="true"><div class="rf-skeleton__row"></div><div class="rf-skeleton__row"></div></div>'
+      + '<p class="rf-visually-hidden" role="status">Loading reviews</p>');
+    const html2 = skeleton().map(renderToString).join('');
+    expect([...html2.matchAll(/rf-skeleton__row/gu)]).toHaveLength(3);
+    expect(html2).toContain('<p class="rf-visually-hidden" role="status">Loading…</p>');
   });
 });

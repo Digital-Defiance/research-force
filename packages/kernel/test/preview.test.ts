@@ -109,7 +109,7 @@ describe('consent and hold gates', () => {
   const ownedByMember2 = () => item('a', { kind: 'topic', body: rich('Body') }, { level: 'not_published', ownerId: 'member-2', credit: [{ member: id('member-2') }] });
   const consentState = (over: Partial<ConsentState> = {}): ConsentState => ({
     consentingMember: (key) => (key === 'u:a' ? 'member-2' : undefined),
-    consents: [], holds: [], dependencies: deps, ...over,
+    consents: [], holds: [], dependencies: deps, emailedGrants: [], ...over,
   });
 
   it('refuses a widening of a Consenting_Member\'s view with no covering consent and names the Member', () => {
@@ -137,14 +137,14 @@ describe('consent and hold gates', () => {
 
   it('needs no consent when the requester is the Consenting_Member', () => {
     const input = state([item('a', { kind: 'topic', body: rich('Body') }, { level: 'not_published' })]);
-    const failures = checkGates({ units: [{ key: 'u:a', level: 'public' }] }, { input, requesterId: 'member-1', contentLicence: LICENCE, consent: { consentingMember: () => 'member-1', consents: [], holds: [], dependencies: deps } });
+    const failures = checkGates({ units: [{ key: 'u:a', level: 'public' }] }, { input, requesterId: 'member-1', contentLicence: LICENCE, consent: { consentingMember: () => 'member-1', consents: [], holds: [], dependencies: deps, emailedGrants: [] } });
     expect(failures.filter((f) => f.reason === 'owner_consent')).toEqual([]);
   });
 
   it('refuses any widening of a unit covered by a Confidentiality_Hold and lists the hold', () => {
     const input = state([item('a', { kind: 'topic', body: rich('Body') }, { level: 'not_published' })]);
     const holds = [{ key: 'u:a', holds: [{ id: 'h1', memberId: 'member-2', placedAt: '2026-02-01T00:00:00.000Z', note: 'Confidential source' }] }];
-    const failures = checkGates({ units: [{ key: 'u:a', level: 'public' }] }, { input, requesterId: 'member-1', contentLicence: LICENCE, consent: { consentingMember: () => 'member-1', consents: [], holds, dependencies: deps } });
+    const failures = checkGates({ units: [{ key: 'u:a', level: 'public' }] }, { input, requesterId: 'member-1', contentLicence: LICENCE, consent: { consentingMember: () => 'member-1', consents: [], holds, dependencies: deps, emailedGrants: [] } });
     expect(failures).toContainEqual(expect.objectContaining({ key: 'u:a', reason: 'hold', offerWithheld: false, details: ['Ben Example: Confidential source'] }));
   });
 

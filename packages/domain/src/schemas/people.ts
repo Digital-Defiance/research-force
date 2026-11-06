@@ -43,7 +43,7 @@ export const publicDescriptionSchema = textField(500, true);
 export const genericLabelSchema = textField(100, true);
 export function policySectionSchema(required: boolean) { return richTextSchema(20_000, required); }
 export function externalPartySchema() {
-  return withChecks(z.strictObject({ name: textField(undefined, true), doNotName: z.boolean(), genericLabel: textField(100).optional() }), (raw, report) => {
+  return withChecks(z.strictObject({ name: textField(undefined, true), doNotName: z.boolean(), genericLabel: textField(100).optional(), contactEmail: emailSchema.optional() }), (raw, report) => {
     if (raw['doNotName'] === true && (raw['genericLabel'] === undefined || (typeof raw['genericLabel'] === 'string' && isBlank(raw['genericLabel'])))) report(['genericLabel'], 'A Party marked Do Not Name needs a non-blank Generic Label.');
   });
 }

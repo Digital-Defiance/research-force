@@ -97,3 +97,36 @@ export const OPERATIONS = Object.freeze({
   publicBudgetMarginFraction: 0.02, aiNeuronMargin: 300, aiNeuronsPerUTCDay: 10_000,
   workerRequestsPerUTCDay: 100_000, d1RowsReadPerUTCDay: 5_000_000, d1RowsWrittenPerUTCDay: 100_000,
 });
+
+/**
+ * The Internal_Backup write-freeze lease budget (design "Backup freeze", R36.14). The backup job holds a renewable
+ * write-freeze lease: each renewal extends the lease `leaseMs` into the future, the owner heartbeats at most every
+ * `heartbeatMs`, and the whole certified snapshot window from the first acquisition is at most `windowMs`. A lease
+ * that is not renewed before it expires, or a snapshot that runs past the window, is lost: writers resume at once and
+ * the snapshot is incomplete. These are chosen safety margins, not platform ceilings.
+ */
+export const FREEZE = Object.freeze({
+  /** A renewal sets `expires_at` this far ahead (30 seconds). */
+  leaseMs: 30_000,
+  /** The owner renews at most this often (10 seconds); a longer gap risks the lease lapsing mid-page. */
+  heartbeatMs: 10_000,
+  /** The certified maximum total snapshot window from first acquisition (120 seconds). */
+  windowMs: 120_000,
+});
+
+/**
+ * The Internal_Backup INDEPENDENT-RECOVERY schedule and RPO alert thresholds (R36.3, R36.7, R36.12; design
+ * "Internal_Backup and independent recovery": "Schedule snapshots at least every 12 hours ... it warns at 18 hours and
+ * declares an RPO breach at 24 hours"). A scheduled snapshot starts at most once per `intervalMs` slot; the latest
+ * VERIFIED independent recovery point older than `warnMs` warns operators, and older than `breachMs` is an RPO breach.
+ * These are chosen objectives, not platform ceilings. The retention counts (14 daily / 8 weekly / 12 monthly) and the
+ * 7-day transient-staging window live beside the growth model in `GROWTH_PROFILE` so one source defines them.
+ */
+export const BACKUP_SCHEDULE = Object.freeze({
+  /** Start a scheduled snapshot at least this often (12 hours), so a verified point can stay within 24 hours. */
+  intervalMs: 12 * 60 * 60 * 1000,
+  /** Warn operators when the latest verified independent recovery point is older than this (18 hours). */
+  warnMs: 18 * 60 * 60 * 1000,
+  /** Declare an RPO breach when the latest verified independent recovery point is older than this (24 hours). */
+  breachMs: 24 * 60 * 60 * 1000,
+});

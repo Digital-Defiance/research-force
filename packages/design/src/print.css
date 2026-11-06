@@ -1,0 +1,72 @@
+/* Design_System print styles (R45.9). Every rule is inside @media print or @page, so screen rendering is untouched.
+   Values come only from tokens.css; tokens.css already forces the light colour scheme under @media print. */
+
+/* A4 and US Letter in portrait, the two paper sizes the Public_Site prints on (R45.9). */
+@page {
+  size: A4 portrait;
+}
+
+@page {
+  size: letter portrait;
+}
+
+@media print {
+  /* The light colour scheme on paper; tokens.css maps the colour tokens to their light values under @media print. */
+  :root {
+    color-scheme: light;
+  }
+
+  /* No controls: navigation, the search box, pagination, buttons, and form fields leave the printed page (R45.9). */
+  .rf-skip-link,
+  .rf-nav,
+  .rf-footer-nav,
+  .rf-pagination,
+  .rf-button,
+  .rf-search,
+  form,
+  button,
+  input,
+  select,
+  textarea {
+    display: none;
+  }
+
+  /* Link texts stay, so a reader keeps the words of every link in the main content (R45.9). */
+  a {
+    color: var(--rf-colour-text);
+  }
+
+  /* The footer's Group_Statement and short copyright statement stay; only its navigation is hidden above (R45.9, R46.2). */
+  .rf-footer__statement,
+  .rf-footer__copyright {
+    display: block;
+  }
+
+  /* Wide code wraps within the page instead of being cut off at the paper edge (R45.9). */
+  pre,
+  code {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  /* Wide code, display mathematics, and wide tables show in full on paper rather than scrolling (R45.9). */
+  pre,
+  math[display='block'],
+  .rf-table-scroll {
+    overflow: visible;
+  }
+
+  table {
+    inline-size: var(--rf-size-full);
+    table-layout: fixed;
+    overflow-wrap: anywhere;
+  }
+
+  /* The page's web address, written out in full from its data-url (R45.9). */
+  [data-url]::after {
+    content: attr(data-url);
+    display: block;
+    font-family: var(--rf-font-ui);
+    font-size: var(--rf-font-size-sm);
+  }
+}

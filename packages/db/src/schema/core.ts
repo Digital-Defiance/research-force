@@ -16,3 +16,6 @@ export * from './core/personal';
 export * from './core/consent';
 export * from './core/permission-evidence';
 export * from './core/operations';
+export * from './core/backup';
+export * from './core/restore';
+export * from './core/backup-inventory';

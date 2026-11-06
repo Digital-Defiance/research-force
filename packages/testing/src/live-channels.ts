@@ -17,6 +17,9 @@ export interface LiveChannel {
 /** Channels the final gate requires an adapter for; new channels register here with their owning feature (task 68.4). */
 export const REQUIRED_LIVE_CHANNELS: readonly { readonly name: string; readonly source: string }[] = Object.freeze([
   { name: 'rf-dl refusals to non-Members', source: 'apps/dl/src/index.ts' },
+  // rf-submit confirmations and refusals: every response is fixed text, the Submission_Reference, the time,
+  // and the Visitor's own validation results, so it must reveal nothing about any Item (R31.6, R31.7).
+  { name: 'rf-submit confirmations and refusals', source: 'apps/submit/src/index.ts' },
 ]);
 
 /** What is wrong with the supplied adapters: a missing one, one that never reached the production handler, or one bound to a different module. */

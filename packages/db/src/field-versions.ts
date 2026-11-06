@@ -1,4 +1,5 @@
-import { GuardViolation, guardCodeOf } from './batch';
+import { GuardViolation, freezeGuardSql, guardCodeOf } from './batch';
+import { SQLiteAsyncDialect } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
 import { fieldFragments, fieldManifest, fragmentDigest, readField, streamField, validateFieldManifest } from '@researchforce/domain/text-fragments';
 import type { FieldFragment, FieldManifest, FieldReference, FieldVersionReader } from '@researchforce/domain/text-fragments';
@@ -11,8 +12,16 @@ import type { GuardedBatch } from './batch';
 export interface FieldOwner { readonly ownerType: string; readonly ownerId: string; readonly field: string }
 export interface StoredField extends FieldOwner { readonly reference: FieldReference; readonly mirrorDigest: string | null }
 const sameOwner = (a: FieldOwner, b: FieldOwner): boolean => a.ownerType === b.ownerType && a.ownerId === b.ownerId && a.field === b.field;
-async function fieldWrite(db: D1Database, statements: readonly D1PreparedStatement[]): Promise<void> {
-  try { await db.batch([db.prepare("INSERT INTO _g_frozen(x) SELECT NULL WHERE NOT ((SELECT v FROM counters WHERE k='frozen')=0)"), ...statements]); }
+const FIELD_DIALECT = new SQLiteAsyncDialect();
+/**
+ * Logical field writes (`field_versions`, `text_fragments`, `span_manifest_parts`, `field_read_leases`) are
+ * snapshotted research data, so they go through the same LIVE-LEASE guard as every GuardedBatch save (R36.14): a save
+ * is refused while an Internal_Backup holds a live write-freeze lease, and proceeds once it lapses. `now` is the
+ * caller's save time, bound into the predicate.
+ */
+async function fieldWrite(db: D1Database, now: Timestamp, statements: readonly D1PreparedStatement[]): Promise<void> {
+  const { sql: text, params } = FIELD_DIALECT.sqlToQuery(freezeGuardSql(now));
+  try { await db.batch([db.prepare(text).bind(...params), ...statements]); }
   catch (error) { const code = guardCodeOf(error); throw code ? new GuardViolation(code, { cause: error }) : error; }
 }
 
@@ -21,20 +30,20 @@ async function fieldWrite(db: D1Database, statements: readonly D1PreparedStateme
 export async function prepareField(db: D1Database, owner: FieldOwner, value: RichText, now: Timestamp, id = newULID(now)): Promise<FieldReference> {
   const manifest = fieldManifest(value); const digest = fragmentDigest(manifest);
   const reference: FieldReference = { $fieldVersion: 1, id, ownerType: owner.ownerType, ownerId: owner.ownerId, field: owner.field, digest };
-  await fieldWrite(db, [db.prepare('INSERT INTO field_versions(id,owner_type,owner_id,field_key,manifest_json,manifest_sha256,created_at) VALUES (?,?,?,?,?,?,?)')
+  await fieldWrite(db, now, [db.prepare('INSERT INTO field_versions(id,owner_type,owner_id,field_key,manifest_json,manifest_sha256,created_at) VALUES (?,?,?,?,?,?,?)')
     .bind(id, owner.ownerType, owner.ownerId, owner.field, JSON.stringify(manifest), digest, now),
     db.prepare('INSERT INTO field_read_leases(version_id,lease_id,expires_at) VALUES (?,?,?)').bind(id, 'prepare-' + id, new Date(Date.parse(now) + 120_000).toISOString())]);
   let statements: D1PreparedStatement[] = [];
   for (const piece of fieldFragments(value)) {
     const table = piece.kind === 'text' ? 'text_fragments' : 'span_manifest_parts';
     statements.push(db.prepare(`INSERT INTO ${table}(version_id,ordinal,payload_json,sha256) VALUES (?,?,?,?)`).bind(id, piece.ordinal, JSON.stringify(piece), fragmentDigest(piece)));
-    if (statements.length === 20) { await fieldWrite(db, statements); statements = []; }
+    if (statements.length === 20) { await fieldWrite(db, now, statements); statements = []; }
   }
-  if (statements.length) await fieldWrite(db, statements);
+  if (statements.length) await fieldWrite(db, now, statements);
   // Re-read and validate authoritative stored bytes before exposing a completed version.
   const reader = new DatabaseFieldReader(db, owner, true);
   for await (const _piece of streamField(reference, reader)) { /* authoritative bounded read-back; source spans were already validated */ }
-  await fieldWrite(db, [db.prepare('UPDATE field_versions SET sealed=1 WHERE id=? AND sealed=0').bind(id)]);
+  await fieldWrite(db, now, [db.prepare('UPDATE field_versions SET sealed=1 WHERE id=? AND sealed=0').bind(id)]);
   return reference;
 }
 
@@ -114,7 +123,7 @@ export async function leaseField(db: D1Database, reference: FieldReference, leas
 }
 /** A deletion permit is transaction-scoped. Current/history/citation/draft/release refs and live leases always block removal. */
 export async function collectField(db: D1Database, id: string, now: Timestamp): Promise<void> {
-  await fieldWrite(db, [
+  await fieldWrite(db, now, [
     db.prepare('INSERT INTO _field_gc_permits(version_id,at) VALUES (?,?)').bind(id, now),
     db.prepare('DELETE FROM field_read_leases WHERE version_id=? AND expires_at<=?').bind(id, now),
     db.prepare('DELETE FROM field_versions WHERE id=?').bind(id),
@@ -126,12 +135,12 @@ export async function collectField(db: D1Database, id: string, now: Timestamp): 
 export async function beginFieldVersion(db: D1Database, owner: FieldOwner, manifest: FieldManifest, now: Timestamp): Promise<FieldReference> {
   validateFieldManifest(manifest);
   const reference: FieldReference = { $fieldVersion: 1, id: newULID(now), ownerType: owner.ownerType, ownerId: owner.ownerId, field: owner.field, digest: fragmentDigest(manifest) };
-  await fieldWrite(db, [db.prepare('INSERT INTO field_versions(id,owner_type,owner_id,field_key,manifest_json,manifest_sha256,created_at) VALUES(?,?,?,?,?,?,?)')
+  await fieldWrite(db, now, [db.prepare('INSERT INTO field_versions(id,owner_type,owner_id,field_key,manifest_json,manifest_sha256,created_at) VALUES(?,?,?,?,?,?,?)')
     .bind(reference.id, owner.ownerType, owner.ownerId, owner.field, JSON.stringify(manifest), reference.digest, now),
     db.prepare('INSERT INTO field_read_leases VALUES(?,?,?)').bind(reference.id, 'prepare-' + reference.id, new Date(Date.parse(now) + 120_000).toISOString())]);
   return reference;
 }
-export async function putFieldFragment(db: D1Database, owner: FieldOwner, reference: FieldReference, part: FieldFragment): Promise<void> {
+export async function putFieldFragment(db: D1Database, owner: FieldOwner, reference: FieldReference, part: FieldFragment, now: Timestamp = asTimestamp(new Date().toISOString())): Promise<void> {
   const reader = new DatabaseFieldReader(db, owner, true); const manifest = await reader.manifest(reference);
   const expected = manifest.fragments.find((p) => p.kind === part.kind && p.ordinal === part.ordinal);
   const { describeFragment } = await import('@researchforce/domain/text-fragments');
@@ -140,10 +149,10 @@ export async function putFieldFragment(db: D1Database, owner: FieldOwner, refere
   const table = part.kind === 'text' ? 'text_fragments' : 'span_manifest_parts';
   const prior = await db.prepare(`SELECT payload_json AS payload FROM ${table} WHERE version_id=? AND ordinal=?`).bind(reference.id, part.ordinal).first<{ payload: string }>();
   if (prior) { if (fragmentDigest(JSON.parse(prior.payload)) !== expected.sha256) throw new Error('Conflicting field fragment replay.'); return; }
-  await fieldWrite(db, [db.prepare(`INSERT INTO ${table}(version_id,ordinal,payload_json,sha256) VALUES(?,?,?,?)`).bind(reference.id, part.ordinal, JSON.stringify(part), expected.sha256)]);
+  await fieldWrite(db, now, [db.prepare(`INSERT INTO ${table}(version_id,ordinal,payload_json,sha256) VALUES(?,?,?,?)`).bind(reference.id, part.ordinal, JSON.stringify(part), expected.sha256)]);
 }
-export async function sealFieldVersion(db: D1Database, owner: FieldOwner, reference: FieldReference): Promise<void> {
+export async function sealFieldVersion(db: D1Database, owner: FieldOwner, reference: FieldReference, now: Timestamp = asTimestamp(new Date().toISOString())): Promise<void> {
   const reader = new DatabaseFieldReader(db, owner, true);
   await readField(reference, reader);
-  await fieldWrite(db, [db.prepare('UPDATE field_versions SET sealed=1 WHERE id=? AND sealed=0').bind(reference.id)]);
+  await fieldWrite(db, now, [db.prepare('UPDATE field_versions SET sealed=1 WHERE id=? AND sealed=0').bind(reference.id)]);
 }

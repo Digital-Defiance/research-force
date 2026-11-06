@@ -7,6 +7,8 @@ import { assetFiles } from './assets';
 import { archiveJson, attachmentsCsv, licenceText, researchItemsCsv } from './data';
 import { renderExportPage } from './frame';
 import { exportManifest, manifestJson, sha256Sums, type ExportFile } from './manifest';
+// Re-export the type `renderExport` returns, so callers can name the export's file shape (R35).
+export type { ExportFile } from './manifest';
 import { ASSETS_DIR, DATA_DIR, INDEX_FILE, pageFile, relativeLink } from './paths';
 
 export interface ExportOptions {
@@ -55,7 +57,7 @@ function indexFile(site: SiteInput, pages: readonly PageSpec[], assets: readonly
       element('ul', {}, assets.map((asset) => link(asset.path, asset.path))),
     ]),
   ];
-  const spec: PageSpec = { path: '/', title: 'ResearchForce archive export', body, printAddress: false };
+  const spec: PageSpec = { path: '/', title: `${site.publicCopy.name} archive export`, body, printAddress: false };
   // `renderExportPage` reads the path's file; `/` is `index.html`, so its links resolve from the package root.
   return { path: INDEX_FILE, content: renderExportPage(site, spec, inPackage), contentType: 'text/html; charset=utf-8' };
 }
@@ -73,9 +75,9 @@ export function renderExport(site: SiteInput, options: ExportOptions): ExportFil
   const inPackage = new Set<string>([
     INDEX_FILE, ...pages.map((page) => pageFile(page.path)), ...DATA_FILES, 'LICENSE.txt', 'MANIFEST.json', 'SHA256SUMS',
     ...assets.map((asset) => asset.path),
-    // `components.css` and the font binaries are files on disk the job copies beside the produced assets; pages link them, so they count as
-    // in-package targets even though this pure layer does not hold their bytes (R45.1, R45.20).
-    `${ASSETS_DIR}/components.css`,
+    // `components.css`, `print.css`, and the font binaries are files on disk the job copies beside the produced assets; pages link them, so
+    // they count as in-package targets even though this pure layer does not hold their bytes (R45.1, R45.9, R45.20).
+    `${ASSETS_DIR}/components.css`, `${ASSETS_DIR}/print.css`,
   ]);
   const files: ExportFile[] = [
     indexFile(site, pages, assets, options, inPackage),

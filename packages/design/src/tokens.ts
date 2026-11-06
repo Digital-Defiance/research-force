@@ -8,14 +8,14 @@ export interface SchemeColour { readonly light: string; readonly dark: string }
 
 /** Colours that switch with `prefers-color-scheme`; the page follows the browser's preference live and stores nothing (R45.16). */
 export const COLOURS = {
-  surface: { light: '#fbfaf7', dark: '#151413' },
-  'surface-raised': { light: '#f2efe9', dark: '#221f1d' },
-  text: { light: '#1c1b19', dark: '#edebe7' },
-  'text-muted': { light: '#57534e', dark: '#aaa49d' },
+  surface: { light: '#eef1f6', dark: '#1e2330' },
+  'surface-raised': { light: '#f8fafc', dark: '#273041' },
+  text: { light: '#243041', dark: '#eceef2' },
+  'text-muted': { light: '#566173', dark: '#aeb6c6' },
   /** Borders of controls and other interface elements, at least 3:1 against both surfaces. */
-  border: { light: '#78716c', dark: '#8a847d' },
+  border: { light: '#64748b', dark: '#8b93a3' },
   /** Decorative rules and dividers that carry no meaning. */
-  'border-subtle': { light: '#ddd8cf', dark: '#3a3633' },
+  'border-subtle': { light: '#d4dae6', dark: '#39435a' },
   danger: { light: '#a3161a', dark: '#ff9a8f' },
   success: { light: '#1d6b34', dark: '#7fd69a' },
   warning: { light: '#7a4a00', dark: '#f0bb5a' },
@@ -29,7 +29,7 @@ export const ON_ACCENT: SchemeColour = { light: '#ffffff', dark: '#151413' };
 export interface Accent extends SchemeColour { readonly id: string; readonly name: string }
 
 /** The default accent, used wherever no Project_Accent applies. */
-export const DEFAULT_ACCENT: Accent = { id: 'rust', name: 'Rust', light: '#9a3412', dark: '#f4a06b' };
+export const DEFAULT_ACCENT: Accent = { id: 'default', name: 'Blue', light: '#1f4fd1', dark: '#93b6ff' };
 
 /**
  * The eight Project_Accents an Administrator chooses from (R45.3, R45.4, R45.22). Each keeps at least 4.5:1 for text and 3:1 for interface elements
@@ -111,6 +111,8 @@ export const STATIC_TOKENS: Readonly<Record<string, string>> = {
   'width-reading': '68ch',
   'width-page': '72rem',
   'duration-fast': '120ms',
+  /** The Loading_Skeleton base, derived from the raised surface so it stays light/dark-aware without altering any existing token (R13.3). */
+  'colour-skeleton': 'var(--rf-colour-surface-raised)',
 };
 
 /** Breakpoints in rem. CSS custom properties cannot be used in media queries, so stylesheets write these values and a test checks them. */
@@ -148,11 +150,24 @@ export function tokensCss(): string {
     '  }',
     '}',
     '',
+    '/* Explicit scheme override set on <html data-scheme>; wins over the media query so a user choice sticks (R45.16 keeps "system" as the default when the attribute is absent). */',
+    ":root[data-scheme='light'] {",
+    ...colourDeclarations('light', '  '),
+    '}',
+    '',
+    ":root[data-scheme='dark'] {",
+    ...colourDeclarations('dark', '  '),
+    '}',
+    '',
     ...PROJECT_ACCENTS.map((accent) => accentRule(accent, 'light', '')),
     '',
     '@media (prefers-color-scheme: dark) {',
     ...PROJECT_ACCENTS.map((accent) => accentRule(accent, 'dark', '  ')),
     '}',
+    '',
+    ...PROJECT_ACCENTS.map((accent) => `:root[data-scheme='light'] [data-accent='${accent.id}'] { ${property('colour-accent')}: ${accent.light}; }`),
+    '',
+    ...PROJECT_ACCENTS.map((accent) => `:root[data-scheme='dark'] [data-accent='${accent.id}'] { ${property('colour-accent')}: ${accent.dark}; }`),
     '',
     '@media print {',
     '  :root {',

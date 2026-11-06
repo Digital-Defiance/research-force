@@ -17,3 +17,12 @@ export function fileExtension(name: string): string {
 }
 /** Metadata classification only; this does not establish a file's MIME type or safety. */
 export function fileKind(name: string): FileKind { return byExtension.get(fileExtension(name)) ?? 'other'; }
+
+/**
+ * The human label for each File_Kind, used as the "kind of material" of a Withheld Disclosure_Line when an
+ * Attachment's Rights_Status stops permitting publication (R33.5, R33.8).
+ */
+export const FILE_KIND_LABELS: Readonly<Record<FileKind, string>> = Object.freeze({
+  pdf: 'PDF', image: 'image', archive: 'archive', spreadsheet: 'spreadsheet', csv: 'CSV',
+  structured_data: 'structured data', text_log: 'text log', video: 'video', other: 'file',
+});

@@ -122,6 +122,9 @@ describe('Administrator-only decisions and custom roles', () => {
       expect(can(ctx, 'settings.edit', { type: 'setting', key: 'responsiblePerson', candidateMember: { id: other, status: 'active' } })).toBe(admin);
       for (const status of ['pending', 'revoked'] as const) expect(can(ctx, 'settings.edit', { type: 'setting', key: 'responsiblePerson', candidateMember: { id: other, status } })).toBe(false);
       expect(can(ctx, 'settings.edit', { type: 'setting', key: 'responsiblePerson' })).toBe(false);
+      // Sending Consent_Requests and recording or erasing a Contact_Email are Administrator-only (R2.5, R51.1).
+      expect(can(ctx, 'consent.request')).toBe(admin);
+      expect(can(ctx, 'party.contact')).toBe(admin);
     }
   });
 

@@ -106,6 +106,24 @@ export function widens(before: ProjectionInput, after: ProjectionInput, key: Uni
   return widensIn(prospectivePublic(before, id), prospectivePublic(after, id), key);
 }
 
+/**
+ * Whether a change widens a unit's own Public_View beyond the stored seen snapshot an emailed Consent_Answer
+ * was given against (R51.9). An emailed grant covers only the exact material the Consent_Page showed the
+ * person, so the unit's own Public_View may present at most what that snapshot presented. The snapshot is the
+ * unit's own view under prospective-public ancestors (the Consent_Page froze the proposed Public_View under
+ * Effective_Disclosure Public), so the resulting view is read the same way: with every ancestor treated as
+ * Public and Full_Content, the unit's own values are isolated and compared to the seen snapshot. The result
+ * widens when it presents any material the snapshot did not — a raised level that newly presents the unit, an
+ * added field, or a changed value — and never when it only omits material the snapshot showed. A direct status
+ * edit records no snapshot, so it carries no emailed grant and is judged by the ordinary Owner-consent gate
+ * instead; an emailed grant is the only thing that lets a Consent_Status or Rights_Status cover publication.
+ */
+export function widensBeyondSeenSnapshot(seen: PublicView | undefined, after: ProjectionInput, key: UnitKey): boolean {
+  const id = key.slice(2);
+  const resulting = ownView(prospectivePublic(after, id), key);
+  return presentsBeyond(seen, resulting);
+}
+
 /** The exact values a Publication_Consent is given for, compared character for character (R23.20). */
 export interface ConsentValues {
   readonly level: Level;
@@ -234,6 +252,42 @@ export function coverWidening(rows: readonly ConsentRow[], snapshot: ApprovedSna
     if (candidates.some((candidate) => consentCovers(row, candidate))) return { covered: true, consentId: row.id };
   }
   return { covered: false, consideredIds: aboutUnit.map((row) => row.id) };
+}
+
+/**
+ * One emailed grant a unit's Consent_Status or Rights_Status was set through: the Consent_Answer item that
+ * recorded it and the canonical Public_View the Consent_Page showed the person (R51.9). This is the
+ * Permission_Evidence of an `emailed` grant; coverage of its material is exactly the seen snapshot's own
+ * Public_View, so a change that makes the unit present more than the snapshot did is refused and a new
+ * Consent_Request is offered. A status set by hand records no such row, so it carries no emailed grant and
+ * covers no publication (R51.9, R51.15).
+ */
+export interface EmailedGrant {
+  /** The Disclosure_Unit the grant is about; its Consent_Status or Rights_Status was set through the answer. */
+  readonly unitKey: UnitKey;
+  /** The Consent_Answer row that recorded the grant, named in the refusal so the Administrator can offer a new request. */
+  readonly answerId: string;
+  /** The canonical Public_View the Consent_Page showed the person, under prospective-public ancestors; `undefined` when it showed no public trace. */
+  readonly seenView: PublicView | undefined;
+  /** SHA-256 of the seen snapshot, carried for the refusal's audit trail. */
+  readonly seenSnapshotHash: string;
+}
+
+/**
+ * Whether a change widens a unit beyond every emailed grant it relies on, and the grants it exceeds (R51.9). An
+ * emailed grant covers only the exact material the Consent_Page showed, so the resulting view may present at
+ * most what the seen snapshot presented. When the resulting view presents beyond a grant's seen snapshot, that
+ * grant does not cover the change; the change is refused when no emailed grant on hand covers it. A unit with no
+ * emailed grant is not judged here at all — the Owner-consent gate governs an unconsented widening.
+ */
+export function coverSeenSnapshot(grants: readonly EmailedGrant[], after: ProjectionInput, key: UnitKey):
+  { readonly covered: true } | { readonly covered: false; readonly exceededIds: readonly string[] } {
+  const aboutUnit = grants.filter((grant) => grant.unitKey === key);
+  if (aboutUnit.length === 0) return { covered: true };
+  const exceeded = aboutUnit.filter((grant) => widensBeyondSeenSnapshot(grant.seenView, after, key));
+  // Covered when at least one grant's seen snapshot still presents everything the resulting view does.
+  if (exceeded.length < aboutUnit.length) return { covered: true };
+  return { covered: false, exceededIds: exceeded.map((grant) => grant.answerId) };
 }
 
 /**

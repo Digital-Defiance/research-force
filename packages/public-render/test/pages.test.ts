@@ -98,7 +98,7 @@ describe('item page', () => {
 
   it('gives the Citation_Line and the metadata from the page’s own values', () => {
     const citation = textOf(find(view.main.children, byClass('rf-citation__line'))!.children);
-    expect(citation).toBe('Ada Example, Bob Outside. “A synthetic finding.” Alpha Project, ResearchForce, 5 January 2026. AAAA-1111-BBBB. https://researchforce.org/r/AAAA-1111-BBBB, accessed [date of access].');
+    expect(citation).toBe('Ada Example, Bob Outside. “A synthetic finding.” Alpha Project, Synthetic Collective, 5 January 2026. AAAA-1111-BBBB. https://researchforce.org/r/AAAA-1111-BBBB, accessed [date of access].');
     expect(meta(view, 'citation_title')).toEqual(['A synthetic finding']);
     expect(meta(view, 'citation_author')).toEqual(['Ada Example', 'Bob Outside']);
     expect(meta(view, 'citation_publication_date')).toEqual(['2026/01/05']);
@@ -109,7 +109,7 @@ describe('item page', () => {
       name: 'A synthetic finding', datePublished: '2026-01-05', identifier: 'AAAA-1111-BBBB', isPartOf: { name: 'Alpha Project' }, license: 'https://licence.example.test/1.0',
       author: [{ name: 'Ada Example' }, { name: 'Bob Outside' }],
     });
-    expect(find(view.head.children, byTag('title'))!.children).toEqual(['A synthetic finding · ResearchForce']);
+    expect(find(view.head.children, byTag('title'))!.children).toEqual(['A synthetic finding · Synthetic Collective']);
     expect(find(view.main.children, (node) => node.attributes.has('data-url'))!.attributes.get('data-url')).toBe('https://researchforce.org/r/AAAA-1111-BBBB');
   });
 
@@ -117,7 +117,7 @@ describe('item page', () => {
     for (const [name, file] of files) {
       if (!name.endsWith('.html')) continue;
       const current = readPage(file.content);
-      expect(linkTo(current, '/')).toContain('ResearchForce');
+      expect(linkTo(current, '/').join(' ')).toContain('Synthetic Collective');
       expect(current.text).toContain(GROUP_STATEMENT.paragraphs[0]!);
       expect(linkTo(current, 'https://licence.example.test/1.0')).toContain('Synthetic Licence 1.0');
       for (const path of ['/about', '/people', '/methods', '/licence', '/privacy', '/corrections', '/submit']) expect(current.links.some((link) => link.href === path)).toBe(true);

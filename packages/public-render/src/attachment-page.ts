@@ -36,7 +36,7 @@ export function attachmentPage(context: PageContext, view: AttachmentView): Page
     ...context.footnotes(),
   ];
   return {
-    path: view.path, title: view.title, body, meta: openGraph({ title: view.title, path: view.path, type: 'article' }),
+    path: view.path, title: view.title, body, meta: openGraph(context.site, { title: view.title, path: view.path, type: 'article' }),
     ...(view.project.accent === undefined ? {} : { accent: view.project.accent }),
   };
 }

@@ -50,9 +50,9 @@ describe('export package shape', () => {
     }
   });
 
-  it('shows the ResearchForce name linking to the index and never links to the live site', () => {
+  it('shows the masthead name linking to the index and never links to the live site', () => {
     const item = page(files, 'r/AAAA-1111-BBBB.html');
-    expect(item.links.some((link) => link.text === 'ResearchForce' && link.href === '../index.html')).toBe(true);
+    expect(item.links.some((link) => link.text.includes('Synthetic Collective') && link.href === '../index.html')).toBe(true);
     // No navigable link points at the live site; the Citation_Line may still name the canonical Public_URL as text so the item stays citable.
     for (const [, file] of files) {
       if (!file.path.endsWith('.html')) continue;
@@ -80,7 +80,7 @@ describe('index page (R35.1)', () => {
     for (const link of index.links) {
       if (link.href.startsWith('#') || link.href.startsWith('https://')) continue;
       const target = resolve('index.html', link.href);
-      expect(files.has(target) || target === 'assets/components.css', link.href).toBe(true);
+      expect(files.has(target) || target === 'assets/components.css' || target === 'assets/print.css', link.href).toBe(true);
     }
   });
 });
@@ -99,8 +99,8 @@ describe('relative links resolve inside the package (R35.3)', () => {
       }
       for (const style of findAll(view.head.children, byTag('link'))) {
         const target = resolve(file.path, style.attributes.get('href')!);
-        // `components.css` is a disk file the job copies beside the produced assets; the rest are produced here.
-        expect(files.has(target) || target === 'assets/components.css', `${file.path} → ${target}`).toBe(true);
+        // `components.css` and `print.css` are disk files the job copies beside the produced assets; the rest are produced here.
+        expect(files.has(target) || target === 'assets/components.css' || target === 'assets/print.css', `${file.path} → ${target}`).toBe(true);
       }
     }
   });

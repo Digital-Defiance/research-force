@@ -30,10 +30,10 @@ export function buildPages(site: SiteInput): PageSpec[] {
   for (const view of site.views.values()) {
     if (view.tag === 'research_item') pages.push(itemPage(newContext(), view, assets.citationScript));
     else if (view.tag === 'attachment') pages.push(attachmentPage(newContext(), view));
-    else if (view.tag === 'withheld' && view.project !== undefined && view.path !== undefined) pages.push(withheldPage({ ...view, path: view.path }));
+    else if (view.tag === 'withheld' && view.project !== undefined && view.path !== undefined) pages.push(withheldPage(site, { ...view, path: view.path }));
   }
   pages.push(
-    ...formPages(publicProjects).map((page) => formPage(site, publicProjects, page, assets.formScript)), respondPage(assets.formScript),
+    ...formPages(publicProjects).map((page) => formPage(site, publicProjects, page, assets.formScript)), respondPage(site, assets.formScript),
     searchPage(publicProjects, assets.searchScript),
     aboutPage(newContext()), peoplePage(newContext()), licencePage(newContext()), privacyPage(newContext()), correctionsPage(newContext()), notFoundPage(),
   );

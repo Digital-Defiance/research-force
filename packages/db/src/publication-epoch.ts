@@ -172,7 +172,9 @@ export function reconcile(r: Reconciliation): ReconciliationResult {
 /**
  * Record that an epoch-labelled external operation is about to reach the provider. Content-free: the row
  * names the operation identity and its request digest, never any research body. Idempotent on the id, so a
- * re-entry of the same generation reuses the row rather than creating a duplicate (R60.2).
+ * re-entry of the same generation reuses the row rather than creating a duplicate (R60.2). `ignoreFreeze`:
+ * `external_operations` is side-effect bookkeeping, not a snapshotted research table, so it is exempt from the
+ * Internal_Backup write-freeze (R36.14); recording a provider side effect must not stall behind a backup.
  */
 export async function beginOperation(
   db: D1Database,

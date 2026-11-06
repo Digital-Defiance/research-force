@@ -1,16 +1,17 @@
 // Feature: research-collab-cms, Property 20: Page metadata only repeats presented content
 import { expect, it } from 'vitest';
 import type { ResearchItemView } from '@researchforce/kernel/views';
-import { SITE_NAME } from '@researchforce/public-render/frame';
 import { formatDay } from '@researchforce/public-render/format';
 import { WITHHELD_TITLE } from '@researchforce/public-render/item-page';
 import { WITHHELD_PROJECT_TITLE } from '@researchforce/public-render/projects';
 import { renderSite } from '@researchforce/public-render/render-site';
 import { fc } from '../../src/fc';
 import { byTag, collapsed, find, findAll, readPage, textOf, type Page } from '../../src/html';
-import { siteInputFor } from '../../src/site';
+import { siteInputFor, TEST_PUBLIC_COPY } from '../../src/site';
 import { workspaceStateArb } from '../../src/workspace';
 
+/** The installation masthead name a document title repeats and `og:site_name` carries, from the validated Installation_Public_Copy (R46.41). */
+const SITE_NAME = TEST_PUBLIC_COPY.name;
 const FIXED_META = new Map([['og:type', ['article', 'website']], ['og:site_name', [SITE_NAME]]]);
 const FRAME_META = new Set(['viewport', 'color-scheme']);
 

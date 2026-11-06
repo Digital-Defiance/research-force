@@ -4,7 +4,32 @@ import type { RichText } from '@researchforce/domain/richtext';
 import type {
   AttachmentView, DissentNoteView, ProjectRef, ProjectView, PublicView, ReplyView, ResearchItemView, UnitKey, ValueRef, WithheldView,
 } from '@researchforce/kernel/views';
+import { assertPublicCopy, type InstallationPublicCopy, type ValidatedInstallationPublicCopy } from '@researchforce/design/installation';
 import { FIXED_TERM_KEYS, POLICY_PAGE_KEYS, type MethodsInput, type PolicyPageInput, type PolicyPageKey, type SiteInput } from '../src/site';
+
+/**
+ * A synthetic Installation_Public_Copy, visibly different from ResearchForce.org: a made-up collective, strapline,
+ * Mission, About prose, and Principles. Nothing here is drawn from `docs/instance/researchforce-org-content.md`.
+ */
+export const SYNTHETIC_COPY: InstallationPublicCopy = {
+  version: '2026-02-02',
+  name: 'Synthetic Collective',
+  strapline: 'A visibly different strapline',
+  mission: {
+    heading: 'Our mission',
+    paragraphs: ['The Synthetic Collective studies entirely made-up questions for a test fixture and keeps a synthetic record of them.'],
+  },
+  about: [
+    'The Synthetic Collective is a fixture group that exists only to exercise the renderers.',
+    'It has one synthetic Project and a handful of synthetic members.',
+  ],
+  principles: [
+    { name: 'Synthetic independence', text: 'The fixture answers to the test, not to any real funder.' },
+    { name: 'Made-up provenance', text: 'Every synthetic claim points to a synthetic source.' },
+    { name: 'Keep the fixture whole', text: 'Synthetic dead ends stay in the synthetic record.' },
+  ],
+};
+export const PUBLIC_COPY: ValidatedInstallationPublicCopy = assertPublicCopy(SYNTHETIC_COPY);
 
 /** Synthetic values only; nothing here comes from a real archive. */
 export const rich = (text: string, spans: RichText['spans'] = []): RichText => ({ text, spans });
@@ -142,6 +167,7 @@ export function site(overrides: Partial<SiteInput> = {}): SiteInput {
     featured: new Set([WITHHELD_PROJECT.key, PROJECT.key, 'p:private']),
     createdAt: new Map([[FINDING.key, '2026-01-01T00:00:00.000Z'], [HYPOTHESIS.key, '2026-01-02T00:00:00.000Z']]),
     licence: { name: 'Synthetic Licence 1.0', url: 'https://licence.example.test/1.0' },
+    publicCopy: PUBLIC_COPY,
     profiles: [
       { displayName: 'Émile Example', specialties: ['Optics'], affiliations: ['Own Lab'], biography: 'First paragraph.\n\nSecond paragraph.' },
       { displayName: 'Ada Example', specialties: [], affiliations: [], biography: 'Short.' },

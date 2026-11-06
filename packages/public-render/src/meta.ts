@@ -1,20 +1,20 @@
 import { element, text, type ElementNode } from '@researchforce/domain/tree';
 import type { ResearchItemView } from '@researchforce/kernel/views';
-import { SITE_NAME } from './frame';
+import { siteName } from './frame';
 import { absoluteUrl } from './paths';
 import type { SiteInput } from './site';
 
 const property = (name: string, content: string): ElementNode => element('meta', { property: name, content }, []);
 const named = (name: string, content: string): ElementNode => element('meta', { name, content }, []);
 
-/** Open Graph link-preview tags; the description is the page's own Public_Summary text, only when one is set (R45.10). */
-export function openGraph(spec: { readonly title: string; readonly path: string; readonly type: 'article' | 'website'; readonly description?: string }): ElementNode[] {
+/** Open Graph link-preview tags; the description is the page's own Public_Summary text, only when one is set (R45.10). The site name is the installation masthead name (R46.41). */
+export function openGraph(site: Pick<SiteInput, 'publicCopy'>, spec: { readonly title: string; readonly path: string; readonly type: 'article' | 'website'; readonly description?: string }): ElementNode[] {
   return [
     property('og:title', spec.title),
     ...(spec.description === undefined ? [] : [property('og:description', spec.description)]),
     property('og:url', absoluteUrl(spec.path)),
     property('og:type', spec.type),
-    property('og:site_name', SITE_NAME),
+    property('og:site_name', siteName(site)),
   ];
 }
 
@@ -44,7 +44,7 @@ export function itemMeta(site: SiteInput, view: ResearchItemView, summaryText?: 
     named('citation_title', view.title),
     ...authors.map((name) => named('citation_author', name)),
     named('citation_publication_date', view.firstPublicOn.replaceAll('-', '/')),
-    ...openGraph({ title: view.title, path: view.path, type: 'article', ...(summaryText === undefined ? {} : { description: summaryText }) }),
+    ...openGraph(site, { title: view.title, path: view.path, type: 'article', ...(summaryText === undefined ? {} : { description: summaryText }) }),
     element('script', { type: 'application/ld+json' }, [text(scriptJson(jsonLd))]),
   ];
 }

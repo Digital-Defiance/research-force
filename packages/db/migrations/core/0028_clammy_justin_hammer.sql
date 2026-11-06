@@ -1,0 +1,1 @@
+ALTER TABLE `outside_submissions` ADD `response_target_reminded_day` integer;

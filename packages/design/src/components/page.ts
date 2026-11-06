@@ -13,20 +13,27 @@ export function navigation(label: string, items: readonly NavItem[], className =
 }
 
 export interface HeaderProps {
-  /** The ResearchForce link target: the Public_Site home page, or the Workspace start page (R45.2). */
+  /** The masthead link target: the Public_Site home page, or the Workspace start page (R45.2). */
   readonly home: string;
+  /** The installation masthead name shown as the brand link; from the validated Installation_Public_Copy (R46.41). */
+  readonly name: string;
+  /** The installation masthead strapline shown with the name; from the validated Installation_Public_Copy (R46.41). */
+  readonly strapline: string;
   readonly navigation?: readonly NavItem[];
   /** Extra header content, such as the search form. */
   readonly extra?: ViewNode;
 }
 
-/** The skip link and the header with the ResearchForce link (R45.2, R45.5). */
+/** The skip link and the header with the masthead name and strapline linking home (R45.2, R45.5, R46.41). */
 export function siteHeader(props: HeaderProps): FragmentNode {
   return fragment([
     element('a', { class: 'rf-skip-link', href: '#main' }, [text('Skip to main content')]),
     element('header', { class: 'rf-header' }, [
       element('div', { class: 'rf-header__inner' }, [
-        element('a', { class: 'rf-header__brand', href: props.home }, [text('ResearchForce')]),
+        element('a', { class: 'rf-header__brand', href: props.home }, [
+          element('span', { class: 'rf-header__name' }, [text(props.name)]),
+          element('span', { class: 'rf-header__strapline' }, [text(props.strapline)]),
+        ]),
         ...(props.navigation === undefined ? [] : [navigation('Main', props.navigation)]),
         ...(props.extra === undefined ? [] : [props.extra]),
       ]),

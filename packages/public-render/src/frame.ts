@@ -6,7 +6,8 @@ import { element, text, type ElementNode, type ViewNode } from '@researchforce/d
 import { PAGE_PATHS, absoluteUrl } from './paths';
 import { DEFAULT_ASSETS, type SiteInput } from './site';
 
-export const SITE_NAME = 'ResearchForce';
+/** The installation masthead name a page's document title repeats, read from the validated Installation_Public_Copy (R46.41). */
+export const siteName = (site: Pick<SiteInput, 'publicCopy'>): string => site.publicCopy.name;
 
 export interface PageSpec {
   readonly path: string;
@@ -30,8 +31,10 @@ const NAVIGATION: readonly NavItem[] = [
   { label: 'About', href: SITE_PATHS.about },
 ];
 
-export const documentTitle = (spec: Pick<PageSpec, 'title' | 'titleContext'>): string =>
-  [spec.title, ...(spec.titleContext === undefined ? [] : [spec.titleContext]), ...(spec.title === SITE_NAME ? [] : [SITE_NAME])].join(' · ');
+export const documentTitle = (site: Pick<SiteInput, 'publicCopy'>, spec: Pick<PageSpec, 'title' | 'titleContext'>): string => {
+  const name = siteName(site);
+  return [spec.title, ...(spec.titleContext === undefined ? [] : [spec.titleContext]), ...(spec.title === name ? [] : [name])].join(' · ');
+};
 
 /** The whole document: English page language, the Design_System styles, header, main content with its printable address, and footer. */
 export function renderPage(site: SiteInput, spec: PageSpec): string {
@@ -41,14 +44,14 @@ export function renderPage(site: SiteInput, spec: PageSpec): string {
     element('meta', { charset: 'utf-8' }, []),
     element('meta', { name: 'viewport', content: 'width=device-width, initial-scale=1' }, []),
     element('meta', { name: 'color-scheme', content: 'light dark' }, []),
-    element('title', {}, [text(documentTitle(spec))]),
+    element('title', {}, [text(documentTitle(site, spec))]),
     ...(spec.printAddress === false ? [] : [element('link', { rel: 'canonical', href: absoluteUrl(spec.path) }, [])]),
     ...assets.styles.map((href) => element('link', { rel: 'stylesheet', href }, [])),
     ...(spec.meta ?? []),
     ...(spec.scripts ?? []).map((src) => element('script', { type: 'module', src }, [])),
   ]);
   const body = element('body', { 'data-accent': accent }, [
-    siteHeader({ home: SITE_PATHS.home, navigation: NAVIGATION.map((item) => ({ ...item, current: item.href === spec.path })) }),
+    siteHeader({ home: SITE_PATHS.home, name: site.publicCopy.name, strapline: site.publicCopy.strapline, navigation: NAVIGATION.map((item) => ({ ...item, current: item.href === spec.path })) }),
     mainContent([
       element('h1', {}, [text(spec.title)]),
       ...spec.body,

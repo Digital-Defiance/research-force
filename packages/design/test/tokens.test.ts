@@ -27,7 +27,7 @@ describe('tokens', () => {
   });
 
   it('uses only defined tokens in every stylesheet', () => {
-    const sheets = ['components.css', ...readdirSync(new URL('../../../apps/app/web/src/', import.meta.url)).filter((name) => name.endsWith('.css')).map((name) => join('../../../apps/app/web/src/', name))];
+    const sheets = ['components.css', 'print.css', ...readdirSync(new URL('../../../apps/app/web/src/', import.meta.url)).filter((name) => name.endsWith('.css')).map((name) => join('../../../apps/app/web/src/', name))];
     const defined = new Set(TOKEN_NAMES);
     for (const sheet of sheets) {
       const used = [...read(sheet).matchAll(/var\((--rf-[\w-]+)/gu)].map((match) => match[1]!);

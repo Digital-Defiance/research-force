@@ -11,13 +11,13 @@ import { absoluteUrl, downloadUrl, fileFor, projectPaths } from '@researchforce/
 import { renderSite } from '@researchforce/public-render/render-site';
 import { fc } from '../../src/fc';
 import { byClass, byTag, find, findAll, hasClass, readPage, textOf, type Page } from '../../src/html';
-import { TEST_LICENCE, siteInputFor, syntheticSite } from '../../src/site';
+import { TEST_LICENCE, TEST_PUBLIC_COPY, siteInputFor, syntheticSite } from '../../src/site';
 import { TEST_VALUES, canariesIn, workspaceStateArb } from '../../src/workspace';
 
 const linksTo = (page: Page, href: string): string[] => page.links.filter((link) => link.href === href).map((link) => link.text);
 
 function expectFrame(page: Page): void {
-  expect(linksTo(page, SITE_PATHS.home)).toContain('ResearchForce');
+  expect(linksTo(page, SITE_PATHS.home).join(' ')).toContain(TEST_PUBLIC_COPY.name);
   expect(page.text).toContain(GROUP_STATEMENT.paragraphs[0]!);
   expect(page.text).toContain('Copyright in published work stays with its credited authors.');
   expect(linksTo(page, TEST_LICENCE.url)).toContain(TEST_LICENCE.name);

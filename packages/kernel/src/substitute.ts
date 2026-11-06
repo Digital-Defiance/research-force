@@ -1,5 +1,5 @@
 import { partialDate } from '@researchforce/domain/dates';
-import type { FileKind } from '@researchforce/domain/file-kinds';
+import { FILE_KIND_LABELS } from '@researchforce/domain/file-kinds';
 import type { RichText, Span } from '@researchforce/domain/richtext';
 import { isBlank } from '@researchforce/domain/text';
 import type { DisclosureLine, MemberStatus, ULID } from '@researchforce/domain/types';
@@ -54,10 +54,7 @@ export function prefillCorrespondenceLine(correspondence: Correspondence, direct
   return { line, view: lineView(line, directory) };
 }
 
-export const FILE_KIND_LABELS: Readonly<Record<FileKind, string>> = Object.freeze({
-  pdf: 'PDF', image: 'image', archive: 'archive', spreadsheet: 'spreadsheet', csv: 'CSV',
-  structured_data: 'structured data', text_log: 'text log', video: 'video', other: 'file',
-});
+export { FILE_KIND_LABELS };
 
 /** The Disclosure_Line set when an Attachment's Rights_Status stops permitting publication (R33.5, R33.8). */
 export function prefillAttachmentLine(attachment: Pick<AttachmentRecord, 'fileKind' | 'uploadedAt'>): DisclosureLine {
@@ -168,6 +165,21 @@ export function projectProfile(profile: ProfileRecord, emails: Iterable<string>)
 export function projectPolicyText(text: RichText, emails: Iterable<string>): { readonly text: RichText; readonly marks: readonly { start: number; end: number }[] } {
   const scrubbed = scrubRichText(text, emailMatcher(emails));
   return { text: scrubbed.value, marks: scrubbed.ranges };
+}
+
+/** The display name a Member row carries, read whatever the Member's status (R46.35). */
+export interface ResponsibleMember { readonly id: string; readonly displayName: string | null }
+
+/**
+ * The name the Privacy page shows for the Responsible_Person: the designated Member's display name whatever that
+ * Member's Member_Status (R46.35), with any registered Member address scrubbed as from every other Public_Site output
+ * (R46.9). An unset, null, malformed, or absent designation leaves the name empty, so the statement degrades without a
+ * name rather than naming someone it should not.
+ */
+export function responsiblePersonLabel(members: Iterable<ResponsibleMember>, responsibleId: string | undefined, emails: Iterable<string>): string {
+  if (responsibleId === undefined) return '';
+  const name = [...members].find((member) => member.id === responsibleId)?.displayName ?? '';
+  return scrubText(name, emailMatcher(emails)).text;
 }
 
 export type BreachCode = 'consent' | 'rights' | 'missing_line' | 'structure';

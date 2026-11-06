@@ -6,12 +6,30 @@ import type { ValueRecord } from '@researchforce/kernel/input';
 import { project } from '@researchforce/kernel/project';
 import { projectPolicyText, projectProfile, type PublicProfileView } from '@researchforce/kernel/substitute';
 import { projectKey, unitKey, type PublicView, type UnitKey } from '@researchforce/kernel/views';
+import { assertPublicCopy, type InstallationPublicCopy, type ValidatedInstallationPublicCopy } from '@researchforce/design/installation';
 import {
   METHODS_SET_KINDS, POLICY_PAGE_KEYS, type MethodsSetKind, type MethodsValue, type PolicyPageInput, type PolicyPageKey, type SiteInput,
 } from '@researchforce/public-render/site';
 import { CURRENT_LICENCE, TEST_VALUES, type WorkspaceState } from './workspace';
 
 export const TEST_LICENCE = { name: CURRENT_LICENCE, url: 'https://licence.example.test/synthetic-1.0' } as const;
+
+/**
+ * A visibly synthetic Installation_Public_Copy for the shared test fixtures, drawn from no real installation. Nothing
+ * here matches ResearchForce.org's masthead, strapline, Mission, About prose, or Principles.
+ */
+export const TEST_PUBLIC_COPY_INPUT: InstallationPublicCopy = {
+  version: '2026-10-28',
+  name: 'Synthetic Workspace',
+  strapline: 'A made-up strapline for tests',
+  mission: { heading: 'Our synthetic mission', paragraphs: ['The Synthetic Workspace exercises the renderers with invented copy and keeps a synthetic record.'] },
+  about: ['The Synthetic Workspace is a fixture group for tests.', 'It has synthetic projects and synthetic members only.'],
+  principles: [
+    { name: 'Synthetic independence', text: 'The fixture answers only to the test.' },
+    { name: 'Made-up provenance', text: 'Every synthetic claim points to a synthetic source.' },
+  ],
+};
+export const TEST_PUBLIC_COPY: ValidatedInstallationPublicCopy = assertPublicCopy(TEST_PUBLIC_COPY_INPUT);
 /** Not a canary: the Privacy page names the Responsible_Person whatever the Member_Status (R46.35). */
 export const TEST_RESPONSIBLE_PERSON = 'Synthetic Responsible Person';
 export const TEST_POLICY_DATE = '2026-10-28';
@@ -40,6 +58,8 @@ export interface SiteOptions {
   /** Value ids that are retired. */
   readonly retired?: ReadonlySet<string>;
   readonly profiles?: readonly PublicProfileView[];
+  /** The Responsible_Person's display name on the Privacy page (R46.35), already scrubbed; by default a fixed name. */
+  readonly responsiblePerson?: string;
   /** The Policy_Sections of every policy page, by default the seeded ones. */
   readonly policySections?: readonly SeedPolicySection[];
 }
@@ -66,8 +86,9 @@ export function syntheticSite(views: Iterable<PublicView>, options: SiteOptions 
     featured: options.featured ?? new Set(projectKeys.filter((_, index) => index % 2 === 0)),
     createdAt: options.createdAt ?? new Map(),
     licence: TEST_LICENCE,
+    publicCopy: TEST_PUBLIC_COPY,
     profiles: options.profiles ?? [],
-    responsiblePerson: TEST_RESPONSIBLE_PERSON,
+    responsiblePerson: options.responsiblePerson ?? TEST_RESPONSIBLE_PERSON,
     methods: { values, terms: FIXED_METHODS_TERMS.map((term) => ({ key: term.key, name: term.name, description: term.publicDescription })) },
     policy,
     retention: retentionRows(),

@@ -15,6 +15,7 @@ export const PERMISSIONS = [
   'import.run', 'export.manage', 'backup.manage', 'access.restrict', 'access.widen', 'hold.place', 'hold.lift', 'consent.give', 'consent.propose',
   'dual.propose', 'dual.approve', 'dual.decline', 'attachment.move', 'decision.acknowledge',
   'work.assign', 'work.edit', 'work.progress', 'work.accept', 'derivation.review', 'draft.recover',
+  'consent.request', 'party.contact',
 ] as const;
 export type Permission = typeof PERMISSIONS[number];
 export type PermissionScope = 'any' | 'own' | 'other' | 'eligible';
@@ -133,7 +134,7 @@ export function can(ctx: PermissionContext, permission: Permission, target?: Per
     case 'decision.acknowledge': return ownScope && target?.type === 'decision_response' && own(target.memberId);
     case 'consent.give': return ownScope && target?.type === 'publication_proposal' && own(target.consentingMemberId);
     case 'dual.approve': case 'dual.decline': return scope === 'any' && target?.type === 'dual_approval' && !own(target.proposedById);
-    case 'draft.recover': case 'backup.manage': case 'party.doNotName.off': return scope === 'any' && isAdministrator(ctx);
+    case 'draft.recover': case 'backup.manage': case 'party.doNotName.off': case 'consent.request': case 'party.contact': return scope === 'any' && isAdministrator(ctx);
     default: return scope === 'any';
   }
 }

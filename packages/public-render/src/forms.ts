@@ -74,7 +74,7 @@ export function formPages(projects: readonly ProjectView[]): FormPage[] {
 
 export function formPage(site: SiteInput, projects: readonly ProjectView[], page: FormPage, formScript: string): PageSpec {
   const body: ViewNode[] = [
-    element('p', {}, [text('Use this form to send ResearchForce material, a correction, a comment, or a request to remove material or personal data. Removal requests are never published.')]),
+    element('p', {}, [text(`Use this form to send ${site.publicCopy.name} material, a correction, a comment, or a request to remove material or personal data. Removal requests are never published.`)]),
     submissionForm(site, projects, page.preselect),
   ];
   return {
@@ -84,11 +84,11 @@ export function formPage(site: SiteInput, projects: readonly ProjectView[], page
 }
 
 /** The page a Response_Link opens; the script reads the link's token and the Moderation_Service decides what the form may do. */
-export function respondPage(formScript: string): PageSpec {
+export function respondPage(site: SiteInput, formScript: string): PageSpec {
   return {
     path: PAGE_PATHS.respond, title: 'Respond to a request', scripts: [formScript],
     body: [
-      element('p', {}, [text('Use this form to answer a request from ResearchForce about your submission.')]),
+      element('p', {}, [text(`Use this form to answer a request from ${site.publicCopy.name} about your submission.`)]),
       element('form', { class: 'rf-form', method: 'post', action: PAGE_PATHS.respond, enctype: 'multipart/form-data', 'data-response-form': true }, [
         formField({ id: 'message', label: 'Message', control: 'textarea', required: true, attributes: { maxlength: 10_000 } }),
         filesField(),

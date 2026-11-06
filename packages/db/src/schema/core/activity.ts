@@ -11,7 +11,7 @@ export const FLAG_KINDS = ['new', 'updated'] as const;
 export const ACTIVITY_KINDS = ['submission', 'correction', 'withdrawal', 'status_change', 'disclosure_change', 'dissent', 'policy_change', 'journal_import'] as const;
 export const ACTIVITY_TAG_TYPES = ['kind', 'project'] as const;
 export const BATCH_STATES = ['open', 'queued', 'sent', 'failed'] as const;
-export const OUTGOING_EMAIL_KINDS = ['invitation', 'acknowledgement', 'more_information', 'decision'] as const;
+export const OUTGOING_EMAIL_KINDS = ['invitation', 'acknowledgement', 'more_information', 'decision', 'consent', 'consent_confirmation'] as const;
 export const OUTGOING_EMAIL_STATES = ['queued', 'sent', 'failed'] as const;
 
 /** Rows are immutable: the BEFORE UPDATE trigger in the raw migration refuses every change (R22.11). */
@@ -38,6 +38,10 @@ export const revisions = sqliteTable('revisions', {
 export const policyPages = sqliteTable('policy_pages', {
   pageKey: text('page_key', { enum: POLICY_PAGE_KEYS }).primaryKey(),
   sectionsChangedAt: text('sections_changed_at'), // UTC time of the latest Policy_Section change (R46.29)
+  // The last build's hash of the page's generated content and the UTC date that hash last changed, so a rebuild
+  // whose generated content is unchanged keeps the same last-updated date and only a real change advances it (R46.29).
+  generatedHash: text('generated_hash'),
+  generatedChangedAt: text('generated_changed_at'), // UTC date (`YYYY-MM-DD`) the generated content last changed
   ...versioned(),
 }, (t) => [oneOf('policy_pages_key_values', t.pageKey, POLICY_PAGE_KEYS)]);
 

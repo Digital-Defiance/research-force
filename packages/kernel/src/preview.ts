@@ -2,8 +2,8 @@ import type { RichText } from '@researchforce/domain/richtext';
 import { validate } from '@researchforce/domain/schemas/common';
 import { disclosureLineSchema } from '@researchforce/domain/schemas/other';
 import type { DisclosureLine, Level, PublicPresentation, ULID } from '@researchforce/domain/types';
-import { approvedSnapshot, coverWidening, widens } from './consent';
-import type { ConsentRow, ConsentValues, HoldCoverage, SnapshotDependency } from './consent';
+import { approvedSnapshot, coverSeenSnapshot, coverWidening, widens } from './consent';
+import type { ConsentRow, ConsentValues, EmailedGrant, HoldCoverage, SnapshotDependency } from './consent';
 import type { ProjectRecord, ProjectionInput, UnitRecord } from './input';
 import { projectDetailed } from './project';
 import type { Projection } from './project';
@@ -159,7 +159,7 @@ export function diffViews(before: ProjectionInput, after: ProjectionInput, optio
 
 export type GateReason =
   | 'unit_limit' | 'unknown_unit' | 'rights' | 'consent' | 'licence' | 'requester_licence' | 'disclosure_line' | 'restricted'
-  | 'owner_consent' | 'hold';
+  | 'owner_consent' | 'hold' | 'emailed_consent';
 export interface GateFailure {
   readonly key?: UnitKey;
   readonly reason: GateReason;
@@ -186,6 +186,12 @@ export interface ConsentState {
   readonly holds: readonly HoldCoverage[];
   /** The loaded dependency rows the resulting snapshot binds to (R23.23). */
   readonly dependencies: readonly SnapshotDependency[];
+  /**
+   * The emailed grants a unit's Consent_Status or Rights_Status was set through, each with the seen snapshot
+   * the Consent_Page showed (R51.9). A change may make the unit present at most what the snapshot presented;
+   * a status set by hand records no such row, so it carries no grant and covers no publication.
+   */
+  readonly emailedGrants: readonly EmailedGrant[];
 }
 
 export interface GateState {
@@ -331,6 +337,19 @@ function consentAndHoldGates(change: ChangeSet, state: GateState, after: Project
         key, reason: 'hold', offerWithheld: false,
         message: 'A Confidentiality_Hold covers this unit; nothing it covers may be published until the hold is lifted or overridden.',
         details: holds.map((hold) => `${members.get(hold.memberId)?.displayName ?? hold.memberId}: ${hold.note}`),
+      });
+      continue;
+    }
+
+    // R51.9: a Consent_Status or Rights_Status set through a Consent_Answer covers only the exact material the
+    // Consent_Page showed. A widening that makes the unit's own Public_View present more than the seen snapshot
+    // did is refused, naming the element and the recorded answer and offering a new Consent_Request.
+    const seen = coverSeenSnapshot(consent.emailedGrants, after, key);
+    if (!seen.covered) {
+      failures.push({
+        key, reason: 'emailed_consent', offerWithheld: false,
+        message: 'This change presents more than the emailed consent covered; the person saw a narrower version, so a new Consent_Request is needed.',
+        details: seen.exceededIds,
       });
       continue;
     }

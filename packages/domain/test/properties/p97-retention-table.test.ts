@@ -13,7 +13,7 @@ function numbers(rule: RetentionRule): number[] {
 }
 
 it('generates exactly the configured periods, windows, ending events and unlimited policies', () => {
-  fc.assert(fc.property(fc.array(fc.integer({ min: 1, max: 500 }), { minLength: 16, maxLength: 16 }), fc.boolean(), (values, variant) => {
+  fc.assert(fc.property(fc.array(fc.integer({ min: 1, max: 500 }), { minLength: 22, maxLength: 22 }), fc.boolean(), (values, variant) => {
     const n = (i: number) => values[i]!;
     const upload = [n(3), n(4)].sort((a, b) => a - b);
     const email = [n(7), n(8)].sort((a, b) => a - b);
@@ -24,14 +24,20 @@ it('generates exactly the configured periods, windows, ending events and unlimit
       finalDecisionFilesAndEmail: { filesWithinHours: n(6), emailMinDays: email[0]!, emailMaxDays: email[1]! },
       finalDecisionText: { reason: variant ? 'retained as a decision record' : 'retained as research history' },
       acceptedOtherSubmissions: { until: variant ? 'neither a submission nor a credited Item exists' : 'both referenced records are gone' },
+      submitterContact: { reviewMonths: n(17), eraseWithinHours: n(18) },
       responseLinks: { validDays: n(9), tokenPurgeDaysAfterExpiry: n(10) }, publicExports: { requestedDays: n(11), scheduledCompleteCount: n(12) },
       internalBackups: { days: n(13), deleteWithinHours: n(14) }, timeTravel: { days: n(15) }, deletedItemFiles: { withinHours: n(0) },
+      contactEmails: { until: variant ? 'an Administrator erases it or the Party is deleted' : 'the Party is erased or removed' },
+      consentRequests: { until: variant ? 'the External Party exists' : 'the Party remains in records', tokenPurgeDaysAfterExpiry: n(16) },
+      operationalRecords: { reconciledPayloadDays: n(19), closedCheckpointDays: n(20), failureMetadataDays: n(21) },
     };
     const expected: Record<RetentionKind, number[]> = {
       sessions: [n(0), n(1)], downloadLinks: [n(2)], abandonedOutsideUploads: upload, networkAddresses: [n(5)],
       pendingOutsideSubmissions: [], finalDecisionFilesAndEmail: [n(6), ...email], finalDecisionText: [], acceptedOtherSubmissions: [],
+      submitterContact: [n(17), n(18)],
       responseLinks: [n(9), n(10)], publicExports: [n(11), n(12)], internalBackups: [n(13), n(14)], timeTravel: [n(15)],
-      deletedItemFiles: [n(0)], memberAccountsAndProfiles: [], externalParties: [],
+      deletedItemFiles: [n(0)], memberAccountsAndProfiles: [], externalParties: [], contactEmails: [], consentRequests: [n(16)],
+      operationalRecords: [n(19), n(20), n(21)],
     };
     const rows = retentionRows(config);
     expect(rows.map((row) => row.kind).sort()).toEqual(Object.keys(expected).sort());
@@ -48,5 +54,7 @@ it('generates exactly the configured periods, windows, ending events and unlimit
     expect(statement('finalDecisionText')).toContain(config.finalDecisionText.reason);
     expect(statement('memberAccountsAndProfiles')).toContain(config.memberAccountsAndProfiles.reason);
     expect(statement('externalParties')).toContain(config.externalParties.reason);
+    expect(statement('contactEmails')).toContain(config.contactEmails.until);
+    expect(statement('consentRequests')).toContain(config.consentRequests.until);
   }));
 });

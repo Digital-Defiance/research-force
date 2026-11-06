@@ -40,11 +40,18 @@ it('does not satisfy a Worker-backed channel with a constant: rf-dl is a require
 
 it('rejects a missing adapter, a mismatched source, an unregistered adapter, and a stub that never calls the production handler', async () => {
   const [required] = REQUIRED_LIVE_CHANNELS;
-  const adapter = (over: Partial<LiveChannel> = {}): LiveChannel => ({ name: required!.name, source: required!.source, invocations: 1, artifacts: () => Promise.resolve([]), ...over });
-  expect(liveChannelProblems([])).toEqual([`Missing live adapter: ${required!.name}`]);
-  expect(liveChannelProblems([adapter()])).toEqual([]);
-  expect(liveChannelProblems([adapter({ invocations: 0 })])).toEqual([`Adapter ${required!.name} never called the production handler (stub)`]);
-  expect(liveChannelProblems([adapter({ source: 'apps/dl/test/fake.ts' })])[0]).toMatch(/exercises apps\/dl\/test\/fake\.ts/u);
-  expect(liveChannelProblems([adapter(), adapter({ name: 'extra' })])).toEqual(['Unregistered live adapter: extra']);
+  // A valid adapter for a required channel: the right source and at least one real call to the production handler.
+  const adapterFor = (channel: { name: string; source: string }, over: Partial<LiveChannel> = {}): LiveChannel =>
+    ({ name: channel.name, source: channel.source, invocations: 1, artifacts: () => Promise.resolve([]), ...over });
+  // A full, valid set of adapters, one per required channel, so the baseline has no problems.
+  const validSet = (): LiveChannel[] => REQUIRED_LIVE_CHANNELS.map((channel) => adapterFor(channel));
+  // Replace the adapter for the first required channel with a defective one, leaving the rest valid.
+  const withDefect = (over: Partial<LiveChannel>): LiveChannel[] => validSet().map((adapter, index) => (index === 0 ? { ...adapter, ...over } : adapter));
+
+  expect(liveChannelProblems([])).toEqual(REQUIRED_LIVE_CHANNELS.map((channel) => `Missing live adapter: ${channel.name}`));
+  expect(liveChannelProblems(validSet())).toEqual([]);
+  expect(liveChannelProblems(withDefect({ invocations: 0 }))).toEqual([`Adapter ${required!.name} never called the production handler (stub)`]);
+  expect(liveChannelProblems(withDefect({ source: 'apps/dl/test/fake.ts' }))[0]).toMatch(/exercises apps\/dl\/test\/fake\.ts/u);
+  expect(liveChannelProblems([...validSet(), adapterFor({ name: 'extra', source: 'apps/extra/src/index.ts' })])).toEqual(['Unregistered live adapter: extra']);
   expect(await responseArtifact('x', { status: 404, headers: [['b', '2'], ['a', '1']], text: () => Promise.resolve('body') })).toEqual({ name: 'x', content: '404\na: 1\nb: 2\n\nbody' });
 });

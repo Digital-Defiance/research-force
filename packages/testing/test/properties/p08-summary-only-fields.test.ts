@@ -10,7 +10,11 @@ import { canariesIn, referenceModel, workspaceStateArb } from '../../src/workspa
 
 /** The text fields of a Summary_Only Research_Item that may reach public output, with the status and tool fields listings show. */
 const SUMMARY_ONLY_FIELDS: ReadonlySet<string> = new Set([
-  'identifier', 'title', 'publicSummary', 'publicSummary.source', 'scopeCaveat', 'scopeCaveat.source', 'eliminationScope', 'eliminationScope.source',
+  'identifier', 'title',
+  // R50.4: a Public Research_Question's question text is a public headline presented on its public page regardless of
+  // Public_Presentation — shown even under Summary_Only, exactly like the title. Only its introduction is Full_Content-gated.
+  'question',
+  'publicSummary', 'publicSummary.source', 'scopeCaveat', 'scopeCaveat.source', 'eliminationScope', 'eliminationScope.source',
   'toolName', 'toolVersion', 'credit.name', 'credit.affiliation', 'credit.imported', 'withdrawal.reason',
 ]);
 const CHILD_TYPES: ReadonlySet<UnitRecord['type']> = new Set(['entry_section', 'reply', 'dissent_note']);

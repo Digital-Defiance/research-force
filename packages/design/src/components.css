@@ -166,11 +166,18 @@ img {
 }
 
 .rf-header__brand {
+  flex-direction: column;
   color: var(--rf-colour-text);
   font-family: var(--rf-font-heading);
   font-size: var(--rf-font-size-lg);
   font-weight: var(--rf-font-weight-semibold);
   text-decoration: none;
+}
+
+.rf-header__strapline {
+  font-size: var(--rf-font-size-sm);
+  font-weight: var(--rf-font-weight-regular);
+  color: var(--rf-colour-text-muted);
 }
 
 .rf-nav__list,
@@ -197,6 +204,45 @@ img {
 .rf-nav__link[aria-current='page'] {
   color: var(--rf-colour-text);
   font-weight: var(--rf-font-weight-semibold);
+}
+
+/* Grouped, collapsible primary navigation (R1, R4) */
+
+.rf-primary-nav {
+  display: none;
+  font-family: var(--rf-font-ui);
+}
+
+.rf-primary-nav--open {
+  display: block;
+}
+
+.rf-nav-group {
+  margin-block-end: var(--rf-space-sm);
+}
+
+.rf-nav-group__label {
+  margin: 0;
+  color: var(--rf-colour-text-muted);
+  font-family: var(--rf-font-ui);
+  font-size: var(--rf-font-size-sm);
+  font-weight: var(--rf-font-weight-semibold);
+  line-height: var(--rf-line-height-ui);
+}
+
+.rf-nav-toggle {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: var(--rf-target-min);
+  min-inline-size: var(--rf-target-min);
+  padding: var(--rf-space-xs) var(--rf-space-md);
+  border: var(--rf-border-width) solid var(--rf-colour-border);
+  border-radius: var(--rf-radius-sm);
+  background: var(--rf-colour-surface);
+  color: var(--rf-colour-text);
+  font-family: var(--rf-font-ui);
+  font-size: var(--rf-font-size-ui);
+  cursor: pointer;
 }
 
 .rf-main {
@@ -571,10 +617,208 @@ img {
   font-weight: var(--rf-font-weight-semibold);
 }
 
+/* Page header and breadcrumb (R6.1, R6.3, R6.4) */
+
+.rf-page-header {
+  margin-block-end: var(--rf-space-xl);
+  border-block-end: var(--rf-border-width) solid var(--rf-colour-border-subtle);
+}
+
+.rf-page-header > h1 {
+  margin-block-start: 0;
+}
+
+.rf-page-header__description {
+  max-inline-size: var(--rf-width-reading);
+  color: var(--rf-colour-text-muted);
+}
+
+.rf-breadcrumb {
+  margin-block-end: var(--rf-space-xs);
+  font-family: var(--rf-font-ui);
+  font-size: var(--rf-font-size-sm);
+}
+
+.rf-breadcrumb ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rf-space-2xs) var(--rf-space-xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rf-breadcrumb li:not(:last-child)::after {
+  content: '/';
+  margin-inline-start: var(--rf-space-xs);
+  color: var(--rf-colour-text-muted);
+}
+
+.rf-breadcrumb [aria-current='page'] {
+  color: var(--rf-colour-text-muted);
+}
+
+/* Card (R7.1) */
+
+.rf-card {
+  margin-block-end: var(--rf-space-lg);
+  padding: var(--rf-space-lg);
+  border: var(--rf-border-width) solid var(--rf-colour-border-subtle);
+  border-radius: var(--rf-radius-md);
+  background: var(--rf-colour-surface-raised);
+}
+
+.rf-card > :last-child {
+  margin-block-end: 0;
+}
+
+.rf-card__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--rf-space-xs) var(--rf-space-md);
+  margin-block-start: 0;
+}
+
+.rf-card__header > :first-child {
+  margin-block: 0;
+}
+
+/* Data table sort affordance (R7.2, R8) */
+
+.rf-table th[aria-sort] {
+  white-space: nowrap;
+}
+
+.rf-table__sort {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rf-space-2xs);
+  min-block-size: var(--rf-target-min);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: var(--rf-font-weight-semibold);
+  text-align: start;
+  cursor: pointer;
+}
+
+.rf-table__sort::after {
+  content: '';
+  color: var(--rf-colour-text-muted);
+}
+
+.rf-table th[aria-sort='ascending'] .rf-table__sort::after {
+  content: '\2191';
+}
+
+.rf-table th[aria-sort='descending'] .rf-table__sort::after {
+  content: '\2193';
+}
+
+.rf-table th[aria-sort='none'] .rf-table__sort::after {
+  content: '\2195';
+}
+
+/* Tabs (R7.3, R7.7) */
+
+.rf-tablist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rf-space-2xs);
+  margin-block-end: var(--rf-space-md);
+  border-block-end: var(--rf-border-width) solid var(--rf-colour-border-subtle);
+}
+
+.rf-tab {
+  min-block-size: var(--rf-control-height);
+  padding: var(--rf-space-xs) var(--rf-space-md);
+  border: 0;
+  border-block-end: var(--rf-border-width-strong) solid transparent;
+  background: transparent;
+  color: var(--rf-colour-text-muted);
+  font-family: var(--rf-font-ui);
+  font-size: var(--rf-font-size-ui);
+  font-weight: var(--rf-font-weight-medium);
+  line-height: var(--rf-line-height-ui);
+  cursor: pointer;
+}
+
+.rf-tab[aria-selected='true'] {
+  color: var(--rf-colour-text);
+  border-block-end-color: var(--rf-colour-accent);
+  font-weight: var(--rf-font-weight-semibold);
+}
+
+.rf-tabpanel[hidden] {
+  display: none;
+}
+
+/* Empty state (R7.4) */
+
+.rf-empty {
+  display: grid;
+  justify-items: start;
+  gap: var(--rf-space-md);
+  padding: var(--rf-space-xl);
+  border: var(--rf-border-width) dashed var(--rf-colour-border-subtle);
+  border-radius: var(--rf-radius-md);
+  color: var(--rf-colour-text-muted);
+}
+
+.rf-empty > p {
+  margin: 0;
+}
+
+/* Loading skeleton (R7.5, R12.5) */
+
+.rf-skeleton {
+  display: grid;
+  gap: var(--rf-space-sm);
+}
+
+.rf-skeleton__row {
+  block-size: var(--rf-space-md);
+  border-radius: var(--rf-radius-sm);
+  background: var(--rf-colour-skeleton);
+  animation: rf-skeleton-pulse var(--rf-duration-fast) ease-in-out infinite alternate;
+}
+
+@keyframes rf-skeleton-pulse {
+  from { opacity: 0.6; }
+  to { opacity: 1; }
+}
+
+/* Layout wrappers (R6.2, R6.5) */
+
+.rf-layout--wide {
+  max-inline-size: var(--rf-width-page);
+}
+
+.rf-layout--split {
+  display: grid;
+  gap: var(--rf-space-lg);
+}
+
 @media (min-width: 48rem) {
   .rf-header__inner {
     flex-wrap: nowrap;
     justify-content: space-between;
+  }
+
+  .rf-layout--split {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .rf-nav-toggle {
+    display: none;
+  }
+
+  .rf-primary-nav {
+    display: block;
   }
 }
 
@@ -588,48 +832,4 @@ img {
   }
 }
 
-/* Printing (R45.9): no controls, link texts kept, wide content wrapped, the page address written out, the footer statements kept. */
-@media print {
-  .rf-skip-link,
-  .rf-nav,
-  .rf-footer-nav,
-  .rf-pagination,
-  .rf-button,
-  .rf-search,
-  form,
-  button,
-  input,
-  select,
-  textarea {
-    display: none;
-  }
-
-  a {
-    color: var(--rf-colour-text);
-  }
-
-  pre,
-  code {
-    white-space: pre-wrap;
-    overflow-wrap: anywhere;
-  }
-
-  pre,
-  math[display='block'],
-  .rf-table-scroll {
-    overflow: visible;
-  }
-
-  table {
-    inline-size: var(--rf-size-full);
-    table-layout: fixed;
-    overflow-wrap: anywhere;
-  }
-
-  [data-url]::after {
-    content: attr(data-url);
-    display: block;
-    font-family: var(--rf-font-ui);
-    font-size: var(--rf-font-size-sm);
-  }
-}
+/* The print styles live in print.css (R45.9); every page links it beside this sheet. */

@@ -9,7 +9,7 @@ import { newULID } from '@researchforce/domain/identifiers';
 import { OPERATIONS } from '@researchforce/domain/settings';
 import type { RevisionKind, Timestamp, ULID } from '@researchforce/domain/types';
 import type { OutboxTopic, RequestAccountant } from './accountant';
-import { outbox, revisions } from './schema/core';
+import { FREEZE_OWNER_WRITABLE_TABLES, outbox, revisions } from './schema/core';
 import type { AiProvenance, REVISION_TARGET_TYPES } from './schema/core';
 
 export const GUARD_CODES = [
@@ -17,7 +17,7 @@ export const GUARD_CODES = [
   'upload_ready', 'upload_limit', 'reply_parent', 'review_eligible', 'reviewer_eligible', 'review_open', 'access_owner',
   'decision_participant', 'decision_wording', 'acknowledgement_version', 'work_state', 'work_cycle',
   'derivation_cycle', 'derivation_tip', 'draft_author', 'proposal_state', 'personal_owner', 'personal_limit',
-  'consent_valid', 'hold_free', 'dual_open', 'dual_distinct', 'evidence_covered',
+  'consent_valid', 'hold_free', 'dual_open', 'dual_distinct', 'evidence_covered', 'consent_link_open',
 ] as const;
 export type GuardCode = typeof GUARD_CODES[number];
 /** HTTP status and the rule each guard enforces, for the API's refusal (design "Guards"). */
@@ -55,12 +55,26 @@ export const GUARD_RULES: Readonly<Record<GuardCode, { readonly status: 409 | 42
   dual_open: { status: 409, rule: 'This approval changed after you read it; its action no longer applies or it is no longer open (R49.4).' },
   dual_distinct: { status: 422, rule: 'An approval needs a second, different currently Active Administrator (R49.3, R49.8).' },
   evidence_covered: { status: 422, rule: 'No current Permission_Evidence covers this material or use; record a grant or send a request first (R51.9).' },
+  consent_link_open: { status: 409, rule: 'This link is no longer valid; it is unknown, expired, cancelled, or already used (R51.6, R51.12).' },
 });
 
 /** The change sequence after the batch's second statement has incremented it. */
 export const CHANGE_SEQ: SQL = sql`(SELECT v FROM counters WHERE k = 'change')`;
 const INCREMENT_CHANGE = "UPDATE counters SET v = v + 1 WHERE k = 'change'";
-const FROZEN_GUARD = "INSERT INTO _g_frozen (x) SELECT NULL WHERE NOT ((SELECT v FROM counters WHERE k = 'frozen') = 0)";
+
+/**
+ * The shared LIVE-LEASE write predicate (R36.14, design "Backup freeze"). The `frozen` guard aborts a save only while
+ * an Internal_Backup holds a LIVE write-freeze lease: a `write_freeze_leases` row that is still `held` and whose
+ * `expires_at` and window `deadline_at` are both in the future at `now`. A lease that was released, completed, marked
+ * incomplete, expired (not renewed in time), or overran its certified window is NOT live, so writers resume at once
+ * and a crashed freeze owner can never wedge writes forever. With no lease row at all the predicate never blocks, so
+ * existing databases and ordinary operation are unaffected. `now` is the batch actor's time, bound per statement, so
+ * the predicate reads the same instant the rest of the save uses rather than trusting a wall clock inside SQL.
+ */
+export function freezeGuardSql(now: Timestamp): SQL {
+  return sql`INSERT INTO _g_frozen (x) SELECT NULL WHERE EXISTS (
+    SELECT 1 FROM write_freeze_leases WHERE only = 1 AND state = 'held' AND ${now} < expires_at AND ${now} < deadline_at)`;
+}
 /**
  * The durable public invalidation epoch, read as 0 before it is first bumped. The epoch lives in the same
  * `counters` table as `change`; a confidentiality-affecting save increments it in the same batch as its
@@ -117,8 +131,45 @@ type Stamp = 'updatedSeq' | 'actorId' | 'rev';
 type Writable<T extends SQLiteTable> = Omit<T['$inferInsert'], Stamp>;
 
 /**
+ * The owning backup job's identity for the narrow freeze exception (R36.14). A batch created with `freezeOwner` is the
+ * only kind of write allowed to proceed while a live lease is held, and only for the owning job and generation; the
+ * exception runs the live-lease guard scoped to the owner so a stale generation's writes are still refused, and every
+ * statement it carries must target a {@link FREEZE_OWNER_WRITABLE_TABLES} bookkeeping table — it can never mutate a
+ * snapshotted research row.
+ */
+export interface FreezeOwner { readonly jobId: string; readonly generation: number }
+
+/**
+ * How a batch relates to the write-freeze lease.
+ * - default: an ordinary save; the live-lease guard blocks it while a backup holds a live lease.
+ * - `freezeOwner`: the owning job's renewal/control/checkpoint write; passes the freeze but is restricted to the
+ *   owner's generation and the bookkeeping-table allowlist (R36.14).
+ * - `ignoreFreeze`: a write to a NON-snapshotted store (the public-export package bookkeeping and the external-operation
+ *   outbox), exempt from the research freeze because it never touches a snapshotted research row. Each use is
+ *   justified at its call site; do not add new ones without the same justification.
+ */
+export interface BatchOptions {
+  readonly ignoreFreeze?: boolean;
+  readonly freezeOwner?: FreezeOwner;
+}
+
+/** A statement the freeze owner tried to run that does not target a bookkeeping table (R36.14). */
+export class FreezeOwnerScopeError extends Error {
+  constructor(readonly table: string) {
+    super(`The freeze owner exception may only write ${FREEZE_OWNER_WRITABLE_TABLES.join(', ')}; it tried to write "${table}".`);
+    this.name = 'FreezeOwnerScopeError';
+  }
+}
+
+/** The table a plain INSERT/UPDATE/DELETE statement writes, lower-cased, or null when it is not a single-table mutation. */
+function writtenTable(statementSql: string): string | null {
+  const match = /^\s*(?:INSERT(?:\s+OR\s+\w+)?\s+INTO|UPDATE(?:\s+OR\s+\w+)?|DELETE\s+FROM)\s+[`"']?([A-Za-z_][A-Za-z0-9_]*)[`"']?/iu.exec(statementSql);
+  return match ? match[1]!.toLowerCase() : null;
+}
+
+/**
  * Collects one save as a single D1 batch, which D1 runs as one transaction (design "Atomic writes").
- * The batch always starts with the `frozen` guard and the change-counter increment; every other
+ * The batch always starts with the live-lease `frozen` guard and the change-counter increment; every other
  * statement keeps the order in which it was added, so a guard can check the state after the writes
  * before it (for example the last-Administrator guard after a Role change).
  */
@@ -132,13 +183,16 @@ export class GuardedBatch {
   readonly #topics = new Set<OutboxTopic>();
   readonly #deferred = new Map<string, (batch: GuardedBatch) => void>();
 
-  constructor(db: D1Database, readonly actor: BatchActor, readonly options: { readonly ignoreFreeze?: boolean } = {}) {
+  constructor(db: D1Database, readonly actor: BatchActor, readonly options: BatchOptions = {}) {
     this.#db = db;
     this.#orm = drizzle(db);
   }
 
+  /** Whether the leading live-lease guard is sent (an `ignoreFreeze` or `freezeOwner` batch sends its own guard or none). */
+  get #sendsFreezeGuard(): boolean { return !this.options.ignoreFreeze && this.options.freezeOwner === undefined; }
+
   /** Statements the batch will send, including the leading guard and counter increment. */
-  get size(): number { return this.#statements.length + this.#pendingRevisionSize + (this.options.ignoreFreeze ? 1 : 2); }
+  get size(): number { return this.#statements.length + this.#pendingRevisionSize + (this.#sendsFreezeGuard || this.options.freezeOwner !== undefined ? 2 : 1); }
   /** Topics this batch writes outbox rows to, whose owners are kicked once it commits. */
   get outboxTopics(): readonly OutboxTopic[] { return [...this.#topics]; }
 
@@ -282,8 +336,9 @@ export class GuardedBatch {
     this.#revisionWrites.length = 0;
     const operation = accountant?.operation;
     if (this.size + (operation ? 1 : 0) > OPERATIONS.maxD1Statements) throw new BatchTooLarge(this.size + (operation ? 1 : 0));
+    const lead = this.#leadStatements();
     const statements = [
-      ...(this.options.ignoreFreeze ? [] : [this.#db.prepare(FROZEN_GUARD)]),
+      ...lead,
       this.#db.prepare(INCREMENT_CHANGE),
       ...this.#statements.map((statement) => this.#db.prepare(statement.sql).bind(...statement.params)),
       ...(operation ? [this.#db.prepare("UPDATE idempotency_results SET state = 'committed', completed_at = ?3 WHERE actor_id = ?1 AND op_key = ?2 AND state = 'pending'").bind(operation.actorId, operation.key, this.actor.now)] : []),
@@ -298,6 +353,35 @@ export class GuardedBatch {
     accountant?.add(results);
     accountant?.committed(this.#topics);
     return results;
+  }
+
+  /**
+   * The leading statement(s) before the change-counter increment:
+   * - an ordinary batch sends the live-lease `frozen` guard (blocks while a backup holds a live lease);
+   * - an `ignoreFreeze` batch (a non-snapshotted store) sends nothing;
+   * - a `freezeOwner` batch sends an OWNER guard that aborts unless the owning job still holds the CURRENT
+   *   generation's live lease, so a stale generation's owner write is refused, and it validates that every statement
+   *   targets a bookkeeping table so the exception can never mutate a snapshotted research row (R36.14).
+   */
+  #leadStatements(): D1PreparedStatement[] {
+    const owner = this.options.freezeOwner;
+    if (owner !== undefined) {
+      for (const statement of this.#statements) {
+        const table = writtenTable(statement.sql);
+        if (table !== null && !FREEZE_OWNER_WRITABLE_TABLES.includes(table)) throw new FreezeOwnerScopeError(table);
+      }
+      // Abort unless THIS owner still holds the current live lease at its generation; a later generation or a lapsed
+      // lease refuses the write through the same `_g_frozen` NOT NULL violation, surfacing as the `frozen` rule.
+      return [this.#db.prepare(
+        `INSERT INTO _g_frozen (x) SELECT NULL WHERE NOT EXISTS (
+          SELECT 1 FROM write_freeze_leases WHERE only = 1 AND state = 'held' AND job_id = ?1 AND generation = ?2 AND ?3 < expires_at AND ?3 < deadline_at)`,
+      ).bind(owner.jobId, owner.generation, this.actor.now)];
+    }
+    if (this.#sendsFreezeGuard) {
+      const { sql: text, params } = this.#dialect.sqlToQuery(freezeGuardSql(this.actor.now));
+      return [this.#db.prepare(text).bind(...params)];
+    }
+    return [];
   }
 
   #push(query: SQL): this {

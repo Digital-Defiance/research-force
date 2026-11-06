@@ -41,8 +41,8 @@ function sectionBlock(context: PageContext, section: PolicySection): ElementNode
 const sections = (context: PageContext, key: PolicyPageKey, filter: (section: PolicySection) => boolean = () => true): ElementNode[] =>
   context.site.policy[key].sections.filter(filter).flatMap((section) => sectionBlock(context, section));
 
-const contactLink = (): ElementNode => element('p', { class: 'rf-policy-contact' }, [
-  text('To contact ResearchForce or its members, use the '), element('a', { href: PAGE_PATHS.submitGeneral }, [text('contact and submission form')]), text('.'),
+const contactLink = (context: PageContext): ElementNode => element('p', { class: 'rf-policy-contact' }, [
+  text(`To contact ${context.site.publicCopy.name} or its members, use the `), element('a', { href: PAGE_PATHS.submitGeneral }, [text('contact and submission form')]), text('.'),
 ]);
 
 function policyPage(context: PageContext, key: PolicyPageKey, body: readonly ViewNode[]): PageSpec {
@@ -52,12 +52,28 @@ function policyPage(context: PageContext, key: PolicyPageKey, body: readonly Vie
   };
 }
 
-/** The fixed status section, then “About the group” (R46.1). */
+/** The ordered Principles from the validated Installation_Public_Copy, presented in the configured order (R46.1, R46.41). */
+function principlesSection(context: PageContext): ElementNode[] {
+  const { principles } = context.site.publicCopy;
+  if (principles.length === 0) return [];
+  return [element('section', { class: 'rf-about-principles', 'aria-labelledby': 'principles-heading' }, [
+    element('h2', { id: 'principles-heading' }, [text('Principles')]),
+    element('ol', { class: 'rf-principles' }, principles.map((principle) => element('li', { class: 'rf-principles__item' }, [
+      element('strong', { class: 'rf-principles__name' }, [text(`${principle.name}.`)]), text(` ${principle.text}`),
+    ]))),
+  ])];
+}
+
+/**
+ * The fixed legal/status section (R46), then the “About the group” Policy_Section initialized from the installation's
+ * About prose, then the ordered Principles from the validated Installation_Public_Copy (R46.1, R46.41).
+ */
 export function aboutPage(context: PageContext): PageSpec {
   return policyPage(context, 'about', [
-    element('section', { class: 'rf-about-status', 'aria-label': 'Status of ResearchForce' }, paragraphs(ABOUT_STATUS.paragraphs)),
+    element('section', { class: 'rf-about-status', 'aria-label': 'Status of the group' }, paragraphs(ABOUT_STATUS.paragraphs)),
     ...sections(context, 'about'),
-    contactLink(),
+    ...principlesSection(context),
+    contactLink(context),
   ]);
 }
 
@@ -89,7 +105,7 @@ export function peoplePage(context: PageContext): PageSpec {
     ...sections(context, 'people'),
     ...(profiles.length === 0 ? paragraphs(PEOPLE_NO_PROFILE_STATEMENT.paragraphs) : profiles),
     ...paragraphs(PEOPLE_AFFILIATION_STATEMENT.paragraphs),
-    contactLink(),
+    contactLink(context),
   ]);
 }
 

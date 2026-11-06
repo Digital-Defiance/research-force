@@ -371,11 +371,18 @@ export const externalParties = sqliteTable('external_parties', {
   nameFold: text('name_fold').notNull(), // case- and diacritic-folded (R9.2)
   doNotName: flag('do_not_name'),
   genericLabel: text('generic_label'),
+  /** An optional Contact_Email of at most 254 characters, shown only to Members; used to address a Consent_Request (R51.1). */
+  contactEmail: text('contact_email'),
+  /** The Administrator who erased the Contact_Email, and when; the value itself is nulled, never kept (R51.1). */
+  contactEmailErasedBy: text('contact_email_erased_by'),
+  contactEmailErasedAt: text('contact_email_erased_at'),
   createdAt: text('created_at').notNull(),
   ...versioned(),
 }, (t) => [
   index('external_parties_fold').on(t.nameFold),
   check('external_parties_label', sql`${t.doNotName} = 0 OR ${t.genericLabel} IS NOT NULL`),
+  // An erasure records its Administrator and time together, and never keeps the erased value (R51.1).
+  check('external_parties_email_erasure', sql`(${t.contactEmailErasedBy} IS NULL) = (${t.contactEmailErasedAt} IS NULL) AND (${t.contactEmailErasedAt} IS NULL OR ${t.contactEmail} IS NULL)`),
 ]);
 
 /** The partial unique index over active links is an expression index, so it lives in the raw migration. */

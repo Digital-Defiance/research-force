@@ -7,6 +7,7 @@ export interface RetentionConfiguration {
   readonly finalDecisionFilesAndEmail: { readonly filesWithinHours: number; readonly emailMinDays: number; readonly emailMaxDays: number };
   readonly finalDecisionText: { readonly reason: string };
   readonly acceptedOtherSubmissions: { readonly until: string };
+  readonly submitterContact: { readonly reviewMonths: number; readonly eraseWithinHours: number };
   readonly responseLinks: { readonly validDays: number; readonly tokenPurgeDaysAfterExpiry: number };
   readonly publicExports: { readonly requestedDays: number; readonly scheduledCompleteCount: number };
   readonly internalBackups: { readonly days: number; readonly deleteWithinHours: number };
@@ -14,6 +15,17 @@ export interface RetentionConfiguration {
   readonly deletedItemFiles: { readonly withinHours: number };
   readonly memberAccountsAndProfiles: { readonly reason: string };
   readonly externalParties: { readonly reason: string };
+  readonly contactEmails: { readonly until: string };
+  readonly consentRequests: { readonly until: string; readonly tokenPurgeDaysAfterExpiry: number };
+  /**
+   * The operational-records retention of R60.8 (task 67.3): reconciled outbox/side-effect payloads expire 30 days
+   * after reconciliation, job checkpoints are kept while active plus 30 days after their owner closes, and failure
+   * metadata is aggregated and the per-failure rows dropped at 90 days. These windows govern only operational
+   * bookkeeping; the reference-safety guard (apps/app/src/jobs/operational-retention.ts) refuses to remove anything a
+   * live citation, release, proposal, or backup still depends on, and scholarly Revisions, permission evidence,
+   * manifests, suppressed identifiers, and content-free operation tombstones are never swept here.
+   */
+  readonly operationalRecords: { readonly reconciledPayloadDays: number; readonly closedCheckpointDays: number; readonly failureMetadataDays: number };
 }
 /** Sweepers and the generated Privacy table consume these same entries. Changes require a release. */
 export const RETENTION: RetentionConfiguration = Object.freeze({
@@ -25,16 +37,20 @@ export const RETENTION: RetentionConfiguration = Object.freeze({
   finalDecisionFilesAndEmail: Object.freeze({ filesWithinHours: 24, emailMinDays: 90, emailMaxDays: 91 }),
   finalDecisionText: Object.freeze({ reason: 'kept as the record of the decision' }),
   acceptedOtherSubmissions: Object.freeze({ until: 'neither the Outside Submission nor a credited Item exists' }),
+  submitterContact: Object.freeze({ reviewMonths: 12, eraseWithinHours: 24 }),
   responseLinks: Object.freeze({ validDays: 30, tokenPurgeDaysAfterExpiry: 30 }),
   publicExports: Object.freeze({ requestedDays: 7, scheduledCompleteCount: 3 }),
   internalBackups: Object.freeze({ days: 7, deleteWithinHours: 1 }), timeTravel: Object.freeze({ days: 7 }),
   deletedItemFiles: Object.freeze({ withinHours: 24 }),
   memberAccountsAndProfiles: Object.freeze({ reason: 'Revoked Members remain for attribution' }),
   externalParties: Object.freeze({ reason: 'while records name them' }),
+  contactEmails: Object.freeze({ until: 'an Administrator erases it or the External Party is deleted' }),
+  consentRequests: Object.freeze({ until: 'the External Party exists', tokenPurgeDaysAfterExpiry: 30 }),
+  operationalRecords: Object.freeze({ reconciledPayloadDays: 30, closedCheckpointDays: 30, failureMetadataDays: 90 }),
 });
 export type RetentionKind = keyof RetentionConfiguration;
 export type RetentionRule =
-  | { readonly kind: 'period'; readonly amount: number; readonly unit: 'minutes' | 'hours' | 'days'; readonly action: string; readonly after: string }
+  | { readonly kind: 'period'; readonly amount: number; readonly unit: 'minutes' | 'hours' | 'days' | 'months'; readonly action: string; readonly after: string }
   | { readonly kind: 'window'; readonly minimum: number; readonly maximum: number; readonly unit: 'hours' | 'days'; readonly action: string; readonly after: string }
   | { readonly kind: 'until'; readonly event: string }
   | { readonly kind: 'unlimited'; readonly reason: string }
@@ -60,7 +76,7 @@ export function retentionRows(config: RetentionConfiguration = RETENTION): Reten
     if (typeof value === 'string' && value.trim() === '') throw new RangeError('Retention events and reasons cannot be blank.');
   }
   if (config.abandonedOutsideUploads.minHours > config.abandonedOutsideUploads.maxHours || config.finalDecisionFilesAndEmail.emailMinDays > config.finalDecisionFilesAndEmail.emailMaxDays) throw new RangeError('A retention window cannot end before it starts.');
-  const period = (amount: number, unit: 'minutes' | 'hours' | 'days', action: string, after: string): RetentionRule => ({ kind: 'period', amount, unit, action, after });
+  const period = (amount: number, unit: 'minutes' | 'hours' | 'days' | 'months', action: string, after: string): RetentionRule => ({ kind: 'period', amount, unit, action, after });
   const combined = (...rules: RetentionRule[]): RetentionRule => ({ kind: 'combined', rules });
   const row = (kind: RetentionKind, data: string, rule: RetentionRule): RetentionRow => ({ kind, data, rule, statement: describeRetention(rule) });
   return [
@@ -71,7 +87,8 @@ export function retentionRows(config: RetentionConfiguration = RETENTION): Reten
     row('pendingOutsideSubmissions', 'Outside Submissions without a final decision: text, files, name, email and affiliation', { kind: 'until', event: config.pendingOutsideSubmissions.until }),
     row('finalDecisionFilesAndEmail', 'Rejected Outside Submissions and accepted Removal Requests: files and email', combined(period(config.finalDecisionFilesAndEmail.filesWithinHours, 'hours', 'Delete files within', 'the decision'), { kind: 'window', minimum: config.finalDecisionFilesAndEmail.emailMinDays, maximum: config.finalDecisionFilesAndEmail.emailMaxDays, unit: 'days', action: 'Erase the email address', after: 'the decision' })),
     row('finalDecisionText', 'Rejected Outside Submissions and accepted Removal Requests: text, name and affiliation', { kind: 'unlimited', reason: config.finalDecisionText.reason }),
-    row('acceptedOtherSubmissions', 'Other accepted Outside Submissions: text, name, email and affiliation', { kind: 'until', event: config.acceptedOtherSubmissions.until }),
+    row('acceptedOtherSubmissions', 'Other accepted Outside Submissions: text and the Submitter Attribution (name and affiliation)', { kind: 'until', event: config.acceptedOtherSubmissions.until }),
+    row('submitterContact', 'Other accepted Outside Submissions: the Submitter Contact (email address)', combined(period(config.submitterContact.reviewMonths, 'months', 'Reviewed every', 'acceptance, then kept with a reason or erased'), period(config.submitterContact.eraseWithinHours, 'hours', 'erased within', 'an Erase Contact Review'))),
     row('responseLinks', 'Response Links', combined(period(config.responseLinks.validDays, 'days', 'Valid for', 'sending'), period(config.responseLinks.tokenPurgeDaysAfterExpiry, 'days', 'Delete token hashes', 'expiry'))),
     row('publicExports', 'Public Archive Exports', combined(period(config.publicExports.requestedDays, 'days', 'Keep requested exports for', 'the requested export starts'), { kind: 'count', count: config.publicExports.scheduledCompleteCount })),
     row('internalBackups', 'Internal Backups', combined(period(config.internalBackups.days, 'days', 'Keep for', 'the backup is produced or marked incomplete'), period(config.internalBackups.deleteWithinHours, 'hours', 'Delete within', 'that retention period ends'))),
@@ -79,5 +96,8 @@ export function retentionRows(config: RetentionConfiguration = RETENTION): Reten
     row('deletedItemFiles', 'Files of permanently deleted Items', period(config.deletedItemFiles.withinHours, 'hours', 'Delete within', 'permanent deletion')),
     row('memberAccountsAndProfiles', 'Member accounts and Profiles', { kind: 'unlimited', reason: config.memberAccountsAndProfiles.reason }),
     row('externalParties', 'External Parties named in records', { kind: 'unlimited', reason: config.externalParties.reason }),
+    row('contactEmails', 'Contact Emails of External Parties', { kind: 'until', event: config.contactEmails.until }),
+    row('consentRequests', 'Consent Requests, Consent Answers, and withdrawals', combined({ kind: 'until', event: config.consentRequests.until }, period(config.consentRequests.tokenPurgeDaysAfterExpiry, 'days', 'Delete token hashes', 'the links expire'))),
+    row('operationalRecords', 'Operational records: reconciled outbox and external-operation payloads, closed job checkpoints, and failure metadata', combined(period(config.operationalRecords.reconciledPayloadDays, 'days', 'Expire reconciled payloads', 'reconciliation'), period(config.operationalRecords.closedCheckpointDays, 'days', 'keep job checkpoints while active and then', 'the job closes'), period(config.operationalRecords.failureMetadataDays, 'days', 'and aggregate then drop failure metadata', 'the failure'))),
   ];
 }
