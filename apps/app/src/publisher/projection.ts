@@ -40,10 +40,26 @@ async function viewHash(view: PublicView): Promise<string> {
   return Array.from(digest, (byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 
-/** `1` while an Internal_Backup reads rf-core; the Publisher skips every change until it clears (R36.16, R59.3). */
-export async function isFrozen(core: D1Database): Promise<boolean> {
-  const row = await core.prepare("SELECT coalesce((SELECT v FROM counters WHERE k = 'frozen'), 0) AS v").first<{ v: number }>();
-  return (row?.v ?? 0) !== 0;
+/**
+ * True while an Internal_Backup holds a LIVE write-freeze lease over rf-core; the Publisher skips every change until
+ * the lease lapses or is released (R36.16, R36.14, R59.3). A lease that expired, was released, or overran its window
+ * is not live, so the Publisher resumes the moment writers do. Read against `now` so the same instant the predicate
+ * blocks saves also pauses projection.
+ */
+export async function isFrozen(core: D1Database, now?: Timestamp): Promise<boolean> {
+  const at = now ?? (new Date().toISOString() as Timestamp);
+  const row = await core.prepare(
+    "SELECT 1 AS live FROM write_freeze_leases WHERE only = 1 AND state = 'held' AND ?1 < expires_at AND ?1 < deadline_at",
+  ).bind(at).first<{ live: number }>();
+  if (row !== null) return true;
+  // A restore keeps its restored material QUARANTINED until an operator explicitly releases containment: while any
+  // restore is running, quarantined, or incomplete, the Publisher must project nothing so no restored Disclosure_Unit
+  // reaches the Public_Site before release (R36.9, R36.16; task 38.5 `restoreQuarantineActive`). A `released` or
+  // `failed` restore no longer holds the quarantine, so the Publisher resumes.
+  const quarantined = await core.prepare(
+    "SELECT 1 AS n FROM restores WHERE state IN ('running', 'quarantined', 'incomplete') LIMIT 1",
+  ).first<{ n: number }>();
+  return quarantined !== null;
 }
 
 /** The project a scope names, or the whole-site/policy scopes that carry no projectable root. */
@@ -259,7 +275,7 @@ function rootBytes(viewsJson: string): number { return new TextEncoder().encode(
  * `publish` rows stay pending until the restore clears and the Publisher is kicked again.
  */
 export async function runProjectionSlice(deps: ProjectionDeps, run: Generation, now: Timestamp): Promise<SliceResult> {
-  if (await isFrozen(deps.core)) return { more: false, processed: 0, seqTo: 0, urgent: false, preempted: false };
+  if (await isFrozen(deps.core, now)) return { more: false, processed: 0, seqTo: 0, urgent: false, preempted: false };
 
   const authoritative = await readEpoch(deps.core);
   // A removal step is always authorized, so suppression proceeds; addition/promotion are fenced by a newer epoch.

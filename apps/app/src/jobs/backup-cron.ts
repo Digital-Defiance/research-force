@@ -1,0 +1,202 @@
+import { BACKUP_SCHEDULE } from '@researchforce/domain/settings';
+import { newULID } from '@researchforce/domain/identifiers';
+import type { Timestamp, ULID } from '@researchforce/domain/types';
+import { sha256 } from '@noble/hashes/sha2.js';
+import { bytesToHex, utf8ToBytes } from '@noble/hashes/utils.js';
+import type { Env } from '../env';
+import { backupPrefix, startBackup } from './backup';
+import { bucketKeyOf } from './export';
+import { pointsToExpire } from './backup-retention';
+import type { RetentionPoint } from './backup-retention';
+import { deleteIndependentCopy, independentDestination, transferPackage, verifyIndependentCopy } from '../backup/copies';
+
+/**
+ * The SCHEDULED Internal_Backup snapshot start, the independent COPY + VERIFICATION, and the tiered RETENTION, run from
+ * the hourly cron sweep (task 58.2, R36.3, R36.7, R36.12, R36.13, R36.16; design "Internal_Backup and independent
+ * recovery"). This mirrors `export-cron.ts` (`startScheduledExport` / `sweepExportRetention`): a time-gated idempotent
+ * start, then retention over the kept set. Here there are three sweeps:
+ *   1. `startScheduledBackup` — start a scheduled snapshot at most once per 12-hour slot (R36.3, R36.7), reusing the
+ *      38.4 job/enqueue path (`startBackup`) and recording a `backup_points` row for the slot.
+ *   2. `sweepBackupCopies` — reconcile each snapshot's own completion, carry a complete snapshot's encrypted package to
+ *      the configured INDEPENDENT destination, VERIFY the independent copy (decrypt + re-validate + confirm hashes),
+ *      and mark the snapshot a verified RPO point only then (R36.7, R36.12, R36.13); persist the minimal authenticated
+ *      suppression ledger independently (R36.16). Raise the no-destination gap.
+ *   3. `sweepBackupRetention` — keep 14 daily / 8 weekly / 12 monthly verified points with successor-verified-before-
+ *      expiry, deleting the independent copy, the local package, and the row for each expired point (R36.3). The 7-day
+ *      requested-staging expiry stays with the 38.4 `finish` path, unchanged.
+ */
+
+/** The 12-hour schedule slot `now` falls in: a `YYYY-MM-DDTHH` key floored to a 12-hour boundary (00 or 12). */
+export function slotKey(now: Timestamp): string {
+  const date = new Date(now);
+  const halfDay = date.getUTCHours() < 12 ? '00' : '12';
+  return `${now.slice(0, 10)}T${halfDay}`;
+}
+
+/**
+ * Start the 12-hour slot's scheduled Internal_Backup (R36.3, R36.7), idempotently: it starts none when a
+ * `backup_points` row already exists for this slot (a retried or re-fired cron, or a start earlier in the same slot),
+ * so a slot starts at most one scheduled snapshot. It also starts none until at least `BACKUP_SCHEDULE.intervalMs` has
+ * elapsed since the last scheduled snapshot, so a fresh install that has just taken a snapshot does not immediately
+ * take another within the window. Returns 1 when it started one, 0 otherwise, for the sweep count.
+ */
+export async function startScheduledBackup(env: Env, now: Timestamp): Promise<number> {
+  const slot = slotKey(now);
+  // Idempotent per slot: a snapshot already started for this slot stops a second start.
+  const existing = await env.RF_CORE.prepare('SELECT 1 AS present FROM backup_points WHERE slot_key = ?1 LIMIT 1').bind(slot).first<{ present: number }>();
+  if (existing !== null) return 0;
+  // Time-gated: do not start within `intervalMs` of the most recent scheduled snapshot (≥12h gating, R36.3).
+  const latest = await env.RF_CORE.prepare('SELECT started_at AS startedAt FROM backup_points ORDER BY started_at DESC LIMIT 1').first<{ startedAt: string }>();
+  if (latest !== null && Date.parse(now) - Date.parse(latest.startedAt) < BACKUP_SCHEDULE.intervalMs) return 0;
+
+  const id = newULID(now) as ULID;
+  // Reuse the 38.4 request/enqueue path with no requester (a scheduled snapshot, distinct from a requested staging one).
+  await startBackup(env.RF_CORE, { id, requestedBy: null, now });
+  await env.RF_CORE.prepare(
+    "INSERT INTO backup_points (export_id, slot_key, started_at, state, copy_state, created_at) VALUES (?1, ?2, ?3, 'pending', 'none', ?3)",
+  ).bind(id, slot, now).run();
+  return 1;
+}
+
+/** One scheduled snapshot the copy/verification sweep reconciles, joined to its `exports` outcome. */
+interface PointRow {
+  readonly exportId: string;
+  /** Mutated locally as the sweep reconciles the snapshot's completion within one pass. */
+  state: 'pending' | 'complete' | 'incomplete';
+  /** Mutated locally as the sweep advances the independent copy within one pass. */
+  copyState: 'none' | 'transferred' | 'offline_pending' | 'offline_confirmed';
+  readonly verifiedAt: string | null;
+  readonly exportState: string | null;
+}
+
+/**
+ * Reconcile each scheduled snapshot and drive its independent copy and verification toward a verified RPO point
+ * (R36.7, R36.12, R36.13). For each `backup_points` row that is not yet a verified RPO point it:
+ *   • mirrors the snapshot's own completion from the `exports` row — a `complete` export makes the point `complete`, an
+ *     `incomplete`/`deleted` export makes it `incomplete` (and so never a recovery point);
+ *   • for a complete snapshot with no independent copy, resolves the configured destination and TRANSFERS the already-
+ *     encrypted package there (or records an offline pending transfer). With NO destination configured it records the
+ *     gap (the point stays `none`, blocking sole-copy custody) and leaves it for the RPO alert to surface;
+ *   • for a transferred (or offline-confirmed) copy, VERIFIES it against the independent destination; a verified copy
+ *     becomes an RPO point (sets `verified_at`) and persists the minimal suppression ledger independently; a failed
+ *     copy records the fault and is NOT a recovery point.
+ * Returns how many points advanced (transferred or verified) this run.
+ */
+export async function sweepBackupCopies(env: Env, now: Timestamp): Promise<number> {
+  const rows = (await env.RF_CORE.prepare(
+    `SELECT bp.export_id AS exportId, bp.state, bp.copy_state AS copyState, bp.verified_at AS verifiedAt,
+       e.state AS exportState
+     FROM backup_points bp LEFT JOIN exports e ON e.id = bp.export_id
+     WHERE bp.verified_at IS NULL AND bp.state <> 'incomplete'`,
+  ).all<PointRow>()).results;
+
+  const destination = independentDestination(env);
+  let advanced = 0;
+
+  for (const row of rows) {
+    // 1. Mirror the snapshot's own completion from the exports row.
+    if (row.state === 'pending') {
+      if (row.exportState === 'complete') {
+        await env.RF_CORE.prepare("UPDATE backup_points SET state = 'complete' WHERE export_id = ?1").bind(row.exportId).run();
+        row.state = 'complete';
+      } else if (row.exportState === 'incomplete' || row.exportState === 'deleted' || row.exportState === null) {
+        await env.RF_CORE.prepare("UPDATE backup_points SET state = 'incomplete' WHERE export_id = ?1").bind(row.exportId).run();
+        continue; // an incomplete snapshot is never a recovery point
+      } else {
+        continue; // still running; reconcile on a later sweep
+      }
+    }
+
+    // 2. A complete snapshot with no independent copy: transfer it (or record the no-destination gap).
+    if (row.copyState === 'none') {
+      if (destination === null) continue; // no independent destination configured; the RPO alert surfaces the gap
+      const result = await transferPackage(env, row.exportId, destination);
+      await env.RF_CORE.prepare('UPDATE backup_points SET copy_state = ?2, copy_destination = ?3, copied_at = ?4 WHERE export_id = ?1')
+        .bind(row.exportId, result.copyState, result.destination, now).run();
+      row.copyState = result.copyState;
+      advanced++;
+    }
+
+    // 3. Verify a transferred (or operator-confirmed offline) copy; only a verified copy becomes an RPO point.
+    if (row.copyState === 'transferred' || row.copyState === 'offline_confirmed') {
+      // An `r2` destination verifies against the independent bucket; an offline-confirmed copy is verified against the
+      // production package the operator carried (the operator attested the bytes are identical).
+      const bucket = destination?.kind === 'r2' && destination.bucket ? destination.bucket : env.RF_PRIVATE_BUCKET;
+      const result = await verifyIndependentCopy(env, row.exportId, bucket);
+      if (result.verified) {
+        await env.RF_CORE.prepare('UPDATE backup_points SET verified_at = ?2, verify_fault = NULL WHERE export_id = ?1').bind(row.exportId, now).run();
+        await persistSuppressionLedger(env, row.exportId, now);
+        advanced++;
+      } else {
+        await env.RF_CORE.prepare('UPDATE backup_points SET verify_fault = ?2 WHERE export_id = ?1').bind(row.exportId, result.fault).run();
+      }
+    }
+  }
+  return advanced;
+}
+
+/**
+ * Persist the minimal AUTHENTICATED suppression ledger for a recovery point, independently (R36.16): the identity and
+ * invalidation generation of every suppressed element (a permanent deletion) known at the snapshot, as authenticated
+ * metadata — opaque ids and generations only, NEVER a deleted body. The generation is the element's monotonic ordinal
+ * among all suppressions by time, so a restore reapplies suppressions up to the snapshot. Each record carries a
+ * lowercase-hex SHA-256 over its minimal fields so a tampered ledger is detected. Idempotent per (point, id).
+ */
+async function persistSuppressionLedger(env: Env, exportId: string, now: Timestamp): Promise<void> {
+  const deletions = (await env.RF_CORE.prepare(
+    'SELECT coalesce(item_identifier, unit_id) AS suppressedId, deleted_at AS suppressedAt FROM deletions ORDER BY deleted_at, unit_id',
+  ).all<{ suppressedId: string; suppressedAt: string }>()).results;
+  if (deletions.length === 0) return;
+  const statements = deletions.map((deletion, index) => {
+    const generation = index + 1; // monotonic invalidation generation by suppression order
+    const digest = bytesToHex(sha256(utf8ToBytes(`${deletion.suppressedId}\u0000${generation}\u0000${deletion.suppressedAt}`)));
+    return env.RF_CORE.prepare(
+      `INSERT INTO suppression_generations (id, backup_point_id, suppressed_id, generation, suppressed_at, digest)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+       ON CONFLICT (backup_point_id, suppressed_id) DO UPDATE SET generation = excluded.generation, suppressed_at = excluded.suppressed_at, digest = excluded.digest`,
+    ).bind(newULID(now), exportId, deletion.suppressedId, generation, deletion.suppressedAt, digest);
+  });
+  await env.RF_CORE.batch(statements);
+}
+
+/**
+ * Enforce the tiered retention over the verified independent recovery points (R36.3): keep 14 daily / 8 weekly / 12
+ * monthly, with successor-verified-before-expiry (never delete a point until a strictly newer verified point exists).
+ * For each expired point it deletes the independent copy, the local package, and the `backup_points` + suppression
+ * rows. The 7-day requested-staging expiry is unchanged (the 38.4 finish sets it; this never touches a staging
+ * package). Returns how many recovery points were expired.
+ */
+export async function sweepBackupRetention(env: Env, now: Timestamp): Promise<number> {
+  const rows = (await env.RF_CORE.prepare(
+    'SELECT export_id AS id, verified_at AS verifiedAt FROM backup_points WHERE verified_at IS NOT NULL',
+  ).all<RetentionPoint>()).results;
+  const expire = pointsToExpire(rows);
+  if (expire.length === 0) return 0;
+
+  const destination = independentDestination(env);
+  for (const id of expire) {
+    if (destination !== null) await deleteIndependentCopy(destination, id);
+    await deleteBackupPackage(env, id, now); // deletes the local package objects and marks the exports row deleted
+    await env.RF_CORE.batch([
+      env.RF_CORE.prepare('DELETE FROM suppression_generations WHERE backup_point_id = ?1').bind(id),
+      env.RF_CORE.prepare('DELETE FROM backup_points WHERE export_id = ?1').bind(id),
+    ]);
+  }
+  return expire.length;
+}
+
+/**
+ * Delete a backup package's local R2 objects under `backups/{id}/` and mark its `exports` row deleted (R36.3). Unlike
+ * `deleteExport` (which addresses `exports/{id}/`), a backup package lives under `backups/{id}/`, so this uses the
+ * backup prefix. Idempotent: re-running deletes any remaining objects and leaves the row `deleted`.
+ */
+async function deleteBackupPackage(env: Env, id: string, now: Timestamp): Promise<void> {
+  const prefix = `${bucketKeyOf(backupPrefix(id))}/`;
+  let cursor: string | undefined;
+  do {
+    const listed = await env.RF_PRIVATE_BUCKET.list({ prefix, ...(cursor ? { cursor } : {}) });
+    if (listed.objects.length > 0) await env.RF_PRIVATE_BUCKET.delete(listed.objects.map((object) => object.key));
+    cursor = listed.truncated ? listed.cursor : undefined;
+  } while (cursor !== undefined);
+  await env.RF_CORE.prepare("UPDATE exports SET state = 'deleted', finished_at = coalesce(finished_at, ?2), volumes = NULL WHERE id = ?1").bind(id, now).run();
+}

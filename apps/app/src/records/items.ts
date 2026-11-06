@@ -13,6 +13,8 @@ import { validate } from '@researchforce/domain/schemas/common';
 import type { ValidationContext } from '@researchforce/domain/schemas/common';
 import { researchItemSchema } from '@researchforce/domain/schemas/items';
 import { editMarkSchema, reasonSchema } from '@researchforce/domain/schemas/other';
+import { savedProvenance } from '@researchforce/domain/ai';
+import type { AiProvenance } from '@researchforce/db/schema/core';
 import { cpLength } from '@researchforce/domain/text';
 import { isULID } from '@researchforce/domain/types';
 import type { CreditEntry, ItemKind, Level, MemberStatus, Timestamp, ULID } from '@researchforce/domain/types';
@@ -64,8 +66,34 @@ const linksSchema = z.array(z.strictObject({ targetId: z.string(), relationValue
 const evidenceSchema = z.array(z.string()).max(LINKS_PER_SAVE).optional();
 /** Review_Requests made within the Submission, of the new Item or, by index, one of its Entry_Sections (R17.1). */
 const reviewsSchema = z.array(z.record(z.string(), z.unknown())).max(10).optional();
-const createEnvelope = z.object({ links: linksSchema, evidence: evidenceSchema, reviews: reviewsSchema });
-const editEnvelope = z.object({ rev: z.int().min(1), mark: editMarkSchema.optional(), statusReason: reasonSchema.optional(), links: linksSchema, evidence: evidenceSchema });
+/**
+ * The AI provenance the editor sends on save for each field it placed an AI_Draft in since the field was last saved
+ * (R44.6, task 42.4): the drafting model's id and catalog version and the SHA-256 of the placed draft. Only fields
+ * that can be AI-drafted in this path take provenance; `AI_DRAFTABLE_FIELDS` is the allow-list. A hash is 64 lowercase
+ * hex characters (the form `draftTextHash` produces).
+ */
+const draftProvenanceSchema = z.strictObject({ model: z.string().min(1).max(200), version: z.string().min(1).max(100), draftSha256: z.string().regex(/^[0-9a-f]{64}$/u) });
+/** The fields a Research_Item create/edit can carry AI provenance for (R44.1): only the Log_Summary in this path. */
+export const AI_DRAFTABLE_FIELDS = ['logSummary'] as const;
+const aiSchema = z.record(z.enum(AI_DRAFTABLE_FIELDS), draftProvenanceSchema).optional();
+const createEnvelope = z.object({ links: linksSchema, evidence: evidenceSchema, reviews: reviewsSchema, ai: aiSchema });
+const editEnvelope = z.object({ rev: z.int().min(1), mark: editMarkSchema.optional(), statusReason: reasonSchema.optional(), links: linksSchema, evidence: evidenceSchema, ai: aiSchema });
+
+/**
+ * The provenance to record on save for each AI-draftable field the client sent a draft for (R44.6): the draft's model
+ * and version, with `differs` from comparing the saved field's canonical text hash against the sent draft SHA-256. A
+ * field absent from `sent`, or whose saved value has no text, contributes no entry (a field with no draft records none).
+ */
+export function resolveProvenance(sent: Partial<Record<(typeof AI_DRAFTABLE_FIELDS)[number], z.infer<typeof draftProvenanceSchema>>> | undefined, saved: Readonly<Record<string, unknown>>): AiProvenance | undefined {
+  if (sent === undefined) return undefined;
+  const entries = Object.entries(sent).flatMap(([field, draft]) => {
+    if (draft === undefined) return [];
+    const value = saved[field];
+    const text = typeof value === 'string' ? value : (value as RichText | null | undefined)?.text;
+    return text === undefined || text === null ? [] : [[field, savedProvenance(draft, text)] as const];
+  });
+  return entries.length === 0 ? undefined : Object.fromEntries(entries);
+}
 
 function objectBody(body: unknown): Record<string, unknown> {
   if (typeof body !== 'object' || body === null || Array.isArray(body)) throw new ApiError('validation', { fields: [{ field: '$', rule: 'Send a JSON object.' }] });
@@ -294,8 +322,8 @@ function validated(kind: ItemKind, context: ValidationContext, options: Paramete
  * A Journal_Entry's Entry_Sections can come from the parts of a staged save instead of the body.
  */
 export async function createItem(c: Context<ApiEnv>, kind: ItemKind, body: unknown, staged?: StagedSections): Promise<ULID> {
-  const { links, evidence, reviews: reviewList, access, files, ...rest } = objectBody(body);
-  const envelope = parse(createEnvelope, { links, evidence, reviews: reviewList });
+  const { links, evidence, reviews: reviewList, access, files, ai, ...rest } = objectBody(body);
+  const envelope = parse(createEnvelope, { links, evidence, reviews: reviewList, ai });
   const actor = c.get('session').member.id;
   const now = c.get('now');
   await authorize(c, [
@@ -341,6 +369,8 @@ export async function createItem(c: Context<ApiEnv>, kind: ItemKind, body: unkno
   const submissionId = newULID(now);
   const mentioned = (await mentionRecipients(c, addedMentions(undefined, fields), actor, scope)).map((recipient) => recipient.memberId);
   const groupNote = fields['groupNote'] as RichText | undefined;
+  // The AI provenance of each field the Member placed an AI_Draft in, recorded on the unit's creation (R44.6).
+  const createdAi = resolveProvenance(envelope.ai, fields);
   const withdrawn = kind === 'finding' && fields['statusValueId'] === BUILT_IN_VALUE_IDS.findingWithdrawn;
   const attached = await prepareAttachments(c, files, kind === 'source' ? {
     rightsStatusId: (fields['rightsStatusId'] as ULID | undefined) ?? BUILT_IN_VALUE_IDS.rightsUnknown,
@@ -353,6 +383,7 @@ export async function createItem(c: Context<ApiEnv>, kind: ItemKind, body: unkno
     addSubmission(batch, { id: submissionId, memberId: actor, kind: 'member', now, complete: true, hasGroupNote: present(groupNote) });
     batch.insert(units, {
       id, unitType: 'research_item', projectId, rootId: id, ownerId: actor, credit, submissionId, createdAt: now,
+      ...(createdAi ? { createdAi } : {}),
       ...(withdrawn ? { withdrawnAt: now, withdrawnBy: actor, withdrawalReason: fields['withdrawalReason'] as string } : {}),
     });
     batch.insert(researchItems, {
@@ -384,8 +415,8 @@ export async function createItem(c: Context<ApiEnv>, kind: ItemKind, body: unkno
  * Entry_Sections it adds back keep their ids (R22.5). Resolves to whether anything was saved.
  */
 export async function editItem(c: Context<ApiEnv>, current: LoadedItem, body: unknown, staged?: StagedSections, restoration?: Restoration, options: { readonly authorizeOnly?: boolean; readonly contentOnly?: boolean } = {}): Promise<boolean> {
-  const { rev, mark, statusReason, links, evidence, ...patch } = objectBody(body);
-  const envelope = parse(editEnvelope, { rev, mark, statusReason, links, evidence });
+  const { rev, mark, statusReason, links, evidence, ai, ...patch } = objectBody(body);
+  const envelope = parse(editEnvelope, { rev, mark, statusReason, links, evidence, ai });
   if (restoration && (envelope.mark || envelope.statusReason !== undefined)) throw new Error('A Restoration carries no mark or status reason.');
   const { base } = current;
   const adapter = KIND_ADAPTERS[base.kind];
@@ -464,6 +495,9 @@ export async function editItem(c: Context<ApiEnv>, current: LoadedItem, body: un
   if (changes.length === 0 && !sectionsChange && linked.links.length === 0) return false;
 
   const changed = new Set(changes.map((change) => change.field));
+  // The AI provenance of each field the Member placed an AI_Draft in, against the saved text; `revisionsFor` keeps
+  // only the entries for fields that a Revision carries, so an unchanged field records nothing (R44.6).
+  const editedProvenance = resolveProvenance(envelope.ai, after);
   const mentioned = (await mentionRecipients(c, addedMentions(before, input), actor, { rootId: base.id })).map((recipient) => recipient.memberId);
   const summaryChanged = changed.has('logSummary');
   const fieldPointers = await prepareItemFields(c, base.id, after, before);
@@ -475,6 +509,9 @@ export async function editItem(c: Context<ApiEnv>, current: LoadedItem, body: un
       ...(envelope.mark ? { mark: { mark: envelope.mark.mark, ...(envelope.mark.reason === undefined ? {} : { reason: envelope.mark.reason }) } } : {}),
       ...(envelope.statusReason === undefined ? {} : { reasons: { status: envelope.statusReason } }),
       ...(restoration ? { restoredPoint: restoration.point } : {}),
+      // The AI provenance of each changed field the Member placed an AI_Draft in, recorded on its Revision (R44.6);
+      // only a field that actually changed carries a Revision, so provenance for an unchanged field is dropped here.
+      ...(editedProvenance === undefined ? {} : { ai: editedProvenance }),
     },
     write: (batch) => {
       staged?.guard(batch);

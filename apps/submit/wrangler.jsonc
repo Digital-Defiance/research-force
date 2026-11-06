@@ -33,6 +33,10 @@
       }
     ]
   },
+  "triggers": {
+    // Hourly sweep of uploaded files not part of a complete Outside_Submission (R31.8).
+    "crons": ["17 * * * *"]
+  },
   "env": {
     "staging": {
       "name": "rf-submit-staging",
@@ -65,6 +69,9 @@
             "script_name": "rf-app-staging"
           }
         ]
+      },
+      "triggers": {
+        "crons": ["17 * * * *"]
       }
     }
   }

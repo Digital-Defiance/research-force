@@ -122,6 +122,20 @@ function start(form: HTMLFormElement, results: HTMLElement): void {
   fromAddress();
 }
 
+/**
+ * Static public search is INDEPENDENT of the public-traffic budget (R28.6, R28.11): the index files are stored
+ * same-origin static files and the engine runs in the browser, so a query costs no Worker request and no D1
+ * read. The script therefore never reads the dynamic form admission status (`status.json`'s `form`) that the
+ * Outside_Submission_Form uses to disable itself (see `form.ts`); when the form budget is exhausted, search
+ * keeps working from here unchanged.
+ *
+ * Confidentiality Containment is a SEPARATE action (design "Capacity, cost, and public abuse budgets"): to
+ * contain exposed material the edge can deny the whole public research host, which also removes the static
+ * search index files this script fetches. That removal happens at the host, not in this script — a contained
+ * host never serves this page or its `/idx` files in the first place, so there is nothing for the script to
+ * gate. This separation keeps budget shedding (which leaves search available) distinct from containment (which
+ * takes the public hosts, including search, offline).
+ */
 const form = document.querySelector<HTMLFormElement>('form[data-search-form]');
 const results = document.querySelector<HTMLElement>('[data-search-results]');
 if (form !== null && results !== null) start(form, results);

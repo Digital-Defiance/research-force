@@ -5,14 +5,19 @@ import { createParty, editParty, listParties, loadParty } from '../../records/pa
 import type { ApiEnv } from '../app';
 import { parse, readJson } from '../input';
 
-const createSchema = z.strictObject({ name: z.string(), doNotName: z.boolean().optional(), genericLabel: z.string().optional(), confirmDistinct: z.boolean().optional() });
-const editSchema = z.strictObject({ rev: z.number().int().min(1), name: z.string().optional(), doNotName: z.boolean().optional(), genericLabel: z.string().nullable().optional() });
+const createSchema = z.strictObject({ name: z.string(), doNotName: z.boolean().optional(), genericLabel: z.string().optional(), contactEmail: z.string().optional(), confirmDistinct: z.boolean().optional() });
+const editSchema = z.strictObject({ rev: z.number().int().min(1), name: z.string().optional(), doNotName: z.boolean().optional(), genericLabel: z.string().nullable().optional(), contactEmail: z.string().nullable().optional() });
 
 export const partiesRoutes = new Hono<ApiEnv>();
 
 partiesRoutes.get('/', async (c) => {
   await authorizeRead(c);
   return c.json({ parties: await listParties(c) });
+});
+
+partiesRoutes.get('/:id', async (c) => {
+  await authorizeRead(c);
+  return c.json({ party: await loadParty(c, c.req.param('id')) });
 });
 
 partiesRoutes.post('/', async (c) => {

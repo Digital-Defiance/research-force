@@ -1,12 +1,19 @@
+import type { ValidatedInstallationPublicCopy } from '@researchforce/design/installation';
 import { retentionRows } from '@researchforce/domain/retention';
 import { OPERATIONS } from '@researchforce/domain/settings';
 import type { Timestamp } from '@researchforce/domain/types';
 import { GuardedBatch } from '@researchforce/db/batch';
-import { projectPolicyText, projectProfile } from '@researchforce/kernel/substitute';
+import { projectPolicyText, projectProfile, responsiblePersonLabel } from '@researchforce/kernel/substitute';
 import type { ProfileRecord, PublicProfileView } from '@researchforce/kernel/substitute';
 import type { PublicView, UnitKey } from '@researchforce/kernel/views';
 import { buildSearchIndex } from '@researchforce/search-public/build';
+// The Public_Site `_headers` file lives in `public-render` (`src/headers.ts`, task 45.2), the single source of truth
+// for the CSP and security-header strings (R45.17 to R45.19). Re-exported below so the Publisher and its render test
+// reach it through the render module as before.
+import { headersFile } from '@researchforce/public-render/headers';
 import { renderSite, type SiteFile } from '@researchforce/public-render/render-site';
+
+export { headersFile };
 import {
   METHODS_SET_KINDS, POLICY_PAGE_KEYS,
   type MethodsInput, type MethodsSetKind, type MethodsValue, type PolicyPageInput, type PolicyPageKey, type SiteInput,
@@ -14,6 +21,8 @@ import {
 import { notifySystemAlert } from '../notifications/fanout';
 import { directUploadHash, extensionOf, manifestPath, planSite, reachesFileAlert } from './plan';
 import type { ManifestEntry, PlannedFile, SitePlan } from './plan';
+import { advancedGeneratedRows, policyLastUpdated } from './policy-pages';
+import type { GeneratedContent, GeneratedRow, PolicyPageState } from './policy-pages';
 
 /**
  * The Publisher's render step (task 32.3, design "Publisher" step 5). It loads one Public_Site build input from the
@@ -36,6 +45,12 @@ export interface RenderDeps {
   readonly privateBucket: R2Bucket;
   /** The installation's Content_Licence; the footer and licence page link the name to the URL (R29.10, R46.15). */
   readonly licence: { readonly name: string; readonly url: string };
+  /**
+   * The installation's validated `Installation_Public_Copy` (masthead, Mission, About prose, Principles). A caller
+   * obtains it through `assertPublicCopy`, which refuses an unconfigured or partial bundle; there is no
+   * ResearchForce.org fallback (R46.41, R46.42).
+   */
+  readonly publicCopy: ValidatedInstallationPublicCopy;
   /**
    * The compiled `site-shell` assets and fixed Design_System files (scripts, styles, print CSS, fonts, images, the
    * 404 metadata) to ship as static files. These are produced by `apps/site-shell`'s Vite build with content-hashed
@@ -71,7 +86,10 @@ const encoder = new TextEncoder();
  * set (path, hash, size, updatedAt).
  */
 export async function renderSiteBuild(deps: RenderDeps, now: Timestamp): Promise<RenderResult> {
-  const input = await loadSiteInput(deps);
+  const input = await loadSiteInput(deps, now);
+  // Persist the per-page generated-content hash/date for any page whose generated content changed this build, so the
+  // same last-updated date the render shows is the date later builds keep while the content is unchanged (R46.29).
+  await persistGeneratedDates(deps.core, input, now);
   const rendered = toRenderedFiles(renderSite(input), input, deps.shellAssets);
 
   // Hash every produced file with the Direct Upload algorithm so the manifest agrees with 32.1's upload (R24.7).
@@ -125,40 +143,6 @@ function toRenderedFiles(siteFiles: readonly SiteFile[], input: SiteInput, shell
   return files;
 }
 
-/**
- * The `_headers` file for the assets-only `rf-site` (design "Headers"). A default rule sets the Public_Site CSP and
- * the common security headers on every address; a form-page rule widens `connect-src`/`script-src` for the submit
- * origin, the R2 S3 endpoint, and Turnstile on the form, response, and consent addresses. Pure, so it is testable
- * without R2/D1 and hashes deterministically. `not_found_handling` is set on the version in 32.1, not here.
- */
-export function headersFile(): string {
-  const base = "default-src 'self'; img-src 'self' https://files.researchforce.org data:; connect-src 'self' https://files.researchforce.org; frame-ancestors 'none'; base-uri 'none'";
-  const form = "default-src 'self'; img-src 'self' https://files.researchforce.org data:; "
-    + "connect-src 'self' https://files.researchforce.org https://submit.researchforce.org https://challenges.cloudflare.com https://*.r2.cloudflarestorage.com; "
-    + "script-src 'self' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; frame-ancestors 'none'; base-uri 'none'";
-  const common = [
-    '  X-Content-Type-Options: nosniff',
-    '  Strict-Transport-Security: max-age=63072000; includeSubDomains; preload',
-    '  Referrer-Policy: strict-origin-when-cross-origin',
-    "  Permissions-Policy: camera=(), microphone=(), geolocation=()",
-  ];
-  // Cloudflare `_headers`: a path pattern line, then indented `Header: value` lines; the last matching rule wins.
-  return [
-    '/*',
-    `  Content-Security-Policy: ${base}`,
-    ...common,
-    '/submit/*',
-    `  Content-Security-Policy: ${form}`,
-    '/respond',
-    `  Content-Security-Policy: ${form}`,
-    '/consent/*',
-    `  Content-Security-Policy: ${form}`,
-    '/p/*/submit',
-    `  Content-Security-Policy: ${form}`,
-    '',
-  ].join('\n');
-}
-
 // ---------------------------------------------------------------------------
 // The loader: one SiteInput from the current `rf-public` views and the `rf-core` non-view fields.
 // ---------------------------------------------------------------------------
@@ -171,8 +155,8 @@ export function headersFile(): string {
  * from the injected configuration. Registered Member addresses are scrubbed from profiles and policy text, exactly
  * as the projection does (R46.5, R46.9).
  */
-export async function loadSiteInput(deps: Pick<RenderDeps, 'core' | 'public' | 'licence'>): Promise<SiteInput> {
-  return buildSiteInput(deps, await loadViews(deps.public));
+export async function loadSiteInput(deps: Pick<RenderDeps, 'core' | 'public' | 'licence' | 'publicCopy'>, now?: Timestamp): Promise<SiteInput> {
+  return buildSiteInput(deps, await loadViews(deps.public), now);
 }
 
 /**
@@ -191,8 +175,13 @@ export async function loadViewsAsOf(pub: D1Database, startedAt: string, scopePro
   return new Map(result.results.map((row) => [row.unitKey as UnitKey, JSON.parse(row.viewJson) as PublicView]));
 }
 
-/** Build a `SiteInput` from a given views map and the current `rf-core` non-view data, for both the Publisher and the export. */
-export async function buildSiteInput(deps: Pick<RenderDeps, 'core' | 'public' | 'licence'>, views: ReadonlyMap<UnitKey, PublicView>): Promise<SiteInput> {
+/**
+ * Build a `SiteInput` from a given views map and the current `rf-core` non-view data, for both the Publisher and the
+ * export. Pass the build's `now` in the Publisher so a change to a Policy_Page's generated content advances its
+ * last-updated date to today (R46.29); omit it for the preview and the export, which show the date the last published
+ * build recorded without advancing it.
+ */
+export async function buildSiteInput(deps: Pick<RenderDeps, 'core' | 'public' | 'licence' | 'publicCopy'>, views: ReadonlyMap<UnitKey, PublicView>, now?: Timestamp): Promise<SiteInput> {
   const [projectRows, memberRows, specialtyRows, affiliationRows, valueRows, termRows, policyPageRows, policySectionRows, settingRows]
     = await deps.core.batch([
       deps.core.prepare('SELECT id, accent, featured, position, created_at AS createdAt, question_order AS questionOrder FROM projects ORDER BY position'),
@@ -203,7 +192,7 @@ export async function buildSiteInput(deps: Pick<RenderDeps, 'core' | 'public' | 
       deps.core.prepare('SELECT member_id AS memberId, position, text FROM profile_affiliations ORDER BY member_id, position'),
       deps.core.prepare('SELECT id, set_key AS setKey, name, retired, public_description AS publicDescription, position FROM config_values WHERE set_key <> \'specialty\' ORDER BY set_key, position'),
       deps.core.prepare('SELECT key, name, public_description AS publicDescription, position FROM methods_terms ORDER BY group_key, position'),
-      deps.core.prepare('SELECT page_key AS pageKey, sections_changed_at AS sectionsChangedAt FROM policy_pages'),
+      deps.core.prepare('SELECT page_key AS pageKey, sections_changed_at AS sectionsChangedAt, generated_hash AS generatedHash, generated_changed_at AS generatedChangedAt FROM policy_pages'),
       deps.core.prepare('SELECT page_key AS pageKey, section_key AS sectionKey, title, required, text, position FROM policy_sections ORDER BY page_key, position'),
       deps.core.prepare("SELECT key, value FROM settings WHERE key = 'responsiblePerson'"),
     ]);
@@ -213,6 +202,16 @@ export async function buildSiteInput(deps: Pick<RenderDeps, 'core' | 'public' | 
   const emails = members.map((row) => row.email);
   const responsibleId = parseSetting((settingRows as D1Result<{ key: string; value: string }>).results[0]?.value);
 
+  // The generated content each Policy_Page presents (R46.29). These same values are the SiteInput fields below and
+  // the inputs to each page's generated-content last-updated date, so they are built once here.
+  const profiles = buildProfiles(members, specialtyRows as D1Result<NamedRow>, affiliationRows as D1Result<AffiliationRow>, emails);
+  const methods = buildMethods((valueRows as D1Result<ValueRow>).results, (termRows as D1Result<TermRow>).results);
+  // The Responsible_Person is named on the Privacy page whatever the Member_Status, so its name comes from the
+  // Member's Profile row regardless of whether that Member is Active (R46.35), with any registered address scrubbed
+  // from the name as from every other Public_Site output (R46.9).
+  const responsiblePerson = responsiblePersonLabel(members, responsibleId, emails);
+  const retention = retentionRows();
+
   return {
     views,
     projectOrder: projects.map((project) => `p:${project.id}` as UnitKey),
@@ -221,13 +220,15 @@ export async function buildSiteInput(deps: Pick<RenderDeps, 'core' | 'public' | 
     // Each Project's Administrator-set Research_Question order, as view keys, for the Project page part (R50.5).
     questionOrder: new Map(projects.map((project) => [`p:${project.id}` as UnitKey, questionOrderKeys(project.questionOrder)])),
     licence: deps.licence,
-    profiles: buildProfiles(members, specialtyRows as D1Result<NamedRow>, affiliationRows as D1Result<AffiliationRow>, emails),
-    // The Responsible_Person is named on the Privacy page whatever the Member_Status, so its name comes from the
-    // Member's Profile row regardless of whether that Member is Active (R46.35).
-    responsiblePerson: responsiblePersonName(members, responsibleId),
-    methods: buildMethods((valueRows as D1Result<ValueRow>).results, (termRows as D1Result<TermRow>).results),
-    policy: buildPolicy((policySectionRows as D1Result<PolicySectionRow>).results, (policyPageRows as D1Result<PolicyPageRow>).results, emails),
-    retention: retentionRows(),
+    publicCopy: deps.publicCopy,
+    profiles,
+    responsiblePerson,
+    methods,
+    policy: buildPolicy(
+      (policySectionRows as D1Result<PolicySectionRow>).results, (policyPageRows as D1Result<PolicyPageRow>).results,
+      { profiles, methods, licence: deps.licence, retention, responsiblePerson }, now, emails,
+    ),
+    retention,
   };
 }
 
@@ -253,7 +254,10 @@ interface NamedRow { readonly memberId: string; readonly name: string }
 interface AffiliationRow { readonly memberId: string; readonly position: number; readonly text: string }
 interface ValueRow { readonly id: string; readonly setKey: string; readonly name: string; readonly retired: number; readonly publicDescription: string | null; readonly position: number }
 interface TermRow { readonly key: string; readonly name: string; readonly publicDescription: string; readonly position: number }
-interface PolicyPageRow { readonly pageKey: PolicyPageKey; readonly sectionsChangedAt: string | null }
+interface PolicyPageRow {
+  readonly pageKey: PolicyPageKey; readonly sectionsChangedAt: string | null;
+  readonly generatedHash: string | null; readonly generatedChangedAt: string | null;
+}
 interface PolicySectionRow { readonly pageKey: PolicyPageKey; readonly sectionKey: string; readonly title: string; readonly required: number; readonly text: string; readonly position: number }
 
 /** The current (open) Public_Views, parsed from their stored canonical JSON, keyed by unit key (`p:…`/`u:…`). */
@@ -273,17 +277,49 @@ function buildMethods(values: readonly ValueRow[], terms: readonly TermRow[]): M
   return { values: byKind, terms: terms.map((term) => ({ key: term.key as MethodsInput['terms'][number]['key'], name: term.name, description: term.publicDescription })) };
 }
 
-/** The Policy_Pages input: each page's sections in order, with Member addresses scrubbed, and its last-changed date (R46.9, R46.29). */
-function buildPolicy(sections: readonly PolicySectionRow[], pages: readonly PolicyPageRow[], emails: readonly string[]): Readonly<Record<PolicyPageKey, PolicyPageInput>> {
-  const changedByPage = new Map(pages.map((page) => [page.pageKey, page.sectionsChangedAt]));
+/**
+ * The Policy_Pages input: each page's sections in order with Member addresses scrubbed, and its last-updated date out
+ * of its section change and its generated-content change (R46.9, R46.29). The generated-content date comes from
+ * hashing the content each page presents and comparing it to the hash the last build stored (`policy-pages.ts`); the
+ * public renderer adds the page's fixed-text version date on top. With a build `now` a changed hash advances the date
+ * to today; without one (preview/export) the stored date stands.
+ */
+function buildPolicy(
+  sections: readonly PolicySectionRow[], pages: readonly PolicyPageRow[],
+  generated: GeneratedContent, now: Timestamp | undefined, emails: readonly string[],
+): Readonly<Record<PolicyPageKey, PolicyPageInput>> {
+  const lastUpdated = policyLastUpdated(generated, policyPageState(pages), now);
   const result = Object.fromEntries(POLICY_PAGE_KEYS.map((key): [PolicyPageKey, PolicyPageInput] => [key, {
-    changedOn: dayOf(changedByPage.get(key)) ?? '1970-01-01',
+    changedOn: lastUpdated[key].changedOn,
     sections: sections.filter((section) => section.pageKey === key).map((section) => ({
       key: section.sectionKey, title: section.title, required: section.required === 1,
       text: projectPolicyText({ text: section.text, spans: [] }, emails).text,
     })),
   }])) as Record<PolicyPageKey, PolicyPageInput>;
   return result;
+}
+
+/** The stored section-change date and generated hash/date each Policy_Page carries, keyed by page, for the last-updated computation. */
+function policyPageState(pages: readonly PolicyPageRow[]): Readonly<Record<PolicyPageKey, PolicyPageState>> {
+  const byKey = new Map(pages.map((page) => [page.pageKey, page]));
+  return Object.fromEntries(POLICY_PAGE_KEYS.map((key): [PolicyPageKey, PolicyPageState] => {
+    const page = byKey.get(key);
+    return [key, { sectionChangedAt: page?.sectionsChangedAt ?? null, stored: { hash: page?.generatedHash ?? null, changedAt: page?.generatedChangedAt ?? null } }];
+  })) as Record<PolicyPageKey, PolicyPageState>;
+}
+
+/**
+ * Persist the generated-content hash and date of every Policy_Page whose generated content changed this build, so the
+ * last-updated date the render shows is the date later builds keep while the content is unchanged (R46.29). Read-only
+ * when nothing changed. Called only from the Publisher's `renderSiteBuild`, which passes the build `now`.
+ */
+async function persistGeneratedDates(core: D1Database, site: SiteInput, now: Timestamp): Promise<void> {
+  const pages = await core.prepare('SELECT page_key AS pageKey, sections_changed_at AS sectionsChangedAt, generated_hash AS generatedHash, generated_changed_at AS generatedChangedAt FROM policy_pages')
+    .all<PolicyPageRow>();
+  const generated: GeneratedContent = { profiles: site.profiles, methods: site.methods, licence: site.licence, retention: site.retention, responsiblePerson: site.responsiblePerson };
+  const rows: GeneratedRow[] = advancedGeneratedRows(policyLastUpdated(generated, policyPageState(pages.results), now));
+  if (rows.length === 0) return;
+  await core.batch(rows.map((row) => core.prepare('UPDATE policy_pages SET generated_hash = ?1, generated_changed_at = ?2 WHERE page_key = ?3').bind(row.hash, row.changedAt, row.pageKey)));
 }
 
 /** The active Public_Profiles for the People page, scrubbed of Member addresses and limited to the setting-On Active Members (R46.5). */
@@ -307,17 +343,10 @@ function buildProfiles(members: readonly MemberRow[], specialties: D1Result<Name
   return views;
 }
 
-/** The Responsible_Person's display name from the Member's Profile; named on the Privacy page whatever its status (R46.35). */
-function responsiblePersonName(members: readonly MemberRow[], responsibleId: string | undefined): string {
-  if (responsibleId === undefined) return '';
-  return members.find((member) => member.id === responsibleId)?.displayName ?? '';
-}
-
 const parseSetting = (value: string | undefined): string | undefined => {
   if (value === undefined) return undefined;
   try { const parsed = JSON.parse(value) as unknown; return typeof parsed === 'string' ? parsed : undefined; } catch { return undefined; }
 };
-const dayOf = (at: string | null | undefined): string | undefined => (at ? at.slice(0, 10) : undefined);
 
 // ---------------------------------------------------------------------------
 // Manifest I/O.

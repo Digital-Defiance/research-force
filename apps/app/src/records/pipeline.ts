@@ -2,7 +2,7 @@ import type { Context } from 'hono';
 import { sql } from 'drizzle-orm';
 import { GuardedBatch, GuardViolation } from '@researchforce/db/batch';
 import type { RevisionInput } from '@researchforce/db/batch';
-import type { OUTBOX_TOPICS, REVISION_TARGET_TYPES } from '@researchforce/db/schema/core';
+import type { AiProvenance, OUTBOX_TOPICS, REVISION_TARGET_TYPES } from '@researchforce/db/schema/core';
 import type { RichText } from '@researchforce/domain/richtext';
 import { REVISION_KINDS } from '@researchforce/domain/types';
 import type { RevisionKind, Timestamp, ULID } from '@researchforce/domain/types';
@@ -24,6 +24,13 @@ export interface ChangeSet {
   /** A Restoration names the restored point and needs no mark (R22.2, R22.5). */
   readonly restoredPoint?: string;
   readonly reasons?: { readonly status?: string; readonly withdrawal?: string };
+  /**
+   * The AI provenance of each changed field a Member placed an AI_Draft in since it was last saved (R44.6): the
+   * drafting model, its catalog version, and whether the saved text differs from the draft. Keyed by field name;
+   * `revisionsFor` records each field's entry on the Revision that carries that field, so a reader sees it in
+   * history wherever that Revision is shown. A field with no draft contributes no entry.
+   */
+  readonly ai?: AiProvenance;
 }
 export type RevisionTargetType = typeof REVISION_TARGET_TYPES[number];
 export interface SaveTarget { readonly type: RevisionTargetType; readonly id: string; readonly rootId?: string | null }
@@ -74,11 +81,18 @@ export function revisionsFor(target: SaveTarget, change: ChangeSet): RevisionInp
     if (kind === 'status_change') return change.reasons?.status ?? null;
     return null;
   };
-  return REVISION_KINDS.filter((kind) => groups.has(kind)).map((kind) => ({
-    targetType: target.type, targetId: target.id, rootId: target.rootId ?? null, kind, reason: reasonFor(kind),
-    prev: Object.fromEntries(groups.get(kind)!.map((field) => [field.field, field.before])),
-    restoredPoint: kind === 'restoration' ? change.restoredPoint! : null,
-  }));
+  return REVISION_KINDS.filter((kind) => groups.has(kind)).map((kind) => {
+    const fields = groups.get(kind)!;
+    // The AI provenance of the fields this Revision carries, so each record shows which model drafted the text it
+    // began as and whether the saved text differs from that draft (R44.6). Omitted when no covered field had a draft.
+    const ai = change.ai === undefined ? undefined : Object.fromEntries(fields.flatMap((field) => (change.ai![field.field] === undefined ? [] : [[field.field, change.ai![field.field]!]])));
+    return {
+      targetType: target.type, targetId: target.id, rootId: target.rootId ?? null, kind, reason: reasonFor(kind),
+      prev: Object.fromEntries(fields.map((field) => [field.field, field.before])),
+      restoredPoint: kind === 'restoration' ? change.restoredPoint! : null,
+      ...(ai !== undefined && Object.keys(ai).length > 0 ? { ai } : {}),
+    };
+  });
 }
 
 export interface SavePlan {

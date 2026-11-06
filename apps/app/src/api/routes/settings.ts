@@ -13,6 +13,7 @@ import type { ApiEnv } from '../app';
 import { ApiError } from '../errors';
 import type { FieldIssue } from '../errors';
 import { readJson } from '../input';
+import { recordDesignation } from '../../policy/responsible';
 
 const SETTING_KEYS = Object.keys(SETTINGS) as SettingKey[];
 const isSettingKey = (key: string): key is SettingKey => Object.hasOwn(SETTINGS, key);
@@ -88,9 +89,9 @@ settingsRoutes.put('/', async (c) => {
       ON CONFLICT (key) DO UPDATE SET value = excluded.value, updated_by = excluded.updated_by, updated_at = excluded.updated_at, updated_seq = excluded.updated_seq, actor_id = excluded.actor_id`);
   }
   if (changed.some(([key]) => key === 'responsiblePerson')) {
-    // The designation is a Minor_Edit of the Privacy page that keeps the previous Responsible_Person (R46.37).
-    batch.revision({ targetType: 'policy_page', targetId: 'privacy', kind: 'minor_edit', prev: { responsiblePerson: current.responsiblePerson.value } })
-      .outbox('publish', 'policy:privacy');
+    // The Responsible_Person designation's side effects (Minor_Edit Privacy Revision holding the previous person, the
+    // Activity_Feed entry, and the urgent publish) live in one place so the route never duplicates them (R46.37, R46.38).
+    recordDesignation(batch, (current.responsiblePerson.value ?? null) as ULID | null);
   }
   await batch.commit(c.get('accountant'));
   return c.json({ settings: await currentSettings(c) });

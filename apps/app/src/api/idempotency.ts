@@ -76,6 +76,11 @@ export function idempotency(): MiddlewareHandler<ApiEnv> {
     const actor = c.get('session').member.id;
     const now = c.get('now');
     const digest = await requestDigest(c.req.raw);
+    // `idempotency_results` is content-free operation bookkeeping (identity-only tombstones, R60.8), NOT a snapshotted
+    // research row, so this pending insert is not gated by the Internal_Backup write-freeze; the handler's own
+    // GuardedBatch below IS gated, so a save attempted while frozen is refused (503, input kept, R28.10) and this row
+    // stays pending for the client's later reconciliation (R28.13, R60.2). The `committed` flip rides the handler's
+    // guarded batch, so it only lands when the save itself does.
     const inserted = await accountant.track(db.prepare(`INSERT INTO idempotency_results (actor_id, op_key, request_hash, method, route, state, created_at) VALUES (?1, ?2, ?3, ?4, ?5, 'pending', ?6)
       ON CONFLICT (actor_id, op_key) DO NOTHING`).bind(actor, key, digest, c.req.method, routePath(c, -1), now).run());
     if (inserted.meta.changes !== 1) {

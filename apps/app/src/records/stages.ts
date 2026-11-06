@@ -151,7 +151,7 @@ export async function putStageFragment(c: Context<ApiEnv>, token: string, part: 
   const staged = await storedField(c, token, part, section);
   try {
     validateFieldFragment(body as FieldFragment);
-    await putFieldFragment(c.env.RF_CORE, ownerOf(staged.id), staged.reference, body as FieldFragment);
+    await putFieldFragment(c.env.RF_CORE, ownerOf(staged.id), staged.reference, body as FieldFragment, c.get('now'));
   } catch (error) {
     throw new ApiError('validation', { fields: [{ field: 'fragment', rule: error instanceof Error ? error.message : 'Invalid logical field fragment.' }] });
   }
@@ -188,7 +188,7 @@ export async function loadStage(c: Context<ApiEnv>, token: string): Promise<Stag
   const stored = partRows.map((row) => ({ part: row.part, value: JSON.parse(row.payload) as StoredPart }));
   const all = stored.flatMap(({ part, value }) => value.sections.map((section, ordinal) => ({ part, ordinal, section })));
   for (const entry of all) if (entry.section.storage === 'field') {
-    try { await sealFieldVersion(db, ownerOf(entry.section.id), entry.section.reference); }
+    try { await sealFieldVersion(db, ownerOf(entry.section.id), entry.section.reference, c.get('now')); }
     catch (error) { throw new ApiError('validation', { fields: [{ field: `parts.${entry.part}.sections.${entry.ordinal}.field`, rule: error instanceof Error ? error.message : 'The logical field is incomplete.' }] }); }
   }
   const ids = all.map((entry) => entry.section.id);

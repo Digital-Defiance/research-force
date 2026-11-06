@@ -7,7 +7,8 @@ import type {
   AttachmentRecord, CorrespondenceParty, CrossLinkRecord, ExternalPartyRecord, KindRecord, MemberRecord, PartyRef,
   ProjectRecord, ProjectionInput, ResearchItemRecord, UnitRecord, ValueRecord,
 } from '@researchforce/kernel/input';
-import type { ConsentRow, ConsentValues, HoldCoverage, HoldRef } from '@researchforce/kernel/consent';
+import type { ConsentRow, ConsentValues, EmailedGrant, HoldCoverage, HoldRef } from '@researchforce/kernel/consent';
+import type { PublicView } from '@researchforce/kernel/views';
 import type { ConsentState } from '@researchforce/kernel/preview';
 import { unitKey } from '@researchforce/kernel/views';
 import type { UnitKey } from '@researchforce/kernel/views';
@@ -283,6 +284,8 @@ interface ConsentRowRaw {
   approved_view_hash: string; dependency_manifest_hash: string; withdrawn_at: string | null; used_at: string | null;
 }
 interface HoldRowRaw { id: ULID; unit_id: ULID; member_id: ULID; note: string; placed_at: string }
+/** The latest Consent_Answer per unit, with the seen snapshot and whether it was later withdrawn (R51.9). */
+interface EmailedGrantRaw { answer_id: ULID; unit_id: ULID; result_status: string | null; seen_snapshot_json: string; seen_snapshot_hash: string; withdrawn: number }
 
 const dialectEach = (ids: readonly string[]): string => JSON.stringify([...new Set(ids)]);
 
@@ -553,11 +556,21 @@ async function loadConsentState(
   dependencies: readonly Dependency[],
   track: RequestAccountant['track'],
 ): Promise<ConsentState> {
-  const [holdRows, consentRows] = await track(db.batch([
+  const [holdRows, consentRows, emailedRows] = await track(db.batch([
     db.prepare(`SELECT id, unit_id, member_id, note, placed_at FROM confidentiality_holds
       WHERE lifted_at IS NULL AND override_id IS NULL AND unit_id IN (SELECT value FROM json_each(?1))`).bind(unitJson),
     db.prepare(`SELECT id, unit_id, member_id, values_json, approved_view_hash, dependency_manifest_hash, withdrawn_at, used_at
       FROM publication_consents WHERE unit_id IN (SELECT value FROM json_each(?1))`).bind(unitJson),
+    // The current emailed grant per unit: its latest Consent_Answer (append-only), its seen snapshot, and whether
+    // that answer has since been withdrawn through a Change_Link. A later refusing answer wins, so the latest row
+    // decides the live status; a grant that was withdrawn covers nothing (R51.9, R51.10).
+    db.prepare(`SELECT a.id AS answer_id, a.unit_id, a.result_status, a.seen_snapshot_json, a.seen_snapshot_hash,
+          EXISTS (SELECT 1 FROM consent_withdrawals w WHERE w.item_id = a.item_id) AS withdrawn
+        FROM consent_answers a
+        WHERE a.unit_id IN (SELECT value FROM json_each(?1))
+          AND NOT EXISTS (
+            SELECT 1 FROM consent_answers later
+            WHERE later.unit_id = a.unit_id AND (later.answered_at, later.id) > (a.answered_at, a.id))`).bind(unitJson),
   ]));
 
   const holds = holdCoverage(input.units, (holdRows as D1Result<HoldRowRaw>).results);
@@ -567,7 +580,16 @@ async function loadConsentState(
     viewHash: row.approved_view_hash, dependencyHash: row.dependency_manifest_hash,
     withdrawn: row.withdrawn_at !== null, used: row.used_at !== null,
   }));
+  // Each live emailed grant: the latest answer for a unit that granted and was not later withdrawn, carrying the
+  // Public_View the Consent_Page showed (the `.view` of the stored ConsentSnapshot) so the gate can judge whether
+  // a change presents beyond it (R51.9). A refusing or withdrawn answer grants nothing, so it is dropped here.
+  const emailedGrants = (emailedRows as D1Result<EmailedGrantRaw>).results.flatMap((row): EmailedGrant[] => {
+    if (row.result_status !== 'granted' || row.withdrawn === 1) return [];
+    const snapshot = JSON.parse(row.seen_snapshot_json) as { readonly view?: PublicView };
+    return [{ unitKey: unitKey(row.unit_id), answerId: row.answer_id, seenView: snapshot.view, seenSnapshotHash: row.seen_snapshot_hash }];
+  });
+
   const consentingMember = consentingMemberFor(input.units);
   const snapshotDependencies = dependencies.map((entry) => ({ table: entry.table, id: entry.id, updatedSeq: entry.updatedSeq }));
-  return { consentingMember, consents, holds, dependencies: snapshotDependencies };
+  return { consentingMember, consents, holds, dependencies: snapshotDependencies, emailedGrants };
 }

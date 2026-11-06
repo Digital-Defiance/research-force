@@ -1,7 +1,9 @@
 import type {
+  BackupAgeAlert,
   ConfidentialityIncident,
   ContainmentCapabilities,
   ContainmentState,
+  OpsBackupAlert,
   OpsContainment,
 } from '@researchforce/domain/ops';
 import {
@@ -15,6 +17,7 @@ import {
   mayReleaseContainment,
 } from '@researchforce/db/containment';
 import { CLOUDFLARE_API, CloudflareApiError } from './access';
+import { postIndependentAlert } from './independent-channel';
 
 // The pure escalation state machine and Containment-release guard moved to `@researchforce/db/containment`
 // (task 32.5) so the Publisher in rf-app can share them without importing apps/ops. They are re-exported here
@@ -99,7 +102,7 @@ export interface ContainmentConfig {
  * is injected so the authorized-generation guard (R24.17) can be backed by whatever durable store the caller
  * uses; the default is in-memory and suits the per-invocation RPC entrypoint plus tests.
  */
-export class Containment implements OpsContainment {
+export class Containment implements OpsContainment, OpsBackupAlert {
   readonly #fetch: typeof fetch;
   #status: ContainmentStatus;
 
@@ -171,15 +174,12 @@ export class Containment implements OpsContainment {
   }
 
   async declareIncident(incident: ConfidentialityIncident): Promise<void> {
-    if (!this.config.alertWebhookUrl || !this.config.alertToken) {
-      throw new Error('No independent alert channel is configured for confidentiality incidents.');
-    }
     // Content-free payload: operation identities and states only, never a research body, bearer link, or
-    // recovery secret (R28.6, R60.6).
-    const response = await this.#fetch(this.config.alertWebhookUrl, {
-      method: 'POST',
-      headers: { authorization: `Bearer ${this.config.alertToken}`, 'content-type': 'application/json' },
-      body: JSON.stringify({
+    // recovery secret (R28.6, R60.6). Sent over the same independent channel as every other rf-ops alert.
+    await postIndependentAlert(
+      this.#fetch,
+      this.config,
+      {
         kind: 'confidentiality_incident',
         generation: incident.generation,
         epoch: incident.epoch,
@@ -187,9 +187,30 @@ export class Containment implements OpsContainment {
         failedActions: incident.failedActions,
         lastVerifiedState: incident.lastVerifiedState,
         removalUnconfirmed: true,
-      }),
-    }).catch(() => null);
-    if (!response || !response.ok) throw new Error('The independent alert channel did not accept the incident.');
+      },
+      {
+        description: 'No independent alert channel is configured for confidentiality incidents.',
+        rejection: 'The independent alert channel did not accept the incident.',
+      },
+    );
+  }
+
+  /**
+   * Declare the INDEPENDENT backup-age / RPO alert on the same out-of-band channel (task 58.2, R36.7, R60.6). The
+   * payload is content-free — the alert level and ages only, never a research body or recovery secret. A `warning`
+   * crosses the 18-hour threshold, a `breach` the 24-hour RPO objective (repeated daily), and `cleared` withdraws a
+   * prior alert once a fresh verified point restores the RPO.
+   */
+  async backupAgeAlert(alert: BackupAgeAlert): Promise<void> {
+    await postIndependentAlert(
+      this.#fetch,
+      this.config,
+      { kind: 'backup_age_alert', level: alert.level, ageHours: alert.ageHours, thresholdHours: alert.thresholdHours },
+      {
+        description: 'No independent alert channel is configured for backup-age alerts.',
+        rejection: 'The independent alert channel did not accept the backup-age alert.',
+      },
+    );
   }
 
   /** PATCH a precreated WAF custom rule's `enabled` flag on the public-host zone (reuses the AccessSync pattern). */

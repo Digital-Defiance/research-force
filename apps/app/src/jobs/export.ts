@@ -14,6 +14,7 @@ import { attachmentFile } from '@researchforce/public-render/export/paths';
 import type { ApiEnv } from '../api/app';
 import { JOB_HANDLERS } from '../do/jobs';
 import { buildSiteInput, loadViewsAsOf } from '../publisher/render';
+import { publicCopyOf } from '../publisher/public-copy';
 import { canServerSideCopy, copyObject } from '../files/s3';
 import { notifySystemAlert } from '../notifications/fanout';
 import { manifestMisses, volumeManifests } from './export-manifest';
@@ -79,6 +80,8 @@ export async function startExport(
   accountant?: Parameters<GuardedBatch['commit']>[0],
 ): Promise<void> {
   const params: ExportParams = { exportId: spec.id };
+  // `ignoreFreeze`: the Public_Archive_Export writes only its OWN bookkeeping — the `exports`, `jobs`, and `jobs`
+  // outbox rows — never a snapshotted research row, so it is exempt from the Internal_Backup write-freeze (R36.14).
   await new GuardedBatch(core, { id: spec.requestedBy, now: spec.now }, { ignoreFreeze: true })
     .insert(exportPackages, {
       id: spec.id, type: 'public', scopeProjectId: spec.scopeProjectId, scheduled: spec.scheduled,
@@ -209,7 +212,7 @@ async function plan(env: ApiEnv['Bindings'], row: ExportRow, startedAt: string):
   readonly views: ReadonlyMap<UnitKey, PublicView>; readonly scope: string;
 }> {
   const views = await loadViewsAsOf(env.RF_PUBLIC, startedAt, row.scopeProjectId);
-  const site = await buildSiteInput({ core: env.RF_CORE, public: env.RF_PUBLIC, licence: licenceOf(env) }, views);
+  const site = await buildSiteInput({ core: env.RF_CORE, public: env.RF_PUBLIC, licence: licenceOf(env), publicCopy: publicCopyOf(env) }, views);
   const scope = scopeLabel(views, row.scopeProjectId);
   // The render layer writes its own MANIFEST.json and SHA256SUMS of the text files; the job replaces them with the
   // final ones that also list the Attachment copies, so drop the render's two placeholder files here (R35.1).
@@ -241,6 +244,8 @@ async function finishExport(
   const complete = result.misses.length === 0;
   const requested = row.scheduled === 0;
   const expiresAt = requested ? new Date(new Date(row.startedAt).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString() : null;
+  // `ignoreFreeze`: finishing an export writes only `exports` bookkeeping and System_Alert events, no snapshotted
+  // research row, so it is exempt from the Internal_Backup write-freeze (R36.14).
   const batch = new GuardedBatch(env.RF_CORE, { id: null, now }, { ignoreFreeze: true })
     .update(exportPackages, {
       state: complete ? 'complete' : 'incomplete', finishedAt: now, volumes: [...result.volumes], unitIndexKey: unitIndexKey(id),

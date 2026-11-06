@@ -155,6 +155,18 @@ export class Budget extends DurableObject<Env> {
       ledger.day, used, ledger.reserved);
   }
 
+  /**
+   * The Neurons still available in the current UTC day for an AI_Draft, below the margin: the day's allocation
+   * minus the margin minus what is committed and reserved (R28.14). A READ-ONLY check that reserves nothing, so
+   * `GET /ai/status` can tell whether one worst-case draft would still fit without consuming the allocation
+   * (R44.10). Counts each outstanding reservation as already used, matching {@link reserveNeurons}'s own test.
+   */
+  async neuronsRemaining(): Promise<number> {
+    const row = this.#dayRow(this.#today());
+    const limit = OPERATIONS.aiNeuronsPerUTCDay - OPERATIONS.aiNeuronMargin;
+    return Math.max(0, limit - row.neurons_committed - row.neurons_reserved);
+  }
+
   // -------------------------------------------------------------------------
   // Network-address counting (HMAC-only; R46.20).
   // -------------------------------------------------------------------------

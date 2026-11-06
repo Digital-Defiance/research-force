@@ -68,6 +68,10 @@ export const localRuntime: LocalRuntimeAdapter = {
       verifyContainment: async () => ({ active: false, verified: false }),
       probePublicAddress: async () => 'unknown' as const,
       declareIncident: async () => { /* no independent alert channel locally */ },
+      backupAgeAlert: async () => { /* no independent backup-age alert channel locally */ },
+      // No independent health/spend channel locally: health reports down with no endpoints, spend is a no-op.
+      certifyHealth: async () => ({ level: 'down', endpoints: [], controlAvailable: false }),
+      spendAlert: async () => { /* no independent spend alert channel locally */ },
       // The local runtime has no edge WAF; the Budget still runs, it simply toggles nothing externally.
       setSubmitBlock: async () => { /* no edge WAF rule locally */ },
       fetch: async () => new Response('Local RPC methods only', { status: 404 }),

@@ -1,16 +1,27 @@
 import { WorkerEntrypoint } from 'cloudflare:workers';
 import type {
+  BackupAgeAlert,
   ConfidentialityIncident,
   ContainmentCapabilities,
   ContainmentState,
+  HealthReport,
   OpsAccess,
+  OpsBackupAlert,
   OpsContainment,
   OpsDeploy,
   OpsDeployResult,
+  OpsAnalytics,
+  OpsHealthAlert,
+  OpsSpendAlert,
   OpsWaf,
+  SpendAlert,
+  UsageSnapshot,
+  UsageWindow,
 } from '@researchforce/domain/ops';
 import type { Timestamp } from '@researchforce/domain/types';
 import { AccessSync } from './access';
+import { Analytics } from './analytics';
+import { type MonitoredEndpoint, OperationalAlerts } from './alerts';
 import { Containment } from './containment';
 import { type AssetBody, SiteDeploy } from './deploy';
 import { Waf } from './waf';
@@ -20,6 +31,12 @@ export interface OpsEnv {
   ACCESS_MEMBER_LIST_ID: string;
   /** Secret. */
   CF_ACCESS_API_TOKEN: string;
+
+  // --- Platform usage analytics for the usage-alert check (task 44.1, R19.10). rf-ops is the SOLE holder of
+  //     this account-scoped analytics-read token; rf-app's usage alerts (task 44.2) reach `usage()` over the
+  //     OPS binding rather than holding the token themselves.
+  /** Secret. An Account Analytics Read API token scoped to CF_ACCOUNT_ID only, for the GraphQL Analytics API. */
+  CF_ANALYTICS_API_TOKEN: string;
 
   // --- rf-site assets-only deploy through the Direct Upload API (task 32.1, R24.7, R24.16, R24.17, R60.2) ---
   /** The `rf-site` script/dispatch name the assets-upload-session and version/deploy endpoints address. */
@@ -53,6 +70,16 @@ export interface OpsEnv {
   /** Secret. The bearer credential for the independent alert channel. */
   INCIDENT_ALERT_TOKEN: string;
 
+  // --- Independent health + spend alerts (task 67.2, R28.4, R60.6). Delivered over the SAME independent alert
+  //     channel as the incident/backup-age alerts (INCIDENT_ALERT_WEBHOOK_URL + INCIDENT_ALERT_TOKEN), so they
+  //     stay operable without rf-core D1 and the Graph email queue. Setup is an explicit operator action.
+  /**
+   * Comma-separated `name=url` pairs the independent health check HEADs out-of-band to certify ACTUAL
+   * endpoint reachability (e.g. `app=https://app.researchforce.org/,public=https://researchforce.org/`).
+   * Empty means health cannot be certified and `certifyHealth` reports `degraded`.
+   */
+  HEALTH_CHECK_ENDPOINTS: string;
+
   // --- Public submit-host WAF budget shed (task 34.2, R28.5, R28.6). Ordinary edge shedding, NOT Containment:
   //     its own zone/ruleset/rule id and its own WAF token, never the independently-vaulted Containment token.
   /** The zone that serves the public submit host `submit.researchforce.org`. */
@@ -65,10 +92,29 @@ export interface OpsEnv {
   CF_SUBMIT_WAF_API_TOKEN: string;
 }
 
+/** Parse the `name=url,name=url` health-endpoint config into monitored endpoints, dropping malformed pairs. */
+function parseEndpoints(raw: string): MonitoredEndpoint[] {
+  return (raw ?? '')
+    .split(',')
+    .map((pair) => pair.trim())
+    .filter(Boolean)
+    .flatMap((pair) => {
+      const index = pair.indexOf('=');
+      if (index <= 0) return [];
+      const name = pair.slice(0, index).trim();
+      const url = pair.slice(index + 1).trim();
+      return name && url ? [{ name, url }] : [];
+    });
+}
+
 /** Reachable only through service bindings: no fetch handler and no route. */
-export default class Ops extends WorkerEntrypoint<OpsEnv> implements OpsAccess, OpsContainment, OpsDeploy, OpsWaf {
+export default class Ops extends WorkerEntrypoint<OpsEnv> implements OpsAccess, OpsAnalytics, OpsContainment, OpsBackupAlert, OpsHealthAlert, OpsSpendAlert, OpsDeploy, OpsWaf {
   #access(): AccessSync {
     return new AccessSync({ accountId: this.env.CF_ACCOUNT_ID, memberListId: this.env.ACCESS_MEMBER_LIST_ID, apiToken: this.env.CF_ACCESS_API_TOKEN });
+  }
+
+  #analytics(): Analytics {
+    return new Analytics({ accountId: this.env.CF_ACCOUNT_ID, apiToken: this.env.CF_ANALYTICS_API_TOKEN });
   }
 
   #deploy(): SiteDeploy {
@@ -92,6 +138,20 @@ export default class Ops extends WorkerEntrypoint<OpsEnv> implements OpsAccess, 
     });
   }
 
+  #alerts(): OperationalAlerts {
+    // The health check certifies ACTUAL control availability by reading the live Containment capability
+    // (`canDeny`), never a stored flag; both share the one independent alert channel (R60.6).
+    const containment = this.#containment();
+    return new OperationalAlerts(
+      {
+        alertWebhookUrl: this.env.INCIDENT_ALERT_WEBHOOK_URL,
+        alertToken: this.env.INCIDENT_ALERT_TOKEN,
+        monitoredEndpoints: parseEndpoints(this.env.HEALTH_CHECK_ENDPOINTS),
+      },
+      async () => (await containment.containmentCapabilities()).canDeny,
+    );
+  }
+
   #waf(): Waf {
     return new Waf({
       submitZoneId: this.env.CF_SUBMIT_ZONE_ID,
@@ -105,12 +165,22 @@ export default class Ops extends WorkerEntrypoint<OpsEnv> implements OpsAccess, 
   async removeMember(email: string): Promise<void> { await this.#access().removeMember(email); }
   async revokeSessions(email: string): Promise<void> { await this.#access().revokeSessions(email); }
 
+  // Platform usage from the Cloudflare GraphQL Analytics API (task 44.1, R19.10): rf-ops holds the
+  // analytics-read token; rf-app's usage alerts (task 44.2) read this over the OPS binding.
+  async usage(window: UsageWindow): Promise<UsageSnapshot> { return this.#analytics().usage(window); }
+
   async containmentCapabilities(): Promise<ContainmentCapabilities> { return this.#containment().containmentCapabilities(); }
   async containPublicHosts(): Promise<void> { await this.#containment().containPublicHosts(); }
   async releaseContainment(authorizedGeneration: string): Promise<void> { await this.#containment().releaseContainment(authorizedGeneration); }
   async verifyContainment(): Promise<ContainmentState> { return this.#containment().verifyContainment(); }
   async probePublicAddress(url: string): Promise<'present' | 'absent' | 'unknown'> { return this.#containment().probePublicAddress(url); }
   async declareIncident(incident: ConfidentialityIncident): Promise<void> { await this.#containment().declareIncident(incident); }
+  async backupAgeAlert(alert: BackupAgeAlert): Promise<void> { await this.#containment().backupAgeAlert(alert); }
+
+  // Independent health + spend alerts (task 67.2, R28.4, R60.6): provider-native/independent external checks
+  // delivered over the operator-controlled independent channel, operable without rf-core D1 and the Graph queue.
+  async certifyHealth(): Promise<HealthReport> { return this.#alerts().certifyHealth(); }
+  async spendAlert(alert: SpendAlert): Promise<void> { await this.#alerts().spendAlert(alert); }
 
   // Public submit-host WAF budget shed (task 34.2, R28.5, R28.6): the `Budget` DO (34.1) flips this on at the
   // Public_Traffic_Budget-minus-margin threshold and off at the 00:00 UTC reset.

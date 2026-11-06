@@ -21,6 +21,7 @@ import { hashMemberId } from '../log';
 import type { Logger } from '../log';
 import { kick } from '../outbox';
 import { csrfGuard, workspaceCors } from './csrf';
+import { workspaceSecurityHeaders } from './security-headers';
 import { idempotency, operationRoutes } from './idempotency';
 import { ApiError, errorResponse, toApiError } from './errors';
 import type { ErrorCode } from './errors';
@@ -61,6 +62,15 @@ import { importsRoutes } from './routes/imports';
 import { dissentRoutes } from './routes/dissent';
 import { releaseRoutes } from './routes/releases';
 import { exportsRoutes } from './routes/exports';
+import { backupsRoutes } from './routes/backups';
+import { restoresRoutes } from './routes/restores';
+import { moderationRoutes } from './routes/moderation';
+import { consentRequestsRoutes } from './routes/consent';
+import { policyRoutes } from './routes/policy';
+import { aiRoutes } from './routes/ai';
+import { opsStatusRoutes } from './routes/ops';
+import { recordRouteMetric } from '../metrics';
+import type { StatusSources } from '../metrics';
 
 export interface ApiConfig {
   /** Only the controlled local entrypoint supplies developer routes. */
@@ -76,6 +86,8 @@ export interface ApiConfig {
   readonly contentLicence?: string;
   /** Kicks the owners of outbox topics after the request; the Durable Object kick unless a test supplies one. */
   readonly kick?: (env: Env, topics: readonly OutboxTopic[], log: Logger) => Promise<void>;
+  /** Fake operations-status sources for the `GET /ops/status` summary (no `Budget` object runs in the Workers pool). */
+  readonly opsStatusSources?: StatusSources;
 }
 export interface ApiVariables {
   accountant: RequestAccountant;
@@ -122,13 +134,21 @@ export function createApi(config: ApiConfig): Hono<ApiEnv> {
     if (topics.length > 0) afterResponse(c, () => (config.kick ?? kick)(c.env, topics, config.log));
     const session = c.get('session') as Session | undefined;
     const failure = c.get('failure') as ErrorCode | undefined;
+    const route = routePath(c, -1);
+    const wallMs = Date.now() - started;
+    const usage = c.get('accountant').usage;
+    // The per-route metric event (R28.2, R28.3): a request count of one with the route's wall time and tracked D1
+    // rows, so Workers Logs can group routes by the `metric` event and read the CPU column for the same invocation.
+    // Emitted before the `request` line so the request log stays the last line for the request.
+    recordRouteMetric(config.log, { method: c.req.method, route, status: c.res.status, wallMs, d1: { rowsRead: usage.rowsRead, rowsWritten: usage.rowsWritten } });
     // CPU time is not readable inside a Worker; Workers Logs records it for each invocation.
     config.log(c.res.status >= 500 ? 'error' : 'info', 'request', {
-      method: c.req.method, route: routePath(c, -1), status: c.res.status, wallMs: Date.now() - started, d1: c.get('accountant').usage,
+      method: c.req.method, route, status: c.res.status, wallMs, d1: usage,
       ...(session ? { member: await hashMemberId(session.member.id) } : {}),
       ...(failure ? { error: failure } : {}),
     });
   });
+  app.use('/api/*', workspaceSecurityHeaders());
   app.use('/api/*', workspaceCors(config.workspaceOrigin));
   app.use('/api/*', csrfGuard(config.workspaceOrigin));
   app.use('/api/*', async (c, next) => {
@@ -181,6 +201,7 @@ export function createApi(config: ApiConfig): Hono<ApiEnv> {
   v1.route('/proposals', proposalsRoutes);
   v1.route('/me', personalRoutes);
   v1.route('/ops', draftRecoveryRoutes);
+  v1.route('/ops', opsStatusRoutes(config.opsStatusSources ? { statusSources: config.opsStatusSources } : {}));
   v1.route('/questions', questionsRoutes);
   v1.route('/parties', partiesRoutes);
   v1.route('/', discussionRoutes);
@@ -202,6 +223,14 @@ export function createApi(config: ApiConfig): Hono<ApiEnv> {
   v1.route('/dissent', dissentRoutes);
   v1.route('/releases', releaseRoutes);
   v1.route('/exports', exportsRoutes);
+  v1.route('/backups', backupsRoutes);
+  v1.route('/restores', restoresRoutes);
+  v1.route('/moderation', moderationRoutes);
+  v1.route('/consent-requests', consentRequestsRoutes);
+  v1.route('/policy', policyRoutes);
+  // AI drafting is Workspace-only: mounted solely here on the authenticated API, never on rf-submit, imports,
+  // or restores, so Public_Traffic, imports, and restores cannot reach the AI_Service (R44.13).
+  v1.route('/ai', aiRoutes);
   app.route('/api/v1', v1);
 
   app.notFound((c) => {

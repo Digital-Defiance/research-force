@@ -1,0 +1,537 @@
+import type { Context } from 'hono';
+import { sql } from 'drizzle-orm';
+import type { SQL } from 'drizzle-orm';
+import { GuardedBatch } from '@researchforce/db/batch';
+import { exportPackages, jobs } from '@researchforce/db/schema/core';
+import { BACKUP_TABLES } from '@researchforce/db/schema/core';
+import type { BackupTableEntry } from '@researchforce/db/schema/core';
+import {
+  BACKUP_FORMAT_VERSION, createHeader, encodeBody, generateDataKey, rootDigest, serializeManifest, wrapDataKey,
+} from '@researchforce/manifest/backup/index';
+import type {
+  CustodianDescriptor, EncryptedSegment, FieldEntry, FileEntry, RootManifest, TableEntry, WrappedDataKey,
+} from '@researchforce/manifest/backup/index';
+import { stableJson } from '@researchforce/domain/history';
+import { newULID } from '@researchforce/domain/identifiers';
+import { OPERATIONS } from '@researchforce/domain/settings';
+import type { Timestamp, ULID } from '@researchforce/domain/types';
+import type { ApiEnv } from '../api/app';
+import { JOB_HANDLERS } from '../do/jobs';
+import type { JobHandler, JsonValue } from '../do/jobs';
+import {
+  FreezeLostError, acquireFreeze, completeSnapshot, heartbeat, markFileCopied, pinFile,
+} from '../backup/freeze';
+import type { FreezeLease } from '../backup/freeze';
+import { recoveryCustodians } from '../backup/custodians';
+import { bucketKeyOf } from './export';
+import { volumeManifests } from './export-manifest';
+
+/**
+ * The Internal_Backup JOB (task 38.4; R28.8, R36.1, R36.2, R36.3, R36.6, R36.11, R36.12, R36.13, R36.14, R47.15,
+ * R48.11, R49.7, R60.1; design "Internal_Backup and independent recovery"). A `Jobs` Durable Object produces, for a
+ * requested Internal_Backup, a consistent bounded snapshot of the authoritative rf-core state under the renewable
+ * write-freeze lease (task 58.3), seals the authenticated root manifest (task 58.1), and writes an encrypted package
+ * under `rf-private/backups/{id}/`.
+ *
+ * SCOPE (task 38.4): this builds the JOB + `POST /backups` request endpoint only. The FORMAT/codec/manifest/wrapping
+ * is task 58.1 (consumed), the freeze LEASE/watchdog/pins are task 58.3 (consumed); independent SCHEDULES,
+ * encryption/copy VERIFICATION, and tiered RETENTION are task 58.2; RESTORE is task 38.5. A REQUESTED staging package
+ * expires after 7 days (R36.3); the independent retained recovery points are 58.2.
+ *
+ * Snapshot consistency (R36.14). The job ACQUIRES the freeze lease on first entry and HEARTBEATS at each bounded page,
+ * so the lease stays live through the ≤120-second certified window while every other write path (API, cron, raw SQL,
+ * outbox) backs off on the shared live-lease predicate. If the lease is LOST — expired, superseded, overrun, or
+ * invalidated by a higher-priority privacy deletion that destroyed a pinned source — the job marks the package
+ * INCOMPLETE and seals nothing; writers resume automatically once the lease lapses, so no bare frozen counter is ever
+ * left behind (the lease + watchdog handle that). Only the job's own control/checkpoint writes pass the freeze, and
+ * only to bookkeeping tables, through `freezeOwnerOf(lease)`.
+ */
+
+/** What the request records for the backup job: the `exports` row id (type `backup`), so the slice reads it for its sequence. */
+export interface BackupParams { readonly exportId: ULID }
+
+/** The backup package's private R2 prefix; every body part, the accumulator, the manifest, the key envelopes, and the volumes live under it. */
+export const backupPrefix = (id: string): string => `rf-private/backups/${id}`;
+
+/** How many authoritative rows one snapshot page reads, sized by the operations budget. */
+const PAGE_ROWS = OPERATIONS.jobSliceRows;
+/** How many file copies one `files` slice makes, sized by the external-subrequest ceiling. */
+const SLICE_FILES = OPERATIONS.maxExternalSubrequests;
+
+/** The lease identity carried in the cursor so each slice reconstructs the held {@link FreezeLease} and heartbeats/completes it. */
+interface CursorLease {
+  readonly jobId: string; readonly generation: number; readonly acquiredAt: Timestamp;
+  readonly expiresAt: Timestamp; readonly deadlineAt: Timestamp; readonly snapshotSeq: number;
+}
+const leaseOf = (lease: CursorLease): FreezeLease => ({ ...lease });
+
+/** Where the job is. The manifest accumulator (table/field/file entries) lives in an R2 object, not the cursor, so the cursor stays tiny. */
+interface Cursor {
+  /** `snapshot` pages the authoritative tables under the lease; `files` copies pinned Attachment files; `seal` writes the package. */
+  readonly phase: 'snapshot' | 'files' | 'seal';
+  /** The lease identity, set once acquired; the slice reconstructs it to heartbeat/complete. */
+  readonly lease: CursorLease;
+  /** The table index in {@link BACKUP_TABLES} the snapshot phase is on, and the row offset within it. */
+  readonly tableIndex: number;
+  readonly rowOffset: number;
+  /** The Attachment-copy index the `files` phase is on. */
+  readonly fileIndex: number;
+  /** Set true once the snapshot has lost its lease (lost/overrun/invalidated), so the job seals nothing. */
+  readonly incomplete: boolean;
+  /** The reason the package is incomplete, reported to the requester (R36.6). */
+  readonly reason: string | null;
+  readonly rowsRead: number;
+  readonly filesCopied: number;
+}
+
+/** The accumulating manifest pieces, stored as one R2 JSON object the slice reads and rewrites idempotently. */
+interface Accumulator {
+  readonly tables: TableEntry[];
+  readonly fields: FieldEntry[];
+  readonly files: FileEntry[];
+  /** The Attachment files still to copy: each file's in-package id, the source R2 key, and the recorded size/hash. */
+  readonly pendingFiles: { readonly id: string; readonly r2Key: string }[];
+}
+
+type SliceResult = { cursor: JsonValue; progress: JsonValue; done: boolean; outcome?: 'complete' | 'incomplete' };
+function step(cursor: Cursor, change: Partial<Cursor>, done = false, outcome?: 'complete' | 'incomplete'): SliceResult {
+  const next = { ...cursor, ...change };
+  return { cursor: next as unknown as JsonValue, progress: { rows: next.rowsRead, files: next.filesCopied }, done, ...(outcome ? { outcome } : {}) };
+}
+
+/** Lower-case hex SHA-256 of bytes, matching the manifest's hash convention. */
+async function sha256Hex(bytes: ArrayBuffer | Uint8Array): Promise<string> {
+  const view = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+  const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', view as BufferSource));
+  return Array.from(digest, (byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
+/** The `exports` row the backup job reads for its snapshot sequence and requester. */
+interface BackupRow { readonly requestedBy: string | null; readonly startedAt: string }
+async function readBackupRow(env: ApiEnv['Bindings'], id: string): Promise<BackupRow> {
+  const row = await env.RF_CORE.prepare('SELECT requested_by AS requestedBy, started_at AS startedAt FROM exports WHERE id = ?1 AND type = \'backup\'').bind(id).first<BackupRow>();
+  if (row === null) throw new Error(`The backup row ${id} is missing.`);
+  return row;
+}
+
+/**
+ * Record a requested Internal_Backup and queue its job (R36.1, R36.3). An Administrator's request inserts the `exports`
+ * row (type `backup`, not scheduled, whole-installation), the `jobs` row, and the `jobs` outbox row, all bookkeeping
+ * exempt from the research freeze, and returns the id. Authorisation is the caller's (`backup.manage`).
+ */
+export async function requestBackup(c: Context<ApiEnv>): Promise<ULID> {
+  const actor = c.get('session').member.id;
+  const now = c.get('now');
+  const id = newULID(now);
+  await startBackup(c.env.RF_CORE, { id, requestedBy: actor, now }, c.get('accountant'));
+  return id;
+}
+
+/**
+ * Insert the `exports`, `jobs`, and outbox rows that start one Internal_Backup, shared by the requested-backup route
+ * (`requestBackup`) and the scheduled-snapshot cron (task 58.2 `startScheduledBackup`). Every `type = 'backup'` row is
+ * unscheduled and whole-installation at the `exports` level, as the `exports_backup_unscheduled` schema check requires;
+ * a SCHEDULED snapshot is distinguished by its separate `backup_points` row (task 58.2), not by `exports.scheduled`.
+ * `requestedBy` is the requesting Administrator for a staging package, or null for a scheduled snapshot (R36.3). The
+ * batch is bookkeeping only (its own `exports`/`jobs`/outbox rows), so it is exempt from the research freeze (R36.14).
+ */
+export async function startBackup(
+  core: D1Database,
+  spec: { readonly id: ULID; readonly requestedBy: ULID | null; readonly now: Timestamp },
+  accountant?: Parameters<GuardedBatch['commit']>[0],
+): Promise<void> {
+  const { id, requestedBy, now } = spec;
+  const params: BackupParams = { exportId: id };
+  await new GuardedBatch(core, { id: requestedBy, now }, { ignoreFreeze: true })
+    .insert(exportPackages, { id, type: 'backup', scopeProjectId: null, scheduled: false, requestedBy, startedAt: now, state: 'running' })
+    .insert(jobs, { id, type: 'internal_backup', state: 'queued', requestedBy, params: params as unknown as Record<string, unknown>, createdAt: now, updatedAt: now })
+    .outbox('jobs', `job:${id}`)
+    .commit(accountant);
+}
+
+/** Read the manifest accumulator, or the empty one on first entry. */
+async function readAccumulator(env: ApiEnv['Bindings'], id: string): Promise<Accumulator> {
+  const object = await env.RF_PRIVATE_BUCKET.get(`${bucketKeyOf(backupPrefix(id))}/accumulator.json`);
+  if (object === null) return { tables: [], fields: [], files: [], pendingFiles: [] };
+  return JSON.parse(await object.text()) as Accumulator;
+}
+async function writeAccumulator(env: ApiEnv['Bindings'], id: string, accumulator: Accumulator): Promise<void> {
+  await env.RF_PRIVATE_BUCKET.put(`${bucketKeyOf(backupPrefix(id))}/accumulator.json`, JSON.stringify(accumulator), { httpMetadata: { contentType: 'application/json' } });
+}
+
+/** A table's quoted column list excluding the single-use-secret columns the schema omits (R51.13). */
+async function backupColumns(env: ApiEnv['Bindings'], entry: BackupTableEntry): Promise<string[]> {
+  const info = await env.RF_CORE.prepare(`PRAGMA table_info(${entry.table})`).all<{ name: string }>();
+  const excluded = new Set(entry.excludeColumns);
+  return info.results.map((row) => row.name).filter((name) => !excluded.has(name));
+}
+
+/**
+ * Snapshot one page of an authoritative table: read up to {@link PAGE_ROWS} rows (ordered by rowid for a stable scan),
+ * canonicalise each as sorted-key JSON of the kept columns, append the page to the table's JSONL body part, and fold
+ * the page's rows into the running table digest. Returns the page's row count and the updated digest chain.
+ */
+async function snapshotPage(
+  env: ApiEnv['Bindings'], entry: BackupTableEntry, columns: readonly string[], offset: number,
+): Promise<{ readonly rows: number; readonly lines: string }> {
+  const select = columns.map((name) => `"${name}"`).join(', ');
+  const result = await env.RF_CORE.prepare(`SELECT ${select} FROM ${entry.table} ORDER BY rowid LIMIT ?1 OFFSET ?2`).bind(PAGE_ROWS, offset).all<Record<string, unknown>>();
+  const lines = result.results.map((row) => stableJson(row)).join('\n');
+  return { rows: result.results.length, lines: lines === '' ? '' : `${lines}\n` };
+}
+
+/** Append JSONL bytes to a table's body part (read-modify-write; a resumed slice overwrites the same object with the same content). */
+async function appendBodyPart(env: ApiEnv['Bindings'], id: string, table: string, offset: number, lines: string): Promise<void> {
+  const key = `${bucketKeyOf(backupPrefix(id))}/body/${table}.jsonl`;
+  // A resumed slice re-reads from `offset`, so overwrite the part up to this offset then append — the part is rebuilt
+  // deterministically from the authoritative rows, so re-running a page changes nothing (idempotent, R36.1-style).
+  const existing = offset === 0 ? '' : await (await env.RF_PRIVATE_BUCKET.get(key))?.text() ?? '';
+  await env.RF_PRIVATE_BUCKET.put(key, `${existing}${lines}`, { httpMetadata: { contentType: 'application/x-ndjson' } });
+}
+
+/** The exact row count and SHA-256 digest of a fully-written table body part (R36.1, R36.13). */
+async function tableEntry(env: ApiEnv['Bindings'], id: string, table: string, rows: number): Promise<TableEntry> {
+  const object = await env.RF_PRIVATE_BUCKET.get(`${bucketKeyOf(backupPrefix(id))}/body/${table}.jsonl`);
+  const bytes = object === null ? new Uint8Array(0) : new Uint8Array(await object.arrayBuffer());
+  return { table, rows, sha256: await sha256Hex(bytes) };
+}
+
+/**
+ * The logical FIELD entries (R36.1): every sealed `field_versions` row's exact content digest and fragment count, read
+ * from the chunk-aware field-version readers (design "Chunk-aware readers"). The backup RECORDS these digests; it does
+ * not recompute logical text. Paged with the tables, but small enough to read in the seal step for a bounded dataset.
+ */
+async function readFieldEntries(env: ApiEnv['Bindings']): Promise<FieldEntry[]> {
+  const rows = (await env.RF_CORE.prepare(
+    `SELECT fv.owner_type AS ownerType, fv.owner_id AS ownerId, fv.field_key AS field, fv.manifest_sha256 AS digest,
+       (SELECT count(*) FROM text_fragments tf WHERE tf.version_id = fv.id) AS fragments,
+       fv.manifest_json AS manifest
+     FROM field_versions fv WHERE fv.sealed = 1 ORDER BY fv.id`,
+  ).all<{ ownerType: string; ownerId: string; field: string; digest: string; fragments: number; manifest: string }>()).results;
+  return rows.map((row) => {
+    let utf16Length = 0;
+    try { const parsed = JSON.parse(row.manifest) as { utf16Length?: number; length?: number }; utf16Length = parsed.utf16Length ?? parsed.length ?? 0; } catch { utf16Length = 0; }
+    return { address: `${row.ownerType}:${row.ownerId}:${row.field}`, sha256: row.digest, fragments: row.fragments, utf16Length };
+  });
+}
+
+/** The immutable Attachment files to copy, each with its in-package id and `rf-private` source key (R36.1 "file"). */
+async function readPendingFiles(env: ApiEnv['Bindings']): Promise<{ readonly id: string; readonly r2Key: string }[]> {
+  const rows = (await env.RF_CORE.prepare('SELECT item_identifier AS id, r2_key AS r2Key FROM attachments ORDER BY unit_id').all<{ id: string; r2Key: string }>()).results;
+  return rows.map((row) => ({ id: row.id, r2Key: row.r2Key }));
+}
+
+/** Reconstruct the held lease from the cursor and heartbeat it; returns the renewed lease, or throws {@link FreezeLostError} when lost. */
+async function heartbeatLease(env: ApiEnv['Bindings'], cursor: Cursor, now: Timestamp): Promise<FreezeLease> {
+  return heartbeat(env.RF_CORE, leaseOf(cursor.lease), now);
+}
+
+/**
+ * The Internal_Backup job. It runs under the write-freeze lease it acquires, snapshots the authoritative tables and
+ * logical fields in bounded pages (heartbeating each slice), copies immutable Attachment files under read pins, then
+ * seals and encrypts the authenticated package — or, on any lease loss, marks the package incomplete and seals
+ * nothing. Each slice overwrites the same R2 objects, so a resumed slice changes nothing more (R36.1).
+ */
+export const backupJob: JobHandler = {
+  async slice({ env, job, now }, cursorValue): Promise<SliceResult> {
+    const params = job.params as unknown as BackupParams;
+    const id = params.exportId;
+
+    // ── First entry: acquire the freeze lease for a consistent bounded snapshot (R36.14) ──
+    if (cursorValue === null) {
+      const row = await readBackupRow(env, id);
+      const snapshotSeq = Math.floor(Date.parse(row.startedAt) / 1000);
+      let lease: FreezeLease;
+      try {
+        lease = await acquireFreeze(env.RF_CORE, job.id, snapshotSeq, now);
+      } catch (error) {
+        // A live lease is already held (another snapshot in flight): this backup cannot take a consistent snapshot now.
+        if (error instanceof FreezeLostError) return finish(env, id, { incomplete: true, reason: 'another snapshot already holds the write-freeze lease' }, now);
+        throw error;
+      }
+      const cursorLease: CursorLease = { jobId: lease.jobId, generation: lease.generation, acquiredAt: lease.acquiredAt, expiresAt: lease.expiresAt, deadlineAt: lease.deadlineAt, snapshotSeq: lease.snapshotSeq };
+      await writeAccumulator(env, id, { tables: [], fields: [], files: [], pendingFiles: [] });
+      const start: Cursor = { phase: 'snapshot', lease: cursorLease, tableIndex: 0, rowOffset: 0, fileIndex: 0, incomplete: false, reason: null, rowsRead: 0, filesCopied: 0 };
+      return step(start, {});
+    }
+
+    const cursor = cursorValue as unknown as Cursor;
+
+    // ── snapshot: page the authoritative tables under the live lease, heartbeating each slice (R36.1, R36.14) ──
+    if (cursor.phase === 'snapshot') {
+      try { await heartbeatLease(env, cursor, now); } catch (error) {
+        if (error instanceof FreezeLostError) return abort(env, id, cursor, `write-freeze lease lost during snapshot (${error.reason})`, now);
+        throw error;
+      }
+      const entry = BACKUP_TABLES[cursor.tableIndex];
+      if (entry === undefined) {
+        // Every table paged: record the field entries, then advance to the file copies under the same lease.
+        const accumulator = await readAccumulator(env, id);
+        const fields = await readFieldEntries(env);
+        const pendingFiles = await readPendingFiles(env);
+        await writeAccumulator(env, id, { ...accumulator, fields, pendingFiles });
+        return step(cursor, { phase: 'files', fileIndex: 0 });
+      }
+      const columns = await backupColumns(env, entry);
+      const page = await snapshotPage(env, entry, columns, cursor.rowOffset);
+      await appendBodyPart(env, id, entry.table, cursor.rowOffset, page.lines);
+      const rowsRead = cursor.rowsRead + page.rows;
+      if (page.rows < PAGE_ROWS) {
+        // The table is fully read: seal its count and digest, then move to the next table.
+        const accumulator = await readAccumulator(env, id);
+        const rows = cursor.rowOffset + page.rows;
+        const sealed = await tableEntry(env, id, entry.table, rows);
+        await writeAccumulator(env, id, { ...accumulator, tables: [...accumulator.tables.filter((t) => t.table !== entry.table), sealed] });
+        return step(cursor, { tableIndex: cursor.tableIndex + 1, rowOffset: 0, rowsRead });
+      }
+      return step(cursor, { rowOffset: cursor.rowOffset + page.rows, rowsRead });
+    }
+
+    // ── files: pin, copy, and release each immutable Attachment file under the lease (R36.14) ──
+    if (cursor.phase === 'files') {
+      try { await heartbeatLease(env, cursor, now); } catch (error) {
+        if (error instanceof FreezeLostError) return abort(env, id, cursor, `write-freeze lease lost during file copy (${error.reason})`, now);
+        throw error;
+      }
+      const accumulator = await readAccumulator(env, id);
+      const end = Math.min(cursor.fileIndex + SLICE_FILES, accumulator.pendingFiles.length);
+      const copied: FileEntry[] = [...accumulator.files];
+      for (let index = cursor.fileIndex; index < end; index++) {
+        const pending = accumulator.pendingFiles[index]!;
+        const lease = leaseOf(cursor.lease);
+        // Pin the immutable source so a concurrent deletion cannot destroy it before the copy (R36.14). A privacy
+        // deletion that supersedes the pin invalidates the snapshot (58.3 wires that path); the pin owner-write then
+        // fails on the lost lease and the job marks itself incomplete below.
+        try { await pinFile(env.RF_CORE, lease, pending.r2Key, now); } catch (error) {
+          if (error instanceof FreezeLostError) return abort(env, id, cursor, `snapshot invalidated before copying ${pending.id} (${error.reason})`, now);
+          throw error;
+        }
+        const source = await env.RF_PRIVATE_BUCKET.get(bucketKeyOf(pending.r2Key));
+        if (source === null) {
+          // A deletion that superseded the pin already destroyed the source: the snapshot is missing a required file
+          // and is incomplete (R36.6). Report the missing element and seal nothing.
+          return abort(env, id, cursor, `required Attachment file ${pending.id} was deleted during the snapshot`, now);
+        }
+        const bytes = new Uint8Array(await source.arrayBuffer());
+        await env.RF_PRIVATE_BUCKET.put(`${bucketKeyOf(backupPrefix(id))}/files/${pending.id}`, bytes, { httpMetadata: { contentType: 'application/octet-stream' } });
+        copied.push({ id: pending.id, bytes: bytes.byteLength, sha256: await sha256Hex(bytes) });
+        try { await markFileCopied(env.RF_CORE, lease, pending.r2Key, now); } catch (error) {
+          if (error instanceof FreezeLostError) return abort(env, id, cursor, `snapshot invalidated after copying ${pending.id} (${error.reason})`, now);
+          throw error;
+        }
+      }
+      await writeAccumulator(env, id, { ...accumulator, files: copied });
+      const filesCopied = Math.max(cursor.filesCopied, end);
+      return end >= accumulator.pendingFiles.length ? step(cursor, { phase: 'seal', filesCopied }) : step(cursor, { fileIndex: end, filesCopied });
+    }
+
+    // ── seal: complete the snapshot (release writers), build/encrypt/write the package, report misses (R36.6, R36.13) ──
+    return sealPackage(env, id, cursor, now);
+  },
+};
+
+/**
+ * Mark the package incomplete during the snapshot/file phases and complete the job as INCOMPLETE (R36.6, R36.14). The
+ * lease is already lost (lapsed/superseded/invalidated), so writers have resumed; the job records the reason and seals
+ * nothing. Idempotent and never claims completion.
+ */
+async function abort(env: ApiEnv['Bindings'], id: string, cursor: Cursor, reason: string, now: Timestamp): Promise<SliceResult> {
+  const result = await finish(env, id, { incomplete: true, reason }, now);
+  return { ...result, cursor: { ...cursor, phase: 'seal', incomplete: true, reason } as unknown as JsonValue };
+}
+
+/**
+ * Seal the package (R36.6, R36.13). Completes the snapshot — a completion write must still hold the current
+ * generation's live lease, so a lost/superseded snapshot throws and is marked incomplete and seals nothing. On a
+ * healthy snapshot it builds the authenticated root manifest (format/schema/version/count/hash + trust fingerprints),
+ * serializes and encrypts it under a fresh data key wrapped for the configured recovery custodian(s), writes the
+ * package manifest/volume rows, verifies every sealed element, and reports every missing/mismatched element.
+ */
+async function sealPackage(env: ApiEnv['Bindings'], id: string, cursor: Cursor, now: Timestamp): Promise<SliceResult> {
+  const lease = leaseOf(cursor.lease);
+  try {
+    await completeSnapshot(env.RF_CORE, lease, now);
+  } catch (error) {
+    if (error instanceof FreezeLostError) return finish(env, id, { incomplete: true, reason: `the snapshot could not be completed (${error.reason})` }, now);
+    throw error;
+  }
+
+  const accumulator = await readAccumulator(env, id);
+  const row = await readBackupRow(env, id);
+  const custodians = recoveryCustodians(env);
+
+  // Build the authenticated root manifest: format/schema versions, source installation, snapshot sequence/time, the
+  // exact per-table counts+digests, per-field hashes+counts, per-file sizes+SHA-256, and the trust fingerprints
+  // (R36.1, R36.13). The self fingerprint equals the canonical digest of the rest.
+  const counts = {
+    tables: accumulator.tables.length, fields: accumulator.fields.length, files: accumulator.files.length,
+    rows: accumulator.tables.reduce((total, table) => total + table.rows, 0),
+  };
+  const descriptors: CustodianDescriptor[] = [];
+  const envelopes: WrappedDataKey[] = [];
+  const dataKey = generateDataKey();
+  for (const custodian of custodians) {
+    const wrapped = await wrapDataKey(dataKey.raw, custodian);
+    descriptors.push(wrapped.descriptor);
+    envelopes.push(wrapped.envelope);
+  }
+  const draft = {
+    kind: 'rf-internal-backup-root' as const,
+    formatVersion: BACKUP_FORMAT_VERSION,
+    schemaRelease: env.BACKUP_SCHEMA_RELEASE ?? 'dev',
+    installationId: env.BACKUP_INSTALLATION_ID ?? 'rf-dev',
+    snapshot: { sequence: lease.snapshotSeq, at: row.startedAt },
+    tables: [...accumulator.tables].sort((a, b) => (a.table < b.table ? -1 : a.table > b.table ? 1 : 0)),
+    fields: accumulator.fields,
+    files: accumulator.files,
+    counts,
+    trust: { custodians: descriptors.map((descriptor) => ({ keyId: descriptor.keyId, fingerprint: descriptor.fingerprint })) },
+  };
+  const manifest: RootManifest = { ...draft, trust: { ...draft.trust, manifestFingerprint: rootDigest({ ...draft, trust: { ...draft.trust, manifestFingerprint: '' } }) } };
+  const manifestDigest = manifest.trust.manifestFingerprint;
+
+  // Encrypt the serialized manifest body with the 58.1 streaming AEAD under the fresh data key, binding the manifest
+  // digest as associated data (R36.13). The wrapped key envelopes travel with the package; no plaintext key is stored.
+  const header = createHeader(manifestDigest);
+  const manifestBytes = serializeManifest(manifest);
+  const segments: EncryptedSegment[] = [];
+  async function* source(): AsyncGenerator<Uint8Array> { yield manifestBytes; }
+  for await (const segment of encodeBody(source(), dataKey.raw, header)) segments.push(segment);
+  dataKey.raw.fill(0);
+
+  const prefix = bucketKeyOf(backupPrefix(id));
+  // The encrypted package: the authenticated header, the ciphertext segments, the wrapped key envelopes, and the clear
+  // root manifest fingerprint the out-of-band attestation compares against (never the plaintext key, R36.13).
+  const encodeBytes = (bytes: Uint8Array): string => Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+  const packageHeader = {
+    formatVersion: BACKUP_FORMAT_VERSION, segmentBytes: header.segmentBytes,
+    salt: encodeBytes(header.salt), noncePrefix: encodeBytes(header.noncePrefix), manifestDigest,
+    custodians: envelopes.map((envelope) => ({ custodianId: envelope.custodianId, generation: envelope.generation, nonce: encodeBytes(envelope.nonce), wrapped: encodeBytes(envelope.wrapped) })),
+  };
+  await env.RF_PRIVATE_BUCKET.put(`${prefix}/header.json`, JSON.stringify(packageHeader), { httpMetadata: { contentType: 'application/json' } });
+  await env.RF_PRIVATE_BUCKET.put(`${prefix}/body.enc`, concatSegments(segments), { httpMetadata: { contentType: 'application/octet-stream' } });
+  // The root manifest digest (fingerprint) is the out-of-band attested value; store it clear so a reader confirms the
+  // package without the key. The manifest itself is only inside the encrypted body.
+  await env.RF_PRIVATE_BUCKET.put(`${prefix}/manifest-fingerprint.txt`, manifestDigest, { httpMetadata: { contentType: 'text/plain; charset=utf-8' } });
+
+  // Verify every sealed element is present with the recorded size/hash, and report every missing/mismatched one
+  // (R36.6). Each file manifest entry's stored copy is re-read; a table body part's recorded digest is re-hashed.
+  const misses = await verifyPackage(env, id, accumulator);
+  const complete = !cursor.incomplete && misses.length === 0;
+
+  // Group every package file into volume manifests of at most 900 members for rf-dl (R36.2, task 38.3).
+  const packagePaths = ['header.json', 'body.enc', 'manifest-fingerprint.txt', ...accumulator.files.map((file) => `files/${file.id}`)];
+  const volumes = volumeManifests(packagePaths, (path) => `${prefix}/${path}`);
+  const volumeKeys: string[] = [];
+  for (let index = 0; index < volumes.length; index++) {
+    const key = `${prefix}/volumes/${index}.json`;
+    await env.RF_PRIVATE_BUCKET.put(key, JSON.stringify(volumes[index]), { customMetadata: { rfVolume: '1' }, httpMetadata: { contentType: 'application/json' } });
+    volumeKeys.push(key);
+  }
+
+  return finish(env, id, {
+    incomplete: !complete,
+    reason: cursor.reason,
+    misses,
+    volumes: volumeKeys,
+    manifestFingerprint: manifestDigest,
+    custodians: descriptors.map((descriptor) => descriptor.keyId),
+  }, now);
+}
+
+/**
+ * Frame the encrypted segments into one body blob: per segment, a 4-byte big-endian index, a 1-byte final flag, a
+ * 4-byte big-endian length, then the ciphertext. {@link parseSegments} reverses it so the restore (task 38.5) decodes
+ * the stream through the 58.1 codec with each segment's index/final intact.
+ */
+function concatSegments(segments: readonly EncryptedSegment[]): Uint8Array {
+  const total = segments.reduce((bytes, segment) => bytes + 9 + segment.body.length, 0);
+  const out = new Uint8Array(total);
+  const view = new DataView(out.buffer);
+  let at = 0;
+  for (const segment of segments) {
+    view.setUint32(at, segment.index, false); at += 4;
+    out[at] = segment.final ? 1 : 0; at += 1;
+    view.setUint32(at, segment.body.length, false); at += 4;
+    out.set(segment.body, at); at += segment.body.length;
+  }
+  return out;
+}
+
+/** Parse the framed body blob back into encrypted segments (the inverse of {@link concatSegments}), for the restore and verification. */
+export function parseSegments(blob: Uint8Array): EncryptedSegment[] {
+  const segments: EncryptedSegment[] = [];
+  const view = new DataView(blob.buffer, blob.byteOffset, blob.byteLength);
+  let at = 0;
+  while (at < blob.length) {
+    const index = view.getUint32(at, false); at += 4;
+    const final = blob[at] === 1; at += 1;
+    const length = view.getUint32(at, false); at += 4;
+    segments.push({ index, final, body: blob.subarray(at, at + length) });
+    at += length;
+  }
+  return segments;
+}
+
+/** A sealed element the package is missing or whose stored bytes mismatch the manifest (R36.6). */
+interface PackageMiss { readonly element: string; readonly reason: 'missing' | 'size' | 'checksum' }
+
+/** Re-read every sealed file and table body part and compare size/hash with the accumulator (R36.6). */
+async function verifyPackage(env: ApiEnv['Bindings'], id: string, accumulator: Accumulator): Promise<PackageMiss[]> {
+  const prefix = bucketKeyOf(backupPrefix(id));
+  const misses: PackageMiss[] = [];
+  for (const file of accumulator.files) {
+    const object = await env.RF_PRIVATE_BUCKET.get(`${prefix}/files/${file.id}`);
+    if (object === null) { misses.push({ element: `file:${file.id}`, reason: 'missing' }); continue; }
+    const bytes = new Uint8Array(await object.arrayBuffer());
+    if (bytes.byteLength !== file.bytes) { misses.push({ element: `file:${file.id}`, reason: 'size' }); continue; }
+    if ((await sha256Hex(bytes)) !== file.sha256) misses.push({ element: `file:${file.id}`, reason: 'checksum' });
+  }
+  for (const table of accumulator.tables) {
+    const object = await env.RF_PRIVATE_BUCKET.get(`${prefix}/body/${table.table}.jsonl`);
+    const bytes = object === null ? new Uint8Array(0) : new Uint8Array(await object.arrayBuffer());
+    if (object === null && table.rows > 0) { misses.push({ element: `table:${table.table}`, reason: 'missing' }); continue; }
+    if ((await sha256Hex(bytes)) !== table.sha256) misses.push({ element: `table:${table.table}`, reason: 'checksum' });
+  }
+  return misses;
+}
+
+/** Everything the finalize write records. */
+interface FinishResult {
+  readonly incomplete: boolean;
+  readonly reason: string | null;
+  readonly misses?: readonly PackageMiss[];
+  readonly volumes?: readonly string[];
+  readonly manifestFingerprint?: string;
+  readonly custodians?: readonly string[];
+}
+
+/**
+ * Mark the backup complete or incomplete and record the volumes, the missing/mismatched elements, the manifest
+ * fingerprint, the configured custodians, and the 7-day staging expiry (R36.3, R36.6). A REQUESTED staging package
+ * expires 7 days after it started; an incomplete one is kept the same 7 days (R36.3). Bookkeeping only, so exempt from
+ * the research freeze.
+ */
+async function finish(env: ApiEnv['Bindings'], id: string, result: FinishResult, now: Timestamp): Promise<SliceResult> {
+  const row = await readBackupRow(env, id);
+  const expiresAt = new Date(Date.parse(row.startedAt) + 7 * 24 * 60 * 60 * 1000).toISOString();
+  const incompleteReport = result.incomplete
+    ? { reason: result.reason, misses: result.misses ?? [] }
+    : null;
+  await new GuardedBatch(env.RF_CORE, { id: null, now }, { ignoreFreeze: true })
+    .update(exportPackages, {
+      state: result.incomplete ? 'incomplete' : 'complete',
+      finishedAt: now,
+      volumes: [...(result.volumes ?? [])],
+      incomplete: incompleteReport as unknown as Record<string, unknown> | null,
+      staleness: result.manifestFingerprint ? ({ manifestFingerprint: result.manifestFingerprint, custodians: [...(result.custodians ?? [])] } as unknown as Record<string, unknown>) : null,
+      expiresAt,
+    }, exportsIdEq(id))
+    .commit();
+  return { cursor: { done: true } as unknown as JsonValue, progress: { rows: 0, files: result.volumes?.length ?? 0 }, done: true, outcome: result.incomplete ? 'incomplete' : 'complete' };
+}
+
+/** `id = ?` for the single-row backup update, reusing drizzle's `exports` table. */
+const exportsIdEq = (id: string): SQL => sql`id = ${id}`;
+
+JOB_HANDLERS.internal_backup = backupJob;

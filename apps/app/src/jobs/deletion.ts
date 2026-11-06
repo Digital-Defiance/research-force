@@ -7,6 +7,7 @@ import { OPERATIONS } from '@researchforce/domain/settings';
 import type { ItemKind, ULID } from '@researchforce/domain/types';
 import type { ApiEnv } from '../api/app';
 import { JOB_HANDLERS } from '../do/jobs';
+import { invalidateLiveSnapshot, invalidateSnapshotForDeletion } from '../backup/freeze';
 import { removeQuestionEntries } from '../records/kinds/question';
 import type { JobHandler, JsonValue } from '../do/jobs';
 
@@ -102,12 +103,21 @@ export const deletionJob: JobHandler = {
     if (cursor.phase === 'files') {
       const rows = (await db.prepare(`SELECT u.id, a.r2_key AS r2Key FROM units u JOIN attachments a ON a.unit_id = u.id
         WHERE ${where} AND u.id > ?2 ORDER BY u.id LIMIT ?3`).bind(key, cursor.after, SLICE_ROWS).all<{ id: string; r2Key: string }>()).results;
-      if (rows.length > 0) await env.RF_PRIVATE_BUCKET.delete(rows.map((row) => row.r2Key));
+      if (rows.length > 0) {
+        // A privacy/permanent deletion WINS over a backup file pin (R36.14): invalidate any in-progress snapshot that
+        // pinned these sources so it is excluded from recovery coverage, then destroy the files rather than blocking.
+        const keys = rows.map((row) => row.r2Key);
+        await invalidateSnapshotForDeletion(db, keys, `permanent deletion of pinned files (job ${job.id})`, now);
+        await env.RF_PRIVATE_BUCKET.delete(keys);
+      }
       const files = cursor.files + rows.length;
       return rows.length < SLICE_ROWS ? step(cursor, { phase: 'units', after: '', files }) : step(cursor, { after: rows.at(-1)!.id, files });
     }
 
     if (cursor.phase === 'units') {
+      // Removing snapshotted research rows while a backup holds a live lease would make that snapshot inconsistent; a
+      // privacy/permanent deletion WINS, so invalidate the snapshot (excluding it from recovery) and proceed (R36.14).
+      await invalidateLiveSnapshot(db, `permanent deletion of research rows (job ${job.id})`, now);
       const ids = (await db.prepare(`SELECT u.id FROM units u WHERE ${where} ORDER BY u.id LIMIT ?2`).bind(key, SLICE_ROWS).all<{ id: string }>()).results.map((row) => row.id);
       const last = ids.length < SLICE_ROWS;
       // The request already removed the Item's own unit row, but not its kind rows; a Reply goes last, with its files.

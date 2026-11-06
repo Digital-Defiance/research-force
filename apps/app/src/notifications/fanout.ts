@@ -241,6 +241,34 @@ export function notifyAdministratorsReminder(batch: GuardedBatch, alertKey: stri
 }
 
 /**
+ * A Reminder event for every Administrator about an Outside_Submission that is still undecided at a Response_Target
+ * threshold, caused by no Member (R46.25). The event carries the Outside_Submission id, so opening the Notification
+ * shows it in the Moderation_Queue, and a `detail` that states its Submission_Type and the days since receipt. The
+ * `alertKey` names the (submission, threshold) pair so repeated hourly sweeps never make the same Reminder twice.
+ */
+export function notifyAdministratorsSubmissionReminder(
+  batch: GuardedBatch, outsideSubmissionId: string, alertKey: string, detail: Readonly<Record<string, unknown>>,
+): GuardedBatch {
+  return insertEvents(batch, {
+    type: 'reminder', outsideSubmissionId, alertKey, detail, includeActor: true, anonymous: true,
+    recipients: sql`SELECT id FROM members WHERE role_id = ${ROLE_IDS.administrator}`,
+  });
+}
+
+/**
+ * A Reminder event for every Administrator that lists the Outside_Submissions whose Submitter_Contact became due, or
+ * is overdue, for a Contact_Review, caused by no Member (R32.19, R32.21). One Reminder per Administrator carries the
+ * list in its `detail` and opens the Moderation_Queue's "due for contact review" list. The `alertKey` names the day,
+ * so repeated hourly sweeps within a day make the daily Reminder once; the next day's cycle uses a new key.
+ */
+export function notifyAdministratorsContactReviewReminder(batch: GuardedBatch, alertKey: string, detail: Readonly<Record<string, unknown>>): GuardedBatch {
+  return insertEvents(batch, {
+    type: 'reminder', alertKey, detail, includeActor: true, anonymous: true,
+    recipients: sql`SELECT id FROM members WHERE role_id = ${ROLE_IDS.administrator}`,
+  });
+}
+
+/**
  * Collect the events this batch created whose in-app preference is On into Notifications: all events of one Submission for
  * one recipient make one Notification, reusing and marking unread the one an earlier batch of the Submission made; any other
  * event is a Notification of its own (R19.5, R19.6).

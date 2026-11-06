@@ -3,6 +3,7 @@ import type { Context } from 'hono';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { findings, researchItems, units } from '@researchforce/db/schema/core';
+import type { AiProvenance } from '@researchforce/db/schema/core';
 import { compareFields } from '@researchforce/domain/compare';
 import { CREATION, inSaveOrder, sectionIds, stateAt } from '@researchforce/domain/history';
 import type { Fields, HistoryPoint, HistoryState, SectionValue, StoredRevision } from '@researchforce/domain/history';
@@ -39,6 +40,8 @@ export interface HistoryRevision extends StoredRevision {
   readonly at: Timestamp;
   readonly reason: string | null;
   readonly restoredPoint: string | null;
+  /** The AI provenance of the fields this Revision recorded a draft for, shown with it in history (R44.6). */
+  readonly ai: AiProvenance | null;
 }
 /** A Dissent_Note's place in the item history: its creation and each of its Revisions, oldest first (R42.10). */
 export interface DissentNoteHistory {
@@ -56,7 +59,8 @@ export interface ItemHistory {
   readonly current: HistoryState;
   /** Oldest first. */
   readonly revisions: readonly HistoryRevision[];
-  readonly creation: { readonly memberId: ULID; readonly displayName: string | null; readonly at: Timestamp };
+  /** The creation, with the AI provenance of each field the Member placed an AI_Draft in at creation (R44.6). */
+  readonly creation: { readonly memberId: ULID; readonly displayName: string | null; readonly at: Timestamp; readonly ai: AiProvenance | null };
   /** Display names of the Members on any Access_List the history shows. */
   readonly names: ReadonlyMap<ULID, string | null>;
   /** The creation and Revisions of each Dissent_Note on the Item's Log_Summary, oldest first by attachment (R42.10). */
@@ -81,10 +85,10 @@ export function itemFields(item: LoadedItem): Fields {
 export async function loadHistory(c: Context<ApiEnv>, item: LoadedItem): Promise<ItemHistory> {
   const db = c.env.RF_CORE;
   const id = item.base.id;
-  const [sectionRows, revisionRows, creatorRows, nameRows, dissentUnitRows] = await c.get('accountant').track(db.batch([
+  const [sectionRows, revisionRows, creatorRows, nameRows, dissentUnitRows, createdAiRows] = await c.get('accountant').track(db.batch([
     db.prepare(`SELECT id, disclosure_level AS disclosureLevel, classification_state AS classificationState, disclosure_line AS disclosureLine
       FROM units WHERE root_id = ?1 AND unit_type = 'entry_section'`).bind(id),
-    db.prepare(`SELECT r.id, r.seq, r.target_id AS targetId, r.kind, COALESCE(fs.prev_json,r.prev) AS prev, EXISTS(SELECT 1 FROM field_references f WHERE f.holder_type='revision' AND f.holder_id=r.id) AS hasFields, r.member_id AS memberId, p.display_name AS displayName, r.at, r.reason, r.restored_point AS restoredPoint
+    db.prepare(`SELECT r.id, r.seq, r.target_id AS targetId, r.kind, COALESCE(fs.prev_json,r.prev) AS prev, EXISTS(SELECT 1 FROM field_references f WHERE f.holder_type='revision' AND f.holder_id=r.id) AS hasFields, r.member_id AS memberId, p.display_name AS displayName, r.at, r.reason, r.restored_point AS restoredPoint, r.ai
       FROM revisions r LEFT JOIN profiles p ON p.member_id = r.member_id LEFT JOIN revision_field_snapshots fs ON fs.revision_id=r.id
       WHERE r.target_type = 'unit' AND (r.target_id = ?1 OR r.root_id = ?1)`).bind(id),
     db.prepare('SELECT s.member_id AS memberId, p.display_name AS displayName FROM submissions s LEFT JOIN profiles p ON p.member_id = s.member_id WHERE s.id = ?1').bind(item.base.submissionId),
@@ -95,15 +99,17 @@ export async function loadHistory(c: Context<ApiEnv>, item: LoadedItem): Promise
     db.prepare(`SELECT u.id, u.created_at AS createdAt, u.withdrawn_at AS withdrawnAt, dn.author_id AS authorId, ap.display_name AS authorName, dn.text, dn.text_spans AS spans
       FROM units u LEFT JOIN dissent_notes dn ON dn.unit_id = u.id LEFT JOIN profiles ap ON ap.member_id = dn.author_id
       WHERE u.root_id = ?1 AND u.unit_type = 'dissent_note' ORDER BY u.id`).bind(id),
+    // The AI provenance recorded on the Item's creation, shown with the creation in history (R44.6).
+    db.prepare('SELECT created_ai AS createdAi FROM units WHERE id = ?1').bind(id),
   ]));
   const sections = Object.fromEntries(rowsOf<{ id: ULID; disclosureLevel: Level; classificationState: string | null; disclosureLine: string | null }>(sectionRows).map((row) => [
     row.id, defined({ disclosureLevel: row.disclosureLevel, classificationState: row.classificationState, disclosureLine: row.disclosureLine === null ? null : JSON.parse(row.disclosureLine) as DisclosureLine }),
   ]));
   const current: HistoryState = { id, item: itemFields(item), sections };
   const all: HistoryRevision[] = [];
-  for (const { hasFields, ...row } of rowsOf<Omit<HistoryRevision, 'prev'> & { prev: string; hasFields: number }>(revisionRows)) {
+  for (const { hasFields, ai, ...row } of rowsOf<Omit<HistoryRevision, 'prev' | 'ai'> & { prev: string; hasFields: number; ai: string | null }>(revisionRows)) {
     const previous = JSON.parse(row.prev) as Record<string, unknown>;
-    all.push({ ...row, prev: hasFields ? await readRevisionSnapshot(db, row.id, previous) : previous });
+    all.push({ ...row, prev: hasFields ? await readRevisionSnapshot(db, row.id, previous) : previous, ai: ai === null ? null : JSON.parse(ai) as AiProvenance });
   }
   const covered = sectionIds(current, all);
   const revisions = inSaveOrder(all.filter((revision) => revision.targetId === id || covered.has(revision.targetId)));
@@ -123,8 +129,10 @@ export async function loadHistory(c: Context<ApiEnv>, item: LoadedItem): Promise
       id: revision.id, kind: revision.kind as RevisionKind, memberId: revision.memberId, displayName: revision.displayName, at: revision.at, reason: revision.reason,
     })),
   }));
+  const createdAiRaw = rowsOf<{ createdAi: string | null }>(createdAiRows)[0]?.createdAi ?? null;
+  const createdAi = createdAiRaw === null ? null : JSON.parse(createdAiRaw) as AiProvenance;
   return {
-    current, revisions, creation: { memberId: creator?.memberId ?? item.base.ownerId, displayName: creator?.displayName ?? null, at: item.base.createdAt },
+    current, revisions, creation: { memberId: creator?.memberId ?? item.base.ownerId, displayName: creator?.displayName ?? null, at: item.base.createdAt, ai: createdAi },
     names: new Map([...rowsOf<NamedMember>(nameRows), ...item.accessMembers].map((member) => [member.id, member.displayName])),
     dissentNotes,
   };
@@ -145,6 +153,7 @@ export function historyResponse(history: ItemHistory, point?: HistoryPoint) {
     level: fields['accessLevel'] as AccessLevel,
     members: ((fields['accessMembers'] ?? []) as ULID[]).map((id) => ({ id, displayName: history.names.get(id) ?? null })),
   });
+  const { ai: creationAi, ...creationEntry } = history.creation;
   let after = accessPoint(history.current.item);
   const entries = [...history.revisions].reverse().map((revision) => {
     const access = revision.kind === 'access_change' && revision.targetId === history.current.id ? { before: accessPoint(revision.prev), after } : undefined;
@@ -153,10 +162,12 @@ export function historyResponse(history: ItemHistory, point?: HistoryPoint) {
       id: revision.id, kind: revision.kind as RevisionKind, memberId: revision.memberId, displayName: revision.displayName, at: revision.at, reason: revision.reason,
       restoredPoint: revision.restoredPoint, sectionId: revision.targetId === history.current.id ? null : revision.targetId, fields: Object.keys(revision.prev),
       ...(access === undefined ? {} : { access }),
+      // The AI provenance of the fields this Revision recorded a draft for, so a reader sees the model and whether the saved text differs (R44.6).
+      ...(revision.ai === null ? {} : { ai: revision.ai }),
     };
   });
   return {
-    entries: [...entries, { id: CREATION, kind: CREATION, ...history.creation, reason: null, restoredPoint: null, sectionId: null, fields: [] }],
+    entries: [...entries, { id: CREATION, kind: CREATION, ...creationEntry, reason: null, restoredPoint: null, sectionId: null, fields: [], ...(creationAi === null ? {} : { ai: creationAi }) }],
     // Each Dissent_Note on the Log_Summary, with its creation and Revisions, oldest first by attachment (R42.10).
     dissentNotes: history.dissentNotes,
     ...(point === undefined ? {} : { point, state: pointState(history, point) }),

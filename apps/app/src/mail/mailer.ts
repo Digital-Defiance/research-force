@@ -5,7 +5,9 @@ import type { Timestamp, ULID } from '@researchforce/domain/types';
 import { notifySystemAlert } from '../notifications/fanout';
 import { closeDueBatches } from './batching';
 import { composeBatch, timeIn } from './compose';
+import { composeConsentConfirmationFor, composeConsentEmailFor } from './consent';
 import { composeInvitation } from './invitation';
+import { composeOutsideEmail } from './outside';
 import type { EmailMessage, EmailProvider } from './provider';
 
 const MINUTE = 60_000;
@@ -178,7 +180,9 @@ async function attempt(deps: MailerDeps, item: Queued, nowMs: number): Promise<v
   const { db } = deps;
   const now = iso(nowMs);
   const heldMs = item.held;
-  const composed = item.kind === 'batch' ? (await composeBatch(db, deps.origin, item.id))?.message ?? null : await composeInvitation(db, deps.origin, item.id);
+  const composed = item.kind === 'batch'
+    ? (await composeBatch(db, deps.origin, item.id))?.message ?? null
+    : (await composeInvitation(db, deps.origin, item.id)) ?? (await composeOutsideEmail(db, item.id)) ?? (await composeConsentEmailFor(db, item.id)) ?? (await composeConsentConfirmationFor(db, item.id));
   if (composed === null) {
     // The recipient is no longer an active Member, or nothing is left that they can read: the email is not sent (R20.8, R47.5).
     await mark(deps, item, now, { state: 'failed', failedAt: now, heldMs });
