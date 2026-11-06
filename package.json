@@ -17,6 +17,10 @@
     "lint": "oxlint && stylelint '**/*.css' && node scripts/check-boundaries.mjs && node --import tsx tools/lint-copy.ts",
     "typecheck": "node scripts/check-boundaries.mjs && tsc -b",
     "test": "vitest --run",
+    "test:presentation": "playwright test --config playwright.config.ts",
+    "test:security": "playwright test --config playwright.security.config.ts",
+    "test:staging": "playwright test --config playwright.staging.config.ts",
+    "lighthouse": "node scripts/lighthouse.mjs",
     "build": "npm run build --workspace @researchforce/app && npm run build --workspace @researchforce/site-shell",
     "ci": "npm run lint && npm run check:specs && npm run release:check && npm run typecheck && npm test",
     "check:workers": "node scripts/check-workers.mjs",
@@ -28,6 +32,7 @@
     "design:css": "node --import tsx tools/generate-design-css.ts",
     "check:specs": "node --import tsx tools/check-specs.ts",
     "specs:write": "node --import tsx tools/check-specs.ts --write",
+    "check:launch": "node --import tsx tools/check-launch.ts",
     "dev": "node --import tsx scripts/dev.ts",
     "dev:reset": "node --import tsx scripts/dev.ts --reset --seed-only",
     "dev:seed": "node --import tsx tools/dev-seed.ts",
@@ -46,6 +51,7 @@
     "fields:migrate": "node --import tsx tools/migrate-fields.ts"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
     "@capsizecss/metrics": "4.4.0",
     "@cloudflare/vitest-pool-workers": "npm:@cloudflare/vitest-plugin@1.4.8",
     "@cloudflare/workers-types": "5.20261027.1",
@@ -60,6 +66,7 @@
     "@fontsource-variable/stix-two-text": "5.3.0",
     "@fontsource/noto-sans-coptic": "5.3.0",
     "@fontsource/stix-two-math": "5.3.0",
+    "@lhci/cli": "0.16.0",
     "@noble/hashes": "2.4.0",
     "@playwright/test": "^1.56.1",
     "@testing-library/dom": "10.4.2",
@@ -82,7 +89,7 @@
     "pdfjs-dist": "6.4.299",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "react-router": "^7.9.4",
+    "react-router": "8.5.1",
     "stylelint": "^16.25.0",
     "subset-font": "2.9.0",
     "tsx": "4.23.15",
@@ -96,5 +103,16 @@
     "@esbuild-kit/core-utils": {
       "esbuild": "0.25.12"
     }
+  },
+  "dependencies": {
+    "@digitaldefiance/express-suite-react-components": "5.0.6",
+    "@emotion/react": "11.14.0",
+    "@emotion/styled": "11.14.1",
+    "@mui/icons-material": "7.3.11",
+    "@mui/material": "7.3.11",
+    "@mui/system": "7.3.11",
+    "@mui/x-date-pickers": "8.29.5",
+    "events": "3.3.0",
+    "validator": "13.15.35"
   }
 }
