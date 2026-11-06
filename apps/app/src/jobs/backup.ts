@@ -60,8 +60,10 @@ const PAGE_ROWS = OPERATIONS.jobSliceRows;
  * heartbeat interval so the lease heartbeated at the start of the slice stays live, and far under the 120-second window.
  */
 export const SNAPSHOT_SLICE_BUDGET_MS = 5_000;
-/** The most table pages one snapshot slice reads, bounding its subrequests (each page is ~8 D1/R2 calls). */
-export const SNAPSHOT_SLICE_MAX_STEPS = 60;
+/** How many tables one batched group reads (two D1 batches of this many statements, then this many parallel R2 writes). */
+export const SNAPSHOT_GROUP_TABLES = 25;
+/** The most groups or continuation pages one snapshot slice processes, bounding its subrequests. */
+export const SNAPSHOT_SLICE_MAX_STEPS = 10;
 /** How many file copies one `files` slice makes, sized by the external-subrequest ceiling. */
 const SLICE_FILES = OPERATIONS.maxExternalSubrequests;
 
@@ -187,6 +189,27 @@ async function snapshotPage(
   return { rows: result.results.length, lines: lines === '' ? '' : `${lines}\n` };
 }
 
+/**
+ * Read the FIRST page of each table in a group with two batched D1 round trips: every `PRAGMA table_info` in one batch,
+ * then every first-page SELECT in a second. Each result is canonicalised exactly as {@link snapshotPage} does, so a
+ * table read here produces the same body part bytes and digest as the per-page path. The freeze holds writers off, so
+ * reading the group's tables in one batch observes the same snapshot as reading them one by one.
+ */
+async function snapshotFirstPages(env: ApiEnv['Bindings'], group: readonly BackupTableEntry[]): Promise<{ readonly rows: number; readonly lines: string }[]> {
+  if (group.length === 0) return [];
+  const infos = await env.RF_CORE.batch<{ name: string }>(group.map((entry) => env.RF_CORE.prepare(`PRAGMA table_info(${entry.table})`)));
+  const selects = group.map((entry, index) => {
+    const excluded = new Set(entry.excludeColumns);
+    const columns = infos[index]!.results.map((row) => row.name).filter((name) => !excluded.has(name));
+    const select = columns.map((name) => `"${name}"`).join(', ');
+    return env.RF_CORE.prepare(`SELECT ${select} FROM ${entry.table} ORDER BY rowid LIMIT ?1 OFFSET 0`).bind(PAGE_ROWS);
+  });
+  const results = await env.RF_CORE.batch<Record<string, unknown>>(selects);
+  return results.map((result) => {
+    const lines = result.results.map((row) => stableJson(row)).join('\n');
+    return { rows: result.results.length, lines: lines === '' ? '' : `${lines}\n` };
+  });
+}
 /** Append JSONL bytes to a table's body part (read-modify-write; a resumed slice overwrites the same object with the same content). */
 async function appendBodyPart(env: ApiEnv['Bindings'], id: string, table: string, offset: number, lines: string): Promise<void> {
   const key = `${bucketKeyOf(backupPrefix(id))}/body/${table}.jsonl`;
@@ -270,37 +293,73 @@ export const backupJob: JobHandler = {
         if (error instanceof FreezeLostError) return abort(env, id, cursor, `write-freeze lease lost during snapshot (${error.reason})`, now);
         throw error;
       }
-      // Page as many tables as fit in this slice's budget. One page per slice spent most of the 120-second window on
-      // per-slice scheduling and round trips (110 tables at ~1 s each overran it on the first production backup), so a
-      // slice now keeps going until its wall-clock or step budget is used. The slice stays well inside the 10-second
-      // heartbeat interval, so the lease heartbeated above remains live for the whole loop.
+      // Page as many tables as fit in this slice's budget, with as few round trips as possible. The first production
+      // backups overran the 120-second window at ~1.7 s per table: each table made two D1 queries and five R2 calls
+      // (read-modify-write of its part, re-read to hash, read-modify-write of the accumulator). Now a group of tables
+      // costs one batched PRAGMA, one batched page read, and parallel part writes; digests are taken from the bytes in
+      // memory; the accumulator is written once per slice. A table whose first page is full keeps the per-page path.
+      // The slice stays well inside the 10-second heartbeat interval, so the lease heartbeated above stays live.
       const sliceStarted = Date.now();
       let current = cursor;
+      const sealedTables: TableEntry[] = [];
+      const flushSealed = async (): Promise<void> => {
+        if (sealedTables.length === 0) return;
+        const accumulator = await readAccumulator(env, id);
+        const names = new Set(sealedTables.map((t) => t.table));
+        await writeAccumulator(env, id, { ...accumulator, tables: [...accumulator.tables.filter((t) => !names.has(t.table)), ...sealedTables] });
+        sealedTables.length = 0;
+      };
       for (let steps = 1; ; steps++) {
         const entry = BACKUP_TABLES[current.tableIndex];
         if (entry === undefined) {
           // Every table paged: record the field entries, then advance to the file copies under the same lease.
+          await flushSealed();
           const accumulator = await readAccumulator(env, id);
           const fields = await readFieldEntries(env);
           const pendingFiles = await readPendingFiles(env);
           await writeAccumulator(env, id, { ...accumulator, fields, pendingFiles });
           return step(current, { phase: 'files', fileIndex: 0 });
         }
-        const columns = await backupColumns(env, entry);
-        const page = await snapshotPage(env, entry, columns, current.rowOffset);
-        await appendBodyPart(env, id, entry.table, current.rowOffset, page.lines);
-        const rowsRead = current.rowsRead + page.rows;
-        if (page.rows < PAGE_ROWS) {
-          // The table is fully read: seal its count and digest, then move to the next table.
-          const accumulator = await readAccumulator(env, id);
-          const rows = current.rowOffset + page.rows;
-          const sealed = await tableEntry(env, id, entry.table, rows);
-          await writeAccumulator(env, id, { ...accumulator, tables: [...accumulator.tables.filter((t) => t.table !== entry.table), sealed] });
-          current = { ...current, tableIndex: current.tableIndex + 1, rowOffset: 0, rowsRead };
+        if (current.rowOffset > 0) {
+          // A continuing multi-page table: the original read-modify-write page path.
+          const columns = await backupColumns(env, entry);
+          const page = await snapshotPage(env, entry, columns, current.rowOffset);
+          await appendBodyPart(env, id, entry.table, current.rowOffset, page.lines);
+          const rowsRead = current.rowsRead + page.rows;
+          if (page.rows < PAGE_ROWS) {
+            sealedTables.push(await tableEntry(env, id, entry.table, current.rowOffset + page.rows));
+            current = { ...current, tableIndex: current.tableIndex + 1, rowOffset: 0, rowsRead };
+          } else {
+            current = { ...current, rowOffset: current.rowOffset + page.rows, rowsRead };
+          }
         } else {
-          current = { ...current, rowOffset: current.rowOffset + page.rows, rowsRead };
+          // A group of tables starting at their first page, read in two batched D1 round trips.
+          const group = BACKUP_TABLES.slice(current.tableIndex, current.tableIndex + SNAPSHOT_GROUP_TABLES);
+          const pages = await snapshotFirstPages(env, group);
+          const writes: Promise<unknown>[] = [];
+          let rowsRead = current.rowsRead;
+          let tableIndex = current.tableIndex;
+          let rowOffset = 0;
+          for (const [index, page] of pages.entries()) {
+            const table = group[index]!.table;
+            const bytes = new TextEncoder().encode(page.lines);
+            writes.push(env.RF_PRIVATE_BUCKET.put(`${bucketKeyOf(backupPrefix(id))}/body/${table}.jsonl`, bytes, { httpMetadata: { contentType: 'application/x-ndjson' } }));
+            rowsRead += page.rows;
+            if (page.rows >= PAGE_ROWS) {
+              // A full first page: the table continues on the per-page path from the next offset; stop this group here.
+              rowOffset = page.rows;
+              break;
+            }
+            sealedTables.push({ table, rows: page.rows, sha256: await sha256Hex(bytes) });
+            tableIndex += 1;
+          }
+          await Promise.all(writes);
+          current = { ...current, tableIndex, rowOffset, rowsRead };
         }
-        if (Date.now() - sliceStarted >= SNAPSHOT_SLICE_BUDGET_MS || steps >= SNAPSHOT_SLICE_MAX_STEPS) return step(current, {});
+        if (Date.now() - sliceStarted >= SNAPSHOT_SLICE_BUDGET_MS || steps >= SNAPSHOT_SLICE_MAX_STEPS) {
+          await flushSealed();
+          return step(current, {});
+        }
       }
     }
 
