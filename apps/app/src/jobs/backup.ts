@@ -55,6 +55,13 @@ export const backupPrefix = (id: string): string => `rf-private/backups/${id}`;
 
 /** How many authoritative rows one snapshot page reads, sized by the operations budget. */
 const PAGE_ROWS = OPERATIONS.jobSliceRows;
+/**
+ * The wall-clock budget one snapshot slice spends paging tables before yielding. Kept well under the 10-second lease
+ * heartbeat interval so the lease heartbeated at the start of the slice stays live, and far under the 120-second window.
+ */
+export const SNAPSHOT_SLICE_BUDGET_MS = 5_000;
+/** The most table pages one snapshot slice reads, bounding its subrequests (each page is ~8 D1/R2 calls). */
+export const SNAPSHOT_SLICE_MAX_STEPS = 60;
 /** How many file copies one `files` slice makes, sized by the external-subrequest ceiling. */
 const SLICE_FILES = OPERATIONS.maxExternalSubrequests;
 
@@ -263,28 +270,38 @@ export const backupJob: JobHandler = {
         if (error instanceof FreezeLostError) return abort(env, id, cursor, `write-freeze lease lost during snapshot (${error.reason})`, now);
         throw error;
       }
-      const entry = BACKUP_TABLES[cursor.tableIndex];
-      if (entry === undefined) {
-        // Every table paged: record the field entries, then advance to the file copies under the same lease.
-        const accumulator = await readAccumulator(env, id);
-        const fields = await readFieldEntries(env);
-        const pendingFiles = await readPendingFiles(env);
-        await writeAccumulator(env, id, { ...accumulator, fields, pendingFiles });
-        return step(cursor, { phase: 'files', fileIndex: 0 });
+      // Page as many tables as fit in this slice's budget. One page per slice spent most of the 120-second window on
+      // per-slice scheduling and round trips (110 tables at ~1 s each overran it on the first production backup), so a
+      // slice now keeps going until its wall-clock or step budget is used. The slice stays well inside the 10-second
+      // heartbeat interval, so the lease heartbeated above remains live for the whole loop.
+      const sliceStarted = Date.now();
+      let current = cursor;
+      for (let steps = 1; ; steps++) {
+        const entry = BACKUP_TABLES[current.tableIndex];
+        if (entry === undefined) {
+          // Every table paged: record the field entries, then advance to the file copies under the same lease.
+          const accumulator = await readAccumulator(env, id);
+          const fields = await readFieldEntries(env);
+          const pendingFiles = await readPendingFiles(env);
+          await writeAccumulator(env, id, { ...accumulator, fields, pendingFiles });
+          return step(current, { phase: 'files', fileIndex: 0 });
+        }
+        const columns = await backupColumns(env, entry);
+        const page = await snapshotPage(env, entry, columns, current.rowOffset);
+        await appendBodyPart(env, id, entry.table, current.rowOffset, page.lines);
+        const rowsRead = current.rowsRead + page.rows;
+        if (page.rows < PAGE_ROWS) {
+          // The table is fully read: seal its count and digest, then move to the next table.
+          const accumulator = await readAccumulator(env, id);
+          const rows = current.rowOffset + page.rows;
+          const sealed = await tableEntry(env, id, entry.table, rows);
+          await writeAccumulator(env, id, { ...accumulator, tables: [...accumulator.tables.filter((t) => t.table !== entry.table), sealed] });
+          current = { ...current, tableIndex: current.tableIndex + 1, rowOffset: 0, rowsRead };
+        } else {
+          current = { ...current, rowOffset: current.rowOffset + page.rows, rowsRead };
+        }
+        if (Date.now() - sliceStarted >= SNAPSHOT_SLICE_BUDGET_MS || steps >= SNAPSHOT_SLICE_MAX_STEPS) return step(current, {});
       }
-      const columns = await backupColumns(env, entry);
-      const page = await snapshotPage(env, entry, columns, cursor.rowOffset);
-      await appendBodyPart(env, id, entry.table, cursor.rowOffset, page.lines);
-      const rowsRead = cursor.rowsRead + page.rows;
-      if (page.rows < PAGE_ROWS) {
-        // The table is fully read: seal its count and digest, then move to the next table.
-        const accumulator = await readAccumulator(env, id);
-        const rows = cursor.rowOffset + page.rows;
-        const sealed = await tableEntry(env, id, entry.table, rows);
-        await writeAccumulator(env, id, { ...accumulator, tables: [...accumulator.tables.filter((t) => t.table !== entry.table), sealed] });
-        return step(cursor, { tableIndex: cursor.tableIndex + 1, rowOffset: 0, rowsRead });
-      }
-      return step(cursor, { rowOffset: cursor.rowOffset + page.rows, rowsRead });
     }
 
     // ── files: pin, copy, and release each immutable Attachment file under the lease (R36.14) ──

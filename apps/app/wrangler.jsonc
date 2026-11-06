@@ -17,8 +17,6 @@
     "R2_ACCOUNT_ID": "48ca646fd701c00c0069952c95299dad",
     "PRIVATE_BUCKET_NAME": "rf-private",
     "PUBLIC_BUCKET_NAME": "rf-public",
-    // Independent backup copies are carried by hand to the operator's own drive (offline destination).
-    // Operator approval of the independent-backup storage budget (local drive: no storage cost).
     "BACKUP_COPY_BUDGET_APPROVED": "true",
     "BACKUP_COPY_DESTINATION": "{\"kind\":\"offline\",\"label\":\"operator-local-drive\"}",
     "CONTENT_LICENCE_NAME": "CC BY 4.0",
@@ -111,8 +109,6 @@
   "env": {
     "staging": {
       "name": "rf-app-staging",
-      // Cloudflare allows 5 Cron Triggers per account; production needs them, so staging has none.
-      // Run background work on staging by hand when testing.
       "triggers": { "crons": [] },
       "workers_dev": false,
       "preview_urls": false,
