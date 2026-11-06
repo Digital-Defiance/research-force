@@ -108,7 +108,7 @@ export class Containment implements OpsContainment, OpsBackupAlert {
 
   constructor(
     readonly config: ContainmentConfig,
-    fetcher: typeof fetch = fetch,
+    fetcher: typeof fetch = (input, init) => fetch(input, init),
     status: ContainmentStatus = { containmentActive: false, authorizedGeneration: null },
   ) {
     this.#fetch = fetcher;

@@ -32,9 +32,9 @@ export class GraphProvider implements EmailProvider {
   #token: { readonly value: string; readonly expiresAt: number } | null = null;
   #key: CryptoKey | null = null;
 
-  constructor(readonly credentials: GraphCredentials, readonly fetcher: typeof fetch = fetch, readonly clock: () => number = Date.now) {}
+  constructor(readonly credentials: GraphCredentials, readonly fetcher: typeof fetch = (input, init) => fetch(input, init), readonly clock: () => number = Date.now) {}
 
-  static fromEnv(env: Env, fetcher: typeof fetch = fetch): GraphProvider | null {
+  static fromEnv(env: Env, fetcher: typeof fetch = (input, init) => fetch(input, init)): GraphProvider | null {
     const { GRAPH_TENANT_ID: tenantId, GRAPH_CLIENT_ID: clientId, GRAPH_CERT_KEY: privateKeyPem, GRAPH_CERT_THUMBPRINT: thumbprint, SENDING_ADDRESS: sendingAddress } = env;
     if (!tenantId || !clientId || !privateKeyPem || !thumbprint || !sendingAddress) return null;
     return new GraphProvider({ tenantId, clientId, privateKeyPem, thumbprint, sendingAddress }, fetcher);

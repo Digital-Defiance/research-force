@@ -17,7 +17,7 @@
  *
  * The tenant initial domain (`<tenant>.onmicrosoft.com`) that the DKIM targets hang off is an
  * operator input confirmed in the Microsoft 365 admin center; it is encoded as a named default
- * (`INITIAL_DOMAIN`) and the operator overrides `records.ts` if the admin center reports different
+ * (`DKIM_TARGET_ZONE`, confirmed from Get-DkimSigningConfig for this tenant) and the operator overrides `records.ts` if the admin center reports different
  * targets. Requirements referenced: 20.22, 20.23.
  */
 
@@ -54,7 +54,7 @@ if (DMARC_RUA_ADDRESS.toLowerCase() === SENDING_ADDRESS.toLowerCase()) {
  * input; the default is a placeholder the operator confirms against the M365 admin center and
  * overrides here if the real targets differ.
  */
-export const INITIAL_DOMAIN = 'researchforce.onmicrosoft.com';
+export const DKIM_TARGET_ZONE = 'teammulein.n-v1.dkim.mail.microsoft';
 
 /** The SPF record, published as a TXT record at the zone apex. */
 export interface SpfTxtRecord {
@@ -117,7 +117,7 @@ function dkim(selector: string): DkimCnameRecord {
     type: 'CNAME',
     selector,
     host: `${selector}._domainkey.${DOMAIN}`,
-    target: `${selector}-${DOMAIN.replaceAll('.', '-')}._domainkey.${INITIAL_DOMAIN}`,
+    target: `${selector}-${DOMAIN.replaceAll('.', '-')}._domainkey.${DKIM_TARGET_ZONE}`,
     dnsOnly: true,
   };
 }

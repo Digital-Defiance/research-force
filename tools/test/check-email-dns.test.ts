@@ -50,7 +50,7 @@ describe('email DNS records data', () => {
       expect(dkim.type).toBe('CNAME');
       expect(dkim.dnsOnly).toBe(true);
       expect(dkim.host).toBe(`${dkim.selector}._domainkey.researchforce.org`);
-      expect(dkim.target).toBe(`${dkim.selector}-researchforce-org._domainkey.researchforce.onmicrosoft.com`);
+      expect(dkim.target).toBe(`${dkim.selector}-researchforce-org._domainkey.teammulein.n-v1.dkim.mail.microsoft`);
     }
   });
 

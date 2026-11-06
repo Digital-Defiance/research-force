@@ -101,31 +101,38 @@
   "env": {
     "staging": {
       "name": "rf-app-staging",
+      // Cloudflare allows 5 Cron Triggers per account; production needs them, so staging has none.
+      // Run background work on staging by hand when testing.
+      "triggers": { "crons": [] },
       "workers_dev": false,
       "preview_urls": false,
       "vars": {
         "WORKSPACE_ORIGIN": "https://staging.researchforce.org",
         "DOWNLOAD_ORIGIN": "https://dl-staging.researchforce.org",
         "PUBLIC_SITE_ORIGIN": "https://staging-public.researchforce.org",
-        "PUBLIC_FILES_ORIGIN": "https://files-staging.researchforce.org"
+        "PUBLIC_FILES_ORIGIN": "https://files-staging.researchforce.org",
+        "R2_ACCOUNT_ID": "48ca646fd701c00c0069952c95299dad",
+        "PRIVATE_BUCKET_NAME": "rf-private-staging",
+        "PUBLIC_BUCKET_NAME": "rf-public-staging"
       },
+      "routes": [{ "pattern": "staging.researchforce.org", "custom_domain": true }],
       "d1_databases": [
         {
           "binding": "RF_CORE",
           "database_name": "rf-core-staging",
-          "database_id": "00000000-0000-4000-8000-000000000001",
+          "database_id": "d53bf307-ca60-4c5b-8276-b8a0f9b6327e",
           "migrations_dir": "../../packages/db/migrations/core"
         },
         {
           "binding": "RF_SEARCH",
           "database_name": "rf-search-staging",
-          "database_id": "00000000-0000-4000-8000-000000000002",
+          "database_id": "b4105b5e-b6bb-47e6-bc3b-8fe957e98dd4",
           "migrations_dir": "../../packages/db/migrations/search"
         },
         {
           "binding": "RF_PUBLIC",
           "database_name": "rf-public-staging",
-          "database_id": "00000000-0000-4000-8000-000000000003",
+          "database_id": "577fddc8-148f-4691-84a6-341aa6965e17",
           "migrations_dir": "../../packages/db/migrations/public"
         }
       ],

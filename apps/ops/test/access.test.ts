@@ -53,7 +53,7 @@ describe('rf-ops Access sync', () => {
     }
   });
 
-  it('exposes only the narrow RPC methods and no fetch handler', () => {
+  it('exposes only the narrow RPC methods and a fetch that always answers 404', () => {
     expect(Object.getOwnPropertyNames(Ops.prototype).sort()).toEqual([
       'addMember',
       'backupAgeAlert',
@@ -63,6 +63,7 @@ describe('rf-ops Access sync', () => {
       'containmentCapabilities',
       'declareIncident',
       'deploySite',
+      'fetch',
       'probePublicAddress',
       'releaseContainment',
       'removeMember',
@@ -72,7 +73,7 @@ describe('rf-ops Access sync', () => {
       'usage',
       'verifyContainment',
     ]);
-    expect('fetch' in Ops.prototype).toBe(false);
+    expect(Ops.prototype.fetch.call({}).status).toBe(404);
   });
 
   it('has a fake with the same surface that records calls and can fail', async () => {

@@ -107,8 +107,17 @@ function parseEndpoints(raw: string): MonitoredEndpoint[] {
     });
 }
 
-/** Reachable only through service bindings: no fetch handler and no route. */
+/**
+ * Reachable only through service bindings: no route, no custom domain and workers.dev is off.
+ * Cloudflare rejects a Worker with no registered handler (error 10068), so `fetch` exists only to
+ * answer 404 to anything that could ever reach it; it never serves content.
+ */
 export default class Ops extends WorkerEntrypoint<OpsEnv> implements OpsAccess, OpsAnalytics, OpsContainment, OpsBackupAlert, OpsHealthAlert, OpsSpendAlert, OpsDeploy, OpsWaf {
+  override fetch(): Response {
+    return new Response('Not found', { status: 404 });
+  }
+
+
   #access(): AccessSync {
     return new AccessSync({ accountId: this.env.CF_ACCOUNT_ID, memberListId: this.env.ACCESS_MEMBER_LIST_ID, apiToken: this.env.CF_ACCESS_API_TOKEN });
   }

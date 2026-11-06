@@ -12,7 +12,7 @@ import { addMember, KeyServer, request, resetIdentity, testApi } from './api';
 
 // The exact Workspace CSP from design.md "Headers", with a concrete R2 account id substituted for the placeholder.
 const ACCOUNT = '0123456789abcdef0123456789abcdef';
-const EXPECTED_CSP = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' blob: data:; "
+const EXPECTED_CSP = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' blob: data:; "
   + `connect-src 'self' https://dl.researchforce.org https://${ACCOUNT}.r2.cloudflarestorage.com; `
   + "worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'none'; form-action 'self'";
 

@@ -12,8 +12,9 @@ export interface AccessSyncConfig {
 }
 
 export class CloudflareApiError extends Error {
-  constructor(readonly status: number, readonly codes: readonly number[]) {
-    super(`Cloudflare API request failed with HTTP ${status}${codes.length ? ` (codes ${codes.join(', ')})` : ''}.`);
+  /** `messages` are Cloudflare's own error texts (they describe the request, never credentials), kept for diagnosis. */
+  constructor(readonly status: number, readonly codes: readonly number[], readonly messages: readonly string[] = []) {
+    super(`Cloudflare API request failed with HTTP ${status}${codes.length ? ` (codes ${codes.join(', ')})` : ''}${messages.length ? `: ${messages.join('; ').slice(0, 300)}` : ''}.`);
     this.name = 'CloudflareApiError';
   }
 }
@@ -21,7 +22,7 @@ export class CloudflareApiError extends Error {
 /** Keeps the `rf-members` Access list and Access sessions in step with Member_Status (R2.1, R2.9). */
 export class AccessSync implements OpsAccess {
   readonly #fetch: typeof fetch;
-  constructor(readonly config: AccessSyncConfig, fetcher: typeof fetch = fetch) {
+  constructor(readonly config: AccessSyncConfig, fetcher: typeof fetch = (input, init) => fetch(input, init)) {
     this.#fetch = fetcher;
   }
 
@@ -46,7 +47,14 @@ export class AccessSync implements OpsAccess {
     const response = await this.#fetch(`${CLOUDFLARE_API}${path}`, {
       method, body: JSON.stringify(body), headers: { authorization: `Bearer ${this.config.apiToken}`, 'content-type': 'application/json' },
     });
-    const result = await response.json<{ success?: boolean; errors?: { code?: number }[] }>().catch(() => ({ success: false, errors: [] }));
-    if (!response.ok || result.success !== true) throw new CloudflareApiError(response.status, (result.errors ?? []).flatMap((error) => (typeof error.code === 'number' ? [error.code] : [])));
+    const result = await response.json<{ success?: boolean; errors?: { code?: number; message?: string }[] }>().catch(() => ({ success: false, errors: [] }));
+    if (!response.ok || result.success !== true) {
+      const errors = result.errors ?? [];
+      throw new CloudflareApiError(
+        response.status,
+        errors.flatMap((error) => (typeof error.code === 'number' ? [error.code] : [])),
+        errors.flatMap((error) => (typeof error.message === 'string' ? [error.message] : [])),
+      );
+    }
   }
 }

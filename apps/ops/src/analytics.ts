@@ -121,7 +121,7 @@ function count(value: unknown): number {
  */
 export class Analytics implements OpsAnalytics {
   readonly #fetch: typeof fetch;
-  constructor(readonly config: AnalyticsConfig, fetcher: typeof fetch = fetch) {
+  constructor(readonly config: AnalyticsConfig, fetcher: typeof fetch = (input, init) => fetch(input, init)) {
     this.#fetch = fetcher;
   }
 

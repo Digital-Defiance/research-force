@@ -13,3 +13,8 @@ test-results/
 .env*
 !.env.example
 *.log
+
+# Private keys and certificates (never commit)
+*.key
+*.pem
+infra/m365/rf-mail.crt

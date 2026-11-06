@@ -107,7 +107,7 @@ export class OperationalAlerts implements OpsHealthAlert, OpsSpendAlert {
   constructor(
     readonly config: OperationalAlertsConfig,
     controlAvailable: ControlAvailabilityReader,
-    fetcher: typeof fetch = fetch,
+    fetcher: typeof fetch = (input, init) => fetch(input, init),
   ) {
     this.#fetch = fetcher;
     this.#controlAvailable = controlAvailable;

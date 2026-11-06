@@ -12,6 +12,10 @@ import type { Env } from '../env';
  * scripts and styles (`script-src 'self'`, `style-src 'self'`), fetches only its own API, Download_Links on
  * `dl.researchforce.org`, and the R2 S3 endpoint for direct browser uploads (`connect-src`), renders Blob/data image
  * previews client-side (`img-src 'self' blob: data:`), and loads pdf.js as a Blob worker (`worker-src 'self' blob:`).
+ *
+ * Deviation from the design text, found on first staging load: MUI/emotion inject runtime `<style>` tags, which
+ * `style-src 'self'` blocks (unsized icons, broken layout), and bundled fonts are inlined as `data:` URLs. So `style-src`
+ * also allows `'unsafe-inline'` and `font-src` allows `data:`. `script-src` stays `'self'`, so injected scripts are still blocked.
  */
 
 /** The R2 S3 endpoint host for the installation's account, the direct-upload origin `connect-src` must allow. */
@@ -29,7 +33,7 @@ export const R2_ACCOUNT_TOKEN = '<account>';
  * {@link workspaceCsp} (passing the account id) before use. Kept verbatim from design.md "Headers".
  */
 export const WORKSPACE_CSP_TEMPLATE =
-  "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' blob: data:; "
+  "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' blob: data:; "
   + `connect-src 'self' https://dl.researchforce.org https://${R2_ACCOUNT_TOKEN}.${R2_ENDPOINT_HOST}; `
   + "worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'none'; form-action 'self'";
 

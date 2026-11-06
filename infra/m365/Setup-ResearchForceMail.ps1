@@ -118,12 +118,8 @@ param(
     [string] $TransportRuleName = 'ResearchForce-Reject-Inbound',
 
     [Parameter()]
-    [string] $ResponseInstructions = @'
-This mailbox does not accept replies and is not monitored. To reach Research Force:
-  - Submitters: use the response link in the message you received, or the outside submission form.
-  - Members: post in the Workspace instead of replying by email.
-Messages sent to this address are not read.
-'@
+    # Must be a single line (DSN text): no line breaks, and keep it short.
+    [string] $ResponseInstructions = 'This mailbox is not monitored and does not accept replies. Submitters: use the response link in your message or the submission form. Members: post in the Workspace.'
 )
 
 Set-StrictMode -Version Latest
@@ -196,7 +192,9 @@ function Register-MailApp {
         if (-not (Test-Path -LiteralPath $CertPublicKeyPath)) {
             throw "CertPublicKeyPath not found: $CertPublicKeyPath"
         }
-        $cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($CertPublicKeyPath)
+        # .NET resolves relative paths against the process cwd, not the PowerShell location.
+        $certFullPath = (Resolve-Path -LiteralPath $CertPublicKeyPath).ProviderPath
+        $cert = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($certFullPath)
         $thumb = $cert.Thumbprint
         if ($CertThumbprint -and ($CertThumbprint -replace '\s', '').ToUpperInvariant() -ne $thumb.ToUpperInvariant()) {
             throw "CertThumbprint ($CertThumbprint) does not match the certificate at CertPublicKeyPath ($thumb)."
@@ -235,11 +233,24 @@ function Grant-ScopedMailSend {
     $appId = $App.AppId
     $objectId = $App.Id
 
+    # Exchange needs the Entra SERVICE PRINCIPAL (enterprise app) object id, not the application
+    # registration object id. Create the service principal in Entra first if it does not exist.
+    Write-Step "Ensuring Entra service principal for appId $appId"
+    $entraSp = Get-MgServicePrincipal -Filter "appId eq '$appId'" -ErrorAction SilentlyContinue | Select-Object -First 1
+    if (-not $entraSp) {
+        if ($PSCmdlet.ShouldProcess($appId, 'New-MgServicePrincipal')) {
+            $entraSp = New-MgServicePrincipal -AppId $appId
+        }
+    } else {
+        Write-Host "    Entra service principal already exists."
+    }
+    if (-not $entraSp) { throw "No Entra service principal for appId $appId." }
+
     Write-Step "Ensuring Exchange service principal for appId $appId"
     $sp = Get-ServicePrincipal -Identity $appId -ErrorAction SilentlyContinue
     if (-not $sp) {
         if ($PSCmdlet.ShouldProcess($appId, 'New-ServicePrincipal')) {
-            $sp = New-ServicePrincipal -AppId $appId -ObjectId $objectId -DisplayName $AppDisplayName
+            $sp = New-ServicePrincipal -AppId $appId -ObjectId $entraSp.Id -DisplayName $AppDisplayName
         }
     } else {
         Write-Host "    Exchange service principal already exists."
@@ -333,7 +344,18 @@ function New-InboundRejectRule {
 # Orchestration.
 # ---------------------------------------------------------------------------
 Connect-Services
+
+# Fail early: the Sending_Address domain must be an accepted domain in Exchange Online.
+$sendingDomain = ($SendingAddress -split '@')[1]
+$accepted = Get-AcceptedDomain | Where-Object { $_.DomainName -eq $sendingDomain }
+if (-not $accepted) {
+    throw "'$sendingDomain' is not an accepted domain in Exchange Online for tenant $TenantId. Add and verify it (Microsoft 365 admin center > Settings > Domains, with the Exchange service enabled), then re-run."
+}
+
 $null = New-ResearchForceMailbox
+if (-not (Get-Mailbox -Identity $SendingAddress -ErrorAction SilentlyContinue)) {
+    throw "Mailbox <$SendingAddress> does not exist after creation; stopping."
+}
 $app = Register-MailApp
 Grant-ScopedMailSend -App $app
 Set-MailboxHardening

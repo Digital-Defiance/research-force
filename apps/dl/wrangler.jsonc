@@ -28,7 +28,7 @@
         {
           "binding": "RF_CORE",
           "database_name": "rf-core-staging",
-          "database_id": "00000000-0000-4000-8000-000000000001",
+          "database_id": "d53bf307-ca60-4c5b-8276-b8a0f9b6327e",
           "migrations_dir": "../../packages/db/migrations/core"
         }
       ],
@@ -39,8 +39,9 @@
         }
       ],
       "vars": {
-        "WORKSPACE_ORIGIN": "https://app-staging.researchforce.org"
-      }
+        "WORKSPACE_ORIGIN": "https://staging.researchforce.org"
+      },
+      "routes": [{ "pattern": "dl-staging.researchforce.org", "custom_domain": true }]
     }
   },
   "vars": {

@@ -34,7 +34,7 @@ export interface WafConfig {
  */
 export class Waf implements OpsWaf {
   readonly #fetch: typeof fetch;
-  constructor(readonly config: WafConfig, fetcher: typeof fetch = fetch) {
+  constructor(readonly config: WafConfig, fetcher: typeof fetch = (input, init) => fetch(input, init)) {
     this.#fetch = fetcher;
   }
 

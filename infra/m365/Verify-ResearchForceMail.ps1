@@ -66,7 +66,7 @@
 
 .PARAMETER InitialDomain
     The Microsoft 365 tenant initial domain the DKIM CNAME targets point into. Default
-    researchforce.onmicrosoft.com (mirrors infra/dns/records.ts INITIAL_DOMAIN; confirm per tenant).
+    teammulein.n-v1.dkim.mail.microsoft (mirrors infra/dns/records.ts DKIM_TARGET_ZONE; confirm per tenant).
 
 .PARAMETER DmarcRuaAddress
     The expected DMARC aggregate-report address. MUST differ from the Sending_Address (R20.23).
@@ -113,7 +113,7 @@ param(
     [string] $Domain = 'researchforce.org',
 
     [Parameter()]
-    [string] $InitialDomain = 'researchforce.onmicrosoft.com',
+    [string] $InitialDomain = 'teammulein.n-v1.dkim.mail.microsoft',
 
     [Parameter()]
     [string] $DmarcRuaAddress = 'dmarc-reports@researchforce.org',

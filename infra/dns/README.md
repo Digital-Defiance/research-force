@@ -14,7 +14,7 @@ authenticated mail and nothing else can spoof the domain (spec task 48.3, requir
   Sending_Address (`researchforce@researchforce.org`).
 
 It is pure data: no I/O, no network. The DKIM targets depend on the tenant initial domain
-(`INITIAL_DOMAIN`, default `researchforce.onmicrosoft.com`); the operator confirms the real targets
+(`DKIM_TARGET_ZONE`, currently `teammulein.n-v1.dkim.mail.microsoft`); the operator confirms the real targets
 in the Microsoft 365 admin center and overrides `records.ts` if they differ.
 
 ## Operator usage

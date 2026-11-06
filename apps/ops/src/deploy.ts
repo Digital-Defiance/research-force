@@ -124,7 +124,7 @@ export async function manifestRequestHash(manifest: SiteManifest): Promise<strin
 export class SiteDeploy {
   readonly #fetch: typeof fetch;
 
-  constructor(readonly config: SiteDeployConfig, readonly db: D1Database, fetcher: typeof fetch = fetch) {
+  constructor(readonly config: SiteDeployConfig, readonly db: D1Database, fetcher: typeof fetch = (input, init) => fetch(input, init)) {
     this.#fetch = fetcher;
   }
 

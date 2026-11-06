@@ -1,3 +1,4 @@
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import { defineConfig } from 'vite';
@@ -10,9 +11,40 @@ import react from '@vitejs/plugin-react';
 // browser polyfill. Without this the app throws at startup (asyncEventEmitter.js).
 const require = createRequire(import.meta.url);
 
+// The Design Suite `Flag` component paints each language's flag from https://flagcdn.com, a third-party request
+// made by every viewer's browser. The Workspace forbids third-party requests (design "Privacy of Visitors", R45.17;
+// CSP img-src 'self' blob: data:) and is English-only, so the external URL is replaced with an empty image at build
+// time. The flag renders blank instead of calling out.
+const noExternalFlags = {
+  name: 'no-external-flags',
+  enforce: 'pre' as const,
+  transform(code: string, id: string) {
+    if (!id.includes('express-suite-react-components') || !code.includes('flagcdn.com')) return null;
+    return { code: code.replace(/url\(https:\/\/flagcdn\.com\/\$\{[^}]*\}\.svg\)/g, 'none'), map: null };
+  },
+};
+
+// The committed public/_headers carries the production download origin and a literal `<account>` placeholder for the
+// R2 S3 endpoint. At build time, RF_R2_ACCOUNT_ID fills the placeholder and RF_DOWNLOAD_ORIGIN replaces the download
+// origin (staging builds set both), so the emitted CSP names the real hosts and a browser never sees an invalid source.
+const environmentHeaders = {
+  name: 'environment-headers',
+  apply: 'build' as const,
+  writeBundle(options: { dir?: string }) {
+    const file = (options.dir ?? 'dist') + '/_headers';
+    if (!existsSync(file)) return;
+    let text = readFileSync(file, 'utf8');
+    const account = process.env.RF_R2_ACCOUNT_ID;
+    const download = process.env.RF_DOWNLOAD_ORIGIN;
+    if (account) text = text.replaceAll('<account>', account);
+    if (download) text = text.replaceAll('https://dl.researchforce.org', download);
+    writeFileSync(file, text);
+  },
+};
+
 export default defineConfig({
   root: fileURLToPath(new URL('.', import.meta.url)),
-  plugins: [react()],
+  plugins: [noExternalFlags, environmentHeaders, react()],
   resolve: {
     alias: {
       events: require.resolve('events/'),
