@@ -17,6 +17,8 @@
     "R2_ACCOUNT_ID": "48ca646fd701c00c0069952c95299dad",
     "PRIVATE_BUCKET_NAME": "rf-private",
     "PUBLIC_BUCKET_NAME": "rf-public",
+    // Independent backup copies are carried by hand to the operator's own drive (offline destination).
+    "BACKUP_COPY_DESTINATION": "{\"kind\":\"offline\",\"label\":\"operator-local-drive\"}",
     "CONTENT_LICENCE_NAME": "CC BY 4.0",
     "CONTENT_LICENCE_URL": "https://creativecommons.org/licenses/by/4.0/"
   },
