@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useApi } from '../api';
 import { useSession } from '../session';
 import { hashFile } from '../files/upload';
-import { Button, LoadState, Notice, SaveFailure, SelectField, useLoad } from '../ui';
+import { Button, LoadState, Notice, SaveFailure, SelectField, TextField, useLoad } from '../ui';
 
 /**
  * The Internal_Backup and restore screen (R36.1, R36.2, R36.8). Administrators only: the whole screen is gated on
@@ -27,6 +27,7 @@ interface BackupView {
   readonly finishedAt: string | null;
   readonly expiresAt: string | null;
   readonly incomplete: unknown;
+  readonly offsiteConfirmedAt?: string | null;
   readonly download: readonly DownloadLink[];
 }
 
@@ -86,7 +87,8 @@ function whenLabel(value: string): string {
 }
 
 /** One finished backup: when it was taken, how long it is kept, and its download links (R36.2). */
-function BackupCard({ record }: { readonly record: BackupView }) {
+function BackupCard({ record, onConfirm, busy }: { readonly record: BackupView; readonly onConfirm: (id: string, fingerprint: string) => Promise<void>; readonly busy: boolean }) {
+  const [fingerprint, setFingerprint] = useState('');
   return (
     <section className="rf-section" aria-label={`Backup ${record.id}`}>
       <h3>{`Backup from ${whenLabel(record.startedAt)}`}</h3>
@@ -102,6 +104,20 @@ function BackupCard({ record }: { readonly record: BackupView }) {
               <li key={link.url}><a href={link.url}>{record.download.length === 1 ? 'Download this backup' : `Download part ${index + 1}`}</a>{` (link works until ${whenLabel(link.expiresAt)}; reload the page for a new one)`}</li>
             ))}
           </ul>
+        </section>
+      )}
+      {record.state === 'complete' && (
+        <section className="rf-section rf-nested" aria-label={`Offsite copy for backup ${record.id}`}>
+          <h4>Offsite copy</h4>
+          {record.offsiteConfirmedAt != null
+            ? <p className="rf-meta">{`Confirmed ${whenLabel(record.offsiteConfirmedAt)}. This backup counts as a safe recovery point.`}</p>
+            : (
+              <>
+                <p className="rf-meta">After you save the download somewhere safe, run the verify tool on it and paste the fingerprint it prints. Until then this backup is not counted as a recovery point.</p>
+                <TextField label="Fingerprint from the verify tool" value={fingerprint} onChange={setFingerprint} />
+                <div className="rf-actions"><Button variant="primary" disabled={busy || fingerprint.trim() === ''} onClick={() => void onConfirm(record.id, fingerprint)}>Confirm the offsite copy</Button></div>
+              </>
+            )}
         </section>
       )}
     </section>
@@ -217,6 +233,15 @@ export function BackupsScreen() {
     finally { setBusy(false); }
   };
 
+  const confirmOffsite = async (id: string, fingerprint: string) => {
+    setBusy(true); setFailure(undefined);
+    try {
+      await client.post(`/backups/${id}/confirm-offline`, { fingerprint });
+      backups.reload();
+    } catch (error) { setFailure(error); }
+    finally { setBusy(false); }
+  };
+
   const release = async (id: string) => {
     setBusy(true); setFailure(undefined);
     try {
@@ -242,7 +267,7 @@ export function BackupsScreen() {
       <section className="rf-section" aria-label="Backups">
         <h2>Backups</h2>
         {backups.data.backups.length === 0 && <p className="rf-meta">There are no backups yet.</p>}
-        {completeBackups.map((record) => <BackupCard key={record.id} record={record} />)}
+        {completeBackups.map((record) => <BackupCard key={record.id} record={record} onConfirm={confirmOffsite} busy={busy} />)}
         {otherBackups.length > 0 && (
           <details>
             <summary>{`Backups that did not finish (${otherBackups.length})`}</summary>

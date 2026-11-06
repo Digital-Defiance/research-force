@@ -16,7 +16,7 @@ import type { Timestamp, ULID } from '@researchforce/domain/types';
 import { JOB_HANDLERS } from '../src/do/jobs';
 import type { JsonValue } from '../src/do/jobs';
 import { backupPrefix, startBackup } from '../src/jobs/backup';
-import { slotKey, startScheduledBackup, sweepBackupCopies, sweepBackupRetention } from '../src/jobs/backup-cron';
+import { confirmOfflineCopy, slotKey, startScheduledBackup, sweepBackupCopies, sweepBackupRetention } from '../src/jobs/backup-cron';
 import { checkRpoAge, classifyRpo } from '../src/backup/rpo';
 import { soleCopyCustodyGate } from '../src/backup/custody';
 import { independentDestination } from '../src/backup/copies';
@@ -318,5 +318,42 @@ describe('tiered retention + unchanged 7-day staging expiry (R36.3)', () => {
     // The requested staging package has no backup_points row, so tiered retention never touches it.
     expect((await core().prepare('SELECT count(*) AS n FROM backup_points WHERE export_id = ?1').bind(id).first<{ n: number }>())!.n).toBe(0);
     expect(await sweepBackupRetention(world.bindings, asTimestamp('2026-12-20T00:00:00.000Z'))).toBe(0);
+  });
+});
+
+describe('confirmOfflineCopy — an Administrator attests the offline copy by its fingerprint (R36.12)', () => {
+  const offline = () => { (world.bindings as unknown as Record<string, unknown>)['BACKUP_COPY_DESTINATION'] = JSON.stringify({ kind: 'offline', label: 'operator-local-drive' }); };
+
+  async function requestedCompleteBackup(now: Timestamp): Promise<{ id: ULID; fingerprint: string }> {
+    const id = newId(now);
+    await startBackup(core(), { id, requestedBy: null, now });
+    expect(await runBackupJob(id, Date.parse(now))).toBe('complete');
+    const fingerprint = (await (await priv().get(`${bucketKeyOf(backupPrefix(id))}/manifest-fingerprint.txt`))!.text()).trim();
+    return { id, fingerprint };
+  }
+
+  it('a matching fingerprint verifies the package and records a recovery point, even for a requested (unscheduled) backup', async () => {
+    offline();
+    const now = asTimestamp('2026-12-02T01:00:00.000Z');
+    const { id, fingerprint } = await requestedCompleteBackup(now);
+    expect(await confirmOfflineCopy(world.bindings, id, fingerprint.toUpperCase(), asTimestamp('2026-12-02T02:00:00.000Z'))).toEqual({ ok: true });
+    const point = await pointRow(id);
+    expect(point).toMatchObject({ state: 'complete', copyState: 'offline_confirmed', destination: 'operator-local-drive', fault: null });
+    expect(point.verifiedAt).not.toBeNull();
+  });
+
+  it('a wrong fingerprint is refused and records nothing', async () => {
+    offline();
+    const { id } = await requestedCompleteBackup(asTimestamp('2026-12-02T01:00:00.000Z'));
+    expect(await confirmOfflineCopy(world.bindings, id, 'a'.repeat(64), asTimestamp('2026-12-02T02:00:00.000Z'))).toEqual({ ok: false, fault: 'fingerprint-mismatch' });
+    expect(await core().prepare('SELECT 1 AS n FROM backup_points WHERE export_id = ?1').bind(id).first()).toBeNull();
+  });
+
+  it('is refused when the destination is not an offline one, and for a backup that is not complete', async () => {
+    const { id, fingerprint } = await requestedCompleteBackup(asTimestamp('2026-12-02T01:00:00.000Z'));
+    // The default test destination is an r2 copy bucket, not an offline destination.
+    expect(await confirmOfflineCopy(world.bindings, id, fingerprint, asTimestamp('2026-12-02T02:00:00.000Z'))).toEqual({ ok: false, fault: 'no-offline-destination' });
+    offline();
+    expect(await confirmOfflineCopy(world.bindings, newId(asTimestamp('2026-12-02T03:00:00.000Z')), fingerprint, asTimestamp('2026-12-02T03:00:00.000Z'))).toEqual({ ok: false, fault: 'not-complete' });
   });
 });
