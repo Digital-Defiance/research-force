@@ -9,7 +9,7 @@ import { ApiFailure, useApi } from '../api';
 import type { FieldIssue } from '../api';
 import { useSession } from '../session';
 import type { ExcerptPieceView, MemberRow, ProjectRecord, SearchFilters, SearchPageView, SearchResultView } from '../types';
-import { Button, formatDate, levelName, Notice, SelectField, TextField, useLoad } from '../ui';
+import { Button, formatDate, levelName, Notice, PageHeader, PageLayout, SelectField, TextField, useLoad } from '../ui';
 
 /** A search that has not answered after this long is reported as unavailable (R21.10). */
 export const SEARCH_TIMEOUT_MS = 10_000;
@@ -129,7 +129,8 @@ export function SearchScreen() {
 
   return (
     <div className="rf-stack">
-      <h1>Search</h1>
+      <PageHeader title="Search" breadcrumb={[{ label: 'Workspace', to: '/' }, { label: 'Search' }]} />
+      <PageLayout variant="split">
       <form className="rf-stack" aria-label="Search" onSubmit={submit}>
         <TextField label="Search for" value={draft.q} onChange={(value) => setDraft((current) => ({ ...current, q: value }))} errors={forField('query', 'q')}
           hint="Words match whole words or word starts. Put words in double quotes to find them together, in order." />
@@ -142,6 +143,7 @@ export function SearchScreen() {
         <TextField label="Created until (including this date)" type="date" value={draft.to ?? ''} onChange={set('to')} errors={forField('to')} />
         <div className="rf-actions"><Button type="submit" variant="primary">Search</Button></div>
       </form>
+      <div className="rf-stack">
       {unavailable && (
         <Notice tone="danger" title="Search is unavailable.">
           {dailyLimit && <p>A daily limit of the hosting platform was reached. Search resumes at 00:00 UTC.</p>}
@@ -156,6 +158,8 @@ export function SearchScreen() {
           {chosen !== null && <BulkAccess itemIds={chosen.chosen} members={members.data?.members ?? []} onDone={() => { chosen.clear(); setParams(new URLSearchParams(params)); }} />}
         </>
       ))}
+      </div>
+      </PageLayout>
     </div>
   );
 }

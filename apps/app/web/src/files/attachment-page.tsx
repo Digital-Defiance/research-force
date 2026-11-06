@@ -8,6 +8,8 @@ import type { MemberRow, ValueSets } from '../types';
 import { AttachmentMoveDialog } from './move';
 import { FilePreview } from './preview';
 import { UploadFields, useUploads } from './upload';
+import { ConsentRequestLaunch } from '../consent/launch';
+import { ConsentRequestsPanel } from '../consent/requests';
 interface ChainEntry { id: string; title: string; position: number; uploadedAt: string; ownerId: string; displayName: string | null; viewed: boolean; last: boolean; flag: 'new' | 'updated' | null; supersedesId: string | null }
 interface Attachment { id: string; parentId: string; rootId: string; ownerId: string; displayName: string | null; rev: number; identifier: string; title: string; fileKind: string; originalName: string; sizeBytes: number; caption: string | null; origin: string; uploadedAt: string; rightsStatusId: string; rightsStatus: string; permitsPublication: boolean; rightsHolder: string | null; rightsTerms: string | null; level: string; flag: 'new' | 'updated' | null }
 export interface AttachmentData { attachment: Attachment; chain: ChainEntry[] }
@@ -77,5 +79,7 @@ export function AttachmentPage({ id }: { readonly id: string }) {
     {canEdit && <div className="rf-actions"><Link to={`/attachments/${id}/version`}>Add a new version</Link><Button onClick={() => setEditing((old) => !old)}>Edit metadata</Button></div>}
     {editing && <MetadataForm attachment={a} onSaved={() => { setEditing(false); loaded.reload(); }} />}
     <AttachmentMoveDialog attachmentId={id} parentId={a.parentId} members={members.data?.members ?? []} onMoved={() => loaded.reload()} />
+    <ConsentRequestLaunch element={{ key: `u:${id}`, label: `${a.identifier}: ${a.title}` }} kind="rights" members={members.data?.members ?? []} />
+    <ConsentRequestsPanel element={{ unitId: id }} attachments={new Set([id])} />
   </article>;
 }

@@ -1,14 +1,17 @@
 import { CitationScope } from '../../citations/scope';
 import { UploadFields, useUploads } from '../../files/upload';
-import { useId, useMemo, useState } from 'react';
-import type { FormEvent } from 'react';
+import { Fragment, useId, useMemo, useState } from 'react';
+import type { FormEvent, ReactNode } from 'react';
 import { useNavigate } from 'react-router';
+import type { RichText } from '@researchforce/domain/richtext';
 import { ITEM_KIND_NAMES } from '@researchforce/domain/kind-names';
 import type { ItemKind } from '@researchforce/domain/types';
 import { accessBody, AccessFields, WHOLE_TEAM } from '../../access/access';
 import type { AccessValue } from '../../access/access';
 import { ApiFailure, useApi } from '../../api';
 import type { FieldIssue } from '../../api';
+import { AiDraftControl } from '../../editor/ai-draft';
+import type { PlacedProvenance } from '../../editor/ai-draft';
 import { mentionOptions } from '../../discussion/thread';
 import { usePersistentForm } from '../../persist';
 import { draftsToApi, ReviewDrafts, reviewOptions } from '../../reviews/reviews';
@@ -38,6 +41,36 @@ export function useFormData(): { data: FormData | undefined; error: unknown } {
     return { valueSets: valueSets.data.valueSets, parties: parties.data.parties, members: members.data.members, mentions };
   }, [valueSets.data, parties.data, members.data, me.specialtyOptions]);
   return { data, error: valueSets.error ?? parties.error ?? members.error };
+}
+
+/** A field's plain text as the editor holds it now: a RichText field's `.text`, a string field as-is, else empty. */
+function plainText(value: unknown): string {
+  if (typeof value === 'string') return value;
+  if (value !== null && typeof value === 'object' && 'text' in value && typeof (value as RichText).text === 'string') return (value as RichText).text;
+  return '';
+}
+
+/** The fields a Research_Item create/edit can carry AI provenance for in the save's `ai` envelope (R44.6). Matches the server's allow-list. */
+const AI_DRAFTABLE_FIELDS = ['logSummary'] as const;
+
+/**
+ * The save's `ai` envelope (R44.6): the provenance of each AI-draftable field the Member placed a draft in AND that
+ * the save actually carries, so a field left unchanged (absent from the body) or cleared records nothing. The server
+ * compares each draft's SHA-256 against the saved text to record whether the saved text differs from the draft.
+ */
+function aiEnvelope(provenance: Readonly<Record<string, PlacedProvenance>>, body: Readonly<Record<string, unknown>>): { ai?: Record<string, PlacedProvenance> } {
+  const entries = AI_DRAFTABLE_FIELDS.flatMap((field) => (provenance[field] !== undefined && body[field] !== undefined && body[field] !== null ? [[field, provenance[field]!] as const] : []));
+  return entries.length === 0 ? {} : { ai: Object.fromEntries(entries) };
+}
+
+/** The per-field unsaved editor text map the AI draft request sends, so the server prefers it over the saved text (R44.1). */
+function editorTextOf(values: FormValues): Record<string, string> {
+  const text: Record<string, string> = {};
+  for (const [name, value] of Object.entries(values)) {
+    const plain = plainText(value);
+    if (plain !== '') text[name] = plain;
+  }
+  return text;
 }
 
 interface CreateState { readonly values: FormValues; readonly projectId: string; readonly reviews: readonly ReviewDraft[]; readonly access?: AccessValue }
@@ -89,15 +122,20 @@ function EditMarkChoice({ value, onChange, errors }: { readonly value: EditMarkV
   );
 }
 
-function Fields({ kind, mode, values, set, failure, data }: {
+function Fields({ kind, mode, values, set, failure, data, after }: {
   readonly kind: ItemKind; readonly mode: 'create' | 'edit'; readonly values: FormValues; readonly set: (field: string, value: unknown) => void;
   readonly failure: unknown; readonly data: FormData;
+  /** An extra control rendered right after the named field, such as the AI draft control beside the Log_Summary. */
+  readonly after?: (fieldName: string) => ReactNode;
 }) {
   const errors = failure instanceof ApiFailure ? failure.fields : [];
   return (
     <>
       {fieldsFor(kind, mode).map((spec) => (
-        <FieldInput key={spec.name} spec={spec} value={values[spec.name]} onChange={(value) => set(spec.name, value)} errors={errors} data={kind === 'decision_record' ? { ...data, alternatives: (values['alternatives'] ?? []) as AlternativeValue[] } : data} />
+        <Fragment key={spec.name}>
+          <FieldInput spec={spec} value={values[spec.name]} onChange={(value) => set(spec.name, value)} errors={errors} data={kind === 'decision_record' ? { ...data, alternatives: (values['alternatives'] ?? []) as AlternativeValue[] } : data} />
+          {after?.(spec.name)}
+        </Fragment>
       ))}
     </>
   );
@@ -117,6 +155,11 @@ export function CreateItemForm({ kind, choice, data }: { readonly kind: ItemKind
   const form = usePersistentForm<CreateState>(`item:new:${kind}`, () => ({ values: initialValues(kind), projectId: choice.preselected ?? '', reviews: [] }));
   const [failure, setFailure] = useState<unknown>(undefined);
   const [busy, setBusy] = useState(false);
+  // The AI provenance of each field the Member placed an AI_Draft in, sent in the save's `ai` envelope (R44.6). Held
+  // only in this tab's state: a draft and its provenance are never persisted until the field they are placed in saves.
+  const [aiProvenance, setAiProvenance] = useState<Record<string, PlacedProvenance>>({});
+  const placeProvenance = (fieldName: string, provenance: PlacedProvenance | undefined) =>
+    setAiProvenance((current) => { const { [fieldName]: _dropped, ...rest } = current; return provenance === undefined ? rest : { ...rest, [fieldName]: provenance }; });
   const shown = ['projectId', 'reviews', 'access', ...fieldsFor(kind, 'create').map((field) => field.name)];
   const sections = Array.isArray(form.values.values['sections']) ? form.values.values['sections'].length : 0;
   const access = form.values.access ?? WHOLE_TEAM;
@@ -127,7 +170,9 @@ export function CreateItemForm({ kind, choice, data }: { readonly kind: ItemKind
     setFailure(undefined);
     try {
       const reviews = form.values.reviews.length === 0 ? {} : { reviews: draftsToApi(form.values.reviews) };
-      const response = await client.saveItem<{ item: ItemView }>({ kindPath: kind.replaceAll('_', '-') }, { ...createBody(kind, form.values.projectId, form.values.values), ...reviews, access: accessBody(access), ...(uploads.files.length ? { files: uploads.selected() } : {}) });
+      const body = createBody(kind, form.values.projectId, form.values.values);
+      const ai = aiEnvelope(aiProvenance, body);
+      const response = await client.saveItem<{ item: ItemView }>({ kindPath: kind.replaceAll('_', '-') }, { ...body, ...ai, ...reviews, access: accessBody(access), ...(uploads.files.length ? { files: uploads.selected() } : {}) });
       form.sent();
       uploads.sent();
       void navigate(`/items/${response.item.id}`);
@@ -148,7 +193,11 @@ export function CreateItemForm({ kind, choice, data }: { readonly kind: ItemKind
         ? <Notice tone="warning" title="A Project is required, and none exists yet. An Administrator must first create one." />
         : <SelectField label="Project" required value={form.values.projectId} placeholder="Choose a Project" errors={projectErrors}
             options={choice.projects.map((project) => ({ value: project.id, label: project.name }))} onChange={(projectId) => form.set('projectId', projectId)} />}
-      <Fields kind={kind} mode="create" values={form.values.values} set={(field, value) => form.set('values', { ...form.values.values, [field]: value })} failure={failure} data={data} />
+      <Fields kind={kind} mode="create" values={form.values.values} set={(field, value) => form.set('values', { ...form.values.values, [field]: value })} failure={failure} data={data}
+        after={(fieldName) => (fieldName === 'logSummary'
+          ? <AiDraftControl field="logSummary" label="Log Summary" editorText={editorTextOf(form.values.values)} fieldText={plainText(form.values.values['logSummary'])}
+              onPlace={(text) => form.set('values', { ...form.values.values, logSummary: { text, spans: [] } })} onPlaced={(provenance) => placeProvenance('logSummary', provenance)} />
+          : null)} />
       <AccessFields value={access} onChange={(next) => form.set('access', next)} members={data.members} ownerId={session.me.member.id}
         errors={failure instanceof ApiFailure ? failure.fields : []} />
       {session.can('review.request') && <ReviewDrafts value={form.values.reviews} onChange={(reviews) => form.set('reviews', reviews)} options={reviewOptions(session, data.members)}
@@ -172,6 +221,10 @@ export function EditItemForm({ item, data, onReload }: { readonly item: ItemView
   });
   const [failure, setFailure] = useState<unknown>(undefined);
   const [busy, setBusy] = useState(false);
+  // The AI provenance of each field the Member placed an AI_Draft in since this record was opened (R44.6).
+  const [aiProvenance, setAiProvenance] = useState<Record<string, PlacedProvenance>>({});
+  const placeProvenance = (fieldName: string, provenance: PlacedProvenance | undefined) =>
+    setAiProvenance((current) => { const { [fieldName]: _dropped, ...rest } = current; return provenance === undefined ? rest : { ...rest, [fieldName]: provenance }; });
   const hasStatus = fieldsFor(item.kind, 'edit').some((field) => field.name === 'statusValueId' || field.name === 'outcomeId');
   const shown = ['mark', 'statusReason', ...fieldsFor(item.kind, 'edit').map((field) => field.name)];
   const submit = async (event: FormEvent) => {
@@ -189,7 +242,7 @@ export function EditItemForm({ item, data, onReload }: { readonly item: ItemView
     setBusy(true);
     setFailure(undefined);
     try {
-      await client.saveItem<{ item: ItemView }>({ id: item.id }, body);
+      await client.saveItem<{ item: ItemView }>({ id: item.id }, { ...body, ...aiEnvelope(aiProvenance, body) });
       form.sent();
       void navigate(`/items/${item.id}`);
     } catch (error) {
@@ -209,7 +262,11 @@ export function EditItemForm({ item, data, onReload }: { readonly item: ItemView
         : <SaveFailure error={failure} />}
       <IssueSummary issues={unplaced(failure, shown)} />
       <p className="rf-meta">{`Project: ${item.project.name}`}</p>
-      <Fields kind={item.kind} mode="edit" values={form.values.values} set={(field, value) => form.set('values', { ...form.values.values, [field]: value })} failure={failure} data={data} />
+      <Fields kind={item.kind} mode="edit" values={form.values.values} set={(field, value) => form.set('values', { ...form.values.values, [field]: value })} failure={failure} data={data}
+        after={(fieldName) => (fieldName === 'logSummary'
+          ? <AiDraftControl field="logSummary" label="Log Summary" itemId={item.id} editorText={editorTextOf(form.values.values)} fieldText={plainText(form.values.values['logSummary'])}
+              onPlace={(text) => form.set('values', { ...form.values.values, logSummary: { text, spans: [] } })} onPlaced={(provenance) => placeProvenance('logSummary', provenance)} />
+          : null)} />
       {hasStatus && <TextField label="Reason for a status change" multiline value={form.values.statusReason} onChange={(statusReason) => form.set('statusReason', statusReason)}
         errors={errors.filter((issue) => issue.field === 'statusReason')} hint="Optional; recorded with the status change." />}
       <EditMarkChoice value={form.values.mark} onChange={(mark) => form.set('mark', mark)} errors={errors} />

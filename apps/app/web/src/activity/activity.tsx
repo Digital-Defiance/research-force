@@ -3,6 +3,9 @@ import { Link, useLocation } from 'react-router';
 import { ITEM_KIND_NAMES } from '@researchforce/domain/kind-names';
 import { ITEM_KINDS } from '@researchforce/domain/types';
 import type { ItemKind } from '@researchforce/domain/types';
+import { Badge, Box, IconButton, Tooltip } from '@mui/material';
+import NotificationsIcon from '@mui/icons-material/Notifications';
+import DynamicFeedIcon from '@mui/icons-material/DynamicFeed';
 import { useApi } from '../api';
 import { useSession } from '../session';
 import type { Badges, FeedEntry, FeedFilter, FeedItem, FeedPage, FlagKind, MemberRow, ProjectRecord, SubmissionItems } from '../types';
@@ -83,18 +86,35 @@ export function useBadges(): Badges | undefined {
 }
 
 /** The counts of New and Updated Items, in the header of every page (R18.7). */
+/**
+ * The Activity and Notification affordances in the top bar (R18.7): two compact icon buttons carrying the
+ * total New/Updated and unread-Notification counts as MUI badges, modelled on the suite's NotificationBell.
+ * The per-type New/Updated counts stay available to assistive technology as a visually-hidden list so the
+ * "counts in the header of every page" requirement holds without expanding the bar; the Dashboard shows the
+ * same breakdown visually.
+ */
 export function ActivityBadges() {
   const badges = useBadges();
+  const total = badges?.total ?? 0;
+  const unread = badges?.unreadNotifications ?? 0;
   return (
-    <div className="rf-badges">
-      <Link className="rf-nav__link" to="/activity">{badges === undefined ? 'Activity feed' : `Activity feed (${badges.total})`}</Link>
-      <Link className="rf-nav__link" to="/notifications">{badges === undefined ? 'Notifications' : `Notifications (${badges.unreadNotifications})`}</Link>
+    <Box className="rf-badges" sx={{ display: 'inline-flex', alignItems: 'center' }}>
+      <Tooltip title="Activity feed" arrow>
+        <IconButton color="inherit" aria-label={`Activity feed (${total})`} component={Link} to="/activity">
+          <Badge badgeContent={total} color="error" max={999} invisible={total === 0}><DynamicFeedIcon /></Badge>
+        </IconButton>
+      </Tooltip>
+      <Tooltip title="Notifications" arrow>
+        <IconButton color="inherit" aria-label={`Notifications (${unread})`} component={Link} to="/notifications">
+          <Badge badgeContent={unread} color="error" max={999} invisible={unread === 0}><NotificationsIcon /></Badge>
+        </IconButton>
+      </Tooltip>
       {badges !== undefined && (
-        <ul className="rf-list rf-meta" aria-label="New and updated Items">
+        <ul className="rf-visually-hidden" aria-label="New and updated Items">
           {GROUPS.map((group) => <li key={group}>{`${bucketPlural(group)}: ${badges.counts[group] ?? 0}`}</li>)}
         </ul>
       )}
-    </div>
+    </Box>
   );
 }
 

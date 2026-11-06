@@ -178,3 +178,27 @@ body {
 .rf-file-text {
   white-space: pre-wrap;
 }
+
+.rf-ai-draft {
+  border-inline-start: var(--rf-border-width) solid var(--rf-colour-border);
+  padding-inline-start: var(--rf-space-md);
+  margin-block-start: var(--rf-space-sm);
+}
+
+.rf-ai-draft > * + * {
+  margin-block-start: var(--rf-space-sm);
+}
+
+.rf-ai-draft__text {
+  white-space: pre-wrap;
+}
+
+.rf-preview-frame {
+  inline-size: var(--rf-size-full);
+  block-size: var(--rf-width-reading);
+  border: var(--rf-border-width) solid var(--rf-colour-border);
+}
+
+.rf-policy-text {
+  white-space: pre-wrap;
+}

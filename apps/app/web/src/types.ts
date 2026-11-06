@@ -454,12 +454,16 @@ export interface LinkEntry {
   readonly end: LinkEnd;
 }
 
+/** Per saved field: the AI model that drafted the text it began as, its catalog version, and whether the saved text differs (R44.6). */
+export type AiProvenanceView = Readonly<Record<string, { readonly model: string; readonly version: string; readonly differs: boolean }>>;
 export interface HistoryEntry {
   /** A Revision id, or `creation`. */
   readonly id: string; readonly kind: string; readonly memberId: string; readonly displayName: string | null; readonly at: string;
   readonly reason: string | null; readonly restoredPoint: string | null; readonly sectionId: string | null; readonly fields: readonly string[];
   /** An Access_Change's level and list before and after (R47.6). */
   readonly access?: { readonly before: AccessPoint; readonly after: AccessPoint };
+  /** The AI provenance of each field this record began as an AI_Draft of (R44.6). */
+  readonly ai?: AiProvenanceView;
 }
 export interface HistoryStateView {
   readonly item: Readonly<Record<string, unknown>>;

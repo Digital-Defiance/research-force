@@ -11,7 +11,7 @@ import { useSession } from '../session';
 import type {
   CreditDisplayView, LogEntryView, LogFilters, LogItemEntryView, LogPageView, MemberRow, PartialDateView, ProjectRecord, ValueSets,
 } from '../types';
-import { Button, formatDate, Notice, PersonLink, SelectField, TextField, useLoad } from '../ui';
+import { Button, formatDate, Notice, PageHeader, PageLayout, PersonLink, SelectField, TextField, useLoad } from '../ui';
 
 /** A Project_Log whose page has not arrived after this long is reported as unavailable (R43.9). */
 export const LOG_TIMEOUT_MS = 10_000;
@@ -188,8 +188,9 @@ export function ProjectLogScreen({ projectId }: { readonly projectId?: string | 
   const people = useMemo(() => (members.data?.members ?? []).filter((member) => member.status !== 'pending'), [members.data]);
 
   return (
+    <PageLayout>
     <div className="rf-stack">
-      <h1>Project log</h1>
+      <PageHeader title="Project log" breadcrumb={[{ label: 'Projects', to: '/projects' }, { label: 'Project log' }]} />
       <form className="rf-stack" aria-label="Choose and filter the Project log" onSubmit={(event) => event.preventDefault()}>
         <SelectField label="Project" value={chosen} placeholder="First Project" options={(projects.data?.projects ?? []).map((project) => ({ value: project.id, label: project.name }))} onChange={setParam('project')} />
         <SelectField label="Kind of record" value={filters.itemKind ?? ''} placeholder="Any kind" options={ITEM_KINDS.map((kind: ItemKind) => ({ value: kind, label: ITEM_KIND_NAMES[kind] }))} onChange={setParam('itemKind')} />
@@ -223,6 +224,7 @@ export function ProjectLogScreen({ projectId }: { readonly projectId?: string | 
         )}
       {state === 'done' && next !== null && <div className="rf-actions"><Button onClick={() => void more()}>Show more entries</Button></div>}
     </div>
+    </PageLayout>
   );
 }
 

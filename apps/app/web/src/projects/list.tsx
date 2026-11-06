@@ -4,7 +4,7 @@ import { Link } from 'react-router';
 import { useApi } from '../api';
 import { useSession } from '../session';
 import type { ProjectRecord } from '../types';
-import { Button, levelName, LoadState, SaveFailure, useLoad } from '../ui';
+import { Button, levelName, LoadState, PageHeader, PageLayout, SaveFailure, useLoad } from '../ui';
 
 /**
  * The Projects in the Project_Order, which an Administrator can change with Move buttons or by dragging; each move puts
@@ -75,12 +75,16 @@ export function ProjectsPage() {
   const projects = useLoad<{ projects: ProjectRecord[] }>('/projects');
   if (!projects.data) return <LoadState error={projects.error} />;
   return (
-    <div className="rf-stack">
-      <h1>Projects</h1>
-      {can('project.create') && <Link className="rf-button rf-button--primary" to="/projects/new">Create a Project</Link>}
-      {projects.data.projects.length === 0
-        ? <p className="rf-meta">No Project exists yet.</p>
-        : <ProjectOrder projects={projects.data.projects} canEdit={can('project.edit')} onMoved={projects.reload} />}
-    </div>
+    <PageLayout>
+      <div className="rf-stack">
+        <PageHeader
+          title="Projects"
+          actions={can('project.create') ? <Link className="rf-button rf-button--primary" to="/projects/new">Create a Project</Link> : undefined}
+        />
+        {projects.data.projects.length === 0
+          ? <p className="rf-meta">No Project exists yet.</p>
+          : <ProjectOrder projects={projects.data.projects} canEdit={can('project.edit')} onMoved={projects.reload} />}
+      </div>
+    </PageLayout>
   );
 }

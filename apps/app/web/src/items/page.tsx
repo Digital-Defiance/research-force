@@ -13,6 +13,8 @@ import { DissentPanel } from '../dissent/dissent';
 import { HoldPanel } from '../disclosure/holds';
 import { DisclosureChange } from '../disclosure/disclosure';
 import { CorrespondenceParties } from '../disclosure/correspondence';
+import { ConsentRequestLaunch } from '../consent/launch';
+import { ConsentRequestsPanel } from '../consent/requests';
 import { MoveDialog } from '../disclosure/move';
 import { RichTextView } from '../editor/RichTextView';
 import { FlagMark, useFlagSnapshot, useRecordViews } from '../activity/activity';
@@ -22,7 +24,7 @@ import { PendingReview, ReviewList, ReviewRequestForm, reviewOptions } from '../
 import type { CreditView, ItemView, LinkEntry, MemberRow, PartyRecord, ThreadEntryView, ValueSets } from '../types';
 import { useApi } from '../api';
 import { useSession } from '../session';
-import { DisclosureStatus, formatDate, LoadState, Notice, PersonLink, useLoad } from '../ui';
+import { DisclosureStatus, formatDate, LoadState, Notice, PageHeader, PageLayout, PersonLink, useLoad } from '../ui';
 import { partyName } from './forms/inputs';
 import { KIND_FIELDS, SUBMITTABLE_KINDS } from './forms/model';
 import { AssessmentPanel } from './question/assessment';
@@ -68,6 +70,12 @@ function creditLabel(entry: CreditView): ReactNode {
 
 function Entry({ label, children }: { readonly label: string; readonly children: ReactNode }) {
   return <><dt>{label}</dt><dd>{children}</dd></>;
+}
+
+/** The first External_Party of a Correspondence, to prefill a publication Consent_Request's recipient (R51.2). */
+function firstExternalParty(item: ItemView): string | undefined {
+  const entries = (item['parties'] as readonly CorrespondencePartyValue[] | undefined) ?? [];
+  return entries.find((entry) => entry.kind === 'external')?.id;
 }
 
 /** One stored field as the page shows it. */
@@ -228,30 +236,44 @@ export function ItemDetails({ data }: { readonly data: ItemPageData }) {
   const fields = KIND_FIELDS[item.kind].filter((spec) => !HIDDEN_FIELDS.has(spec.name) && !companions.has(spec.name) && item[spec.name] !== undefined && item[spec.name] !== null);
   return (
     <CitationScope rootId={item.id}>
+    <PageLayout>
     <article className="rf-stack">
+      <PageHeader
+        title={item.title}
+        description={`${ITEM_KIND_NAMES[item.kind]} ${item.identifier}`}
+        breadcrumb={[{ label: 'Projects', to: '/projects' }, { label: item.project.name, to: `/projects/${item.project.id}/log` }, { label: item.title }]}
+        actions={(
+          <>
+            <Link className="rf-button" to={`/items/${item.id}/edit`}>Edit</Link>
+            <Link className="rf-button" to={`/items/${item.id}/propose`}>Propose an edit</Link>
+            <Link className="rf-button" to={`/items/${item.id}/proposals`}>Proposed edits</Link>
+            <Link className="rf-button" to={`/items/${item.id}/history`}>History</Link>
+            {item.withdrawal === null && <Link className="rf-button" to={`/items/${item.id}/withdraw`}>Withdraw</Link>}
+            {session.can('item.delete') && <Link className="rf-button rf-button--danger" to={`/items/${item.id}/delete`}>Delete permanently</Link>}
+          </>
+        )}
+      />
       <header>
-        <p className="rf-meta">{`${ITEM_KIND_NAMES[item.kind]} ${item.identifier}`}</p>
-        <h1>{item.title}</h1>
         {flagOf(item.id) && <p><FlagMark flag={flagOf(item.id)} /></p>}
         {item.access.level === 'restricted' && <p><RestrictedMark /></p>}
         {item.pendingReview && <p><PendingReview /></p>}
         <p>{'Project: '}<strong>{item.project.name}</strong></p>
         <DisclosureStatus disclosure={item.disclosure} />
         {item.disclosure.line !== undefined && <p className="rf-disclosure-line">{item.disclosure.line}</p>}
-        <div className="rf-actions">
-          <Link className="rf-button" to={`/items/${item.id}/edit`}>Edit</Link>
-          <Link className="rf-button" to={`/items/${item.id}/propose`}>Propose an edit</Link>
-          <Link className="rf-button" to={`/items/${item.id}/proposals`}>Proposed edits</Link>
-          <Link className="rf-button" to={`/items/${item.id}/history`}>History</Link>
-          {item.withdrawal === null && <Link className="rf-button" to={`/items/${item.id}/withdraw`}>Withdraw</Link>}
-          {session.can('item.delete') && <Link className="rf-button rf-button--danger" to={`/items/${item.id}/delete`}>Delete permanently</Link>}
-        </div>
       </header>
       <AccessSummary item={item} members={data.members} onChanged={onChanged} />
       <DisclosureChange itemId={item.id} level={item.disclosure.level} {...(typeof item['publicPresentation'] === 'string' ? { presentation: item['publicPresentation'] } : {})}
         {...(isRich(item['publicSummary']) ? { publicSummary: item['publicSummary'] } : {})} {...(item.logSummary !== undefined ? { logSummary: item.logSummary } : {})}
         members={data.members} onProposed={onChanged} onApplied={onChanged} />
       {item.kind === 'correspondence' && <CorrespondenceParties item={item} parties={data.parties} members={data.members} onChanged={onChanged} />}
+      {item.kind === 'correspondence' && (
+        <ConsentRequestLaunch element={{ key: `u:${item.id}`, label: `${item.identifier}: ${item.title}` }} kind="publication"
+          {...(firstExternalParty(item) === undefined ? {} : { defaultPartyId: firstExternalParty(item)! })} members={data.members} />
+      )}
+      {item.kind === 'source' && (
+        <ConsentRequestLaunch element={{ key: `u:${item.id}`, label: `${item.identifier}: ${item.title}` }} kind="rights" members={data.members} />
+      )}
+      {(item.kind === 'correspondence' || item.kind === 'source') && <ConsentRequestsPanel element={{ unitId: item.id }} />}
       <HoldPanel itemId={item.id} ownerId={item.owner.id} holds={item.holds ?? []} onChanged={onChanged} />
       <MoveDialog itemId={item.id} projectId={item.project.id} members={data.members} onMoved={onChanged} />
       {item.withdrawal !== null && (
@@ -322,6 +344,7 @@ export function ItemDetails({ data }: { readonly data: ItemPageData }) {
         </ul>
       </section>
     </article>
+    </PageLayout>
     </CitationScope>
   );
 }

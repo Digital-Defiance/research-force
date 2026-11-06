@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router';
 import { useApi } from '../api';
 import { useSession } from '../session';
 import type { ItemView, MemberRow, PartyRecord } from '../types';
@@ -71,7 +72,7 @@ export function CorrespondenceParties({ item, parties, members, onChanged }: {
           const name = record?.name ?? entry.id;
           return (
             <li key={entry.id} className="rf-companion">
-              <p><strong>{name}</strong></p>
+              <p><strong><Link to={`/parties/${entry.id}`}>{name}</Link></strong></p>
               <p className="rf-meta">{`Consent status: ${consentName(entry.consent ?? 'not_asked')}`}</p>
               {record !== undefined && (
                 <>

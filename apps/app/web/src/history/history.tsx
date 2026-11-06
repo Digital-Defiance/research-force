@@ -8,7 +8,7 @@ import { RichTextView } from '../editor/RichTextView';
 import { KIND_FIELDS } from '../items/forms/model';
 import { useApi } from '../api';
 import { useSession } from '../session';
-import type { AccessPoint, DualApprovalView, FieldDifference, HistoryEntry, HistoryStateView, ItemHistoryView, ItemView, WordPart } from '../types';
+import type { AccessPoint, AiProvenanceView, DualApprovalView, FieldDifference, HistoryEntry, HistoryStateView, ItemHistoryView, ItemView, WordPart } from '../types';
 import { Button, formatDate, levelName, LoadState, Notice, PersonLink, SaveFailure, SelectField, useLoad } from '../ui';
 
 export const REVISION_KIND_NAMES: Readonly<Record<string, string>> = {
@@ -94,6 +94,24 @@ export const describeAccess = (point: AccessPoint): string => `${accessLevelName
 
 const entryName = (entry: HistoryEntry) => `${REVISION_KIND_NAMES[entry.kind] ?? entry.kind}, ${formatDate(entry.at)}`;
 
+/**
+ * The AI provenance a creation or Revision recorded for each field a Member placed an AI_Draft in: the field, the
+ * model and its catalog version, and whether the saved text differs from that AI_Draft (R44.6).
+ */
+export function AiProvenanceDetails({ item, ai }: { readonly item: Pick<ItemView, 'kind'>; readonly ai: AiProvenanceView }) {
+  const fields = Object.entries(ai);
+  if (fields.length === 0) return null;
+  return (
+    <ul className="rf-list">
+      {fields.map(([field, provenance]) => (
+        <li key={field}>
+          {`${fieldLabel(item, field)}: began as an AI draft from ${provenance.model} (version ${provenance.version}); ${provenance.differs ? 'the saved text differs from the AI draft.' : 'the saved text is unchanged from the AI draft.'}`}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 /** The creation and every Revision, newest first, with who, when, what kind, the reason, and the fields it changed (R22.3). */
 export function HistoryList({ item, entries, selected, onSelect }: {
   readonly item: ItemView; readonly entries: readonly HistoryEntry[]; readonly selected: string | undefined; readonly onSelect: (point: string) => void;
@@ -117,6 +135,7 @@ export function HistoryList({ item, entries, selected, onSelect }: {
           {entry.access !== undefined && <p>{`Before: ${describeAccess(entry.access.before)}. After: ${describeAccess(entry.access.after)}.`}</p>}
           {entry.kind === 'access_change' && entry.fields.includes('hold') && <p>This Access change placed, lifted, or overrode a Confidentiality hold; it changed no Disclosure level.</p>}
           {entry.fields.length > 0 && <p className="rf-meta">{`Changed: ${entry.fields.map((field) => fieldLabel(item, field)).join(', ')}`}</p>}
+          {entry.ai !== undefined && <AiProvenanceDetails item={item} ai={entry.ai} />}
           <Button variant="quiet" onClick={() => onSelect(entry.id)} disabled={selected === entry.id}>
             {selected === entry.id ? 'Shown below' : 'Show the record as it was after this'}
           </Button>

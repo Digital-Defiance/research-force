@@ -7,8 +7,8 @@ import { usePersistentForm } from '../persist';
 import { useSession } from '../session';
 import type { Session } from '../session';
 import type { MemberRow, ReviewView } from '../types';
-import { Button, CheckboxField, formatDate, LoadState, Notice, PersonLink, SaveFailure, SelectField, TextField, useLoad } from '../ui';
-import type { Option } from '../ui';
+import { Button, CheckboxField, DataTable, EmptyState, formatDate, LoadState, Notice, PageHeader, PageLayout, PersonLink, SaveFailure, SelectField, TextField, useClientFilterSort, useLoad } from '../ui';
+import type { ClientFilter, Column, Option } from '../ui';
 
 /** Who a Review_Request can name: active Members other than the requester, Specialties that are not retired, and Roles (R17.2). */
 export interface ReviewOptions {
@@ -190,29 +190,61 @@ export function targetLink(review: ReviewView): { to: string; name: string } {
 /** The Needs_Review requests the Member can review now, oldest first, each linking to its Item or Entry_Section (R17.8). */
 export function ReviewQueuePage({ embedded = false }: { readonly embedded?: boolean }) {
   const queue = useLoad<{ reviews: ReviewView[] }>('/reviews/queue');
+  const session = useSession();
+  const loaded = queue.data?.reviews ?? NO_REVIEWS;
+  const { visible, filterValue, setFilter } = useClientFilterSort(loaded, { filters: QUEUE_FILTERS });
   if (!queue.data) return <LoadState error={queue.error} />;
-  return (
+  const columns: Column<ReviewView>[] = [
+    { key: 'target', header: 'Target', sortBy: (review) => queueTarget(review).name, cell: (review) => <QueueTarget review={review} /> },
+    { key: 'requester', header: 'Requester', sortBy: (review) => review.requester.displayName ?? '', cell: (review) => <PersonLink person={review.requester} /> },
+    { key: 'addressees', header: 'Addressees', cell: (review) => addresseeList(review) },
+    { key: 'requestedAt', header: 'Requested at', sortBy: (review) => review.createdAt, cell: (review) => formatDate(review.createdAt) },
+    { key: 'actions', header: 'Review', cell: (review) => (review.state === 'needs_review' && !review.isPublicationRequest && canReview(session, review)
+      ? <CompleteReview review={review} onCompleted={queue.reload} /> : null) },
+  ];
+  const empty = loaded.length === 0;
+  const body = (
     <div className="rf-stack">
-      {!embedded && <h1>Review queue</h1>}
-      {queue.data.reviews.length === 0 ? <p className="rf-meta">No Review Requests are waiting for you.</p> : (
-        <ul className="rf-list">
-          {queue.data.reviews.map((review) => {
-            // A Publication_Proposal addressed to the viewer links to their proposal page; every other request links to its target (R23.18, R23.19).
-            if (review.requestType === 'proposal') {
-              return <li key={review.id}><ReviewEntry review={review} what={<Link to={`/publication-proposals/${review.id}`}>A Publication Proposal to review</Link>} onChanged={queue.reload} /></li>;
-            }
-            // A Publication_Request links an Administrator to the apply or decline screen (R23.11, R23.12).
-            if (review.isPublicationRequest) {
-              return <li key={review.id}><ReviewEntry review={review} what={<Link to={`/publication-requests/${review.id}`}>A Publication Request to apply or decline</Link>} onChanged={queue.reload} /></li>;
-            }
-            const link = targetLink(review);
-            return <li key={review.id}><ReviewEntry review={review} what={<Link to={link.to}>{link.name}</Link>} onChanged={queue.reload} /></li>;
-          })}
-        </ul>
-      )}
+      {!empty && <TextField label="Filter review requests" value={filterValue['q'] ?? ''} onChange={(value) => setFilter('q', value)} hint="Matches the target, requester, or addressees." />}
+      {empty ? <EmptyState message="No Review Requests are waiting for you." />
+        : visible.length === 0 ? <EmptyState message="No Review Requests match the filter." />
+        : <DataTable caption="Review requests" columns={columns} rows={visible} />}
     </div>
   );
+  if (embedded) return body;
+  return (
+    <PageLayout variant="wide">
+      <PageHeader title="Review queue" />
+      {body}
+    </PageLayout>
+  );
 }
+
+const NO_REVIEWS: readonly ReviewView[] = [];
+
+/** What a queued request is about and where it links: a proposal, a Publication_Request, or its target (R17.8, R23.11, R23.12, R23.18, R23.19). */
+function queueTarget(review: ReviewView): { to: string; name: string } {
+  if (review.requestType === 'proposal') return { to: `/publication-proposals/${review.id}`, name: 'A Publication Proposal to review' };
+  if (review.isPublicationRequest) return { to: `/publication-requests/${review.id}`, name: 'A Publication Request to apply or decline' };
+  return targetLink(review);
+}
+
+function QueueTarget({ review }: { readonly review: ReviewView }) {
+  const link = queueTarget(review);
+  return (
+    <>
+      {review.isPublicationRequest && <><span className="rf-status">Publication request</span>{' '}</>}
+      {review.requestType === 'proposal' && <><span className="rf-status">Publication proposal</span>{' '}</>}
+      <Link to={link.to}>{link.name}</Link>
+      {review.note !== null && <p className="rf-meta">{review.note}</p>}
+    </>
+  );
+}
+
+const QUEUE_FILTERS: readonly ClientFilter<ReviewView>[] = [{
+  key: 'q',
+  predicate: (review, value) => `${queueTarget(review).name} ${review.requester.displayName ?? ''} ${addresseeList(review)}`.toLowerCase().includes(value.trim().toLowerCase()),
+}];
 
 /** A Review_Request added to a new Item's Submission; `section` is an Entry_Section's index, or empty for the whole record. */
 export interface ReviewDraft { readonly section: string; readonly addressees: Addressees; readonly note: string }

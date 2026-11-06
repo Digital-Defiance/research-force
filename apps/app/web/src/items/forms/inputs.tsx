@@ -7,6 +7,7 @@ import type { MemberRow, PartyRecord, ValueSets } from '../../types';
 import { Button, CheckboxField, SelectField, TextField } from '../../ui';
 import type { Option } from '../../ui';
 import { GroupsInput } from '../question/groups-input';
+import { moved } from '../question/model';
 import type { AlternativeValue, CorrespondencePartyValue, CountValue, DateValue, DocumentDateValue, FieldSpec, OutcomeValue, PartyValue, SectionValue } from './model';
 
 export interface FormData {
@@ -200,7 +201,11 @@ export function FieldInput({ spec, value, onChange, errors, data }: InputProps) 
             <div key={section.id ?? `new-${index}`} className="rf-section">
               <RichTextEditor label={`Entry Section ${index + 1}`} value={section.content} onChange={(content) => update(index, { ...section, content })}
                 errors={under(fieldErrors, `${spec.name}.${index}`)} mentions={data.mentions} />
-              {sections.length > 1 && <Button variant="quiet" onClick={() => update(index, undefined)}>{`Remove Entry Section ${index + 1}`}</Button>}
+              <div className="rf-actions">
+                <Button variant="quiet" disabled={index === 0} label={`Move Entry Section ${index + 1} up`} onClick={() => onChange(moved(sections, index, index - 1))}>Move up</Button>
+                <Button variant="quiet" disabled={index === sections.length - 1} label={`Move Entry Section ${index + 1} down`} onClick={() => onChange(moved(sections, index, index + 1))}>Move down</Button>
+                {sections.length > 1 && <Button variant="quiet" onClick={() => update(index, undefined)}>{`Remove Entry Section ${index + 1}`}</Button>}
+              </div>
             </div>
           ))}
           <Button onClick={() => onChange([...sections, { content: EMPTY_RICH_TEXT }])}>Add an Entry Section</Button>

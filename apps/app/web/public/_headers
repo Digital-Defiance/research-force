@@ -1,0 +1,7 @@
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' blob: data:; connect-src 'self' https://dl.researchforce.org https://<account>.r2.cloudflarestorage.com; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'none'; form-action 'self'
+  Referrer-Policy: no-referrer
+  Cross-Origin-Opener-Policy: same-origin
+  Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
+  X-Content-Type-Options: nosniff
+  Permissions-Policy: camera=(), microphone=(), geolocation=()

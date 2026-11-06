@@ -1,11 +1,9 @@
 import { AttachmentPage, AttachFilesForm } from './files/attachment-page';
-import { useMemo } from 'react';
-import { Link, Navigate, Route, Routes, useParams, useSearchParams } from 'react-router';
-import { ITEM_KIND_NAMES } from '@researchforce/domain/kind-names';
+import { Navigate, Route, Routes, useParams, useSearchParams } from 'react-router';
 import { ITEM_KINDS } from '@researchforce/domain/types';
 import type { ItemKind } from '@researchforce/domain/types';
-import { SUBMITTABLE_KINDS } from './items/forms/model';
-import { ActivityBadges, FeedScreen, SubmissionItemsScreen } from './activity/activity';
+import { Dashboard } from './dashboard/dashboard';
+import { FeedScreen, SubmissionItemsScreen } from './activity/activity';
 import { useApiStatus } from './api';
 import { NotificationCentre } from './notifications/centre';
 import { DeletePage } from './history/delete';
@@ -15,7 +13,7 @@ import { EditItemPage, NewItemPage } from './items/forms/ItemForm';
 import { ItemPage } from './items/page';
 import { MembersPage } from './people/members';
 import { PreferencesPage } from './people/preferences';
-import { OwnProfilePage, ProfileForm } from './people/profile';
+import { OwnProfilePage } from './people/profile';
 import { ProfilePage } from './people/view';
 import { CoverageScreen } from './compute/coverage';
 import { DraftsPage } from './drafts/drafts';
@@ -29,20 +27,28 @@ import { SavedNavigationPage } from './me/saved';
 import { TeamDashboardPage } from './me/team';
 import { CitationCurationScreen } from './citations/panel';
 import { ReviewQueuePage } from './reviews/reviews';
+import { ModerationQueueScreen } from './moderation/queue';
+import { OutsideSubmissionScreen } from './moderation/submission';
 import { ProposalScreen } from './reviews/proposal';
 import { PublicationRequestScreen } from './disclosure/publication-request';
+import { ConsentRequestsScreen } from './consent/requests';
+import { PartyPage } from './consent/party';
 import { UnclassifiedScreen, PublicOverviewScreen } from './disclosure/records';
 import { EvidenceEditorScreen } from './evidence/editor';
 import { CurationQueueScreen } from './evidence/queue';
 import { JournalImportScreen } from './imports/journal';
 import { BulkImportScreen } from './imports/bulk';
+import { ExportsScreen } from './exports/exports';
+import { BackupsScreen } from './exports/backups';
 import { DualApprovalsPage } from './reviews/dual';
 import { SearchScreen } from './search/search';
 import { ProjectLogRoute, ProjectLogScreen } from './projects/log';
 import { ArchivalRequestsScreen, CorrespondencesScreen, FindingsScreen, HypothesesScreen, RunsScreen } from './lists/lists';
 import { NewReleasePage, ReleasePage, ReleasesListPage } from './releases/releases';
-import { SessionContext, sessionFor } from './session';
-import type { Me, MemberRow, Role } from './types';
+import { PolicyIndexScreen, PolicyPageScreen } from './admin/policy';
+import { SettingsScreen } from './admin/settings';
+import { ValueSetsScreen } from './admin/value-sets';
+import type { MemberRow } from './types';
 import { LoadState, Notice, useLoad } from './ui';
 
 /** Workspace-wide notices, shown on every page (R28.9, R28.10). */
@@ -55,58 +61,6 @@ export function StatusNotices() {
       </Notice>}
       {status.frozen && <Notice tone="warning" title="Saving is paused for a backup (about a minute)." />}
     </>
-  );
-}
-
-/** The header of every Workspace page, with ResearchForce linking to the Workspace start page (R45.2). */
-export function Header() {
-  return (
-    <header className="rf-header">
-      <div className="rf-header__inner">
-        <Link className="rf-header__brand" to="/">ResearchForce</Link>
-        <nav aria-label="Workspace">
-          <ul className="rf-nav__list">
-            <li><Link className="rf-nav__link" to="/projects">Projects</Link></li>
-            <li><Link className="rf-nav__link" to="/log">Project log</Link></li>
-            <li><Link className="rf-nav__link" to="/lists/findings">Findings</Link></li>
-            <li><Link className="rf-nav__link" to="/lists/runs">Runs</Link></li>
-            <li><Link className="rf-nav__link" to="/lists/hypotheses">Hypotheses</Link></li>
-            <li><Link className="rf-nav__link" to="/lists/correspondences">Correspondences</Link></li>
-            <li><Link className="rf-nav__link" to="/lists/archival-requests">Archival requests</Link></li>
-            <li><Link className="rf-nav__link" to="/me/work">My work</Link></li>
-            <li><Link className="rf-nav__link" to="/me/drafts">My drafts</Link></li>
-            <li><Link className="rf-nav__link" to="/me/saved">Saved</Link></li>
-            <li><Link className="rf-nav__link" to="/search">Search</Link></li>
-            <li><Link className="rf-nav__link" to="/members">Members</Link></li>
-            <li><Link className="rf-nav__link" to="/reviews">Review queue</Link></li>
-            <li><Link className="rf-nav__link" to="/dual-approvals">Dual approvals</Link></li>
-            <li><Link className="rf-nav__link" to="/disclosure/unclassified">Unclassified</Link></li>
-            <li><Link className="rf-nav__link" to="/disclosure/public-units">Public overview</Link></li>
-            <li><Link className="rf-nav__link" to="/evidence/queue">Evidence queue</Link></li>
-            <li><Link className="rf-nav__link" to="/imports/journal">Import a journal</Link></li>
-            <li><Link className="rf-nav__link" to="/imports/bulk">Import a manifest</Link></li>
-            <li><Link className="rf-nav__link" to="/releases">Releases</Link></li>
-            <li><Link className="rf-nav__link" to="/me/profile">Your Profile</Link></li>
-            <li><Link className="rf-nav__link" to="/me/preferences">Notification settings</Link></li>
-          </ul>
-        </nav>
-        <ActivityBadges />
-      </div>
-    </header>
-  );
-}
-
-function StartPage() {
-  return (
-    <div className="rf-stack">
-      <h1>Workspace</h1>
-      <section aria-label="Submit">
-        <h2>Submit a new record</h2>
-        <ul className="rf-list">
-          {SUBMITTABLE_KINDS.map((kind) => <li key={kind}><Link to={`/items/new/${kind}`}>{ITEM_KIND_NAMES[kind]}</Link></li>)}
-        </ul>
-      </section>
-    </div>
   );
 }
 
@@ -212,6 +166,18 @@ function GoRoute() {
   const [root, reply] = ref.split('~');
   return root ? <Navigate to={`/items/${root}${reply ? `#reply-${reply}` : ''}`} replace /> : <NotFound />;
 }
+function OutsideSubmissionRoute() {
+  const { id = '' } = useParams();
+  return <OutsideSubmissionScreen key={id} id={id} />;
+}
+function PartyRoute() {
+  const { id = '' } = useParams();
+  return <PartyPage key={id} id={id} />;
+}
+function PolicyPageRoute() {
+  const { page = '' } = useParams();
+  return <PolicyPageScreen key={page} pageKey={page} />;
+}
 function NotFound() {
   return <Notice tone="warning" title="This page does not exist." />;
 }
@@ -219,7 +185,9 @@ function NotFound() {
 export function WorkspaceRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<StartPage />} />
+      <Route path="/" element={<Dashboard />} />
+      {/* The Design Suite TopMenu links its built-in "Dashboard" control to /dashboard; alias it to the Workspace start page. */}
+      <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/items/new/:kind" element={<NewItemRoute />} />
       <Route path="/attachments/:id" element={<AttachmentRoute />} />
       <Route path="/attachments/:id/version" element={<VersionRoute />} />
@@ -256,12 +224,22 @@ export function WorkspaceRoutes() {
       <Route path="/me/saved" element={<SavedNavigationPage />} />
       <Route path="/me/drafts" element={<DraftsPage />} />
       <Route path="/reviews" element={<ReviewQueuePage />} />
+      <Route path="/moderation" element={<ModerationQueueScreen />} />
+      <Route path="/moderation/:id" element={<OutsideSubmissionRoute />} />
       <Route path="/publication-requests/:id" element={<PublicationRequestRoute />} />
+      <Route path="/parties/:id" element={<PartyRoute />} />
+      <Route path="/consent-requests" element={<ConsentRequestsScreen />} />
       <Route path="/disclosure/unclassified" element={<UnclassifiedScreen />} />
       <Route path="/disclosure/public-units" element={<PublicOverviewScreen />} />
       <Route path="/evidence/queue" element={<CurationQueueScreen />} />
       <Route path="/imports/journal" element={<JournalImportScreen />} />
       <Route path="/imports/bulk" element={<BulkImportScreen />} />
+      <Route path="/admin/policy" element={<PolicyIndexScreen />} />
+      <Route path="/admin/policy/:page" element={<PolicyPageRoute />} />
+      <Route path="/admin/settings" element={<SettingsScreen />} />
+      <Route path="/admin/value-sets" element={<ValueSetsScreen />} />
+      <Route path="/exports" element={<ExportsScreen />} />
+      <Route path="/backups" element={<BackupsScreen />} />
       <Route path="/releases" element={<ReleasesListPage />} />
       <Route path="/releases/new" element={<NewReleasePage />} />
       <Route path="/releases/:id" element={<ReleaseRoute />} />
@@ -274,28 +252,5 @@ export function WorkspaceRoutes() {
       <Route path="/activity/submissions/:id" element={<SubmissionItemsRoute />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
-  );
-}
-
-/** The signed-in Workspace: header, notices, and either the requested page or, while the Profile is incomplete, the Profile form (R3.6). */
-export function Workspace() {
-  const status = useApiStatus();
-  const me = useLoad<Me>('/me');
-  const roles = useLoad<{ roles: Role[] }>('/roles');
-  const session = useMemo(() => (me.data && roles.data ? sessionFor(me.data, roles.data.roles, me.reload) : null), [me.data, roles.data, me.reload]);
-  const gated = session !== null && (session.me.missing.length > 0 || status.profileMissing !== null);
-  return (
-    <>
-      <a className="rf-skip-link" href="#main">Skip to the main content</a>
-      <Header />
-      <main className="rf-main" id="main">
-        <StatusNotices />
-        {session === null ? <LoadState error={me.error ?? roles.error} /> : (
-          <SessionContext.Provider value={session}>
-            {gated ? <ProfileForm me={session.me} onSaved={me.reload} /> : <WorkspaceRoutes />}
-          </SessionContext.Provider>
-        )}
-      </main>
-    </>
   );
 }
