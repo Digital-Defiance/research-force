@@ -26,21 +26,56 @@ export const installationProfileSchema = z.strictObject({
 });
 export type InstallationProfile = z.infer<typeof installationProfileSchema>;
 
+const safeBytes = (n: number): number => { if (!Number.isSafeInteger(n)) throw new RangeError('Growth forecast exceeds safe byte arithmetic.'); return n; };
+
+/**
+ * One growth point at `years` from the measured corpus: every stored category plus ALL retained and transient copies.
+ * `years === 0` is the MEASURED CURRENT storage (the corpus as it is now); `years > 0` adds `annualBytes * years` to
+ * each category. The total deliberately counts the independent-backup tiers (14 daily + 8 weekly + 12 monthly, per the
+ * one GROWTH_PROFILE) and every transient package, with no deduplication or compression, so the report never
+ * understates what the installation must store and spend for (R28.8, R60.7).
+ */
+function growthPoint(input: InstallationProfile, years: number) {
+  const g = input.growth;
+  const category = (v: { initialBytes: number; annualBytes: number }): number => safeBytes(v.initialBytes + v.annualBytes * years);
+  const bytes = { originals: category(g.originals), derivatives: category(g.derivatives), metadata: category(g.metadata), history: category(g.history), publicCopies: category(g.publicCopies), releases: category(g.releases), exports: category(g.exports) };
+  const recoveryPointBytes = safeBytes(bytes.originals + bytes.derivatives + bytes.metadata + bytes.history);
+  const tiers = GROWTH_PROFILE.dailyRetention + GROWTH_PROFILE.weeklyRetention + GROWTH_PROFILE.monthlyRetention;
+  const independentBackupBytes = safeBytes(recoveryPointBytes * tiers * g.independentBackupCopies);
+  const transientBytes = safeBytes(recoveryPointBytes * g.transientCopies);
+  return { years, bytes, recoveryPointBytes, independentBackupBytes, transientBytes,
+    totalStoredBytes: safeBytes(Object.values(bytes).reduce((a, b) => a + b, 0) + independentBackupBytes + transientBytes),
+    fullRecoveryTransferBytes: recoveryPointBytes,
+  };
+}
+
+/** The 1/3/5-year forecast points, each including all retained and transient copies (R28.8, R60.7). */
 export function growthForecast(input: InstallationProfile) {
-  const safe = (n: number): number => { if (!Number.isSafeInteger(n)) throw new RangeError('Growth forecast exceeds safe byte arithmetic.'); return n; };
-  return GROWTH_PROFILE.years.map((years) => {
-    const g = input.growth;
-    const category = (v: { initialBytes: number; annualBytes: number }): number => safe(v.initialBytes + v.annualBytes * years);
-    const bytes = { originals: category(g.originals), derivatives: category(g.derivatives), metadata: category(g.metadata), history: category(g.history), publicCopies: category(g.publicCopies), releases: category(g.releases), exports: category(g.exports) };
-    const recoveryPointBytes = safe(bytes.originals + bytes.derivatives + bytes.metadata + bytes.history);
-    const tiers = GROWTH_PROFILE.dailyRetention + GROWTH_PROFILE.weeklyRetention + GROWTH_PROFILE.monthlyRetention;
-    const independentBackupBytes = safe(recoveryPointBytes * tiers * g.independentBackupCopies);
-    const transientBytes = safe(recoveryPointBytes * g.transientCopies);
-    return { years, bytes, recoveryPointBytes, independentBackupBytes, transientBytes,
-      totalStoredBytes: safe(Object.values(bytes).reduce((a, b) => a + b, 0) + independentBackupBytes + transientBytes),
-      fullRecoveryTransferBytes: recoveryPointBytes,
-    };
-  });
+  return GROWTH_PROFILE.years.map((years) => growthPoint(input, years));
+}
+
+/**
+ * The MEASURED growth report (task 67.3, R28.8, R28.17, R60.7): the measured CURRENT storage (year 0) and the 1/3/5-
+ * year forecast, every point counting all current/transient copies and the independent-backup tiers. It ties the
+ * report to the operational-retention transient window (`GROWTH_PROFILE.transientDays`, the 7-day retained/transient
+ * staging the operational sweeps bound) so the reported transient copies and the swept operational copies are the one
+ * model. This is the report wiring certification surfaces; it does not rebuild the forecaster.
+ */
+export function measuredGrowthReport(input: InstallationProfile) {
+  return {
+    version: GROWTH_PROFILE.version,
+    /** The measured corpus as it is now, including all current/transient and independent-backup copies. */
+    measuredCurrent: growthPoint(input, 0),
+    /** The 1/3/5-year forecast points (R28.17). */
+    forecasts: growthForecast(input),
+    /** The horizons the copies counted here are governed by: the transient-staging days and the independent-backup tiers. */
+    copyModel: {
+      transientDays: GROWTH_PROFILE.transientDays,
+      transientCopies: input.growth.transientCopies,
+      independentBackupCopies: input.growth.independentBackupCopies,
+      independentBackupTiers: GROWTH_PROFILE.dailyRetention + GROWTH_PROFILE.weeklyRetention + GROWTH_PROFILE.monthlyRetention,
+    },
+  };
 }
 
 /** Local geometry evidence only. Staging capacity/recovery/abuse measurements belong to task 48.3. */
@@ -63,7 +98,10 @@ export function certifyLocalProfile(raw: unknown) {
   return { schemaVersion: 1, status: 'local_bounds_verified', productionCertified: false,
     profile, installation, referenceArchive: REFERENCE_ARCHIVE, abuse: ABUSE_PROFILE, growth: GROWTH_PROFILE,
     forecastAssumptions: 'Uncompressed full copies at forecast-year volume; retention tiers added without deduplication. No storage purchase or spend cap is inferred. Replace example inputs with measured corpus/metadata volumes.',
-    forecasts: growthForecast(installation), boundaries,
+    forecasts: growthForecast(installation),
+    // The measured current + 1/3/5-year growth report, each point counting all current/transient and independent-backup
+    // copies, tied to the operational-retention transient/tier model (task 67.3, R28.8, R28.17, R60.7).
+    measuredGrowth: measuredGrowthReport(installation), boundaries,
     pendingProductionEvidence: ['maximum-input CPU and concurrent isolate memory', 'actual D1 calls/statements/rows and database growth', 'bounded preview/search/100-file paths', 'independent restore RPO/RTO', 'distributed abuse with authorized saves/downloads and removal', 'operator deployment limits and edge/account controls'],
   };
 }

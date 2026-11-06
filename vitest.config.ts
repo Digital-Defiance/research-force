@@ -43,7 +43,7 @@ export default defineConfig({
         test: {
           name: 'web', environment: 'happy-dom', testTimeout,
           provide: { fcRuns },
-          include: ['apps/app/web/test/**/*.test.{ts,tsx}'],
+          include: ['apps/app/web/test/**/*.test.{ts,tsx}', 'apps/site-shell/test/**/*.test.{ts,tsx}'],
           setupFiles: ['./packages/testing/test/setup.ts', './apps/app/web/test/setup.ts'],
         },
       },
@@ -63,7 +63,8 @@ export default defineConfig({
         })],
         test: {
           name: 'workers', include: ['apps/*/test/**/*.test.ts'], testTimeout,
-          exclude: ['apps/app/test/local-services.test.ts'],
+          // site-shell scripts are browser code, tested in the happy-dom `web` project, not the Workers pool.
+          exclude: ['apps/app/test/local-services.test.ts', 'apps/site-shell/test/**'],
           provide: { fcRuns, d1Migrations },
           setupFiles: ['./packages/testing/test/setup.ts'],
         },

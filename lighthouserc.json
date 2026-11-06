@@ -1,0 +1,55 @@
+{
+  "ci": {
+    "collect": {
+      "numberOfRuns": 20,
+      "url": [
+        "http://127.0.0.1:5173/",
+        "http://127.0.0.1:5173/about",
+        "http://127.0.0.1:5173/people",
+        "http://127.0.0.1:5173/methods",
+        "http://127.0.0.1:5173/licence",
+        "http://127.0.0.1:5173/privacy",
+        "http://127.0.0.1:5173/corrections",
+        "http://127.0.0.1:5173/projects",
+        "http://127.0.0.1:5173/search",
+        "http://127.0.0.1:5173/submit/general"
+      ],
+      "settings": {
+        "formFactor": "mobile",
+        "throttlingMethod": "simulate",
+        "screenEmulation": {
+          "mobile": true,
+          "width": 412,
+          "height": 823,
+          "deviceScaleFactor": 1.75,
+          "disabled": false
+        },
+        "throttling": {
+          "rttMs": 150,
+          "throughputKbps": 1638.4,
+          "requestLatencyMs": 562.5,
+          "downloadThroughputKbps": 1474.5600000000002,
+          "uploadThroughputKbps": 675,
+          "cpuSlowdownMultiplier": 4
+        },
+        "onlyCategories": ["performance"]
+      }
+    },
+    "assert": {
+      "assertions": {
+        "largest-contentful-paint": [
+          "error",
+          { "maxNumericValue": 2500, "aggregationMethod": "pessimistic" }
+        ],
+        "cumulative-layout-shift": [
+          "error",
+          { "maxNumericValue": 0.1, "aggregationMethod": "pessimistic" }
+        ],
+        "interaction-to-next-paint": [
+          "error",
+          { "maxNumericValue": 200, "aggregationMethod": "pessimistic" }
+        ]
+      }
+    }
+  }
+}

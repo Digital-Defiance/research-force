@@ -11,6 +11,8 @@
   },
   "include": [
     "src/**/*.ts",
+    "smoke/**/*.ts",
+    "recovery/**/*.ts",
     "*.ts",
     "types/*.d.ts",
     "../infra/secrets.ts",

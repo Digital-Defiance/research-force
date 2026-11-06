@@ -36,6 +36,20 @@ export const SENDING_ADDRESS = 'researchforce@researchforce.org';
 export const DMARC_RUA_ADDRESS = 'dmarc-reports@researchforce.org';
 
 /**
+ * Guarantee at import time that the DMARC aggregate-report address is never the Sending_Address, so
+ * report mail can never loop back into the sending mailbox (R20.23). The comparison is
+ * case-insensitive because receiving mail servers treat the local part case-insensitively in
+ * practice. This throws before any record is exported if the two constants are ever edited to
+ * collide, turning a dangerous misconfiguration into a loud, early failure.
+ */
+if (DMARC_RUA_ADDRESS.toLowerCase() === SENDING_ADDRESS.toLowerCase()) {
+  throw new Error(
+    `DMARC_RUA_ADDRESS (${DMARC_RUA_ADDRESS}) must not equal the Sending_Address (${SENDING_ADDRESS}); ` +
+      'aggregate reports would loop back into the sending mailbox (R20.23).',
+  );
+}
+
+/**
  * The Microsoft 365 tenant initial domain the DKIM CNAME targets point into. This is an operator
  * input; the default is a placeholder the operator confirms against the M365 admin center and
  * overrides here if the real targets differ.

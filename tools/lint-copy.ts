@@ -49,7 +49,7 @@ export function fixedTextIssues(where: string, value: string): CopyIssue[] {
   return issues;
 }
 
-const CODE_LIKE = /[=<>{};|\\`]|--|^\s*(?:SELECT|INSERT|UPDATE|DELETE|CREATE|ALTER|DROP|WITH)\b/u;
+const CODE_LIKE = /[=<>{};|\\`]|--|^\s*(?:SELECT|INSERT|UPDATE|DELETE|CREATE|ALTER|DROP|WITH)\b|\bIN\s*\(|^\s*(?:AND|OR|FROM|WHERE|GROUP|ORDER|JOIN|ON|VALUES|SET|LIMIT|OFFSET)\b/u;
 const PROSE = /\p{L}+\s+\p{L}+\s+\p{L}+/u;
 const APOSTROPHE = /\p{L}'\p{L}/u;
 const QUOTED = /(?:^|[\s(])(["'])[^"'\s][^"']*\1(?=$|[\s.,;:!?)])/u;

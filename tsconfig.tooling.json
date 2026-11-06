@@ -22,7 +22,14 @@
     "packages/*/test/**/*.ts",
     "apps/*/test/**/*.ts",
     "tools/test/**/*.ts",
-    "scripts/**/*.ts"
+    "scripts/**/*.ts",
+    "playwright.config.ts",
+    "playwright.security.config.ts",
+    "playwright.staging.config.ts",
+    "tests/presentation/**/*.ts",
+    "tests/security/**/*.ts",
+    "tests/staging/**/*.ts",
+    "tests/perf/**/*.ts"
   ],
   "references": [
     {

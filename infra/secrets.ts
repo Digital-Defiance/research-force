@@ -8,7 +8,9 @@
  *   - rf-app:    apps/app/src/env.ts and apps/app/src/mail/providers/graph.ts (GraphProvider.fromEnv);
  *   - rf-submit: apps/submit/src/index.ts (Env);
  *   - rf-dl:     apps/dl/src/index.ts (Env);
- *   - rf-ops:    apps/ops/src/index.ts (OpsEnv) — the Access-sync credentials for the Cloudflare API.
+ *   - rf-ops:    apps/ops/src/index.ts (OpsEnv) — the Cloudflare API credentials/inputs for Access-sync,
+ *                usage analytics, rf-site deploy, edge Containment, the submit-host WAF shed and the
+ *                independent health/spend/incident alerts.
  * A test asserts these exact lists, so drift from the source files is caught.
  *
  * Production and staging must use SEPARATE credentials/secrets (README: "Production and staging must
@@ -64,9 +66,16 @@ export const workerSecrets: readonly WorkerSecrets[] = freeze([
   },
   {
     worker: 'rf-submit',
-    note: 'Public submission API. Secret from apps/submit/src/index.ts (Env). BUDGET/MAILER are DO bindings, not secrets.',
-    secrets: [{ name: 'TURNSTILE_SECRET', note: 'Turnstile siteverify secret key.' }],
-    vars: [],
+    note: 'Public submission API. Secrets from apps/submit/src/index.ts (Env). BUDGET/MAILER are DO bindings, not secrets.',
+    secrets: [
+      { name: 'TURNSTILE_SECRET', note: 'Turnstile siteverify secret key.' },
+      { name: 'R2_ACCESS_KEY_ID', note: 'Bucket-scoped S3 access key id; presigns Outside_Submission uploads.' },
+      { name: 'R2_SECRET_ACCESS_KEY', note: 'Bucket-scoped S3 secret access key; presigns Outside_Submission uploads.' },
+    ],
+    vars: [
+      { name: 'R2_ACCOUNT_ID', note: 'Cloudflare account id for the S3 endpoint; installation input.' },
+      { name: 'PRIVATE_BUCKET_NAME', note: 'Private bucket name for presigned uploads; installation input.' },
+    ],
   },
   {
     worker: 'rf-dl',
@@ -76,11 +85,30 @@ export const workerSecrets: readonly WorkerSecrets[] = freeze([
   },
   {
     worker: 'rf-ops',
-    note: 'Access-sync Worker (no fetch route; reachable only via service bindings). Env from apps/ops/src/index.ts (OpsEnv); AccessSync throws "Access sync is not configured." when any is absent.',
-    secrets: [{ name: 'CF_ACCESS_API_TOKEN', note: 'Cloudflare API token (Access Apps/Policies Edit + Zero Trust list edit, this account only).' }],
+    note: 'Ops Worker (no fetch route; reachable only via service bindings). Env from apps/ops/src/index.ts (OpsEnv). Covers Access-sync, usage analytics (task 44.1), rf-site deploy (task 32.1), edge Containment (task 59.2), the submit-host WAF budget shed (task 34.2) and the independent health/spend/incident alerts (task 67.2). Each subsystem refuses to operate when its inputs are absent. Separate credentials per environment.',
+    secrets: [
+      { name: 'CF_ACCESS_API_TOKEN', note: 'Cloudflare API token (Access Apps/Policies Edit + Zero Trust list edit, this account only).' },
+      { name: 'CF_ANALYTICS_API_TOKEN', note: 'Account Analytics Read API token scoped to CF_ACCOUNT_ID only, for the GraphQL Analytics API (task 44.1).' },
+      { name: 'CF_SITE_DEPLOY_API_TOKEN', note: 'Workers deploy API token scoped to rf-site on this account only (task 32.1).' },
+      { name: 'CONTAINMENT_API_TOKEN', note: 'Independently recoverable API token scoped to the public-host zone WAF only, held in a store separate from CF_ACCESS_API_TOKEN so Containment survives a primary-account lock (task 59.2, R60.6).' },
+      { name: 'INCIDENT_ALERT_TOKEN', note: 'Bearer credential for the independent alert channel (task 59.2/67.2, R28.6).' },
+      { name: 'CF_SUBMIT_WAF_API_TOKEN', note: 'API token scoped to the submit-host zone WAF only, for toggling the precreated submit-block rule (task 34.2).' },
+    ],
     vars: [
-      { name: 'CF_ACCOUNT_ID', note: 'Cloudflare account id the Access list/revoke calls target; installation input.' },
+      { name: 'CF_ACCOUNT_ID', note: 'Cloudflare account id the Access list/revoke and analytics calls target; installation input.' },
       { name: 'ACCESS_MEMBER_LIST_ID', note: 'Zero Trust list id for the rf-members Access list; installation input.' },
+      { name: 'CF_SITE_SCRIPT_NAME', note: 'The rf-site script/dispatch name the assets-upload-session and version/deploy endpoints address (task 32.1).' },
+      { name: 'CF_PUBLIC_ZONE_ID', note: 'The zone that serves the public research hosts, for edge Containment (task 59.2).' },
+      { name: 'APP_HOST', note: 'The app host Containment must never deny; kept available while the public hosts are denied (task 59.2).' },
+      { name: 'CF_PUBLIC_DENY_RULESET_ID', note: 'The WAF ruleset id the precreated public-host deny rules live in (task 59.2).' },
+      { name: 'CF_PUBLIC_DENY_RULE_IDS', note: 'Comma-separated ids of the precreated public-host deny rules Containment enables/disables (task 59.2).' },
+      { name: 'CONTAINMENT_PROBE_URL', note: 'A public research address an out-of-band probe HEADs to confirm a denial is actually serving (task 59.2).' },
+      { name: 'PLAN_CAN_DENY', note: 'Whether the configured plan can carry WAF custom deny rules at all; false blocks public launch (task 59.2, R60.4).' },
+      { name: 'INCIDENT_ALERT_WEBHOOK_URL', note: 'The independent alert channel endpoint, a provider distinct from the app and its email queue (task 59.2/67.2, R28.6).' },
+      { name: 'HEALTH_CHECK_ENDPOINTS', note: 'Comma-separated name=url pairs the independent health check HEADs out-of-band; empty reports degraded (task 67.2).' },
+      { name: 'CF_SUBMIT_ZONE_ID', note: 'The zone that serves the public submit host, for the submit-host WAF budget shed (task 34.2).' },
+      { name: 'CF_SUBMIT_BLOCK_RULESET_ID', note: 'The WAF ruleset id the precreated submit-block rule lives in (task 34.2).' },
+      { name: 'CF_SUBMIT_BLOCK_RULE_ID', note: 'The id of the precreated submit-block WAF custom rule the shed enables/disables, never creates (task 34.2).' },
     ],
   },
 ]);
