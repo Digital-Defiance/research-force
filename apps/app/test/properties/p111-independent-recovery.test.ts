@@ -118,6 +118,9 @@ function configureReady(options: { destination?: boolean; budget?: boolean; init
   b['BACKUP_COPY_DESTINATION'] = options.destination === false ? undefined : JSON.stringify({ kind: 'r2', label: 'independent-test' });
   b['RF_BACKUP_COPY_BUCKET'] = options.destination === false ? undefined : copyBucket();
   b['BACKUP_COPY_BUDGET_APPROVED'] = options.budget === false ? undefined : '1';
+  // The deployed config lengthens the RPO window; these tests exercise the specification's 18h / 24h defaults.
+  b['BACKUP_RPO_WARN_HOURS'] = undefined;
+  b['BACKUP_RPO_BREACH_HOURS'] = undefined;
   b['BACKUP_INITIAL_RESTORE_DONE'] = options.initialRestore === false ? undefined : '1';
 }
 

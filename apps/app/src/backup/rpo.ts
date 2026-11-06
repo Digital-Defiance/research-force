@@ -22,6 +22,24 @@ import { notifySystemAlert } from '../notifications/fanout';
 
 const HOUR_MS = 60 * 60 * 1000;
 
+/** The warning and breach ages, in milliseconds, that classify a verified point as stale. */
+export interface RpoThresholds { readonly warnMs: number; readonly breachMs: number }
+
+/**
+ * The thresholds in force. Default to the specification's 18 hours / 24 hours (R36.7). An installation whose only
+ * independent copy is a manual offline download may lengthen them with `BACKUP_RPO_WARN_HOURS` and
+ * `BACKUP_RPO_BREACH_HOURS`, an explicit operator decision to accept a longer recovery-point objective. An unusable
+ * value (not a positive number, or a breach not after the warning) is ignored and the defaults apply.
+ */
+export function rpoThresholds(env: Pick<Env, 'BACKUP_RPO_WARN_HOURS' | 'BACKUP_RPO_BREACH_HOURS'>): RpoThresholds {
+  const warnHours = Number(env.BACKUP_RPO_WARN_HOURS);
+  const breachHours = Number(env.BACKUP_RPO_BREACH_HOURS);
+  const usable = Number.isFinite(warnHours) && Number.isFinite(breachHours) && warnHours > 0 && breachHours > warnHours;
+  return usable
+    ? { warnMs: warnHours * HOUR_MS, breachMs: breachHours * HOUR_MS }
+    : { warnMs: BACKUP_SCHEDULE.warnMs, breachMs: BACKUP_SCHEDULE.breachMs };
+}
+
 /** The state of the RPO at `now`, derived from the latest verified recovery point's age. */
 export type RpoState = 'ok' | 'warning' | 'breach';
 
@@ -37,12 +55,12 @@ export interface RpoStatus {
  * (null `latestVerifiedAt`) is a BREACH: there is no independent recovery point at all, the worst RPO state. Otherwise
  * the age crosses the 18-hour warning or 24-hour breach thresholds.
  */
-export function classifyRpo(latestVerifiedAt: string | null, now: Timestamp): RpoStatus {
+export function classifyRpo(latestVerifiedAt: string | null, now: Timestamp, thresholds: RpoThresholds = BACKUP_SCHEDULE): RpoStatus {
   if (latestVerifiedAt === null) return { state: 'breach', ageHours: null };
   const ageMs = Date.parse(now) - Date.parse(latestVerifiedAt);
   const ageHours = Math.max(0, Math.floor(ageMs / HOUR_MS));
-  if (ageMs >= BACKUP_SCHEDULE.breachMs) return { state: 'breach', ageHours };
-  if (ageMs >= BACKUP_SCHEDULE.warnMs) return { state: 'warning', ageHours };
+  if (ageMs >= thresholds.breachMs) return { state: 'breach', ageHours };
+  if (ageMs >= thresholds.warnMs) return { state: 'warning', ageHours };
   return { state: 'ok', ageHours };
 }
 
@@ -65,7 +83,8 @@ export async function checkRpoAge(env: Env, now: Timestamp, log: Logger = create
     "SELECT verified_at AS verifiedAt FROM backup_points WHERE verified_at IS NOT NULL ORDER BY verified_at DESC LIMIT 1",
   ).first<{ verifiedAt: string }>();
   const latestVerifiedAt = row?.verifiedAt ?? null;
-  const status = classifyRpo(latestVerifiedAt, now);
+  const thresholds = rpoThresholds(env);
+  const status = classifyRpo(latestVerifiedAt, now, thresholds);
 
   // The de-duplication marker: the last alert signature emitted. A warning signature carries the verified point so a
   // fresh point re-warns; a breach signature carries the UTC day so a breach repeats at most once per day (R36.7).
@@ -77,18 +96,18 @@ export async function checkRpoAge(env: Env, now: Timestamp, log: Logger = create
   if (status.state === 'ok') {
     // Only emit a clear when the previous signature was an active alert (not already ok / never alerted).
     if (lastSignature === null || lastSignature === 'ok') { await recordSignature(env, 'ok', now); return 0; }
-    await emitIndependent(env, { level: 'cleared', ageHours: status.ageHours, thresholdHours: Math.round(BACKUP_SCHEDULE.warnMs / HOUR_MS) }, log);
+    await emitIndependent(env, { level: 'cleared', ageHours: status.ageHours, thresholdHours: Math.round(thresholds.warnMs / HOUR_MS) }, log);
     await recordSignature(env, 'ok', now);
     return 1;
   }
 
   const level = status.state; // 'warning' | 'breach'
-  const thresholdHours = Math.round((level === 'breach' ? BACKUP_SCHEDULE.breachMs : BACKUP_SCHEDULE.warnMs) / HOUR_MS);
+  const thresholdHours = Math.round((level === 'breach' ? thresholds.breachMs : thresholds.warnMs) / HOUR_MS);
   // The in-app System_Alert for every Administrator (R19.4) — content-free: the age and threshold only.
   const detail = {
     allowance: level === 'breach'
-      ? `The latest verified independent backup is ${status.ageHours ?? 'over 24'} hours old; this is an RPO breach`
-      : `The latest verified independent backup is ${status.ageHours ?? 'over 18'} hours old; this is an RPO warning`,
+      ? `The latest verified independent backup is ${status.ageHours ?? `over ${thresholdHours}`} hours old; this is an RPO breach`
+      : `The latest verified independent backup is ${status.ageHours ?? `over ${thresholdHours}`} hours old; this is an RPO warning`,
     kind: 'backup_rpo', level, ageHours: status.ageHours, thresholdHours, at: now,
   };
   const batch = new GuardedBatch(env.RF_CORE, { id: null, now }, { ignoreFreeze: true });

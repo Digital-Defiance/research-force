@@ -18,6 +18,8 @@
     "PRIVATE_BUCKET_NAME": "rf-private",
     "PUBLIC_BUCKET_NAME": "rf-public",
     "BACKUP_COPY_BUDGET_APPROVED": "true",
+    "BACKUP_RPO_WARN_HOURS": "576",
+    "BACKUP_RPO_BREACH_HOURS": "744",
     "BACKUP_COPY_DESTINATION": "{\"kind\":\"offline\",\"label\":\"operator-local-drive\"}",
     "CONTENT_LICENCE_NAME": "CC BY 4.0",
     "CONTENT_LICENCE_URL": "https://creativecommons.org/licenses/by/4.0/"

@@ -114,6 +114,13 @@ export interface Env {
    */
   BACKUP_COPY_BUDGET_APPROVED?: string;
   /**
+   * OPTIONAL longer RPO alert ages, in whole hours, for an installation whose independent copy is a manual offline
+   * download (R36.7). Unset keeps the specification's 18-hour warning and 24-hour breach. Both must be set, positive,
+   * and breach after warning, or the defaults apply.
+   */
+  BACKUP_RPO_WARN_HOURS?: string;
+  BACKUP_RPO_BREACH_HOURS?: string;
+  /**
    * Whether an INITIAL FRESH RESTORE rehearsal has completed successfully into an isolated environment (task 58.2,
    * R36.12, R36.17). Sole-copy research custody is refused until the operator records a completed initial restore. The
    * restore itself is task 38.5; this flag is the recorded prerequisite the custody gate checks. A truthy value

@@ -17,7 +17,7 @@ import { JOB_HANDLERS } from '../src/do/jobs';
 import type { JsonValue } from '../src/do/jobs';
 import { backupPrefix, startBackup } from '../src/jobs/backup';
 import { confirmOfflineCopy, slotKey, startScheduledBackup, sweepBackupCopies, sweepBackupRetention } from '../src/jobs/backup-cron';
-import { checkRpoAge, classifyRpo } from '../src/backup/rpo';
+import { checkRpoAge, classifyRpo, rpoThresholds } from '../src/backup/rpo';
 import { soleCopyCustodyGate } from '../src/backup/custody';
 import { independentDestination } from '../src/backup/copies';
 import { bucketKeyOf } from '../src/jobs/export';
@@ -43,6 +43,9 @@ function configureBackup(options: { destination?: boolean; budget?: boolean; ini
   b['BACKUP_COPY_DESTINATION'] = options.destination === false ? undefined : JSON.stringify({ kind: 'r2', label: 'independent-test' });
   b['RF_BACKUP_COPY_BUCKET'] = options.destination === false ? undefined : copyBucket();
   b['BACKUP_COPY_BUDGET_APPROVED'] = options.budget === false ? undefined : '1';
+  // The deployed config lengthens the RPO window; these tests exercise the specification's 18h / 24h defaults.
+  b['BACKUP_RPO_WARN_HOURS'] = undefined;
+  b['BACKUP_RPO_BREACH_HOURS'] = undefined;
   b['BACKUP_INITIAL_RESTORE_DONE'] = options.initialRestore === false ? undefined : '1';
   void custodianFingerprint; // the custodian material is parsed by the production code from the secret above
 }
@@ -355,5 +358,22 @@ describe('confirmOfflineCopy — an Administrator attests the offline copy by it
     expect(await confirmOfflineCopy(world.bindings, id, fingerprint, asTimestamp('2026-12-02T02:00:00.000Z'))).toEqual({ ok: false, fault: 'no-offline-destination' });
     offline();
     expect(await confirmOfflineCopy(world.bindings, newId(asTimestamp('2026-12-02T03:00:00.000Z')), fingerprint, asTimestamp('2026-12-02T03:00:00.000Z'))).toEqual({ ok: false, fault: 'not-complete' });
+  });
+});
+
+describe('rpoThresholds — a longer window is an explicit, validated choice (R36.7)', () => {
+  it('defaults to 18h / 24h, honours valid longer hours, and ignores unusable values', () => {
+    const H = 3_600_000;
+    expect(rpoThresholds({})).toEqual({ warnMs: 18 * H, breachMs: 24 * H });
+    expect(rpoThresholds({ BACKUP_RPO_WARN_HOURS: '576', BACKUP_RPO_BREACH_HOURS: '744' })).toEqual({ warnMs: 576 * H, breachMs: 744 * H });
+    // Unusable: breach not after warning, non-numeric, or only one value set -> defaults.
+    expect(rpoThresholds({ BACKUP_RPO_WARN_HOURS: '48', BACKUP_RPO_BREACH_HOURS: '24' })).toEqual({ warnMs: 18 * H, breachMs: 24 * H });
+    expect(rpoThresholds({ BACKUP_RPO_WARN_HOURS: 'x', BACKUP_RPO_BREACH_HOURS: '744' })).toEqual({ warnMs: 18 * H, breachMs: 24 * H });
+    expect(rpoThresholds({ BACKUP_RPO_WARN_HOURS: '576' })).toEqual({ warnMs: 18 * H, breachMs: 24 * H });
+    // A 20-day-old point is fine under the longer window but a breach under the default.
+    const now = asTimestamp('2026-12-21T00:00:00.000Z');
+    const old = '2026-12-01T00:00:00.000Z';
+    expect(classifyRpo(old, now).state).toBe('breach');
+    expect(classifyRpo(old, now, rpoThresholds({ BACKUP_RPO_WARN_HOURS: '576', BACKUP_RPO_BREACH_HOURS: '744' })).state).toBe('ok');
   });
 });
