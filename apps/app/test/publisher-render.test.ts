@@ -171,6 +171,29 @@ describe('publicCopyOf and the Installation_Public_Copy refusal gate (R46.41, R4
   });
 });
 
+describe('the form configuration', () => {
+  it('puts the Turnstile site key and origins in the form pages and the _headers CSP', async () => {
+    const forms = { siteKey: '0xSYNTHETICKEY', submitOrigin: 'https://submit-staging.example.test', filesOrigin: 'https://files-staging.example.test' };
+    await renderSiteBuild({ ...renderDeps(), forms }, NOW());
+    const stored = async (path: string): Promise<string> => {
+      const row = await manifestRow(path);
+      return new TextDecoder().decode(await (await priv().get(`build/${row!.hash}`))!.arrayBuffer());
+    };
+    const submit = await stored('/submit.html');
+    expect(submit).toContain('data-turnstile-sitekey="0xSYNTHETICKEY"');
+    expect(submit).toContain('data-submit-origin="https://submit-staging.example.test"');
+    expect(await stored('/consent.html')).toContain('data-turnstile-sitekey="0xSYNTHETICKEY"');
+    const headers = await stored('/_headers');
+    expect(headers).toContain('https://submit-staging.example.test');
+    expect(headers).toContain('\n/submit\n');
+  });
+  it('leaves the form attributes out when no site key is configured', async () => {
+    await renderSiteBuild(renderDeps(), NOW());
+    const row = await manifestRow('/submit.html');
+    const html = new TextDecoder().decode(await (await priv().get(`build/${row!.hash}`))!.arrayBuffer());
+    expect(html).not.toContain('data-turnstile-sitekey');
+  });
+});
 describe('a full render', () => {
   it('produces the page set, sitemap.xml, robots.txt, _headers, and the search index, and writes the manifest', async () => {
     const finding = await world.created('author', 'finding');

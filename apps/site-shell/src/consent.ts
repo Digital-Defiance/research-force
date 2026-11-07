@@ -28,6 +28,7 @@
  * shapes are declared here (as `respond.ts` does); the admission status helper is shared with `form.ts`.
  */
 
+import { loadTurnstile } from './turnstile';
 import { readStatus, UNAVAILABLE_NOTICE, type FetchLike } from './form';
 
 /** The kind of request a Consent_Page shows: a publication request (Correspondences) or a rights request (documents). */
@@ -258,16 +259,6 @@ export type { ApiResult };
  * ---------------------------------------------------------------------------
  */
 
-/** The Turnstile widget API the page loads in managed mode; declared here since it is a runtime-only global. */
-interface Turnstile {
-  render(container: HTMLElement, options: { sitekey: string; callback: (token: string) => void; 'expired-callback'?: () => void; 'error-callback'?: () => void; theme?: 'auto' }): string;
-  reset(widgetId?: string): void;
-}
-declare global {
-  interface Window {
-    turnstile?: Turnstile;
-  }
-}
 
 /** The fixed notice an unusable link shows, revealing nothing about the Consent_Request (R51.12). */
 const INVALID_NOTICE = 'This link is no longer valid.';
@@ -287,6 +278,7 @@ function start(form: HTMLFormElement): void {
   const mode = modeOf(form);
   const fetcher: FetchLike = (input, init) => fetch(input, init);
   const sitekey = form.dataset['turnstileSitekey'] ?? '';
+  const origin = form.dataset['submitOrigin'];
   const status = form.querySelector<HTMLElement>('[data-consent-status]');
   const elements = form.querySelector<HTMLElement>('[data-consent-elements]');
   const oneAnswerHost = form.querySelector<HTMLElement>('[data-consent-one-answer]');
@@ -307,7 +299,7 @@ function start(form: HTMLFormElement): void {
   };
 
   // Gate on the dynamic form admission status: an exhausted budget hides the form and shows the fixed notice (R28.11).
-  void readStatus(fetcher).then((admission) => {
+  void readStatus(fetcher, form.dataset['statusUrl']).then((admission) => {
     if (!admission.form) {
       form.hidden = true;
       const notice = document.querySelector<HTMLElement>('[data-consent-unavailable]');
@@ -327,7 +319,7 @@ function start(form: HTMLFormElement): void {
       hideInvalid();
       return;
     }
-    const result = await fetchView(fetcher, mode, token);
+    const result = await fetchView(fetcher, mode, token, origin);
     if (!result.ok) {
       hideInvalid();
       return;
@@ -352,21 +344,31 @@ function start(form: HTMLFormElement): void {
   }
 
   // Turnstile in managed mode (R45.5, R45.18): its token, with the link token, records the answer or withdrawal.
-  if (turnstileHost !== null && sitekey !== '' && window.turnstile) {
-    window.turnstile.render(turnstileHost, {
-      sitekey,
-      theme: 'auto',
-      callback: (value) => {
-        turnstileToken = value;
-        announce(status, 'Verification complete.');
-      },
-      'expired-callback': () => {
-        turnstileToken = null;
-      },
-      'error-callback': () => {
-        turnstileToken = null;
-      },
-    });
+  if (turnstileHost !== null) {
+    if (sitekey === '') {
+      announce(status, UNAVAILABLE_NOTICE);
+    } else {
+      void loadTurnstile().then((turnstile) => {
+        if (turnstile === null) {
+          announce(status, UNAVAILABLE_NOTICE);
+          return;
+        }
+        turnstile.render(turnstileHost, {
+        sitekey,
+        theme: 'auto',
+        callback: (value) => {
+          turnstileToken = value;
+          announce(status, 'Verification complete.');
+        },
+        'expired-callback': () => {
+          turnstileToken = null;
+        },
+        'error-callback': () => {
+          turnstileToken = null;
+        },
+        });
+      });
+    }
   }
 
   // Keep each element's chosen answer, the one-answer-for-all control, the comment, and the Generic_Label in state.
@@ -424,8 +426,8 @@ function start(form: HTMLFormElement): void {
     }
     if (submitButton !== null) submitButton.disabled = true;
     const result = mode === 'change'
-      ? await submitChange(fetcher, changeBody(token, turnstileToken, state.comment))
-      : await submitAnswer(fetcher, answerBody(token, turnstileToken, state));
+      ? await submitChange(fetcher, changeBody(token, turnstileToken, state.comment), origin)
+      : await submitAnswer(fetcher, answerBody(token, turnstileToken, state), origin);
     if (result.ok) {
       confirm(result.value);
       return;

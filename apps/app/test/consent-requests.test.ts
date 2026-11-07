@@ -208,7 +208,8 @@ describe('the queued consent email', () => {
     expect(message!.to).toBe('party@example.test');
     expect(message!.text).toContain('Please consider this request.');
     expect(message!.text).toContain('A synthetic correspondent');
-    // The Consent_Link URL is in the email; the submit host serves the Consent_Page.
+    // The Consent_Link URL is in the email; the public site serves the Consent_Page.
+    expect(message!.text).toContain(`${world.bindings.PUBLIC_SITE_ORIGIN}/consent#`);
     expect(message!.text).toMatch(/\/consent#[0-9A-Z]+/);
     const marked = await world.core().prepare("SELECT state FROM outgoing_emails WHERE kind = 'consent'").first<{ state: string }>();
     expect(marked?.state).toBe('sent');

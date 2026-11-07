@@ -36,6 +36,7 @@
   "vars": {
     "R2_ACCOUNT_ID": "48ca646fd701c00c0069952c95299dad",
     "PRIVATE_BUCKET_NAME": "rf-private",
+    "PUBLIC_SITE_ORIGIN": "https://researchforce.org",
     "CONTENT_LICENCE_NAME": "CC BY 4.0",
     "CONTENT_LICENCE_URL": "https://creativecommons.org/licenses/by/4.0/"
   },
@@ -79,6 +80,7 @@
       "vars": {
         "R2_ACCOUNT_ID": "48ca646fd701c00c0069952c95299dad",
         "PRIVATE_BUCKET_NAME": "rf-private-staging",
+        "PUBLIC_SITE_ORIGIN": "https://staging-public.researchforce.org",
         "CONTENT_LICENCE_NAME": "CC BY 4.0",
         "CONTENT_LICENCE_URL": "https://creativecommons.org/licenses/by/4.0/"
       },

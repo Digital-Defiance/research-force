@@ -250,8 +250,9 @@ function newConsentToken(): string {
   return out;
 }
 
-/** The base of the Consent_Page URL, derived from the Workspace origin (`app.` => `submit.`), so the token stays in the fragment. */
-function consentBase(workspaceOrigin: string): string {
+/** The base of the Consent_Page URL, on the public site that serves the page (falling back to the Workspace origin, `app.` => `submit.`), so the token stays in the fragment. */
+function consentBase({ WORKSPACE_ORIGIN: workspaceOrigin, PUBLIC_SITE_ORIGIN: siteOrigin }: { WORKSPACE_ORIGIN: string; PUBLIC_SITE_ORIGIN?: string | undefined }): string {
+  if (siteOrigin) return `${siteOrigin}/consent`;
   try {
     const url = new URL(workspaceOrigin);
     url.hostname = url.hostname.replace(/^app\./u, 'submit.');
@@ -365,7 +366,7 @@ export async function previewConsentRequest(c: Context<ApiEnv>, body: unknown): 
   const input = parse(previewSchema, body);
   const { party, items } = await build(c, input);
   const digests = items.map((item) => item.snapshotHash);
-  const consentUrl = `${consentBase(c.env.WORKSPACE_ORIGIN)}#<token>`;
+  const consentUrl = `${consentBase(c.env)}#<token>`;
   const requesterName = await requesterDisplayName(c);
   const expiresOn = expiryDate(new Date(Date.parse(c.get('now')) + CONSENT_REQUEST_LIMITS.consentLinkDays * DAY_MS).toISOString());
   const email = composeConsentEmail({
@@ -411,7 +412,7 @@ export async function createConsentRequest(c: Context<ApiEnv>, body: unknown): P
   const tokenHash = await sha256Hex(token);
   const expiresAt = new Date(Date.parse(now) + CONSENT_REQUEST_LIMITS.consentLinkDays * DAY_MS).toISOString() as Timestamp;
   const previewDigest = await previewDigestOf(digests);
-  const consentUrl = `${consentBase(c.env.WORKSPACE_ORIGIN)}#${token}`;
+  const consentUrl = `${consentBase(c.env)}#${token}`;
 
   const batch = new GuardedBatch(c.env.RF_CORE, { id: c.get('session').member.id, now })
     .insert(consentRequests, {

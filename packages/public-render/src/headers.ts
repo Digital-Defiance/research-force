@@ -78,11 +78,17 @@ export const BASE_CSP = `default-src 'self'; img-src 'self' ${FILES_ORIGIN} data
  * adds the Bot_Check origin to `connect-src`/`script-src`/`frame-src`. While {@link WEB_ANALYTICS} is off this is
  * byte-for-byte the launch policy; turning it on adds only the cookieless analytics beacon origin (R45.19).
  */
-export const FORM_CSP = `default-src 'self'; img-src 'self' ${FILES_ORIGIN} data:; `
-  + `connect-src 'self' ${FILES_ORIGIN} ${SUBMIT_ORIGIN} ${TURNSTILE_ORIGIN} ${R2_S3_ENDPOINT}${analyticsConnectSrc()}; `
-  + `script-src 'self' ${TURNSTILE_ORIGIN}${analyticsScriptSrc()}; `
-  + `frame-src ${TURNSTILE_ORIGIN}; frame-ancestors 'none'; base-uri 'none'`;
-
+export const formCsp = (forms?: FormsOrigins): string => {
+  const files = forms?.filesOrigin ?? FILES_ORIGIN;
+  const submit = forms?.submitOrigin ?? SUBMIT_ORIGIN;
+  return `default-src 'self'; img-src 'self' ${files} data:; `
+    + `connect-src 'self' ${files} ${submit} ${TURNSTILE_ORIGIN} ${R2_S3_ENDPOINT}${analyticsConnectSrc()}; `
+    + `script-src 'self' ${TURNSTILE_ORIGIN}${analyticsScriptSrc()}; `
+    + `frame-src ${TURNSTILE_ORIGIN}; frame-ancestors 'none'; base-uri 'none'`;
+};
+export const FORM_CSP = formCsp();
+/** The origins a form page may talk to; the installation's own submit and file-delivery origins (defaults: production). */
+export interface FormsOrigins { readonly submitOrigin: string; readonly filesOrigin: string }
 /**
  * The common security response headers on every address: no MIME sniffing, HSTS with preload for two years and all
  * subdomains, a referrer policy that sends the origin cross-site only over HTTPS, and a minimal permissions policy
@@ -96,19 +102,19 @@ export const COMMON_HEADERS: readonly string[] = [
 ];
 
 /** The form-page address patterns the form CSP applies to: the submit, response, and consent forms. */
-const FORM_PATHS: readonly string[] = ['/submit/*', '/respond', '/consent/*', '/p/*/submit'];
+const FORM_PATHS: readonly string[] = ['/submit', '/submit/*', '/respond', '/consent', '/consent/*', '/p/*/submit'];
 
 /**
  * Generate the Public_Site `_headers` file (R45.17 to R45.19). Cloudflare reads it as a path pattern line followed by
  * indented `Header: value` lines, and the last matching rule wins, so the `/*` default comes first and the form-page
  * rules override the CSP for their addresses. The file emits no `Set-Cookie` (R45.18).
  */
-export function headersFile(): string {
+export function headersFile(forms?: FormsOrigins): string {
   return [
     '/*',
     `  Content-Security-Policy: ${BASE_CSP}`,
     ...COMMON_HEADERS,
-    ...FORM_PATHS.flatMap((path) => [path, `  Content-Security-Policy: ${FORM_CSP}`]),
+    ...FORM_PATHS.flatMap((path) => [path, `  Content-Security-Policy: ${formCsp(forms)}`]),
     '',
   ].join('\n');
 }

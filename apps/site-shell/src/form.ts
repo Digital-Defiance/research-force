@@ -30,6 +30,8 @@
  * response shapes are declared here rather than imported from `apps/submit`; they mirror that Worker's contract.
  */
 
+import { loadTurnstile } from './turnstile';
+
 /** The dynamic public status document published at `files.researchforce.org/status.json` (subset this form reads). */
 interface PublicStatus {
   /** Whether the dynamic Outside_Submission / Consent / Response forms are currently admitted (R28.11). */
@@ -357,16 +359,6 @@ export { SUBMISSION_TYPES };
  * ---------------------------------------------------------------------------
  */
 
-/** The Turnstile widget API the page loads in managed mode; declared here since it is a runtime-only global. */
-interface Turnstile {
-  render(container: HTMLElement, options: { sitekey: string; callback: (token: string) => void; 'expired-callback'?: () => void; 'error-callback'?: () => void; theme?: 'auto' }): string;
-  reset(widgetId?: string): void;
-}
-declare global {
-  interface Window {
-    turnstile?: Turnstile;
-  }
-}
 
 /** Read a baked-in data attribute from the static form variant (its type, preselection, sitekey, licence). */
 function dataset(form: HTMLFormElement): {
@@ -375,6 +367,8 @@ function dataset(form: HTMLFormElement): {
   sitekey: string;
   contentLicence: string;
   formKey: string;
+  origin: string | undefined;
+  statusUrl: string | undefined;
 } {
   const type = (form.dataset['submitType'] ?? 'material') as SubmissionType;
   const project = form.dataset['submitProject'];
@@ -386,6 +380,8 @@ function dataset(form: HTMLFormElement): {
     sitekey: form.dataset['turnstileSitekey'] ?? '',
     contentLicence: form.dataset['contentLicence'] ?? '',
     formKey: form.dataset['submitFormKey'] ?? 'submit',
+    origin: form.dataset['submitOrigin'],
+    statusUrl: form.dataset['statusUrl'],
   };
 }
 
@@ -401,7 +397,10 @@ function readControls(form: HTMLFormElement, type: SubmissionType, destination: 
     return control instanceof HTMLInputElement || control instanceof HTMLTextAreaElement || control instanceof HTMLSelectElement ? control.value : '';
   };
   const projectValue = value('destination');
-  const chosen: Destination | null = projectValue === 'general' ? { kind: 'general' } : projectValue ? { kind: 'project', projectId: projectValue } : destination;
+  const chosenOption = form.elements.namedItem('destination') instanceof HTMLSelectElement ? (form.elements.namedItem('destination') as HTMLSelectElement).selectedOptions[0] : undefined;
+  // The static form's options carry the Project's id in `data-project-id`; their value is a slug-based choice (R31.13).
+  const projectId = chosenOption?.dataset['projectId'] ?? projectValue;
+  const chosen: Destination | null = projectValue === 'general' ? { kind: 'general' } : projectValue ? { kind: 'project', projectId } : destination;
   const licenceBox = form.elements.namedItem('licenceAgreement');
   return {
     type,
@@ -428,7 +427,9 @@ function fillControls(form: HTMLFormElement, state: FormState): void {
   set('pageReference', state.pageReference);
   const destinationControl = form.elements.namedItem('destination');
   if (destinationControl instanceof HTMLSelectElement) {
-    destinationControl.value = state.destination.kind === 'general' ? 'general' : state.destination.projectId;
+    const kept = state.destination;
+    const match = kept.kind === 'general' ? undefined : Array.from(destinationControl.options).find((option) => option.dataset['projectId'] === kept.projectId);
+    destinationControl.value = kept.kind === 'general' ? 'general' : (match?.value ?? kept.projectId);
   }
   const licenceBox = form.elements.namedItem('licenceAgreement');
   if (licenceBox instanceof HTMLInputElement) licenceBox.checked = state.licenceAgreed;
@@ -459,7 +460,7 @@ function start(form: HTMLFormElement): void {
   refresh();
 
   // Gate on the dynamic form admission status: an exhausted budget hides the form and shows the notice (R28.11).
-  void readStatus(fetcher).then((admission) => {
+  void readStatus(fetcher, config.statusUrl).then((admission) => {
     if (!admission.form) {
       form.hidden = true;
       const notice = document.querySelector<HTMLElement>('[data-submit-unavailable]');
@@ -479,7 +480,7 @@ function start(form: HTMLFormElement): void {
       announce(status, 'Complete the verification to continue.');
       return false;
     }
-    const opened = await openSession(fetcher, token);
+    const opened = await openSession(fetcher, token, config.origin);
     if (!opened.ok) {
       announce(status, opened.refusal.message);
       window.turnstile?.reset();
@@ -491,21 +492,31 @@ function start(form: HTMLFormElement): void {
     return true;
   };
 
-  if (turnstileHost !== null && config.sitekey !== '' && window.turnstile) {
-    window.turnstile.render(turnstileHost, {
-      sitekey: config.sitekey,
-      theme: 'auto',
-      callback: (value) => {
-        token = value;
-        announce(status, 'Verification complete.');
-      },
-      'expired-callback': () => {
-        token = null;
-      },
-      'error-callback': () => {
-        token = null;
-      },
-    });
+  if (turnstileHost !== null) {
+    if (config.sitekey === '') {
+      announce(status, UNAVAILABLE_NOTICE);
+    } else {
+      void loadTurnstile().then((turnstile) => {
+        if (turnstile === null) {
+          announce(status, UNAVAILABLE_NOTICE);
+          return;
+        }
+        turnstile.render(turnstileHost, {
+          sitekey: config.sitekey,
+          theme: 'auto',
+          callback: (value) => {
+            token = value;
+            announce(status, 'Verification complete.');
+          },
+          'expired-callback': () => {
+            token = null;
+          },
+          'error-callback': () => {
+            token = null;
+          },
+        });
+      });
+    }
   }
 
   // Mirror every change into this tab's storage (R28.10).
@@ -533,7 +544,7 @@ function start(form: HTMLFormElement): void {
   async function transfer(entry: FormFile, bytes: ArrayBuffer): Promise<void> {
     if (sessionId === null) return;
     update(entry.fileId, { state: 'uploading' });
-    const put = await requestUpload(fetcher, sessionId, { fileId: entry.fileId, fileName: entry.fileName, sizeBytes: entry.sizeBytes, sha256: entry.sha256 });
+    const put = await requestUpload(fetcher, sessionId, { fileId: entry.fileId, fileName: entry.fileName, sizeBytes: entry.sizeBytes, sha256: entry.sha256 }, config.origin);
     if (!put.ok) {
       update(entry.fileId, { state: 'failed' });
       announce(status, put.refusal.message);
@@ -545,7 +556,7 @@ function start(form: HTMLFormElement): void {
       announce(status, uploaded.message);
       return;
     }
-    const confirmed = await completeUpload(fetcher, sessionId, entry.fileId);
+    const confirmed = await completeUpload(fetcher, sessionId, entry.fileId, config.origin);
     update(entry.fileId, { state: confirmed.ok ? 'complete' : 'failed' });
     if (!confirmed.ok) announce(status, confirmed.refusal.message);
     else persist(); // only a complete file is kept across a reload (R28.10)
@@ -570,7 +581,7 @@ function start(form: HTMLFormElement): void {
   });
 
   async function dropFile(entry: FormFile): Promise<void> {
-    if (sessionId !== null) await removeUpload(fetcher, sessionId, entry.fileId);
+    if (sessionId !== null) await removeUpload(fetcher, sessionId, entry.fileId, config.origin);
     state = { ...state, files: state.files.filter((file) => file.fileId !== entry.fileId) };
     persist();
     refresh();
@@ -598,7 +609,7 @@ function start(form: HTMLFormElement): void {
     }
     if (!(await ensureSession()) || sessionId === null) return;
     if (submitButton !== null) submitButton.disabled = true;
-    const result = await submitForm(fetcher, sessionId, submitBody(state, config.contentLicence));
+    const result = await submitForm(fetcher, sessionId, submitBody(state, config.contentLicence), config.origin);
     if (result.ok) {
       confirm(result.value);
       clearUnsent(config.formKey);

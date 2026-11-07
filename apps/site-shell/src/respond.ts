@@ -28,6 +28,7 @@
  * API shapes are declared here; the file upload helpers are shared with `form.ts` within this package.
  */
 
+import { loadTurnstile } from './turnstile';
 import { newFileId, readStatus, sha256Hex, uploadBytes, UNAVAILABLE_NOTICE, type FetchLike, type PresignedPut } from './form';
 
 /** A session opened by `POST /v1/respond/sessions` after a usable link and a passed Turnstile check. */
@@ -169,16 +170,6 @@ export type { OpenedSession, CheckResult, RespondConfirmation, RespondRefusal, A
  * ---------------------------------------------------------------------------
  */
 
-/** The Turnstile widget API the page loads in managed mode; declared here since it is a runtime-only global. */
-interface Turnstile {
-  render(container: HTMLElement, options: { sitekey: string; callback: (token: string) => void; 'expired-callback'?: () => void; 'error-callback'?: () => void; theme?: 'auto' }): string;
-  reset(widgetId?: string): void;
-}
-declare global {
-  interface Window {
-    turnstile?: Turnstile;
-  }
-}
 
 /** Set an `aria-live` status region's text so assistive technology announces changes (R45.5). */
 function announce(region: HTMLElement | null, text: string): void {
@@ -189,6 +180,7 @@ function announce(region: HTMLElement | null, text: string): void {
 function start(form: HTMLFormElement): void {
   const fetcher: FetchLike = (input, init) => fetch(input, init);
   const sitekey = form.dataset['turnstileSitekey'] ?? '';
+  const origin = form.dataset['submitOrigin'];
   const status = form.querySelector<HTMLElement>('[data-respond-status]');
   const fileList = form.querySelector<HTMLElement>('[data-file-list]');
   const fileInput = form.querySelector<HTMLInputElement>('input[type="file"]');
@@ -206,7 +198,7 @@ function start(form: HTMLFormElement): void {
   };
 
   // Gate on the dynamic form admission status: an exhausted budget hides the form and shows the notice (R28.11).
-  void readStatus(fetcher).then((admission) => {
+  void readStatus(fetcher, form.dataset['statusUrl']).then((admission) => {
     if (!admission.form) {
       form.hidden = true;
       const notice = document.querySelector<HTMLElement>('[data-respond-unavailable]');
@@ -226,7 +218,7 @@ function start(form: HTMLFormElement): void {
       hideInvalid('This response link is no longer valid.');
       return;
     }
-    const checked = await checkLink(fetcher, token);
+    const checked = await checkLink(fetcher, token, origin);
     if (!checked.ok) hideInvalid(checked.refusal.message);
     else if (!checked.value.usable) hideInvalid('This response link is no longer valid.');
   })();
@@ -249,7 +241,7 @@ function start(form: HTMLFormElement): void {
       announce(status, 'Complete the verification to continue.');
       return false;
     }
-    const opened = await openSession(fetcher, token, turnstileToken);
+    const opened = await openSession(fetcher, token, turnstileToken, origin);
     if (!opened.ok) {
       announce(status, opened.refusal.message);
       window.turnstile?.reset();
@@ -261,21 +253,31 @@ function start(form: HTMLFormElement): void {
     return true;
   };
 
-  if (turnstileHost !== null && sitekey !== '' && window.turnstile) {
-    window.turnstile.render(turnstileHost, {
-      sitekey,
-      theme: 'auto',
-      callback: (value) => {
-        turnstileToken = value;
-        announce(status, 'Verification complete.');
-      },
-      'expired-callback': () => {
-        turnstileToken = null;
-      },
-      'error-callback': () => {
-        turnstileToken = null;
-      },
-    });
+  if (turnstileHost !== null) {
+    if (sitekey === '') {
+      announce(status, UNAVAILABLE_NOTICE);
+    } else {
+      void loadTurnstile().then((turnstile) => {
+        if (turnstile === null) {
+          announce(status, UNAVAILABLE_NOTICE);
+          return;
+        }
+        turnstile.render(turnstileHost, {
+        sitekey,
+        theme: 'auto',
+        callback: (value) => {
+          turnstileToken = value;
+          announce(status, 'Verification complete.');
+        },
+        'expired-callback': () => {
+          turnstileToken = null;
+        },
+        'error-callback': () => {
+          turnstileToken = null;
+        },
+        });
+      });
+    }
   }
 
   // Keep the message in state as the Submitter types.
@@ -304,7 +306,7 @@ function start(form: HTMLFormElement): void {
   async function transfer(entry: ResponseFile, bytes: ArrayBuffer): Promise<void> {
     if (sessionId === null) return;
     update(entry.fileId, { state: 'uploading' });
-    const put = await requestUpload(fetcher, sessionId, { fileId: entry.fileId, fileName: entry.fileName, sizeBytes: entry.sizeBytes, sha256: entry.sha256 });
+    const put = await requestUpload(fetcher, sessionId, { fileId: entry.fileId, fileName: entry.fileName, sizeBytes: entry.sizeBytes, sha256: entry.sha256 }, origin);
     if (!put.ok) {
       update(entry.fileId, { state: 'failed' });
       announce(status, put.refusal.message);
@@ -316,7 +318,7 @@ function start(form: HTMLFormElement): void {
       announce(status, uploaded.message);
       return;
     }
-    const confirmed = await completeUpload(fetcher, sessionId, entry.fileId);
+    const confirmed = await completeUpload(fetcher, sessionId, entry.fileId, origin);
     update(entry.fileId, { state: confirmed.ok ? 'complete' : 'failed' });
     if (!confirmed.ok) announce(status, confirmed.refusal.message);
   }
@@ -340,7 +342,7 @@ function start(form: HTMLFormElement): void {
   });
 
   async function dropFile(entry: ResponseFile): Promise<void> {
-    if (sessionId !== null) await removeUpload(fetcher, sessionId, entry.fileId);
+    if (sessionId !== null) await removeUpload(fetcher, sessionId, entry.fileId, origin);
     state = { ...state, files: state.files.filter((file) => file.fileId !== entry.fileId) };
     refresh();
   }
@@ -370,7 +372,7 @@ function start(form: HTMLFormElement): void {
     }
     if (!(await ensureSession()) || sessionId === null) return;
     if (submitButton !== null) submitButton.disabled = true;
-    const result = await submitResponse(fetcher, sessionId, respondBody(token, state));
+    const result = await submitResponse(fetcher, sessionId, respondBody(token, state), origin);
     if (result.ok) {
       confirm(result.value);
       return;

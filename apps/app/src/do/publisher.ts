@@ -12,6 +12,7 @@ import { isFrozen, runProjectionSlice } from '../publisher/projection';
 import type { ProjectionDeps } from '../publisher/projection';
 import { renderSiteBuild } from '../publisher/render';
 import type { ShellAsset } from '../publisher/render';
+import type { FormsConfig } from '@researchforce/public-render/site';
 import { publicCopyOf } from '../publisher/public-copy';
 import { runFileOps } from '../publisher/files';
 import type { PlannedFile } from '../publisher/plan';
@@ -190,7 +191,7 @@ export class Publisher extends DurableObject<Env> {
     const now = new Date().toISOString() as Timestamp;
     // Render the current site: reconciles rf-private/build and the rf-public.site_files manifest, returns the diff.
     const render = await renderSiteBuild(
-      { core: this.env.RF_CORE, public: this.env.RF_PUBLIC, privateBucket: this.env.RF_PRIVATE_BUCKET, licence: this.#licence(), publicCopy: this.#publicCopy(), shellAssets: this.#shellAssets() },
+      { core: this.env.RF_CORE, public: this.env.RF_PUBLIC, privateBucket: this.env.RF_PRIVATE_BUCKET, licence: this.#licence(), publicCopy: this.#publicCopy(), ...this.#forms(), shellAssets: this.#shellAssets() },
       now,
     );
 
@@ -250,7 +251,7 @@ export class Publisher extends DurableObject<Env> {
     // Re-render the plan to learn the removed page addresses, and re-run the file deletions so a removal that
     // failed earlier is retried (R25.3); only confirmed-gone copies count as removed for verification.
     const render = await renderSiteBuild(
-      { core: this.env.RF_CORE, public: this.env.RF_PUBLIC, privateBucket: this.env.RF_PRIVATE_BUCKET, licence: this.#licence(), publicCopy: this.#publicCopy(), shellAssets: this.#shellAssets() },
+      { core: this.env.RF_CORE, public: this.env.RF_PUBLIC, privateBucket: this.env.RF_PRIVATE_BUCKET, licence: this.#licence(), publicCopy: this.#publicCopy(), ...this.#forms(), shellAssets: this.#shellAssets() },
       now,
     );
     const publicAttachments = await currentPublicAttachments(this.env.RF_CORE, this.env.RF_PUBLIC);
@@ -356,6 +357,12 @@ export class Publisher extends DurableObject<Env> {
     return { name: this.env.CONTENT_LICENCE_NAME ?? '', url: this.env.CONTENT_LICENCE_URL ?? '' };
   }
 
+  /** The form pages' Turnstile site key and origins from the installation's variables; none (attributes omitted) when no site key is set. */
+  #forms(): { readonly forms?: FormsConfig } {
+    const siteKey = this.env.TURNSTILE_SITE_KEY ?? '';
+    if (siteKey === '') return {};
+    return { forms: { siteKey, submitOrigin: this.env.PUBLIC_SUBMIT_ORIGIN ?? 'https://submit.researchforce.org', filesOrigin: this.env.PUBLIC_FILES_ORIGIN ?? 'https://files.researchforce.org' } };
+  }
   /** The validated Installation_Public_Copy; a missing or partial bundle refuses the render (R46.41, R46.42). */
   #publicCopy() {
     return publicCopyOf(this.env);

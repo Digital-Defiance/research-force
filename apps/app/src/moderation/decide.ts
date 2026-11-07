@@ -126,8 +126,9 @@ function emailKind(kind: DecisionKind): 'more_information' | 'decision' {
   return kind === 'more_information_requested' ? 'more_information' : 'decision';
 }
 
-/** The base of the public Response_Link URL, derived from the Workspace origin (`app.` → `submit.`). */
-function respondBase(workspaceOrigin: string): string {
+/** The base of the public Response_Link URL, on the public site that serves the page (falling back to the Workspace origin, `app.` → `submit.`). */
+function respondBase({ WORKSPACE_ORIGIN: workspaceOrigin, PUBLIC_SITE_ORIGIN: siteOrigin }: { WORKSPACE_ORIGIN: string; PUBLIC_SITE_ORIGIN?: string | undefined }): string {
+  if (siteOrigin) return `${siteOrigin}/respond`;
   try {
     const url = new URL(workspaceOrigin);
     url.hostname = url.hostname.replace(/^app\./u, 'submit.');
@@ -421,7 +422,7 @@ export async function decide(c: Context<ApiEnv>, id: string, body: unknown): Pro
   // The exact email text, assembled before anything is written and shown for confirmation (R32.10). A Response_Link URL
   // placeholder is shown in the preview for More_Information_Requested; the real token is minted only on apply.
   const text = 'statement' in input ? input.statement : input.text;
-  const previewUrl = kind === 'more_information_requested' ? `${respondBase(c.env.WORKSPACE_ORIGIN)}#<link>` : undefined;
+  const previewUrl = kind === 'more_information_requested' ? `${respondBase(c.env)}#<link>` : undefined;
   const previewEmail = emailContent(kind, submission, text, previewUrl);
   if (!input.confirm) return { reference: submission.reference, email: previewEmail };
 
@@ -437,7 +438,7 @@ export async function decide(c: Context<ApiEnv>, id: string, body: unknown): Pro
   // The Response_Link for More_Information_Requested: a fresh token, valid 30 days, stored only as its hash (R32.6, R32.14).
   const token = kind === 'more_information_requested' ? newResponseToken() : null;
   const tokenHash = token ? await sha256Hex(token) : null;
-  const responseUrl = token ? `${respondBase(c.env.WORKSPACE_ORIGIN)}#${token}` : undefined;
+  const responseUrl = token ? `${respondBase(c.env)}#${token}` : undefined;
   // The email the Mailer composes and sends; for More_Information_Requested it carries the real Response_Link.
   const sentEmail = emailContent(kind, submission, text, responseUrl);
 

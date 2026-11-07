@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BASE_CSP, COMMON_HEADERS, FORM_CSP, WEB_ANALYTICS, headersFile } from '../src/headers';
+import { BASE_CSP, COMMON_HEADERS, FORM_CSP, WEB_ANALYTICS, formCsp, headersFile } from '../src/headers';
 
 /**
  * The Public_Site `_headers` file (R45.17 to R45.19): the default CSP and the common security headers on every
@@ -20,6 +20,22 @@ function effectiveCsp(headers: string, address: string): string | undefined {
   return csp;
 }
 
+describe('the _headers file for a configured installation', () => {
+  const forms = { submitOrigin: 'https://submit-staging.example.org', filesOrigin: 'https://files-staging.example.org' };
+  it('names the configured submit and files origins on the form pages, with the base form pages included', () => {
+    const headers = headersFile(forms);
+    for (const address of ['/submit', '/submit/general', '/respond', '/consent', '/consent/change', '/p/alpha/submit']) {
+      const csp = effectiveCsp(headers, address);
+      expect(csp).toBe(formCsp(forms));
+      expect(csp).toContain('https://submit-staging.example.org');
+      expect(csp).not.toContain('submit.researchforce.org');
+    }
+  });
+  it('is the production file when nothing is configured', () => {
+    expect(formCsp()).toBe(FORM_CSP);
+    expect(headersFile()).toBe(headersFile(undefined));
+  });
+});
 describe('the Public_Site _headers file', () => {
   const headers = headersFile();
 

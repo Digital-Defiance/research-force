@@ -48,14 +48,28 @@ export interface SiteAssets {
   /** Replaces the Citation_Line access-date placeholder with the Visitor's local date (R29.9). */
   readonly citationScript: string;
   readonly formScript: string;
+  /** The Response_Link form script (`/respond`). */
+  readonly respondScript: string;
+  /** The consent and consent-change form script (`/consent`, `/consent/change`). */
+  readonly consentScript: string;
   readonly searchScript: string;
 }
 export const DEFAULT_ASSETS: SiteAssets = {
   styles: ['/assets/tokens.css', '/assets/fonts.css', '/assets/components.css', '/assets/print.css'],
   citationScript: '/assets/citation.js',
   formScript: '/assets/form.js',
+  respondScript: '/assets/respond.js',
+  consentScript: '/assets/consent.js',
   searchScript: '/assets/search.js',
 };
+
+/**
+ * The installation's form configuration: public values the form pages carry for the site scripts. The Turnstile
+ * `siteKey` is public by design; the origins are the Outside_Submission worker (`submitOrigin`) and the file-delivery
+ * origin that serves `status.json` (`filesOrigin`). When absent, the pages omit these attributes and the scripts show
+ * the fixed unavailable notice instead of a Bot_Check.
+ */
+export interface FormsConfig { readonly siteKey: string; readonly submitOrigin: string; readonly filesOrigin: string }
 
 /** Everything one build of the Public_Site reads. Only `views`, profiles, and policy text reach pages as content. */
 export interface SiteInput {
@@ -86,4 +100,6 @@ export interface SiteInput {
   readonly policy: Readonly<Record<PolicyPageKey, PolicyPageInput>>;
   readonly retention: readonly RetentionRow[];
   readonly assets?: SiteAssets;
+  /** Installation input for the form pages (Turnstile site key and origins); absent means the attributes are omitted. */
+  readonly forms?: FormsConfig;
 }

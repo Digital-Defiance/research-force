@@ -20,6 +20,8 @@ export const PAGE_PATHS = Object.freeze({
   search: '/search',
   submitGeneral: '/submit/general',
   respond: '/respond',
+  consent: '/consent',
+  consentChange: '/consent/change',
   notFound: '/404',
 });
 

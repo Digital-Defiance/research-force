@@ -26,7 +26,13 @@ export function linkButton(props: { readonly label: string; readonly href: strin
   return element('a', { class: buttonClass(props.variant ?? 'secondary'), href: props.href }, [text(props.label)]);
 }
 
-export interface FieldOption { readonly value: string; readonly label: string; readonly selected?: boolean }
+export interface FieldOption {
+  readonly value: string;
+  readonly label: string;
+  readonly selected?: boolean;
+  /** Extra attributes for the option element, such as a `data-` id a script reads. */
+  readonly attributes?: Readonly<Record<string, AttributeValue>>;
+}
 
 export interface FieldProps {
   readonly id: string;
@@ -55,7 +61,7 @@ export function formField(props: FieldProps): ElementNode {
   const input: ElementNode = control === 'textarea'
     ? element('textarea', { ...common, class: 'rf-input rf-input--textarea', rows: 6 }, [text(props.value ?? '')])
     : control === 'select'
-      ? element('select', { ...common, class: 'rf-input rf-input--select' }, (props.options ?? []).map((option) => element('option', { value: option.value, selected: option.selected }, [text(option.label)])))
+      ? element('select', { ...common, class: 'rf-input rf-input--select' }, (props.options ?? []).map((option) => element('option', { ...option.attributes, value: option.value, selected: option.selected }, [text(option.label)])))
       : control === 'checkbox'
         ? element('input', { ...common, class: 'rf-checkbox', type: 'checkbox', value: props.value, checked: props.checked })
         : element('input', { ...common, class: 'rf-input', type: control, value: props.value });

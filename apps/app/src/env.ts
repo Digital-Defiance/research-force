@@ -39,6 +39,10 @@ export interface Env {
   PUBLIC_SITE_ORIGIN?: string;
   /** The public files origin (`https://files.researchforce.org`) the verify step HEADs removed file copies at (R24.16). */
   PUBLIC_FILES_ORIGIN?: string;
+  /** The Outside_Submission worker origin (`https://submit.researchforce.org`, or the staging host) the public form pages call; unset uses the production host. */
+  PUBLIC_SUBMIT_ORIGIN?: string;
+  /** The Turnstile site key (public) the public form pages mount the Bot_Check with; unset leaves the forms unavailable. */
+  TURNSTILE_SITE_KEY?: string;
   /** Secrets: `https://<team>.cloudflareaccess.com` and the Access application's AUD tag. */
   ACCESS_TEAM_DOMAIN: string;
   ACCESS_AUD: string;

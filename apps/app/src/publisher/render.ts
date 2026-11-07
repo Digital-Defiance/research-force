@@ -16,7 +16,7 @@ import { renderSite, type SiteFile } from '@researchforce/public-render/render-s
 export { headersFile };
 import {
   METHODS_SET_KINDS, POLICY_PAGE_KEYS,
-  type MethodsInput, type MethodsSetKind, type MethodsValue, type PolicyPageInput, type PolicyPageKey, type SiteInput,
+  type FormsConfig, type MethodsInput, type MethodsSetKind, type MethodsValue, type PolicyPageInput, type PolicyPageKey, type SiteInput,
 } from '@researchforce/public-render/site';
 import { notifySystemAlert } from '../notifications/fanout';
 import { directUploadHash, extensionOf, manifestPath, planSite, reachesFileAlert } from './plan';
@@ -51,6 +51,8 @@ export interface RenderDeps {
    * ResearchForce.org fallback (R46.41, R46.42).
    */
   readonly publicCopy: ValidatedInstallationPublicCopy;
+  /** The Turnstile site key and the submit and files origins the form pages carry; absent leaves the form attributes out. */
+  readonly forms?: FormsConfig;
   /**
    * The compiled `site-shell` assets and fixed Design_System files (scripts, styles, print CSS, fonts, images, the
    * 404 metadata) to ship as static files. These are produced by `apps/site-shell`'s Vite build with content-hashed
@@ -137,7 +139,7 @@ function toRenderedFiles(siteFiles: readonly SiteFile[], input: SiteInput, shell
   // The static search index: manifest, term buckets, and 64 content-hashed shards (R30.1).
   for (const file of buildSearchIndex(input.views)) add({ path: manifestPath(file), contentType: file.contentType, content: encoder.encode(file.content) });
   // `_headers` (CSP and other response headers for the assets-only rf-site, design "Headers").
-  add({ path: '/_headers', contentType: 'text/plain; charset=utf-8', content: encoder.encode(headersFile()) });
+  add({ path: '/_headers', contentType: 'text/plain; charset=utf-8', content: encoder.encode(headersFile(input.forms)) });
   // The compiled site-shell scripts/styles and the fixed Design_System assets, shipped verbatim as static files.
   for (const asset of shellAssets) add({ path: asset.path.startsWith('/') ? asset.path : `/${asset.path}`, contentType: asset.contentType, content: asset.content });
   return files;
@@ -155,7 +157,7 @@ function toRenderedFiles(siteFiles: readonly SiteFile[], input: SiteInput, shell
  * from the injected configuration. Registered Member addresses are scrubbed from profiles and policy text, exactly
  * as the projection does (R46.5, R46.9).
  */
-export async function loadSiteInput(deps: Pick<RenderDeps, 'core' | 'public' | 'licence' | 'publicCopy'>, now?: Timestamp): Promise<SiteInput> {
+export async function loadSiteInput(deps: Pick<RenderDeps, 'core' | 'public' | 'licence' | 'publicCopy' | 'forms'>, now?: Timestamp): Promise<SiteInput> {
   return buildSiteInput(deps, await loadViews(deps.public), now);
 }
 
@@ -181,7 +183,7 @@ export async function loadViewsAsOf(pub: D1Database, startedAt: string, scopePro
  * last-updated date to today (R46.29); omit it for the preview and the export, which show the date the last published
  * build recorded without advancing it.
  */
-export async function buildSiteInput(deps: Pick<RenderDeps, 'core' | 'public' | 'licence' | 'publicCopy'>, views: ReadonlyMap<UnitKey, PublicView>, now?: Timestamp): Promise<SiteInput> {
+export async function buildSiteInput(deps: Pick<RenderDeps, 'core' | 'public' | 'licence' | 'publicCopy' | 'forms'>, views: ReadonlyMap<UnitKey, PublicView>, now?: Timestamp): Promise<SiteInput> {
   const [projectRows, memberRows, specialtyRows, affiliationRows, valueRows, termRows, policyPageRows, policySectionRows, settingRows]
     = await deps.core.batch([
       deps.core.prepare('SELECT id, accent, featured, position, created_at AS createdAt, question_order AS questionOrder FROM projects ORDER BY position'),
@@ -221,6 +223,7 @@ export async function buildSiteInput(deps: Pick<RenderDeps, 'core' | 'public' | 
     questionOrder: new Map(projects.map((project) => [`p:${project.id}` as UnitKey, questionOrderKeys(project.questionOrder)])),
     licence: deps.licence,
     publicCopy: deps.publicCopy,
+    ...(deps.forms === undefined ? {} : { forms: deps.forms }),
     profiles,
     responsiblePerson,
     methods,
