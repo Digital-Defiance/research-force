@@ -35,7 +35,9 @@
       "preview_urls": false,
       "vars": {
         "CF_ACCOUNT_ID": "48ca646fd701c00c0069952c95299dad",
-        "ACCESS_MEMBER_LIST_ID": "529ac5f1-5c53-4b10-8a5e-07ebba47389d"
+        "ACCESS_MEMBER_LIST_ID": "529ac5f1-5c53-4b10-8a5e-07ebba47389d",
+        // The staging public site Worker the Publisher deploys; created once from apps/ops/site-bootstrap.
+        "CF_SITE_SCRIPT_NAME": "rf-site-staging"
       },
       "d1_databases": [
         { "binding": "RF_CORE", "database_name": "rf-core-staging", "database_id": "d53bf307-ca60-4c5b-8276-b8a0f9b6327e" }

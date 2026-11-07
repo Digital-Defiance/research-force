@@ -6,6 +6,7 @@ import type { ULID } from '@researchforce/domain/types';
 import { base64Of, directUploadHash, extensionOf, planSite, reachesFileAlert } from '../src/publisher/plan';
 import type { ManifestEntry, PlannedFile } from '../src/publisher/plan';
 import { headersFile, loadSiteInput, renderSiteBuild } from '../src/publisher/render';
+import { loadShellAssets } from '../src/publisher/shell-assets';
 import { runProjectionSlice } from '../src/publisher/projection';
 import type { ProjectionDeps } from '../src/publisher/projection';
 import { TEST_PUBLIC_COPY, TEST_PUBLIC_COPY_INPUT } from '@researchforce/testing/site';
@@ -315,5 +316,31 @@ describe('the 16,000-file alert', () => {
     expect(result.alerted).toBe(true);
     const alerts = await core().prepare("SELECT count(*) AS n FROM notification_events WHERE event_type = 'system_alert' AND alert_key = 'site_file_count'").first<{ n: number }>();
     expect((alerts?.n ?? 0)).toBeGreaterThan(0);
+  });
+});
+describe('staged shell assets', () => {
+  const index = [
+    { path: '/assets/form.js', contentType: 'text/javascript', file: 'assets/form.js' },
+    { path: '/fonts/a.woff2', contentType: 'font/woff2', file: 'fonts/a.woff2' },
+  ];
+  const html = () => new Response('<!doctype html>', { headers: { 'content-type': 'text/html' } });
+  const fetcher = (files: Record<string, string>, withIndex = true): Fetcher => ({
+    fetch: async (input: RequestInfo | URL) => {
+      const path = new URL(String(input)).pathname.replace('/_shell/', '');
+      if (path === 'index.json') return withIndex ? Response.json(index) : html();
+      return path in files ? new Response(files[path], { headers: { 'content-type': 'application/octet-stream' } }) : html();
+    },
+  }) as unknown as Fetcher;
+  it('loads every listed file with its path and content type', async () => {
+    const assets = await loadShellAssets(fetcher({ 'assets/form.js': 'x', 'fonts/a.woff2': 'y' }));
+    expect(assets.map((a) => [a.path, a.contentType])).toEqual([['/assets/form.js', 'text/javascript'], ['/fonts/a.woff2', 'font/woff2']]);
+    expect(new TextDecoder().decode(assets[0]!.content)).toBe('x');
+  });
+  it('ships none when there is no binding or no index', async () => {
+    expect(await loadShellAssets(undefined)).toEqual([]);
+    expect(await loadShellAssets(fetcher({}, false))).toEqual([]);
+  });
+  it('fails rather than ship a partial set when a listed file is missing', async () => {
+    await expect(loadShellAssets(fetcher({ 'assets/form.js': 'x' }))).rejects.toThrow('/fonts/a.woff2');
   });
 });
