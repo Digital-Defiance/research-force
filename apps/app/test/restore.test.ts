@@ -252,6 +252,52 @@ describe('the restore fails closed on conflicts and faults, inserting/releasing 
     expect(report.insertConflict?.table).toBe('settings');
   });
 
+  it('restores into a fresh installation whose migration-seeded defaults carry DIFFERENT timestamps, ending quarantined with no blocked gates', async () => {
+    // The world is shared: drop the non-seed key the conflict test above leaves behind, so only seeded defaults remain.
+    await core().prepare("DELETE FROM settings WHERE key = 'test.conflict'").run();
+    const { id: packageId } = await sealedPackage(async () => { await world.created('author', 'finding'); });
+    const bootstrapId = await freshEnvironmentWithBootstrap();
+
+    // A fresh install migrated at a different time: the untouched seeded defaults differ from the backup only in the
+    // migration-apply timestamps.
+    await core().batch([
+      core().prepare("UPDATE settings SET updated_at = '2001-01-01T00:00:00.000Z' WHERE updated_seq = 0"),
+      core().prepare("UPDATE policy_pages SET sections_changed_at = '2001-01-01T00:00:00.000Z'"),
+      core().prepare("UPDATE policy_sections SET changed_at = '2001-01-01T00:00:00.000Z'"),
+    ]);
+    const stale = (await core().prepare("SELECT count(*) AS n FROM settings WHERE updated_at = '2001-01-01T00:00:00.000Z'").first<{ n: number }>())!.n;
+    expect(stale).toBeGreaterThan(0);
+
+    const restoreId = await enqueueRestore(packageId, bootstrapId);
+    await runRestore(restoreId);
+    const restore = await core().prepare('SELECT state, report FROM restores WHERE id = ?1').bind(restoreId).first<{ state: string; report: string }>();
+    expect(restore?.state, restore?.report).toBe('quarantined');
+    const report = JSON.parse(restore!.report) as { blockedBy?: string[]; insertConflict?: unknown; counts?: { recreated: number } };
+    expect(report.insertConflict).toBeUndefined();
+    expect(report.blockedBy ?? []).toEqual([]);
+    // The replaced defaults count as recreated rows and now carry the backed-up timestamps.
+    expect(report.counts!.recreated).toBeGreaterThanOrEqual(stale);
+    expect((await core().prepare("SELECT count(*) AS n FROM settings WHERE updated_at = '2001-01-01T00:00:00.000Z'").first<{ n: number }>())!.n).toBe(0);
+    expect((await core().prepare("SELECT count(*) AS n FROM policy_sections WHERE changed_at = '2001-01-01T00:00:00.000Z'").first<{ n: number }>())!.n).toBe(0);
+  });
+
+  it.each([
+    ['a changed value', "UPDATE settings SET value = '45' WHERE key = 'followUpInterval'"],
+    ['a bumped updated_seq', "UPDATE settings SET updated_seq = 7 WHERE key = 'followUpInterval'"],
+  ])('a seeded row MODIFIED in the destination (%s) still FAILS with unexpected-duplicate', async (_label, modify) => {
+    const { id: packageId } = await sealedPackage(async () => { await world.created('author', 'finding'); });
+    const bootstrapId = await freshEnvironmentWithBootstrap();
+    await core().prepare(modify).run();
+
+    const restoreId = await enqueueRestore(packageId, bootstrapId);
+    await runRestore(restoreId);
+    const restore = await core().prepare('SELECT state, report FROM restores WHERE id = ?1').bind(restoreId).first<{ state: string; report: string }>();
+    expect(restore?.state).toBe('failed');
+    const report = JSON.parse(restore!.report) as { insertConflict?: { reason: string; table: string; rowKey: string } };
+    expect(report.insertConflict).toMatchObject({ reason: 'unexpected-duplicate', table: 'settings', rowKey: 'followUpInterval' });
+    await core().prepare("UPDATE settings SET value = '30', updated_seq = 0 WHERE key = 'followUpInterval'").run();
+  });
+
   it('FAILS CLOSED when the INSERT stage throws an unhandled exception, releasing containment instead of hanging `running` (R36.8)', async () => {
     // Seed a backup whose `profiles` table carries the author's Profile (every seeded Member gets a Profile named after
     // its id, so `display_name_key` = `member <id>`). The backup copies that Profile row.

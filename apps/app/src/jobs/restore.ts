@@ -18,7 +18,8 @@ import { backupPreflight, destinationEligibility } from '../backup/preflight';
 import type { PreflightProblem } from '../backup/preflight';
 import { reconcileBootstrapIdentity } from '../backup/reconcile';
 import type { BackedUpMember, ReconcileConflict } from '../backup/reconcile';
-import { canonicalRowHash, decideInsert, recordCheckpoint } from '../backup/checkpoints';
+import { canonicalRowHash, decideInsert, readCheckpoint, recordCheckpoint } from '../backup/checkpoints';
+import { isSeedOwnedTable, isUntouchedSeedRow } from '../backup/seed-owned';
 import type { ConflictReason } from '../backup/checkpoints';
 import { applySuppressions, quarantineReleasePrecondition } from '../backup/quarantine';
 import type { QuarantineGateName, SuppressionRecord } from '../backup/quarantine';
@@ -254,6 +255,37 @@ async function installRow(env: Env, table: string, row: Record<string, unknown>)
   await env.RF_CORE.prepare(`INSERT INTO ${table} (${columns.map((column) => `"${column}"`).join(', ')}) VALUES (${placeholders})`).bind(...values).run();
 }
 
+/** Bind-safe value of a row image column: JSON column values (objects/arrays) are bound as their canonical JSON text. */
+const bindable = (value: unknown): string | number | null =>
+  value !== null && typeof value === 'object' ? JSON.stringify(value) : value as string | number | null;
+
+/** This restore's checkpoint payload hash for a key, or null when it has not installed the row. */
+async function readCheckpointHash(env: Env, restoreId: string, table: string, rowKey: string): Promise<string | null> {
+  return (await readCheckpoint(env, restoreId, table, rowKey))?.payloadHash ?? null;
+}
+
+/** The destination row at a backed-up image's primary key with EVERY stored column, exactly as stored (no JSON re-parse). */
+async function readRawRow(
+  env: Env, table: string, pk: readonly string[], image: Record<string, unknown>,
+): Promise<Record<string, unknown> | null> {
+  const where = pk.map((column, index) => `"${column}" = ?${index + 1}`).join(' AND ');
+  return env.RF_CORE.prepare(`SELECT * FROM ${table} WHERE ${where} LIMIT 1`)
+    .bind(...pk.map((column) => image[column] as string | number | null)).first<Record<string, unknown>>();
+}
+
+/**
+ * Replace the untouched seed row at the image's primary key with the backed-up image, in place (an UPDATE, so foreign
+ * keys onto the row — e.g. a Member's role — are never disturbed). Only called after {@link isUntouchedSeedRow}.
+ */
+async function replaceRow(env: Env, table: string, pk: readonly string[], image: Record<string, unknown>): Promise<void> {
+  const columns = Object.keys(image).filter((column) => !pk.includes(column));
+  const keyColumns = pk.map((column, index) => `"${column}" = ?${columns.length + index + 1}`).join(' AND ');
+  if (columns.length === 0) return;
+  const sets = columns.map((column, index) => `"${column}" = ?${index + 1}`).join(', ');
+  await env.RF_CORE.prepare(`UPDATE ${table} SET ${sets} WHERE ${keyColumns}`)
+    .bind(...columns.map((column) => bindable(image[column])), ...pk.map((column) => bindable(image[column]))).run();
+}
+
 /** Read the independently retained suppression ledger for the source package's recovery point (opaque ids only, R36.16). */
 async function readSuppressionLedger(env: Env, sourceExportId: string): Promise<SuppressionRecord[]> {
   const rows = (await env.RF_CORE.prepare(
@@ -400,6 +432,21 @@ async function runSlice(env: Env, job: JobRecord, now: Timestamp, id: ULID, curs
           // the restore-owned checkpoint so a resume recognises it, and skip installing a duplicate.
           await recordCheckpoint(env, id, entry.table, rowKey, hash, now);
           continue;
+        }
+        // A migration-seeded default row that is STILL the untouched installation default (never modified in the
+        // destination) is replaced by the backed-up copy and checkpointed, so a restore into a genuinely fresh
+        // installation does not fail on defaults whose only difference is the migration-apply time. A modified seed row,
+        // or any other pre-existing row, falls through to `decideInsert` and stays an `unexpected-duplicate` conflict.
+        // Only when this restore has NOT already checkpointed the key (a checkpointed key is `decideInsert`'s to judge).
+        if (existing !== null && isSeedOwnedTable(entry.table)
+            && await readCheckpointHash(env, id, entry.table, rowKey) === null) {
+          const raw = await readRawRow(env, entry.table, pk, image);
+          if (raw !== null && isUntouchedSeedRow(entry.table, raw)) {
+            await replaceRow(env, entry.table, pk, image);
+            await recordCheckpoint(env, id, entry.table, rowKey, hash, now);
+            recreated += 1;
+            continue;
+          }
         }
         const decision = await decideInsert(env, id, entry.table, rowKey, hash, () => Promise.resolve(existing !== null));
 
