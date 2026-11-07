@@ -8,7 +8,20 @@
   // The durable external_operations record and the publication epoch live in rf-core (task 32.1, task 59.1).
   "vars": {
     "CF_ACCOUNT_ID": "48ca646fd701c00c0069952c95299dad",
-    "ACCESS_MEMBER_LIST_ID": "fd3597d8-69ff-4e7c-9616-77446e8a0f44"
+    "ACCESS_MEMBER_LIST_ID": "fd3597d8-69ff-4e7c-9616-77446e8a0f44",
+    // The public site Worker the Publisher deploys (task 32.1).
+    "CF_SITE_SCRIPT_NAME": "rf-site",
+    // Edge Containment (task 59.2): the precreated, normally-disabled deny rule over every public research host.
+    "CF_PUBLIC_ZONE_ID": "ed49c9b320c4f3632e5894de842d61ff",
+    "APP_HOST": "app.researchforce.org",
+    "CF_PUBLIC_DENY_RULESET_ID": "32432f67a81d4e5f934d3965b166e2f7",
+    "CF_PUBLIC_DENY_RULE_IDS": "22ca8d44f4a843ceb5ede156851173b4",
+    "CONTAINMENT_PROBE_URL": "https://researchforce.org/",
+    "PLAN_CAN_DENY": "true",
+    // Submit-host budget shed (task 34.2): the precreated, normally-disabled submit-block rule.
+    "CF_SUBMIT_ZONE_ID": "ed49c9b320c4f3632e5894de842d61ff",
+    "CF_SUBMIT_BLOCK_RULESET_ID": "32432f67a81d4e5f934d3965b166e2f7",
+    "CF_SUBMIT_BLOCK_RULE_ID": "7fd6829442614b3fb06b88f824df2d05"
   },
   "d1_databases": [
     { "binding": "RF_CORE", "database_name": "rf-core", "database_id": "5f5ba177-402d-4faf-a67b-fcbda09fa94d" }
