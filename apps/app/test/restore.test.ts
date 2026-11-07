@@ -310,6 +310,23 @@ describe('the restore fails closed on conflicts and faults, inserting/releasing 
     expect((await core().prepare('SELECT count(*) AS n FROM members').first<{ n: number }>())!.n).toBe(membersBefore + 1);
   });
 
+  it('the bootstrap Administrator\'s own Profile (same display name as the backed-up one) does not collide with the restore', async () => {
+    // The backed-up Administrator has a Profile; in a real recovery the same human recreates themselves and fills in a
+    // Profile with the SAME name before restoring (the app requires it). The unique display-name key must not block it.
+    const backedUpAdmin = world.ids.admin;
+    const { id: packageId } = await sealedPackage(async () => {
+      await core().prepare("INSERT OR REPLACE INTO profiles (member_id, display_name, display_name_key, bio, time_zone, digest_hour, public_profile, rev, updated_seq) VALUES (?1, 'Restore Person', 'restore person', '', 'UTC', 8, 0, 1, 0)").bind(backedUpAdmin).run();
+    });
+    const bootstrapId = await freshEnvironmentWithBootstrap();
+    await core().prepare("INSERT OR REPLACE INTO profiles (member_id, display_name, display_name_key, bio, time_zone, digest_hour, public_profile, rev, updated_seq) VALUES (?1, 'Restore Person', 'restore person', '', 'UTC', 8, 0, 1, 0)").bind(bootstrapId).run();
+
+    const restoreId = await enqueueRestore(packageId, bootstrapId);
+    const { outcome } = await runRestore(restoreId);
+    expect(outcome).toBe('complete');
+    const owners = (await core().prepare("SELECT member_id AS id FROM profiles WHERE display_name_key = 'restore person'").all<{ id: string }>()).results.map((row) => row.id);
+    expect(owners).toEqual([backedUpAdmin]);
+  });
+
   it('a bootstrap-identity conflict (ambiguous email) fails the restore', async () => {
     const { id: packageId } = await sealedPackage(async () => { await world.created('author', 'finding'); });
     // Two bootstrap Members share the restore requester's email is impossible (unique email); instead make the

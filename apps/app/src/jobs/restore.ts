@@ -342,7 +342,15 @@ async function runSlice(env: Env, job: JobRecord, now: Timestamp, id: ULID, curs
       const idMap: Record<string, string> = {};
       if (reconciliation.mapping.kind === 'matched') {
         idMap[reconciliation.mapping.fromBootstrapId] = reconciliation.mapping.toBackedUpId;
-        await env.RF_CORE.prepare('DELETE FROM members WHERE id = ?1').bind(reconciliation.mapping.fromBootstrapId).run();
+        // The transient Member's own profile data goes with it: the backed-up Member's Profile, specialties, affiliations,
+        // preferences, and mutes install under the ORIGINAL id. Left behind, a bootstrap Profile that carries the same
+        // display name (the human recreating themselves) collides with the backed-up Profile's unique display-name key.
+        const transientId = reconciliation.mapping.fromBootstrapId;
+        await env.RF_CORE.batch([
+          ...['profile_specialties', 'profile_affiliations', 'notification_prefs', 'muted_projects', 'profiles']
+            .map((table) => env.RF_CORE.prepare(`DELETE FROM ${table} WHERE member_id = ?1`).bind(transientId)),
+          env.RF_CORE.prepare('DELETE FROM members WHERE id = ?1').bind(transientId),
+        ]);
       }
 
       // Read and AUTHENTICATE the independent suppression ledger so a suppressed id is never reinstated (R36.15, R36.16).
