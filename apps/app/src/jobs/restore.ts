@@ -27,6 +27,7 @@ import { backupPrefix } from './backup';
 import { decryptBodyPart } from '../backup/decrypt';
 import { rebuildDerivedData } from '../backup/derived';
 import { isDailyLimitError } from '../api/errors';
+import { createLogger } from '../log';
 
 /**
  * The Internal_Backup RESTORE JOB (task 38.5; R36.4, R36.5, R36.8, R36.9, R36.10, R36.11, R36.13, R36.15, R36.16,
@@ -300,6 +301,8 @@ export const restoreJob: JobHandler = {
       return await runSlice(env, job, now, id, cursor);
     } catch (error) {
       if (isDailyLimitError(error)) throw error;
+      // Keep the cause for the operator: the report is content-free by design, so the real error goes to the log only.
+      createLogger()('error', 'restore_slice_failed', { restore: id, stage: cursor.phase, error });
       return fail(env, id, { fault: { stage: cursor.phase, element: 'restore-slice', detail: `the ${cursor.phase} stage failed with an unexpected fault` }, counts: { recreated: cursor.recreated, tablesDone: cursor.tableIndex, tablesTotal: BACKUP_TABLES.length } }, now);
     }
   },
