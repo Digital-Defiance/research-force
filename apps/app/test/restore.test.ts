@@ -252,6 +252,46 @@ describe('the restore fails closed on conflicts and faults, inserting/releasing 
     expect(report.insertConflict?.table).toBe('settings');
   });
 
+  it('FAILS CLOSED when the INSERT stage throws an unhandled exception, releasing containment instead of hanging `running` (R36.8)', async () => {
+    // Seed a backup whose `profiles` table carries the author's Profile (every seeded Member gets a Profile named after
+    // its id, so `display_name_key` = `member <id>`). The backup copies that Profile row.
+    const { id: packageId } = await sealedPackage(async () => { await world.created('author', 'finding'); });
+    const authorProfileKey = `member ${world.ids.author.toLowerCase()}`;
+
+    // A production-account loss: an empty Research_CMS with only the bootstrap Administrator (and its own Profile).
+    const bootstrapId = await freshEnvironmentWithBootstrap();
+
+    // Reproduce the observed staging fault: a pre-existing `profiles` row at a DIFFERENT primary key (`member_id`) but
+    // the SAME UNIQUE `display_name_key` as a backed-up Profile. The restore's destination-occupied check reads by the
+    // PRIMARY key (`member_id`), so it never sees this row (different id) and proceeds to `installRow`, which hits the
+    // UNIQUE `profiles_display_name_key` constraint and THROWS — an unhandled exception mid-INSERT, not a handled
+    // insert-or-verify conflict. `profiles` is outside the destination-emptiness check, so preflight passes.
+    await core().prepare(
+      `INSERT INTO profiles (member_id, display_name, display_name_key, time_zone, updated_seq) VALUES (?1, ?2, ?3, 'UTC', 0)`,
+    ).bind(newULID(world.at), 'Pre-existing clash', authorProfileKey).run();
+
+    const restoreId = await enqueueRestore(packageId, bootstrapId);
+    // The slice throws mid-INSERT; the fix must catch it, fail the `restores` row through the existing `fail()` path,
+    // and return a terminal SliceResult (`incomplete`) so the job runner records a consistent terminal state — never
+    // left wedged `running` with the quarantine/write-freeze held open.
+    const { outcome } = await runRestore(restoreId);
+    expect(outcome).toBe('incomplete');
+
+    const restore = await core().prepare('SELECT state, report FROM restores WHERE id = ?1').bind(restoreId).first<{ state: string; report: string | null }>();
+    // The restore reaches a TERMINAL `failed` state with a non-null (content-free) report, not a hung `running`.
+    expect(restore?.state).toBe('failed');
+    expect(restore?.report).not.toBeNull();
+    const report = JSON.parse(restore!.report!) as { fault?: { stage: string; element: string; detail: string } };
+    expect(report.fault?.stage).toBe('insert');
+    // The content-free fault descriptor carries no research body/PII/secret.
+    expect(report.fault?.element).toBe('restore-slice');
+
+    // Containment is RELEASED exactly as a handled failure releases it: the quarantine is no longer active and the
+    // Publisher is not frozen, so the Backups page loads and the workspace is not left frozen (the observed symptom).
+    expect(await restoreQuarantineActive(world.bindings)).toBe(false);
+    expect(await isFrozen(core())).toBe(false);
+  });
+
   it('a destination that already holds research or other Members is refused before anything is inserted (R36.4)', async () => {
     const { id: packageId } = await sealedPackage(async () => { await world.created('author', 'finding'); });
     const bootstrapId = await freshEnvironmentWithBootstrap();

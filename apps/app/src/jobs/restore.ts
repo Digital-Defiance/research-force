@@ -13,7 +13,7 @@ import type { Timestamp, ULID } from '@researchforce/domain/types';
 import type { ApiEnv } from '../api/app';
 import type { Env } from '../env';
 import { JOB_HANDLERS } from '../do/jobs';
-import type { JobHandler, JsonValue, SliceResult } from '../do/jobs';
+import type { JobHandler, JobRecord, JsonValue, SliceResult } from '../do/jobs';
 import { backupPreflight, destinationEligibility } from '../backup/preflight';
 import type { PreflightProblem } from '../backup/preflight';
 import { reconcileBootstrapIdentity } from '../backup/reconcile';
@@ -26,6 +26,7 @@ import { bucketKeyOf } from './export';
 import { backupPrefix } from './backup';
 import { decryptBodyPart } from '../backup/decrypt';
 import { rebuildDerivedData } from '../backup/derived';
+import { isDailyLimitError } from '../api/errors';
 
 /**
  * The Internal_Backup RESTORE JOB (task 38.5; R36.4, R36.5, R36.8, R36.9, R36.10, R36.11, R36.13, R36.15, R36.16,
@@ -76,6 +77,13 @@ export interface RestoreReport {
   readonly insertConflict?: { readonly table: string; readonly rowKey: string; readonly reason: ConflictReason };
   /** The suppression fault (a tampered ledger) that denied release (R36.16), when one occurred. */
   readonly suppressionFault?: { readonly element: string };
+  /**
+   * An UNEXPECTED fault (an unhandled exception during a stage, e.g. a SQLite constraint `installRow` hit) that failed
+   * the restore closed (R36.8). CONTENT-FREE by construction — a stage/element/detail descriptor only, never a research
+   * body, PII, or secret — so the restore reaches a terminal `failed` state and releases containment instead of being
+   * left wedged `running` with the quarantine held open.
+   */
+  readonly fault?: { readonly stage: Cursor['phase']; readonly element: string; readonly detail: string };
   /** The numbers of rows recreated and remaining, for the resume report (R36.10). */
   readonly counts?: { readonly recreated: number; readonly tablesDone: number; readonly tablesTotal: number };
   /** The release gates still blocking containment release (R36.16); empty once every gate passes. */
@@ -281,6 +289,25 @@ export const restoreJob: JobHandler = {
     const params = job.params as unknown as RestoreParams;
     const id = params.restoreId;
     const cursor = (cursorValue as Cursor | null) ?? firstCursor;
+    // FAIL CLOSED on ANY unexpected fault in ANY stage (R36.8). A handled conflict/preflight/suppression path returns a
+    // terminal `fail()` itself; but an UNHANDLED exception — a SQLite constraint `installRow` hits, a decrypt/R2 fault,
+    // any unexpected throw — would otherwise propagate to the Jobs runner, which marks only the `jobs` row `failed` and
+    // leaves the `restores` row `running` forever, holding the restore quarantine/write-freeze open and hanging the
+    // Backups UI. Routing the exception through the SAME `fail()` path writes `restores.state='failed'` with a
+    // content-free report and releases containment exactly as a handled failure does. A DAILY-LIMIT error is NOT a
+    // restore failure: it must propagate so the runner pauses and resumes the slice idempotently from the last cursor.
+    try {
+      return await runSlice(env, job, now, id, cursor);
+    } catch (error) {
+      if (isDailyLimitError(error)) throw error;
+      return fail(env, id, { fault: { stage: cursor.phase, element: 'restore-slice', detail: `the ${cursor.phase} stage failed with an unexpected fault` }, counts: { recreated: cursor.recreated, tablesDone: cursor.tableIndex, tablesTotal: BACKUP_TABLES.length } }, now);
+    }
+  },
+};
+
+/** The restore slice's stages (preflight → bootstrap → insert → validate), wrapped by `restoreJob.slice`'s fail-closed guard. */
+async function runSlice(env: Env, job: JobRecord, now: Timestamp, id: ULID, cursor: Cursor): Promise<SliceResult> {
+    const params = job.params as unknown as RestoreParams;
     const registry = restoreRegistry(env);
     const prefix = bucketKeyOf(backupPrefix(params.sourceExportId));
 
@@ -405,8 +432,7 @@ export const restoreJob: JobHandler = {
     // never releases automatically (R36.16). A gate that did not pass keeps it quarantined with the outstanding gates.
     await writeState(env, id, 'quarantined', now, report, true);
     return step(cursor, { phase: 'validate' }, true, 'complete');
-  },
-};
+}
 
 /** Decrypt and parse one table's body part into row images, or an empty list when the table has no rows. */
 async function readBodyRows(env: Env, prefix: string, table: string, manifest: RootManifest): Promise<Record<string, unknown>[]> {
