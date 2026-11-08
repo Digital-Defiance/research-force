@@ -86,7 +86,9 @@ describe('partitionOperationalRecords applies both the window and the guard (R60
   it('never returns a referenced id in `remove`, for any window and reference set (property)', () => {
     fc.assert(
       fc.property(
-        fc.array(fc.record({ id: fc.string({ minLength: 1, maxLength: 6 }), dayOffset: fc.integer({ min: 0, max: 400 }) }), { maxLength: 40 }),
+        // Record ids are unique in every real table, so the generator keeps them unique; a duplicated id would make
+        // the lookup below find the wrong record and fail at random.
+        fc.uniqueArray(fc.record({ id: fc.string({ minLength: 1, maxLength: 6 }), dayOffset: fc.integer({ min: 0, max: 400 }) }), { maxLength: 40, selector: (row) => row.id }),
         fc.array(fc.string({ minLength: 1, maxLength: 6 }), { maxLength: 20 }),
         fc.integer({ min: 0, max: 400 }),
         (rows, referencedIds, cutoffDays) => {

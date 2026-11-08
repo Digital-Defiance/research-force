@@ -235,6 +235,8 @@ describe('stalled-run recovery on kick', () => {
 });
 
 describe('a kick opens a run only for queued work (the one-minute cron must not redeploy an unchanged site)', () => {
+  // The run's own row in the DO can finish and disappear as soon as its alarm fires, so these assert on the durable
+  // `rf-public.publish_runs` row a started run always writes, which is independent of alarm timing.
   const clearState = async (): Promise<void> => {
     await core().prepare("DELETE FROM outbox WHERE topic = 'publish'").run();
     await runInDurableObject(stub(), async (_instance, state) => {
@@ -242,28 +244,28 @@ describe('a kick opens a run only for queued work (the one-minute cron must not 
       await state.storage.deleteAlarm();
     });
   };
-  const runOpen = () => runInDurableObject(stub(), (_instance, state) =>
-    state.storage.sql.exec<{ run_id: string }>('SELECT run_id FROM publish_run WHERE only = 1').toArray().length > 0);
+  const runsStarted = () => pub().prepare('SELECT count(*) AS n FROM publish_runs').first<{ n: number }>().then((row) => row!.n);
 
-  it('opens no run and sets no alarm when nothing is queued and no run is active', async () => {
+  it('opens no run when nothing is queued and no run is active', async () => {
     await clearState();
+    const before = await runsStarted();
     await runInDurableObject(stub(), (instance: Publisher) => instance.kick('publish'));
-    expect(await runOpen()).toBe(false);
+    expect(await runsStarted()).toBe(before);
     expect(await currentAlarm()).toBeNull();
   });
 
   it('opens a run when a publish row is queued', async () => {
     await clearState();
     await publishRow('member:01M6SA486HRZWG3TDVY8RD4E7Q');
+    const before = await runsStarted();
     await runInDurableObject(stub(), (instance: Publisher) => instance.kick('publish'));
-    expect(await runOpen()).toBe(true);
-    expect(await currentAlarm()).not.toBeNull();
+    expect(await runsStarted()).toBe(before + 1);
   });
 
   it('republish (the restore release) opens a run even with nothing queued', async () => {
     await clearState();
+    const before = await runsStarted();
     await runInDurableObject(stub(), (instance: Publisher) => instance.republish());
-    expect(await runOpen()).toBe(true);
-    expect(await currentAlarm()).not.toBeNull();
+    expect(await runsStarted()).toBe(before + 1);
   });
 });
