@@ -67,7 +67,7 @@ export class SliceMeter {
       get: (target, key) => {
         const value = Reflect.get(target, key);
         if (typeof value !== 'function') return value;
-        return (...args: unknown[]) => { this.charge('r2'); return value.apply(target, args); };
+        return (...args: unknown[]) => { this.charge('r2'); return Reflect.apply(value, target, args); };
       },
     });
   }
@@ -79,7 +79,7 @@ export class SliceMeter {
       get: (target, key) => {
         const value = Reflect.get(target, key);
         if (typeof value !== 'function') return value;
-        return (...args: unknown[]) => { if (key === 'fetch') this.charge('external'); return value.apply(target, args); };
+        return (...args: unknown[]) => { if (key === 'fetch') this.charge('external'); return Reflect.apply(value, target, args); };
       },
     });
   }
@@ -91,7 +91,9 @@ export class SliceMeter {
         const value = Reflect.get(target, key);
         // `then` and symbols are probed by the runtime (await, RPC stubs): they are not calls.
         if (typeof value !== 'function' || typeof key === 'symbol' || key === 'then') return value;
-        return (...args: unknown[]) => { this.charge('external'); return value.apply(target, args); };
+        // On a service-binding RPC stub every property is itself a remote stub, so `value.apply` would be sent to
+        // rf-ops as a call to a method named "apply". Reflect.apply invokes the stub directly.
+        return (...args: unknown[]) => { this.charge('external'); return Reflect.apply(value, target, args); };
       },
     });
   }
@@ -102,9 +104,9 @@ export class SliceMeter {
       get(target, key) {
         const value = Reflect.get(target, key);
         if (key === '__target') return target;
-        if (key === 'bind') return (...args: unknown[]) => statement((value as (...a: unknown[]) => object).apply(target, args));
+        if (key === 'bind') return (...args: unknown[]) => statement(Reflect.apply(value as (...a: unknown[]) => object, target, args) as object);
         if (key === 'run' || key === 'all' || key === 'first' || key === 'raw') {
-          return (...args: unknown[]) => { charge('d1'); return (value as (...a: unknown[]) => unknown).apply(target, args); };
+          return (...args: unknown[]) => { charge('d1'); return Reflect.apply(value as (...a: unknown[]) => unknown, target, args); };
         }
         return typeof value === 'function' ? value.bind(target) : value;
       },
@@ -112,15 +114,15 @@ export class SliceMeter {
     return new Proxy(db, {
       get(target, key) {
         const value = Reflect.get(target, key);
-        if (key === 'prepare') return (...args: unknown[]) => statement((value as (...a: unknown[]) => object).apply(target, args));
+        if (key === 'prepare') return (...args: unknown[]) => statement(Reflect.apply(value as (...a: unknown[]) => object, target, args) as object);
         if (key === 'batch') {
           return (statements: readonly unknown[], ...rest: unknown[]) => {
             charge('d1', statements.length);
             const real = statements.map((s) => (s as { __target?: unknown }).__target ?? s);
-            return (value as (...a: unknown[]) => unknown).call(target, real, ...rest);
+            return Reflect.apply(value as (...a: unknown[]) => unknown, target, [real, ...rest]);
           };
         }
-        if (key === 'exec') return (...args: unknown[]) => { charge('d1'); return (value as (...a: unknown[]) => unknown).apply(target, args); };
+        if (key === 'exec') return (...args: unknown[]) => { charge('d1'); return Reflect.apply(value as (...a: unknown[]) => unknown, target, args); };
         return typeof value === 'function' ? value.bind(target) : value;
       },
     });
