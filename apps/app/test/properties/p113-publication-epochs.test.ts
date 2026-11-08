@@ -138,6 +138,11 @@ class FakeOps implements DeployOps {
   readonly deploysSeen: string[] = [];
   options: FakeProviderOptions = { providerDown: false, deployFault: 'ok', canContain: true, containVerifiable: true };
 
+  // The stepped deploy RPCs: the Publisher does not call them yet (it still calls deploySite), so they are inert here.
+  async beginSiteDeploy(): Promise<never> { throw new Error('beginSiteDeploy is not used by the single-call Publisher yet.'); }
+  async uploadSiteAssets(): Promise<never> { throw new Error('uploadSiteAssets is not used by the single-call Publisher yet.'); }
+  async finishSiteDeploy(): Promise<never> { throw new Error('finishSiteDeploy is not used by the single-call Publisher yet.'); }
+
   async deploySite(input: {
     readonly manifest: DeployManifest;
     readonly run: string;

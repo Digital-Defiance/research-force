@@ -6,6 +6,7 @@ import type { ULID } from '@researchforce/domain/types';
 import { base64Of, directUploadHash, extensionOf, planSite, reachesFileAlert } from '../src/publisher/plan';
 import type { ManifestEntry, PlannedFile } from '../src/publisher/plan';
 import { headersFile, loadSiteInput, renderSiteBuild } from '../src/publisher/render';
+import { encodeShellBundle } from '@researchforce/public-render/shell-bundle';
 import { loadShellAssets } from '../src/publisher/shell-assets';
 import { runProjectionSlice } from '../src/publisher/projection';
 import type { ProjectionDeps } from '../src/publisher/projection';
@@ -319,28 +320,35 @@ describe('the 16,000-file alert', () => {
   });
 });
 describe('staged shell assets', () => {
-  const index = [
-    { path: '/assets/form.js', contentType: 'text/javascript', file: 'assets/form.js' },
-    { path: '/fonts/a.woff2', contentType: 'font/woff2', file: 'fonts/a.woff2' },
+  const entries = [
+    { path: '/assets/form.js', contentType: 'text/javascript', content: new TextEncoder().encode('x') },
+    { path: '/fonts/a.woff2', contentType: 'font/woff2', content: new TextEncoder().encode('y') },
   ];
   const html = () => new Response('<!doctype html>', { headers: { 'content-type': 'text/html' } });
-  const fetcher = (files: Record<string, string>, withIndex = true): Fetcher => ({
+  const bundleFetcher = (bytes: Uint8Array | null, calls: string[] = []): Fetcher => ({
     fetch: async (input: RequestInfo | URL) => {
-      const path = new URL(String(input)).pathname.replace('/_shell/', '');
-      if (path === 'index.json') return withIndex ? Response.json(index) : html();
-      return path in files ? new Response(files[path], { headers: { 'content-type': 'application/octet-stream' } }) : html();
+      calls.push(String(input));
+      return bytes ? new Response(bytes as BodyInit, { headers: { 'content-type': 'application/octet-stream' } }) : html();
     },
   }) as unknown as Fetcher;
-  it('loads every listed file with its path and content type', async () => {
-    const assets = await loadShellAssets(fetcher({ 'assets/form.js': 'x', 'fonts/a.woff2': 'y' }));
+  it('loads every bundled file with its path and content type', async () => {
+    const assets = await loadShellAssets(bundleFetcher(encodeShellBundle(entries)));
     expect(assets.map((a) => [a.path, a.contentType])).toEqual([['/assets/form.js', 'text/javascript'], ['/fonts/a.woff2', 'font/woff2']]);
     expect(new TextDecoder().decode(assets[0]!.content)).toBe('x');
   });
-  it('ships none when there is no binding or no index', async () => {
+  it('ships none when there is no binding or no bundle', async () => {
     expect(await loadShellAssets(undefined)).toEqual([]);
-    expect(await loadShellAssets(fetcher({}, false))).toEqual([]);
+    expect(await loadShellAssets(bundleFetcher(null))).toEqual([]);
   });
-  it('fails rather than ship a partial set when a listed file is missing', async () => {
-    await expect(loadShellAssets(fetcher({ 'assets/form.js': 'x' }))).rejects.toThrow('/fonts/a.woff2');
+  it('fails rather than ship a partial set when the bundle is truncated', async () => {
+    const bytes = encodeShellBundle(entries);
+    await expect(loadShellAssets(bundleFetcher(bytes.slice(0, bytes.length - 1)))).rejects.toThrow('truncated');
+  });
+  it('performs exactly one ASSETS fetch for a 63-file shell', async () => {
+    const many = Array.from({ length: 63 }, (_, i) => ({ path: `/assets/f${i}.js`, contentType: 'text/javascript', content: new TextEncoder().encode(`f${i}`) }));
+    const calls: string[] = [];
+    const assets = await loadShellAssets(bundleFetcher(encodeShellBundle(many), calls));
+    expect(assets).toHaveLength(63);
+    expect(calls).toEqual(['https://assets.local/_shell/bundle.bin']);
   });
 });

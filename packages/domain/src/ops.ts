@@ -328,7 +328,38 @@ export interface OpsDeploy {
     readonly missing: Readonly<Record<string, { readonly base64: string; readonly contentType: string }>>;
     readonly containmentActive: boolean;
   }): Promise<OpsDeployResult>;
+  /**
+   * Stepped deploy, step 1 (one platform fetch): record the epoch-labelled operation and register the manifest.
+   * Answers `upload` (one-hour upload token + the platform's missing-hash buckets), `ready` (nothing to upload),
+   * or `settled` when the operation already confirmed or is uncertain (never redone blindly).
+   */
+  beginSiteDeploy(input: {
+    readonly manifest: Readonly<Record<string, { readonly hash: string; readonly size: number }>>;
+    readonly run: string;
+    readonly epoch: number;
+    readonly operationId: string;
+    readonly containmentActive: boolean;
+  }): Promise<OpsDeployBegin>;
+  /** Stepped deploy, step 2 (one multipart fetch): upload 1 to 100 files. `completionToken` is set once the platform issues it. */
+  uploadSiteAssets(input: {
+    readonly uploadToken: string;
+    readonly files: Readonly<Record<string, { readonly base64: string; readonly contentType: string }>>;
+  }): Promise<{ readonly completionToken: string | null }>;
+  /** Stepped deploy, step 3 (two platform fetches): create the version, fence, promote, fence, settle. */
+  finishSiteDeploy(input: {
+    readonly run: string;
+    readonly epoch: number;
+    readonly operationId: string;
+    readonly completionToken: string;
+    readonly containmentActive: boolean;
+  }): Promise<OpsDeployResult>;
 }
+
+/** The answer of the first stepped-deploy call. */
+export type OpsDeployBegin =
+  | { readonly state: 'upload'; readonly uploadToken: string; readonly buckets: readonly (readonly string[])[] }
+  | { readonly state: 'ready'; readonly completionToken: string }
+  | { readonly state: 'settled'; readonly result: OpsDeployResult };
 
 /** The content-free result of an `rf-site` deploy attempt (R28.6): identities and states only, no research body. */
 export interface OpsDeployResult {

@@ -9,6 +9,7 @@ import type {
   OpsBackupAlert,
   OpsContainment,
   OpsDeploy,
+  OpsDeployBegin,
   OpsDeployResult,
   OpsAnalytics,
   OpsHealthAlert,
@@ -203,6 +204,31 @@ export default class Ops extends WorkerEntrypoint<OpsEnv> implements OpsAccess, 
       generation: { run: input.run, epoch: input.epoch },
       operationId: input.operationId,
       assets: async (hash) => missing[hash] ?? null,
+      containmentActive: input.containmentActive,
+      now: new Date().toISOString() as Timestamp,
+    });
+  }
+
+  // The stepped deploy the Publisher drives one alarm slice at a time (bounded cost per call).
+  async beginSiteDeploy(input: Parameters<OpsDeploy['beginSiteDeploy']>[0]): Promise<OpsDeployBegin> {
+    return this.#deploy().beginSiteDeploy({
+      manifest: input.manifest,
+      generation: { run: input.run, epoch: input.epoch },
+      operationId: input.operationId,
+      containmentActive: input.containmentActive,
+      now: new Date().toISOString() as Timestamp,
+    });
+  }
+
+  async uploadSiteAssets(input: Parameters<OpsDeploy['uploadSiteAssets']>[0]): Promise<{ completionToken: string | null }> {
+    return this.#deploy().uploadSiteAssets({ uploadToken: input.uploadToken, files: input.files });
+  }
+
+  async finishSiteDeploy(input: Parameters<OpsDeploy['finishSiteDeploy']>[0]): Promise<OpsDeployResult> {
+    return this.#deploy().finishSiteDeploy({
+      generation: { run: input.run, epoch: input.epoch },
+      operationId: input.operationId,
+      completionToken: input.completionToken,
       containmentActive: input.containmentActive,
       now: new Date().toISOString() as Timestamp,
     });

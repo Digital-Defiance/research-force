@@ -108,8 +108,8 @@ describe('rf-ops rf-site Direct Upload deploy (task 32.1)', () => {
 
     const outcome = await deploy.deploySite({ manifest, generation: gen('r1', 4), operationId: id, assets, containmentActive: false, now: now() });
 
-    // The four Direct Upload phases in order: session -> upload -> version -> deploy.
-    expect(requests.map((r) => classify(r.url))).toEqual(['session', 'upload', 'upload', 'version', 'deploy']);
+    // The Direct Upload phases in order: session -> upload (ONE request per platform bucket) -> version -> deploy.
+    expect(requests.map((r) => classify(r.url))).toEqual(['session', 'upload', 'version', 'deploy']);
     // Only the two MISSING files were uploaded (the 404.html the platform already had is never uploaded).
     const uploadKeys = requests.filter((r) => classify(r.url) === 'upload').flatMap((r) => r.formKeys);
     expect(uploadKeys.sort()).toEqual(['aaaa0000', 'bbbb1111']);
@@ -147,7 +147,7 @@ describe('rf-ops rf-site Direct Upload deploy (task 32.1)', () => {
     const outcome = await new SiteDeploy(config, core(), fetcher).deploySite({ manifest, generation: gen('r1', 4), operationId: id, assets, containmentActive: true, now: now() });
 
     // The version was created, but the deploy (promotion) phase never ran.
-    expect(requests.map((r) => classify(r.url))).toEqual(['session', 'upload', 'upload', 'version']);
+    expect(requests.map((r) => classify(r.url))).toEqual(['session', 'upload', 'version']);
     expect(outcome).toMatchObject({ promoted: false, keepContainment: true, versionId: 'version-xyz', reason: 'stale_before', operationState: 'failed' });
     // An obsolete operation cannot reopen a contained host: containment is kept.
     expect(outcome.keepContainment).toBe(true);

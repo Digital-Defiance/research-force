@@ -57,6 +57,7 @@ describe('rf-ops Access sync', () => {
     expect(Object.getOwnPropertyNames(Ops.prototype).sort()).toEqual([
       'addMember',
       'backupAgeAlert',
+      'beginSiteDeploy',
       'certifyHealth',
       'constructor',
       'containPublicHosts',
@@ -64,12 +65,14 @@ describe('rf-ops Access sync', () => {
       'declareIncident',
       'deploySite',
       'fetch',
+      'finishSiteDeploy',
       'probePublicAddress',
       'releaseContainment',
       'removeMember',
       'revokeSessions',
       'setSubmitBlock',
       'spendAlert',
+      'uploadSiteAssets',
       'usage',
       'verifyContainment',
     ]);
