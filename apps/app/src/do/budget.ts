@@ -229,8 +229,9 @@ export class Budget extends DurableObject<Env> {
   /**
    * The 00:00 UTC reset. Idempotent: it resets the day counters to a fresh day, disables the submit WAF rule,
    * rewrites `status.json` to fully available, and drops the prior day's address key (and any address key
-   * older than 24h, R46.20). The every-minute cron calls this; an alarm set for the next 00:00 UTC also drives
-   * it if the cron is missed.
+   * older than 24h, R46.20). It ZEROES the current day, so it must run only at a day boundary: the every-minute
+   * cron calls {@link rollover}, which runs this only when the stored day is not today; the alarm it sets for the
+   * next 00:00 UTC drives it otherwise.
    */
   async reset(now: number = Date.now()): Promise<void> {
     const today = utcDay(now);
@@ -253,6 +254,20 @@ export class Budget extends DurableObject<Env> {
     await this.#scheduleReset(now);
   }
 
+  /**
+   * The every-minute cron's cheap check (R28.6, R28.11). It runs {@link reset} only when the stored day is not today
+   * or no day has been recorded yet, which also publishes the first `status.json` on a fresh install. Otherwise it
+   * only makes sure the next 00:00 UTC alarm is set. It never zeroes a day in progress. Returns whether a reset ran.
+   * Without it, nothing started the reset cycle, so a day that shed would keep the submit WAF block and the
+   * "unavailable" status.json in force indefinitely.
+   */
+  async rollover(now: number = Date.now()): Promise<boolean> {
+    const stored = this.ctx.storage.sql.exec<{ day: string }>('SELECT day FROM day WHERE only = 1').toArray()[0]?.day;
+    if (stored !== utcDay(now)) { await this.reset(now); return true; }
+    await this.#scheduleReset(now);
+    return false;
+  }
+
   override async alarm(): Promise<void> {
     await this.reset(Date.now());
   }
@@ -266,6 +281,8 @@ export class Budget extends DurableObject<Env> {
     if (this.#dayRow(day).waf_blocked === 1) { await this.#rewriteStatus(); return; }
     await this.#setWaf(true);
     await this.#rewriteStatus();
+    // A shed day must always be lifted at 00:00 UTC, even if the cron is not running.
+    await this.#scheduleReset(Date.now());
   }
 
   /** Toggle the precreated submit WAF block through rf-ops and record the flag in the day row. */
