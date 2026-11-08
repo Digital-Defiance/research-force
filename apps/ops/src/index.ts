@@ -184,6 +184,7 @@ export default class Ops extends WorkerEntrypoint<OpsEnv> implements OpsAccess, 
   async releaseContainment(authorizedGeneration: string): Promise<void> { await this.#containment().releaseContainment(authorizedGeneration); }
   async verifyContainment(): Promise<ContainmentState> { return this.#containment().verifyContainment(); }
   async probePublicAddress(url: string): Promise<'present' | 'absent' | 'unknown'> { return this.#containment().probePublicAddress(url); }
+  async probePublicAddresses(urls: readonly string[]): Promise<Record<string, 'present' | 'absent' | 'unknown'>> { return this.#containment().probePublicAddresses(urls); }
   async declareIncident(incident: ConfidentialityIncident): Promise<void> { await this.#containment().declareIncident(incident); }
   async backupAgeAlert(alert: BackupAgeAlert): Promise<void> { await this.#containment().backupAgeAlert(alert); }
 

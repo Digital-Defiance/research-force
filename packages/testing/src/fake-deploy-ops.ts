@@ -16,6 +16,11 @@ export interface FakeDeployOpsOptions {
   readonly bucketSize?: number;
   /** Throw once from uploadSiteAssets after this many successful upload calls (a transient failure). */
   readonly failUploadAfter?: number;
+  /**
+   * Remember uploaded hashes across deploys, as the platform does: a later begin asks only for hashes it has not seen
+   * (an incremental deploy). Off by default, so each begin asks for every hash in its manifest.
+   */
+  readonly retainUploads?: boolean;
 }
 
 /** A fake `rf-ops` that records what the Publisher asked of it, in order. */
@@ -33,6 +38,8 @@ export interface FakeDeployOps extends DeployOpsSurface {
   readonly begins: Array<Parameters<OpsDeploy['beginSiteDeploy']>[0]>;
   /** For each finishSiteDeploy call: whether every hash the begin step asked for had been uploaded. */
   readonly finishedAfterAllUploads: boolean[];
+  /** The size of each probePublicAddresses call, in order. */
+  readonly probeBatches: number[];
   /** When true, the next uploadSiteAssets call throws once. */
   failNextUpload: boolean;
 }
@@ -46,16 +53,19 @@ export function fakeDeployOps(options: FakeDeployOpsOptions = {}): FakeDeployOps
   const uploaded = new Set<string>();
   const begins: Array<Parameters<OpsDeploy['beginSiteDeploy']>[0]> = [];
   const finishedAfterAllUploads: boolean[] = [];
+  const batches: number[] = [];
   let expected = new Set<string>();
+  const platform = new Set<string>();
   let failedOnce = false;
   const bucketSize = options.bucketSize ?? 100;
   const fake = {
-    calls, incidents, steps, uploads, uploaded, begins, finishedAfterAllUploads,
+    calls, incidents, steps, uploads, uploaded, begins, finishedAfterAllUploads, probeBatches: batches,
     failNextUpload: false,
     async beginSiteDeploy(input: Parameters<OpsDeploy['beginSiteDeploy']>[0]): Promise<OpsDeployBegin> {
       steps.push('begin');
       begins.push(input);
-      const hashes = [...new Set(Object.values(input.manifest).map((entry) => entry.hash))];
+      const hashes = [...new Set(Object.values(input.manifest).map((entry) => entry.hash))]
+        .filter((hash) => !(options.retainUploads && platform.has(hash)));
       expected = new Set(hashes);
       uploaded.clear();
       if (hashes.length === 0) return { state: 'ready', completionToken: 'completion-token' };
@@ -72,7 +82,7 @@ export function fakeDeployOps(options: FakeDeployOpsOptions = {}): FakeDeployOps
       if (fake.failNextUpload) { fake.failNextUpload = false; throw new Error('Synthetic upload failure.'); }
       const hashes = Object.keys(input.files);
       uploads.push(hashes);
-      for (const hash of hashes) uploaded.add(hash);
+      for (const hash of hashes) { uploaded.add(hash); platform.add(hash); }
       const complete = [...expected].every((hash) => uploaded.has(hash));
       return { completionToken: complete ? 'completion-token' : null };
     },
@@ -95,6 +105,12 @@ export function fakeDeployOps(options: FakeDeployOpsOptions = {}): FakeDeployOps
     async releaseContainment(authorizedGeneration: string) { calls.push(`releaseContainment:${authorizedGeneration}`); },
     async verifyContainment() { calls.push('verifyContainment'); return options.containment ?? { active: false, verified: false }; },
     async probePublicAddress(url: string) { calls.push(`probe:${url}`); return options.probe?.(url) ?? 'absent'; },
+    async probePublicAddresses(urls: readonly string[]) {
+      const statuses: Record<string, 'present' | 'absent' | 'unknown'> = {};
+      for (const url of urls) { calls.push(`probe:${url}`); statuses[url] = options.probe?.(url) ?? 'absent'; }
+      batches.push(urls.length);
+      return statuses;
+    },
     async declareIncident(incident: ConfidentialityIncident) { calls.push('declareIncident'); incidents.push(incident); },
     // Unused OpsAccess surface for the type.
     async addMember() {}, async removeMember() {}, async revokeSessions() {},

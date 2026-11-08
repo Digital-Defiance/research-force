@@ -264,10 +264,14 @@ export function verifyObservation(
   probes: readonly ProbeResult[],
   elapsedMs: number,
   containment: { readonly active: boolean; readonly verified: boolean; readonly canContain: boolean },
+  complete = true,
 ): Observation {
-  // `every` is true for an empty set, so a run with nothing to suppress is trivially verified (R24.16).
-  const removalVerified = probes.every((p) => p.status === 'absent');
-  const providerDown = probes.length > 0 && probes.every((p) => p.status === 'unknown');
+  // `every` is true for an empty set, so a run with nothing to suppress is trivially verified (R24.16). A PARTIAL pass
+  // (the sliced verify has not probed every removed address yet) can never verify the removal.
+  const removalVerified = complete && probes.every((p) => p.status === 'absent');
+  // Every probe unknown means the control path is unreachable. On a partial pass that is only concluded once the
+  // five-minute mark is reached, so a few early unknowns never become an incident on their own.
+  const providerDown = probes.length > 0 && probes.every((p) => p.status === 'unknown') && (complete || elapsedMs >= VERIFY_BY_MS);
   return {
     elapsedMs,
     removalVerified,
@@ -276,6 +280,32 @@ export function verifyObservation(
     canContain: containment.canContain,
     providerDown,
   };
+}
+
+/**
+ * The next addresses of `urls` that have no probe result yet, at most `limit` of them, in order (pure). The sliced
+ * verify phase probes a window per slice and stores the results, so a pass resumes where it stopped.
+ */
+export function probeWindow(urls: readonly string[], doneUrls: ReadonlySet<string>, limit: number): string[] {
+  const window: string[] = [];
+  for (const url of urls) {
+    if (window.length >= limit) break;
+    if (!doneUrls.has(url)) window.push(url);
+  }
+  return window;
+}
+
+/** How often a partial probe pass re-evaluates the escalation once the four-minute mark has passed. */
+export const EVALUATE_EVERY_MS = 15_000;
+
+/**
+ * Whether the sliced verify phase must run the escalation now (pure). A COMPLETE pass always evaluates. A partial pass
+ * evaluates only from the four-minute mark on (so containment and the five-minute checks fire on time however long a
+ * pass takes) and then at most once per {@link EVALUATE_EVERY_MS}; before four minutes there is nothing to decide.
+ */
+export function shouldEvaluate(input: { passComplete: boolean; elapsedMs: number; lastEvalMs: number; nowMs: number }): boolean {
+  if (input.passComplete) return true;
+  return input.elapsedMs >= CONTAIN_AT_MS && input.nowMs - input.lastEvalMs >= EVALUATE_EVERY_MS;
 }
 
 /** The outcome of one verify step: the next action the escalation decided, and whether the public state is safe. */
@@ -316,16 +346,33 @@ export async function verifyRemoval(
   const urls = removedProbeUrls(removed, origins);
   const probes: ProbeResult[] = [];
   for (const url of urls) probes.push({ url, status: await ops.probePublicAddress(url) });
+  return escalateAfterProbes(ops, generation, probes, true, elapsedMs);
+}
 
+/**
+ * Everything {@link verifyRemoval} does after probing: read the containment state, build the observation, decide with
+ * {@link escalate}, and perform the decided side effect (contain, verify containment, declare the incident). The sliced
+ * verify phase calls it with the probes stored so far; `complete` says every removed address has been probed, and only
+ * a complete all-absent set can verify the removal. `unprobed` are removed addresses with no result yet: they are
+ * unconfirmed, so a declared incident lists them with the still-reachable ones.
+ */
+export async function escalateAfterProbes(
+  ops: DeployOps,
+  generation: Generation,
+  probes: readonly ProbeResult[],
+  complete: boolean,
+  elapsedMs: number,
+  unprobed: readonly string[] = [],
+): Promise<VerifyResult> {
   const capabilities = await ops.containmentCapabilities();
   const containmentState = await ops.verifyContainment();
   const observation = verifyObservation(probes, elapsedMs, {
     active: containmentState.active,
     verified: containmentState.verified,
     canContain: capabilities.canDeny,
-  });
+  }, complete);
   const decision = escalate(observation);
-  const unverified = probes.filter((p) => p.status !== 'absent').map((p) => p.url);
+  const unverified = [...probes.filter((p) => p.status !== 'absent').map((p) => p.url), ...unprobed];
 
   switch (decision.action) {
     case 'contain': {

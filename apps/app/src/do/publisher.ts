@@ -10,17 +10,17 @@ import type { Env } from '../env';
 import { createLogger } from '../log';
 import { isFrozen, runProjectionSlice } from '../publisher/projection';
 import type { ProjectionDeps } from '../publisher/projection';
-import { deleteManifestRows, raiseFileCountAlert, renderSiteBuild } from '../publisher/render';
+import { deleteManifestRows, raiseFileCountAlert, renderPlanned } from '../publisher/render';
 import type { PlannedRender } from '../publisher/render';
 import { loadShellAssets } from '../publisher/shell-assets';
 import type { FormsConfig } from '@researchforce/public-render/site';
 import { publicCopyOf } from '../publisher/public-copy';
-import { runFileOps, runFileOpsSlice } from '../publisher/files';
+import { runFileOpsSlice } from '../publisher/files';
 import { reachesFileAlert } from '../publisher/plan';
 import { stageSlice } from '../publisher/stage';
 import type { StageDeps } from '../publisher/stage';
 import { SliceMeter } from '../publisher/slice-budget';
-import { UPLOAD_SESSION_MAX_MS } from '@researchforce/domain/slice-budget';
+import { PROBES_PER_SLICE, PROBE_BATCH_MAX, UPLOAD_SESSION_MAX_MS } from '@researchforce/domain/slice-budget';
 import { canServerSideCopy } from '../files/s3';
 import {
   VERIFY_BY_MS,
@@ -29,15 +29,17 @@ import {
   deployFinish,
   deployWhen,
   elapsedSince,
+  escalateAfterProbes,
   fileOpsFor,
   liveFileCopies,
+  probeWindow,
   reconcileUncertainDeploy,
-  removedAddresses,
+  removedProbeUrls,
+  shouldEvaluate,
   sqlDeletionRetryState,
   uploadChunk,
-  verifyRemoval,
 } from '../publisher/deploy';
-import type { DeployManifest, DeployOps, DeployRunResult, PublicOrigins } from '../publisher/deploy';
+import type { DeployManifest, DeployOps, DeployRunResult, ProbeResult, PublicOrigins } from '../publisher/deploy';
 
 /** The SQL default for the run's starting phase column (a template literal, not user-facing copy). */
 const PROJECT_PHASE_DEFAULT = `'project'`;
@@ -89,6 +91,8 @@ export class Publisher extends DurableObject<Env> {
     // public addresses this run removed (pages by path, files by Item_Identifier) that the verify phase must probe.
     ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS deploy_buckets (idx INTEGER PRIMARY KEY, hashes TEXT NOT NULL)');
     ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS deploy_removed (kind TEXT NOT NULL, value TEXT NOT NULL, PRIMARY KEY (kind, value))');
+    // The verify phase's probe results for the pass in progress (url -> present/absent/unknown); cleared when a pass restarts.
+    ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS verify_probes (url TEXT PRIMARY KEY, status TEXT NOT NULL)');
     // The durable pending-public-file-deletion retry set (task 32.4's DeletionRetryState, backed here, R25.3).
     this.#retry = sqlDeletionRetryState(ctx.storage.sql);
   }
@@ -432,6 +436,8 @@ export class Publisher extends DurableObject<Env> {
     if (run.urgent) {
       // An urgent run must verify the removal is actually gone (or contained) before it may claim success.
       this.#clearDeployProgress();
+      // The deploy phase persisted every removed address before it deleted the manifest rows: verify uses that record.
+      this.#saveVerify({ ...DEFAULT_VERIFY, removedReady: true });
       this.#update({ phase: 'verify', verifyStartMs: run.startedMs });
       await this.#wake(Date.now());
       return;
@@ -442,30 +448,81 @@ export class Publisher extends DurableObject<Env> {
   }
 
   /**
-   * Verify phase (task 32.5, design "Publisher" step 7). HEAD each removed page+file address through rf-ops,
-   * expecting not-found, and drive the four-/five-minute escalation: at 4 min unverified → contain + alert; by
-   * 5 min → verify Containment; if neither removal nor Containment can be confirmed → UNCONFIRMED incident,
-   * NEVER success (R24.16, R24.17, R25.7). Only a genuinely safe outcome records `publish_runs.verified_at`.
+   * Verify phase (task 32.5, design "Publisher" step 7), sliced to the Workers Free plan. HEAD each removed page+file
+   * address through rf-ops, expecting not-found, and drive the four-/five-minute escalation: at 4 min unverified →
+   * contain + alert; by 5 min → verify Containment; if neither removal nor Containment can be confirmed → UNCONFIRMED
+   * incident, NEVER success (R24.16, R24.17, R25.7). Only a genuinely safe outcome records `publish_runs.verified_at`.
+   *
+   * It never re-renders per tick. The removed set is the one the deploy phase persisted in `deploy_removed` (a run that
+   * arrives without one, such as a legacy or seeded run, computes it ONCE with a read-only render and stores it). Each
+   * slice retries pending public-file deletions, then probes the next window of the set in batches and stores the
+   * results in `verify_probes`. The escalation is evaluated when a pass completes OR, from the 4-minute mark on, at
+   * least every 15 s even mid-pass, so the deadlines hold however long a pass takes. Removal counts as verified only
+   * for a COMPLETE pass with every address absent.
    */
   async #verifyPhase(run: RunState, meter: SliceMeter): Promise<void> {
     const now = new Date().toISOString() as Timestamp;
     const nowMs = Date.now();
     const io = this.#io(meter);
-    // Re-render the plan to learn the removed page addresses, and re-run the file deletions so a removal that
-    // failed earlier is retried (R25.3); only confirmed-gone copies count as removed for verification.
-    const render = await renderSiteBuild(
-      { core: io.core, public: io.pub, privateBucket: io.priv, licence: this.#licence(), publicCopy: this.#publicCopy(), ...this.#forms(), shellAssets: await loadShellAssets(meter.assets(this.env.ASSETS)) },
-      now,
-    );
-    const publicAttachments = await currentPublicAttachments(io.core, io.pub);
-    const live = await liveFileCopies(io.pubBucket);
-    const fileOps = await runFileOps(io.env, fileOpsFor(publicAttachments, live), this.#retry);
+    let state = this.#loadVerify();
 
-    const removed = removedAddresses(render.plan, fileOps);
+    // (1) The removed set: persisted by the deploy phase, or computed once, read-only, for a run without one.
+    if (!state.removedReady) {
+      const render = await (this.#renderOverride ?? renderPlanned)(
+        { core: io.core, public: io.pub, privateBucket: io.priv, licence: this.#licence(), publicCopy: this.#publicCopy(), ...this.#forms(), shellAssets: await loadShellAssets(meter.assets(this.env.ASSETS)) },
+        now,
+      );
+      for (const path of render.plan.removed) this.ctx.storage.sql.exec("INSERT OR IGNORE INTO deploy_removed (kind, value) VALUES ('page', ?)", path);
+      state = this.#saveVerify({ ...state, removedReady: true });
+    }
+
+    // (2) Retry public-file deletions that have not been confirmed yet (R25.3); only confirmed-gone copies are probed.
+    const deletions = await runFileOpsSlice(
+      io.env, { copies: [], deletions: [] }, this.#retry, { deletion: state.deletionCursor, copy: '' },
+      { deletions: Math.min(PROBES_PER_SLICE, Math.max(1, Math.floor(meter.remaining('r2') / 2))), copies: 0 },
+    );
+    for (const id of deletions.deleted) this.ctx.storage.sql.exec("INSERT OR IGNORE INTO deploy_removed (kind, value) VALUES ('file', ?)", id);
+    state = this.#saveVerify({ ...state, deletionCursor: deletions.deletionsDone ? '' : deletions.cursors.deletion });
+
+    const removed = this.ctx.storage.sql.exec<{ kind: string; value: string }>('SELECT kind, value FROM deploy_removed ORDER BY kind, value').toArray();
+    const urls = removedProbeUrls(
+      { pages: removed.filter((row) => row.kind === 'page').map((row) => row.value), files: removed.filter((row) => row.kind === 'file').map((row) => row.value) },
+      this.#siteOrigins(),
+    );
     const elapsed = elapsedSince(run.verifyStartMs || run.startedMs, nowMs);
+
     let result;
+    let complete: boolean;
     try {
-      result = await verifyRemoval(io.ops, run, removed, this.#siteOrigins(), elapsed);
+      // (3) Probe the next window in batches; each batch is stored at once so a failure keeps what was learned.
+      const done = new Set(this.ctx.storage.sql.exec<{ url: string }>('SELECT url FROM verify_probes').toArray().map((row) => row.url));
+      const window = probeWindow(urls, done, PROBES_PER_SLICE);
+      for (let start = 0; start < window.length; start += PROBE_BATCH_MAX) {
+        const batch = window.slice(start, start + PROBE_BATCH_MAX);
+        const answers = await io.ops.probePublicAddresses(batch);
+        for (const url of batch) {
+          const answer = answers[url];
+          this.ctx.storage.sql.exec('INSERT OR REPLACE INTO verify_probes (url, status) VALUES (?, ?)', url, answer === 'present' || answer === 'absent' ? answer : 'unknown');
+          done.add(url);
+        }
+      }
+      complete = probeWindow(urls, done, 1).length === 0;
+
+      // (4) Evaluate the escalation when the pass is complete, or (from 4 minutes) on the mid-pass cadence.
+      if (!shouldEvaluate({ passComplete: complete, elapsedMs: elapsed, lastEvalMs: state.lastEvalMs, nowMs })) {
+        await this.#wake(Date.now()); // partial pass, nothing to decide yet: keep probing
+        return;
+      }
+      const stored = new Map(this.ctx.storage.sql.exec<{ url: string; status: ProbeResult['status'] }>('SELECT url, status FROM verify_probes').toArray().map((row) => [row.url, row.status]));
+      const probes: ProbeResult[] = [];
+      const unprobed: string[] = [];
+      for (const url of urls) {
+        const status = stored.get(url);
+        if (status === undefined) unprobed.push(url);
+        else probes.push({ url, status });
+      }
+      result = await escalateAfterProbes(io.ops, run, probes, complete, elapsed, unprobed);
+      state = this.#saveVerify({ ...state, lastEvalMs: nowMs });
     } catch (error) {
       this.#log('error', 'publish_verify_failed', { run: run.run, error });
       await this.#wake(nowMs + 30_000); // retry the verify step; never claim success on a failed verify
@@ -495,7 +552,11 @@ export class Publisher extends DurableObject<Env> {
       await this.#finish(run, now);
       return;
     }
-    // Still watching/containing/verifying: schedule the next check at the next deadline boundary.
+    // (5) Still watching/containing/verifying. A partial pass keeps probing at once; a complete, unsafe pass starts a
+    // fresh one at the next deadline boundary.
+    if (!complete) { await this.#wake(Date.now()); return; }
+    this.ctx.storage.sql.exec('DELETE FROM verify_probes');
+    this.#saveVerify({ ...state, passes: state.passes + 1 });
     const nextAtMs = elapsed < VERIFY_BY_MS ? nowMs + 30_000 : nowMs + 15_000;
     await this.#wake(nextAtMs);
   }
@@ -543,6 +604,20 @@ export class Publisher extends DurableObject<Env> {
   #clearDeployProgress(): void {
     this.ctx.storage.sql.exec("UPDATE publish_run SET deploy_json = '{}' WHERE only = 1");
     this.ctx.storage.sql.exec('DELETE FROM deploy_buckets');
+    this.ctx.storage.sql.exec('DELETE FROM verify_probes');
+  }
+
+  /** The verify phase's persisted progress (it shares the `deploy_json` column; the deploy steps are done by then). */
+  #loadVerify(): VerifyProgress {
+    const row = this.ctx.storage.sql.exec<{ deploy_json: string }>('SELECT deploy_json FROM publish_run WHERE only = 1').toArray()[0];
+    let stored: Partial<VerifyProgress> = {};
+    try { stored = JSON.parse(row?.deploy_json ?? '{}') as Partial<VerifyProgress>; } catch { /* start the pass afresh */ }
+    return { ...DEFAULT_VERIFY, ...stored };
+  }
+
+  #saveVerify(progress: VerifyProgress): VerifyProgress {
+    this.ctx.storage.sql.exec('UPDATE publish_run SET deploy_json = ? WHERE only = 1', JSON.stringify(progress));
+    return progress;
   }
 
   /** Forget everything the deploy and verify phases kept for a run: progress, buckets, and the removed addresses. */
@@ -655,6 +730,20 @@ const DEFAULT_DEPLOY: DeployProgress = {
   step: 'stage', deletionCursor: '', copyCursor: '', sessionStartMs: 0, uploadToken: '', completionToken: '',
   bucket: 0, offset: 0, uncertain: false, versionId: null,
 };
+
+/** The verify phase's persisted progress. */
+interface VerifyProgress {
+  /** True once the removed set is in `deploy_removed` (written by the deploy phase, or computed once by verify). */
+  readonly removedReady: boolean;
+  /** When the escalation was last evaluated (ms epoch); throttles mid-pass evaluations after the 4-minute mark. */
+  readonly lastEvalMs: number;
+  /** Probe passes completed without a safe outcome. */
+  readonly passes: number;
+  /** Where the pending-deletion retry stopped (so a long retry set cannot starve its tail). */
+  readonly deletionCursor: string;
+}
+
+const DEFAULT_VERIFY: VerifyProgress = { removedReady: false, lastEvalMs: 0, passes: 0, deletionCursor: '' };
 
 /** What the next deploy step needs from the slice budget (the first step of a slice always runs regardless). */
 const STEP_NEEDS: Readonly<Record<DeployStep, { d1?: number; r2?: number; external?: number }>> = {

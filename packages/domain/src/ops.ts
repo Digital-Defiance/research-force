@@ -142,6 +142,12 @@ export interface OpsContainment {
    */
   probePublicAddress(url: string): Promise<'present' | 'absent' | 'unknown'>;
   /**
+   * {@link probePublicAddress} for up to `PROBE_BATCH_MAX` (25) addresses in one call (one RPC, one outbound HEAD per
+   * address, six at a time), so the Publisher's sliced verify phase stays inside the Free plan's subrequest limits.
+   * Each address gets exactly the status the single probe would give it. More than the batch maximum is a RangeError.
+   */
+  probePublicAddresses(urls: readonly string[]): Promise<Readonly<Record<string, 'present' | 'absent' | 'unknown'>>>;
+  /**
    * Declare a confidentiality incident through the independently operated alert channel, recording the last
    * verified public state and the failed actions (R24.17, R60.6). Never asserts success; it is only called
    * when neither removal nor Containment could be confirmed. The payload carries no research body, only the

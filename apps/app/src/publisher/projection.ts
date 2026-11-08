@@ -157,15 +157,18 @@ export async function expandScopesToRoots(core: D1Database, rows: readonly Outbo
 }
 
 /** The current `public_views` row for every unit under a Root_Item (or a Project), used to diff against the new projection. */
-interface CurrentRow { readonly unitKey: UnitKey; readonly effective: Effective; readonly viewHash: string }
+interface CurrentRow { readonly unitKey: UnitKey; readonly rootKey: UnitKey; readonly effective: Effective; readonly viewHash: string }
 
-async function currentViews(pub: D1Database, rootKeys: readonly UnitKey[]): Promise<Map<UnitKey, CurrentRow>> {
-  if (rootKeys.length === 0) return new Map();
+/** The current rows of every given root, in one query, grouped by `root_key` (each root sees exactly its own rows). */
+async function currentViewsByRoot(pub: D1Database, rootKeys: readonly UnitKey[]): Promise<Map<UnitKey, Map<UnitKey, CurrentRow>>> {
+  const byRoot = new Map<UnitKey, Map<UnitKey, CurrentRow>>();
+  if (rootKeys.length === 0) return byRoot;
   const result = await pub.prepare(
-    `SELECT unit_key AS unitKey, effective, view_hash AS viewHash FROM public_views
+    `SELECT unit_key AS unitKey, root_key AS rootKey, effective, view_hash AS viewHash FROM public_views
       WHERE valid_to_at IS NULL AND root_key IN (SELECT value FROM json_each(?1))`,
   ).bind(JSON.stringify([...new Set(rootKeys)])).all<CurrentRow>();
-  return new Map(result.results.map((row) => [row.unitKey, row]));
+  for (const row of result.results) (byRoot.get(row.rootKey) ?? byRoot.set(row.rootKey, new Map()).get(row.rootKey)!).set(row.unitKey, row);
+  return byRoot;
 }
 
 /** What one Root_Item's projection changed, and whether that change is urgent (it removed or edited public material). */
@@ -190,8 +193,8 @@ async function projectRoot(
   members: ReadonlySet<UnitKey>,
   seqTo: number,
   now: Timestamp,
+  current: ReadonlyMap<UnitKey, CurrentRow>,
 ): Promise<RootResult> {
-  const current = await currentViews(deps.public, [rootKey]);
   const statements: D1PreparedStatement[] = [];
   const close = (key: UnitKey): void => {
     statements.push(deps.public.prepare('UPDATE public_views SET valid_to_at = ?2 WHERE unit_key = ?1 AND valid_to_at IS NULL').bind(key, now));
@@ -299,11 +302,14 @@ export async function runProjectionSlice(deps: ProjectionDeps, run: Generation, 
   if (rootIds.length > 0 || projectIds.length > 0) {
     const { input } = await loadProjectionInput(deps.core, rootIds, now, { projectIds });
     const projection = projectDetailed(input);
+    // The current versions of every affected root, read in ONE query (not one per root), so a slice's D1 round trips
+    // stay constant however many roots it covers (Workers Free plan: 50 queries per invocation).
+    const current = await currentViewsByRoot(deps.public, [...byRoot.keys()]);
     for (const [rootKey, members] of byRoot) {
       // Fence each root's projection: an addition under a stale epoch is refused so suppressed output is never rewritten.
       const authorized = fence(run, authoritative, 'addition').authorized || fence(run, authoritative, 'removal').authorized;
       if (!authorized) break;
-      const result = await projectRoot(deps, rootKey, projection, ownership, members, seqTo, now);
+      const result = await projectRoot(deps, rootKey, projection, ownership, members, seqTo, now, current.get(rootKey) ?? new Map());
       urgent = urgent || result.urgent;
       statements.push(...result.statements);
       bytes += rootBytes(canonicalJson([...members].flatMap((key) => projection.views.get(key) ?? [])));

@@ -177,6 +177,10 @@ class FakeOps implements DeployOps {
     return this.reachable.has(url) ? 'present' : 'absent';
   }
 
+  async probePublicAddresses(urls: readonly string[]): Promise<Record<string, 'present' | 'absent' | 'unknown'>> {
+    return Object.fromEntries(await Promise.all(urls.map(async (url) => [url, await this.probePublicAddress(url)] as const)));
+  }
+
   async containmentCapabilities(): Promise<ContainmentCapabilities> {
     return { canDeny: this.options.canContain, verifiable: this.options.containVerifiable, canAlert: true, blockingReason: this.options.canContain ? null : 'plan cannot deny public hosts' };
   }

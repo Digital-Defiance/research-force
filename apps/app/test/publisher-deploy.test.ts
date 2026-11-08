@@ -7,11 +7,14 @@ import {
   ADDITION_QUIET_MS,
   deployFinish,
   deployWhen,
+  escalateAfterProbes,
   fileOpsFor,
   mayReleaseAfterRestore,
+  probeWindow,
   reconcileUncertainDeploy,
   releaseAfterRestore,
   removedProbeUrls,
+  shouldEvaluate,
   uploadChunk,
   verifyObservation,
   verifyRemoval,
@@ -283,5 +286,76 @@ describe('uploadChunk', () => {
     const chunk = await uploadChunk(priv(), ['hA', 'missing-hash']);
     expect(Object.keys(chunk.files)).toEqual(['hA']);
     expect(chunk.missing).toEqual(['missing-hash']);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// The sliced verify: partial passes, the probe window, and when to evaluate (pure).
+// ---------------------------------------------------------------------------
+
+describe('verifyObservation on a partial pass', () => {
+  const containment = { active: false, verified: false, canContain: true };
+  const absent = [{ url: 'a', status: 'absent' as const }];
+
+  it('never verifies the removal from a partial pass, even when every probe so far is absent', () => {
+    expect(verifyObservation(absent, 0, containment, false).removalVerified).toBe(false);
+    expect(verifyObservation(absent, 0, containment, true).removalVerified).toBe(true);
+  });
+
+  it('declares the provider down on a partial pass only from the five-minute mark', () => {
+    const unknown = [{ url: 'a', status: 'unknown' as const }];
+    expect(verifyObservation(unknown, VERIFY_BY_MS - 1, containment, false).providerDown).toBe(false);
+    expect(verifyObservation(unknown, VERIFY_BY_MS, containment, false).providerDown).toBe(true);
+    expect(verifyObservation(unknown, 0, containment, true).providerDown).toBe(true);
+  });
+});
+
+describe('probeWindow', () => {
+  it('returns the next unprobed addresses in order, at most the limit', () => {
+    const urls = ['a', 'b', 'c', 'd', 'e'];
+    expect(probeWindow(urls, new Set(), 2)).toEqual(['a', 'b']);
+    expect(probeWindow(urls, new Set(['a', 'b']), 2)).toEqual(['c', 'd']);
+    expect(probeWindow(urls, new Set(['a', 'c', 'e']), 10)).toEqual(['b', 'd']);
+    expect(probeWindow(urls, new Set(urls), 10)).toEqual([]);
+    expect(probeWindow([], new Set(), 10)).toEqual([]);
+  });
+});
+
+describe('shouldEvaluate', () => {
+  const base = { passComplete: false, elapsedMs: 0, lastEvalMs: 0, nowMs: 1_000_000 };
+
+  it('always evaluates a complete pass', () => {
+    expect(shouldEvaluate({ ...base, passComplete: true })).toBe(true);
+    expect(shouldEvaluate({ ...base, passComplete: true, elapsedMs: CONTAIN_AT_MS + 1, lastEvalMs: base.nowMs })).toBe(true);
+  });
+
+  it('never evaluates a partial pass before four minutes', () => {
+    expect(shouldEvaluate({ ...base, elapsedMs: 0 })).toBe(false);
+    expect(shouldEvaluate({ ...base, elapsedMs: CONTAIN_AT_MS - 1 })).toBe(false);
+  });
+
+  it('forces an evaluation mid-pass at four minutes, then at most every 15 seconds', () => {
+    expect(shouldEvaluate({ ...base, elapsedMs: CONTAIN_AT_MS })).toBe(true);
+    expect(shouldEvaluate({ ...base, elapsedMs: CONTAIN_AT_MS, lastEvalMs: base.nowMs - 14_999 })).toBe(false);
+    expect(shouldEvaluate({ ...base, elapsedMs: VERIFY_BY_MS + 60_000, lastEvalMs: base.nowMs - 15_000 })).toBe(true);
+  });
+});
+
+describe('escalateAfterProbes', () => {
+  it('contains and declares once on a partial pass at four minutes, listing unprobed addresses as unverified', async () => {
+    const ops = fakeOps();
+    const result = await escalateAfterProbes(ops, gen('r1', 2), [{ url: 'https://public.test/a', status: 'absent' }], false, CONTAIN_AT_MS, ['https://public.test/b']);
+    expect(result.decision.action).toBe('contain');
+    expect(result.safe).toBe(false);
+    expect(ops.calls.filter((call) => call === 'containPublicHosts')).toHaveLength(1);
+    expect(ops.incidents).toHaveLength(1);
+    expect(ops.incidents[0]!.unverifiedTargets).toEqual(['https://public.test/b']);
+  });
+
+  it('does not resolve a partial all-absent pass', async () => {
+    const ops = fakeOps();
+    const result = await escalateAfterProbes(ops, gen('r1', 2), [{ url: 'u', status: 'absent' }], false, 1_000);
+    expect(result.safe).toBe(false);
+    expect(result.decision.action).toBe('wait');
   });
 });

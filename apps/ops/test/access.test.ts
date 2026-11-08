@@ -66,6 +66,7 @@ describe('rf-ops Access sync', () => {
       'fetch',
       'finishSiteDeploy',
       'probePublicAddress',
+      'probePublicAddresses',
       'releaseContainment',
       'removeMember',
       'revokeSessions',

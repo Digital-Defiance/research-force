@@ -187,6 +187,35 @@ describe('Containment Cloudflare control surface', () => {
     expect(await down.probePublicAddress('https://public.example.test/r/x')).toBe('unknown');
   });
 
+  it('probes a batch with the same statuses as per-address probing, one fetch per address, six at a time', async () => {
+    const statusOf = (url: string): number => (url.endsWith('/gone') ? 404 : url.endsWith('/denied') ? 403 : url.endsWith('/odd') ? 500 : 200);
+    const urls = Array.from({ length: 25 }, (_, index) => `https://public.example.test/r/${index}${['/gone', '/denied', '/odd', ''][index % 4]}`);
+    let inFlight = 0;
+    let peak = 0;
+    const batchRecorder = recorder(async (url) => {
+      inFlight++;
+      peak = Math.max(peak, inFlight);
+      await new Promise((resolve) => setTimeout(resolve, 1));
+      inFlight--;
+      return new Response(null, { status: statusOf(url) });
+    });
+    const batched = await new Containment(config, batchRecorder.fetcher).probePublicAddresses(urls);
+    expect(batchRecorder.requests).toHaveLength(urls.length);
+    expect(batchRecorder.requests.every((request) => request.method === 'HEAD')).toBe(true);
+    expect(peak).toBeLessThanOrEqual(6);
+
+    const single = new Containment(config, recorder((url) => new Response(null, { status: statusOf(url) })).fetcher);
+    for (const url of urls) expect(batched[url]).toBe(await single.probePublicAddress(url));
+    expect(Object.values(batched)).toEqual(expect.arrayContaining(['present', 'absent', 'unknown']));
+    // A denied host is still 'present', exactly as the single probe reports it.
+    expect(batched['https://public.example.test/r/1/denied']).toBe('present');
+  });
+  it('refuses a probe batch larger than 25 addresses without fetching', async () => {
+    const batchRecorder = recorder();
+    const urls = Array.from({ length: 26 }, (_, index) => `https://public.example.test/r/${index}`);
+    await expect(new Containment(config, batchRecorder.fetcher).probePublicAddresses(urls)).rejects.toBeInstanceOf(RangeError);
+    expect(batchRecorder.requests).toHaveLength(0);
+  });
   it('declares a content-free incident through the independent alert channel, never asserting success', async () => {
     const { requests, fetcher } = recorder(() => new Response(null, { status: 202 }));
     await new Containment(config, fetcher).declareIncident({

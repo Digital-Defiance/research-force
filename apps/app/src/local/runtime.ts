@@ -70,6 +70,7 @@ export const localRuntime: LocalRuntimeAdapter = {
       releaseContainment: async () => { /* no edge to release locally */ },
       verifyContainment: async () => ({ active: false, verified: false }),
       probePublicAddress: async () => 'unknown' as const,
+      probePublicAddresses: async (urls: readonly string[]) => Object.fromEntries(urls.map((url) => [url, 'unknown' as const])),
       declareIncident: async () => { /* no independent alert channel locally */ },
       backupAgeAlert: async () => { /* no independent backup-age alert channel locally */ },
       // No independent health/spend channel locally: health reports down with no endpoints, spend is a no-op.
