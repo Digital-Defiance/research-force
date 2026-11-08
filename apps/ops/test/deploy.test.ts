@@ -46,8 +46,12 @@ function recorder(respond: (phase: Phase, url: string) => Response | Promise<Res
     const phase = classify(url);
     let json: unknown = null;
     let formKeys: string[] = [];
-    if (init?.body instanceof FormData) formKeys = [...init.body.keys()];
-    else if (init?.body != null) json = JSON.parse(String(init.body));
+    if (init?.body instanceof FormData) {
+      formKeys = [...init.body.keys()];
+      // The Versions endpoint carries its settings in a `metadata` part (Direct Upload docs); decode it for assertions.
+      const metadata = init.body.get('metadata');
+      if (metadata instanceof Blob) json = JSON.parse(await metadata.text());
+    } else if (init?.body != null) json = JSON.parse(String(init.body));
     requests.push({ url, method: init?.method ?? 'GET', headers: new Headers(init?.headers), json, formKeys });
     return respond(phase, url);
   }) as typeof fetch;
@@ -117,8 +121,11 @@ describe('rf-ops rf-site Direct Upload deploy (task 32.1)', () => {
     expect(requests[0]!.json).toEqual({ manifest });
     expect(requests[0]!.headers.get('authorization')).toBe('Bearer synthetic-deploy-token');
     for (const r of requests.filter((x) => classify(x.url) === 'upload')) expect(r.headers.get('authorization')).toBe('Bearer upload-jwt');
-    // The created version uses the fixed assets-only routing and the completion token.
+    // The created version is multipart/form-data with a `metadata` part (a JSON body is refused with HTTP 415), carrying
+    // the fixed assets-only routing and the completion token. FormData sets its own boundary, so no content type is forced.
     const version = requests.find((r) => classify(r.url) === 'version')!;
+    expect(version.formKeys).toEqual(['metadata']);
+    expect(version.headers.get('content-type')).toBeNull();
     expect(version.json).toMatchObject({ assets: { jwt: 'completion-jwt', config: SITE_ASSET_CONFIG } });
     // The deploy promotes the created version to 100%.
     expect(requests.find((r) => classify(r.url) === 'deploy')!.json).toEqual({ strategy: 'percentage', versions: [{ version_id: 'version-xyz', percentage: 100 }] });

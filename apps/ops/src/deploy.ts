@@ -345,10 +345,17 @@ export class SiteDeploy {
   }
   // --- Direct Upload phase 3a: create the assets-only version (no script module) with fixed routing ---
   async #createVersion(completionToken: string): Promise<string> {
-    const result = await this.#call<{ id?: string }>(
+    // The script Versions endpoint takes multipart/form-data with a `metadata` part, not a JSON body (Direct Upload
+    // docs, "Create/Deploy New Version"); a JSON body is refused with HTTP 415. An assets-only version has no module.
+    const form = new FormData();
+    form.append('metadata', new Blob(
+      [JSON.stringify({ assets: { jwt: completionToken, config: SITE_ASSET_CONFIG }, compatibility_date: COMPAT_DATE })],
+      { type: 'application/json' },
+    ));
+    const result = await this.#send<{ id?: string }>(
       'POST',
       `/accounts/${this.config.accountId}/workers/scripts/${this.config.scriptName}/versions`,
-      { assets: { jwt: completionToken, config: SITE_ASSET_CONFIG }, compatibility_date: COMPAT_DATE },
+      form,
     );
     if (!result.id) throw new CloudflareApiError(200, []);
     return result.id;
@@ -365,10 +372,18 @@ export class SiteDeploy {
 
   /** Bearer-token/success-flag Cloudflare API call, returning the `result` payload (reuses the AccessSync pattern). */
   async #call<T>(method: string, path: string, body: unknown): Promise<T> {
+    return this.#send<T>(method, path, JSON.stringify(body), 'application/json');
+  }
+
+  /**
+   * Send one Cloudflare API request and return its `result`. A FormData body sets its own multipart boundary, so no
+   * content type is given for it; a string body is sent with the given content type.
+   */
+  async #send<T>(method: string, path: string, body: string | FormData, contentType?: string): Promise<T> {
     if (!this.config.accountId || !this.config.scriptName || !this.config.apiToken) throw new Error('Site deploy is not configured.');
-    const response = await this.#fetch(`${CLOUDFLARE_API}${path}`, {
-      method, body: JSON.stringify(body), headers: { authorization: `Bearer ${this.config.apiToken}`, 'content-type': 'application/json' },
-    });
+    const headers: Record<string, string> = { authorization: `Bearer ${this.config.apiToken}` };
+    if (contentType !== undefined) headers['content-type'] = contentType;
+    const response = await this.#fetch(`${CLOUDFLARE_API}${path}`, { method, body, headers });
     const result = await response.json<{ success?: boolean; errors?: { code?: number }[]; result?: T }>().catch(() => ({ success: false as boolean, errors: [] as { code?: number }[], result: undefined }));
     if (!response.ok || result.success !== true) {
       throw new CloudflareApiError(response.status, (result.errors ?? []).flatMap((e) => (typeof e.code === 'number' ? [e.code] : [])));
