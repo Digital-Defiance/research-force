@@ -13,7 +13,7 @@ import { directUploadHash, planSite } from '../src/publisher/plan';
 import type { ManifestEntry, PlannedFile } from '../src/publisher/plan';
 import type { PlannedRender } from '../src/publisher/render';
 import { SliceMeter } from '../src/publisher/slice-budget';
-import { stageSlice } from '../src/publisher/stage';
+import { memoryStagingStore, renderToStaging, stageWindow } from '../src/publisher/stage';
 import type { StageDeps } from '../src/publisher/stage';
 import { itemWorld } from './items';
 
@@ -362,7 +362,10 @@ describe('Free-plan slicing: the manifest invariant', () => {
     });
     const deps = { core: core(), public: pub(), privateBucket: bucket, licence: { name: '', url: '' }, shellAssets: [] } as unknown as StageDeps;
 
-    await expect(stageSlice(deps, new SliceMeter(), asTimestamp(world.at), render)).rejects.toThrow('Synthetic R2 put failure.');
+    const store = memoryStagingStore();
+    await renderToStaging(deps, asTimestamp(world.at), store, render);
+    await expect(stageWindow(deps, new SliceMeter(), asTimestamp(world.at), store)).rejects.toThrow('Synthetic R2 put failure.');
+    expect(store.count()).toBe(3); // the failed file and those after it wait for the next slice
 
     const rows = (await pub().prepare('SELECT path, hash FROM site_files ORDER BY path').all<{ path: string; hash: string }>()).results;
     expect(rows.map((row) => row.path)).toEqual(paths.slice(0, 5)); // only what was stored

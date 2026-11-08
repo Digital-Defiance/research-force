@@ -17,12 +17,17 @@ import type { FormsConfig } from '@researchforce/public-render/site';
 import { publicCopyOf } from '../publisher/public-copy';
 import { runFileOpsSlice } from '../publisher/files';
 import { reachesFileAlert } from '../publisher/plan';
-import { stageSlice } from '../publisher/stage';
-import type { StageDeps } from '../publisher/stage';
+import { renderToStaging, stageWindow } from '../publisher/stage';
+import type { StageDeps, StagingStore } from '../publisher/stage';
 import { SliceMeter } from '../publisher/slice-budget';
-import { PROBES_PER_SLICE, PROBE_BATCH_MAX, UPLOAD_SESSION_MAX_MS } from '@researchforce/domain/slice-budget';
+import {
+  FREE_PLAN_SITE_VIEW_CEILING, PROBES_PER_SLICE, PROBE_BATCH_MAX, SITE_VIEW_ALERT_SHARE, UPLOAD_SESSION_MAX_MS,
+} from '@researchforce/domain/slice-budget';
+import type { OpsSpendAlert } from '@researchforce/domain/ops';
 import { canServerSideCopy } from '../files/s3';
 import {
+  CONTAIN_AT_MS,
+  EVALUATE_EVERY_MS,
   VERIFY_BY_MS,
   beginDeploy,
   currentPublicAttachments,
@@ -93,6 +98,11 @@ export class Publisher extends DurableObject<Env> {
     ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS deploy_removed (kind TEXT NOT NULL, value TEXT NOT NULL, PRIMARY KEY (kind, value))');
     // The verify phase's probe results for the pass in progress (url -> present/absent/unknown); cleared when a pass restarts.
     ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS verify_probes (url TEXT PRIMARY KEY, status TEXT NOT NULL)');
+    // The deploy generation's render, kept between slices so the site is rendered once per generation: the added and
+    // changed files whose build object and manifest row are not written yet (a row leaves once both are).
+    ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS deploy_staged (path TEXT PRIMARY KEY, hash TEXT NOT NULL, size INTEGER NOT NULL, content_type TEXT NOT NULL, content BLOB NOT NULL)');
+    // The Free-plan site-size alerts already sent (one row per level and channel), so each is raised once.
+    ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS site_size_alerts (key TEXT PRIMARY KEY)');
     // The durable pending-public-file-deletion retry set (task 32.4's DeletionRetryState, backed here, R25.3).
     this.#retry = sqlDeletionRetryState(ctx.storage.sql);
   }
@@ -293,16 +303,27 @@ export class Publisher extends DurableObject<Env> {
 
       switch (progress.step) {
         case 'stage': {
-          const deps: StageDeps = {
-            core: io.core, public: io.pub, privateBucket: io.priv, licence: this.#licence(), publicCopy: this.#publicCopy(),
-            ...this.#forms(), shellAssets: await loadShellAssets(meter.assets(this.env.ASSETS)),
-          };
-          const staged = await stageSlice(deps, meter, now, this.#renderOverride);
+          if (!progress.rendered) {
+            // The Free-plan site-size ceiling, BEFORE rendering: one render holds the whole site in memory.
+            if (await this.#overSiteCeiling(run, io, meter, now)) {
+              await this.#refuseOverCeiling(run, now);
+              return;
+            }
+            // Render ONCE for this generation; later slices read the staged files and never re-render.
+            const deps: StageDeps = {
+              core: io.core, public: io.pub, privateBucket: io.priv, licence: this.#licence(), publicCopy: this.#publicCopy(),
+              ...this.#forms(), shellAssets: await loadShellAssets(meter.assets(this.env.ASSETS)),
+            };
+            const rendered = await renderToStaging(deps, now, this.#staging, this.#renderOverride);
+            // Record the removed pages BEFORE their manifest rows go, so verify can still probe them (R24.16).
+            for (const path of rendered.removed) this.ctx.storage.sql.exec("INSERT OR IGNORE INTO deploy_removed (kind, value) VALUES ('page', ?)", path);
+            progress = this.#saveDeploy({ ...progress, rendered: true, fileCount: rendered.fileCount });
+          }
+          const staged = await stageWindow({ public: io.pub, privateBucket: io.priv }, meter, now, this.#staging);
           if (!staged.done) { await this.#wake(Date.now()); return; }
-          // Record the removed pages BEFORE their manifest rows go, so verify can still probe them (R24.16).
-          for (const path of staged.removed) this.ctx.storage.sql.exec("INSERT OR IGNORE INTO deploy_removed (kind, value) VALUES ('page', ?)", path);
-          await deleteManifestRows(io.pub, staged.removed);
-          if (reachesFileAlert(staged.fileCount)) await raiseFileCountAlert(io.core, staged.fileCount, now);
+          const removed = this.ctx.storage.sql.exec<{ value: string }>("SELECT value FROM deploy_removed WHERE kind = 'page'").toArray().map((row) => row.value);
+          await deleteManifestRows(io.pub, removed);
+          if (reachesFileAlert(progress.fileCount)) await raiseFileCountAlert(io.core, progress.fileCount, now);
           progress = this.#saveDeploy({ ...progress, step: 'files' });
           continue;
         }
@@ -367,6 +388,7 @@ export class Publisher extends DurableObject<Env> {
             // A manifest row whose build object is gone: drop the rows so the stage step re-renders and re-stores them.
             await io.pub.prepare('DELETE FROM site_files WHERE hash IN (SELECT value FROM json_each(?1))').bind(JSON.stringify(chunk.missing)).run();
             this.ctx.storage.sql.exec('DELETE FROM deploy_buckets');
+            this.ctx.storage.sql.exec('DELETE FROM deploy_staged');
             this.#saveDeploy({ ...DEFAULT_DEPLOY, restages: progress.restages + 1 });
             await this.#wake(Date.now());
             return;
@@ -474,7 +496,11 @@ export class Publisher extends DurableObject<Env> {
     const io = this.#io(meter);
     let state = this.#loadVerify();
 
-    // (1) The removed set: persisted by the deploy phase, or computed once, read-only, for a run without one.
+    // (1) The removed set: persisted by the deploy phase, or computed once, read-only, for a run without one. A site
+    // over the Free-plan ceiling is not rendered: its removal is unconfirmable and goes the Containment path.
+    if (!state.removedReady && await this.#overSiteCeiling(run, io, meter, now)) {
+      state = this.#saveVerify({ ...state, removedReady: true, unconfirmable: true });
+    }
     if (!state.removedReady) {
       const render = await (this.#renderOverride ?? renderPlanned)(
         { core: io.core, public: io.pub, privateBucket: io.priv, licence: this.#licence(), publicCopy: this.#publicCopy(), ...this.#forms(), shellAssets: await loadShellAssets(meter.assets(this.env.ASSETS)) },
@@ -492,7 +518,7 @@ export class Publisher extends DurableObject<Env> {
     for (const id of deletions.deleted) this.ctx.storage.sql.exec("INSERT OR IGNORE INTO deploy_removed (kind, value) VALUES ('file', ?)", id);
     state = this.#saveVerify({ ...state, deletionCursor: deletions.deletionsDone ? '' : deletions.cursors.deletion });
 
-    const removed = this.ctx.storage.sql.exec<{ kind: string; value: string }>('SELECT kind, value FROM deploy_removed ORDER BY kind, value').toArray();
+    const removed = state.unconfirmable ? [] : this.ctx.storage.sql.exec<{ kind: string; value: string }>('SELECT kind, value FROM deploy_removed ORDER BY kind, value').toArray();
     const urls = removedProbeUrls(
       { pages: removed.filter((row) => row.kind === 'page').map((row) => row.value), files: removed.filter((row) => row.kind === 'file').map((row) => row.value) },
       this.#siteOrigins(),
@@ -514,16 +540,21 @@ export class Publisher extends DurableObject<Env> {
           done.add(url);
         }
       }
-      complete = probeWindow(urls, done, 1).length === 0;
+      // An unconfirmable removal (the site was over the ceiling, so it was neither deployed nor probed) never completes
+      // a pass: it can only be resolved by verified Containment, from the 4-minute mark on.
+      complete = !state.unconfirmable && probeWindow(urls, done, 1).length === 0;
 
       // (4) Evaluate the escalation when the pass is complete, or (from 4 minutes) on the mid-pass cadence.
       if (!shouldEvaluate({ passComplete: complete, elapsedMs: elapsed, lastEvalMs: state.lastEvalMs, nowMs })) {
-        await this.#wake(Date.now()); // partial pass, nothing to decide yet: keep probing
+        // A partial pass keeps probing at once; an unconfirmable one has nothing to probe and waits for the next deadline.
+        const verifyStartMs = run.verifyStartMs || run.startedMs;
+        await this.#wake(state.unconfirmable ? Math.max(verifyStartMs + CONTAIN_AT_MS, state.lastEvalMs + EVALUATE_EVERY_MS) : Date.now());
         return;
       }
       const stored = new Map(this.ctx.storage.sql.exec<{ url: string; status: ProbeResult['status'] }>('SELECT url, status FROM verify_probes').toArray().map((row) => [row.url, row.status]));
       const probes: ProbeResult[] = [];
-      const unprobed: string[] = [];
+      // The whole public site stands for an unconfirmable removal's targets (content-free: the origin only).
+      const unprobed: string[] = state.unconfirmable ? [`${this.#siteOrigins().site}/`] : [];
       for (const url of urls) {
         const status = stored.get(url);
         if (status === undefined) unprobed.push(url);
@@ -562,11 +593,81 @@ export class Publisher extends DurableObject<Env> {
     }
     // (5) Still watching/containing/verifying. A partial pass keeps probing at once; a complete, unsafe pass starts a
     // fresh one at the next deadline boundary.
-    if (!complete) { await this.#wake(Date.now()); return; }
+    if (!complete) { await this.#wake(state.unconfirmable ? nowMs + EVALUATE_EVERY_MS : Date.now()); return; }
     this.ctx.storage.sql.exec('DELETE FROM verify_probes');
     this.#saveVerify({ ...state, passes: state.passes + 1 });
     const nextAtMs = elapsed < VERIFY_BY_MS ? nowMs + 30_000 : nowMs + 15_000;
     await this.#wake(nextAtMs);
+  }
+
+  /** The deploy generation's staged render, in this object's SQLite (see `deploy_staged`). */
+  readonly #staging: StagingStore = {
+    save: (files) => {
+      for (const file of files) {
+        const bytes = file.content.buffer.slice(file.content.byteOffset, file.content.byteOffset + file.content.byteLength);
+        this.ctx.storage.sql.exec('INSERT OR REPLACE INTO deploy_staged (path, hash, size, content_type, content) VALUES (?, ?, ?, ?, ?)', file.path, file.hash, file.size, file.contentType, bytes);
+      }
+    },
+    pending: () => this.ctx.storage.sql.exec<{ path: string; hash: string; size: number }>('SELECT path, hash, size FROM deploy_staged ORDER BY path'),
+    content: (hash) => {
+      const row = this.ctx.storage.sql.exec<{ content: ArrayBuffer; content_type: string }>('SELECT content, content_type FROM deploy_staged WHERE hash = ? LIMIT 1', hash).toArray()[0];
+      return row ? { content: new Uint8Array(row.content), contentType: row.content_type } : undefined;
+    },
+    stored: (paths) => { for (const path of paths) this.ctx.storage.sql.exec('DELETE FROM deploy_staged WHERE path = ?', path); },
+    count: () => this.ctx.storage.sql.exec<{ n: number }>('SELECT count(*) AS n FROM deploy_staged').one().n,
+  };
+
+  /**
+   * The Free-plan site-size check, run before any full render: counts the current Public_Views and raises the approach
+   * alert (at {@link SITE_VIEW_ALERT_SHARE} of the ceiling) or the over-ceiling alert, each once, on both the in-app
+   * System_Alert and the independent rf-ops channel. Returns true when the site is over the ceiling.
+   */
+  async #overSiteCeiling(run: RunState, io: { readonly core: D1Database; readonly pub: D1Database }, meter: SliceMeter, now: Timestamp): Promise<boolean> {
+    const views = (await io.pub.prepare('SELECT count(*) AS n FROM public_views WHERE valid_to_at IS NULL').first<{ n: number }>())?.n ?? 0;
+    const over = views > FREE_PLAN_SITE_VIEW_CEILING;
+    if (views < FREE_PLAN_SITE_VIEW_CEILING * SITE_VIEW_ALERT_SHARE) {
+      this.ctx.storage.sql.exec('DELETE FROM site_size_alerts'); // back under the approach line: re-arm both alerts
+      return false;
+    }
+    const level = over ? 'over' : 'approach';
+    if (over) this.#log('error', 'publish_site_over_ceiling', { run: run.run, views, ceiling: FREE_PLAN_SITE_VIEW_CEILING, urgent: run.urgent });
+    const sent = (key: string) => this.ctx.storage.sql.exec('SELECT 1 FROM site_size_alerts WHERE key = ?', key).toArray().length > 0;
+    const mark = (key: string) => this.ctx.storage.sql.exec('INSERT OR IGNORE INTO site_size_alerts (key) VALUES (?)', key);
+    // Content-free: counts only. A failing channel is logged and retried on the next render, never fatal.
+    if (!sent(`${level}:app`)) {
+      try {
+        await notifySystemAlert(new GuardedBatch(io.core, { id: null, now }, { ignoreFreeze: true }), `publication:site_views_${level}`, {
+          views, ceiling: FREE_PLAN_SITE_VIEW_CEILING, at: now,
+        }).commit();
+        mark(`${level}:app`);
+      } catch (error) { this.#log('error', 'publish_site_size_alert_failed', { run: run.run, channel: 'app', error }); }
+    }
+    if (!sent(`${level}:ops`)) {
+      try {
+        const alerting = (this.#opsOverride ?? this.env.OPS) as Partial<OpsSpendAlert>;
+        if (typeof alerting.spendAlert !== 'function') throw new Error('No independent alert channel.');
+        meter.charge('external');
+        await alerting.spendAlert({
+          level: over ? 'breach' : 'warning', meter: 'public_site_views',
+          usagePercent: Math.round((views / FREE_PLAN_SITE_VIEW_CEILING) * 100), budgetAmount: FREE_PLAN_SITE_VIEW_CEILING, currency: 'count',
+        });
+        mark(`${level}:ops`);
+      } catch (error) { this.#log('error', 'publish_site_size_alert_failed', { run: run.run, channel: 'ops', error }); }
+    }
+    return over;
+  }
+
+  /**
+   * A site over the Free-plan ceiling is not rendered. An addition run closes WITHOUT `verified_at` (a later run tries
+   * again once the site shrinks). An urgent run cannot deploy its removal, so it goes straight to the verify phase with
+   * an unconfirmable removal: the 4-minute Containment, 5-minute verify-Containment and incident + System_Alert path.
+   */
+  async #refuseOverCeiling(run: RunState, now: Timestamp): Promise<void> {
+    if (!run.urgent) { await this.#finish(run, now); return; }
+    this.#clearDeployProgress();
+    this.#saveVerify({ ...DEFAULT_VERIFY, removedReady: true, unconfirmable: true });
+    this.#update({ phase: 'verify', verifyStartMs: run.startedMs });
+    await this.#wake(Date.now());
   }
 
   /** Close the run: record its end, highest processed sequence, and urgent classification on `publish_runs`. */
@@ -612,6 +713,7 @@ export class Publisher extends DurableObject<Env> {
   #clearDeployProgress(): void {
     this.ctx.storage.sql.exec("UPDATE publish_run SET deploy_json = '{}' WHERE only = 1");
     this.ctx.storage.sql.exec('DELETE FROM deploy_buckets');
+    this.ctx.storage.sql.exec('DELETE FROM deploy_staged');
     this.ctx.storage.sql.exec('DELETE FROM verify_probes');
   }
 
@@ -734,11 +836,15 @@ interface DeployProgress {
   readonly versionId: string | null;
   /** How many times this deploy restarted at `stage` because a manifest row's `build/{hash}` object was missing. */
   readonly restages: number;
+  /** True once this generation's render is in `deploy_staged`; later stage slices only store the next window. */
+  readonly rendered: boolean;
+  /** The produced file count of that render, for the 16,000-file alert. */
+  readonly fileCount: number;
 }
 
 const DEFAULT_DEPLOY: DeployProgress = {
   step: 'stage', deletionCursor: '', copyCursor: '', sessionStartMs: 0, uploadToken: '', completionToken: '',
-  bucket: 0, offset: 0, uncertain: false, versionId: null, restages: 0,
+  bucket: 0, offset: 0, uncertain: false, versionId: null, restages: 0, rendered: false, fileCount: 0,
 };
 
 /**
@@ -758,9 +864,11 @@ interface VerifyProgress {
   readonly passes: number;
   /** Where the pending-deletion retry stopped (so a long retry set cannot starve its tail). */
   readonly deletionCursor: string;
+  /** True when the site was over the Free-plan ceiling: nothing was deployed or probed, only Containment can resolve it. */
+  readonly unconfirmable: boolean;
 }
 
-const DEFAULT_VERIFY: VerifyProgress = { removedReady: false, lastEvalMs: 0, passes: 0, deletionCursor: '' };
+const DEFAULT_VERIFY: VerifyProgress = { removedReady: false, lastEvalMs: 0, passes: 0, deletionCursor: '', unconfirmable: false };
 
 /** What the next deploy step needs from the slice budget (the first step of a slice always runs regardless). */
 const STEP_NEEDS: Readonly<Record<DeployStep, { d1?: number; r2?: number; external?: number }>> = {

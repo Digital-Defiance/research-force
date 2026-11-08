@@ -37,5 +37,25 @@ export const UPLOAD_CHUNK = { maxFiles: 100, maxBytes: 4 * 1024 * 1024 } as cons
 export const PROBE_BATCH_MAX = 25;
 /** Addresses probed per Publisher slice. */
 export const PROBES_PER_SLICE = 100;
+/**
+ * The most current Public_Views (`public_views` rows with `valid_to_at IS NULL`, every unit kind) the Publisher renders
+ * on the Workers Free plan. The stage step renders the whole site in ONE invocation, so its peak memory grows with the
+ * site; this ceiling keeps that peak at about half the 128 MB isolate limit. Measured with
+ * `scripts/measure-stage-render.ts` (the real loader, renderer, staged shell bundle and Direct Upload hashing, one fresh
+ * process per size; "heap" is the smallest V8 old-space limit the render completes under plus its ArrayBuffers):
+ *
+ *   views  files  CPU ms  heap MB          views  files  CPU ms  heap MB
+ *     251    504     164   32 + 5.8          1001   1254     398   56 + 10.6
+ *     501    754     252   40 + 7.4          1501   1754     547   72 + 14.0
+ *     751   1004     320   48 + 8.8          2001   2254     681   80 + 16.8
+ *                                            4001   4254    1333  128 + 29.9
+ *
+ * At 750 views one stage invocation needs about 57 MB and about 320 ms CPU (against the 30 s Durable Object alarm
+ * default). Over it an addition run refuses before rendering and an urgent run goes straight to the Containment path;
+ * larger sites need Workers Paid or the incremental renderer (follow-up). docs/instance/installation.md documents it.
+ */
+export const FREE_PLAN_SITE_VIEW_CEILING = 750;
+/** The share of {@link FREE_PLAN_SITE_VIEW_CEILING} at which the Publisher raises its one-time approach alert. */
+export const SITE_VIEW_ALERT_SHARE = 0.8;
 /** An upload session older than this restarts at `begin` (the platform's upload token lasts one hour). */
 export const UPLOAD_SESSION_MAX_MS = 45 * 60_000;

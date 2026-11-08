@@ -1,5 +1,5 @@
 import type {
-  ConfidentialityIncident, ContainmentCapabilities, ContainmentState, OpsContainment, OpsDeploy, OpsDeployBegin, OpsDeployResult,
+  ConfidentialityIncident, ContainmentCapabilities, ContainmentState, OpsContainment, OpsDeploy, OpsDeployBegin, OpsDeployResult, OpsSpendAlert, SpendAlert,
 } from '@researchforce/domain/ops';
 
 /** The `rf-ops` surface the Publisher's deploy and verify phases call. */
@@ -24,7 +24,7 @@ export interface FakeDeployOpsOptions {
 }
 
 /** A fake `rf-ops` that records what the Publisher asked of it, in order. */
-export interface FakeDeployOps extends DeployOpsSurface {
+export interface FakeDeployOps extends DeployOpsSurface, OpsSpendAlert {
   /** Labels in call order; `finishSiteDeploy` records as 'deploySite' so older assertions keep their meaning. */
   readonly calls: string[];
   readonly incidents: ConfidentialityIncident[];
@@ -40,6 +40,8 @@ export interface FakeDeployOps extends DeployOpsSurface {
   readonly finishedAfterAllUploads: boolean[];
   /** The size of each probePublicAddresses call, in order. */
   readonly probeBatches: number[];
+  /** The independent-channel spend alerts the Publisher sent (the Free-plan site-size alerts), in order. */
+  readonly spendAlerts: SpendAlert[];
   /** When true, the next uploadSiteAssets call throws once. */
   failNextUpload: boolean;
 }
@@ -54,13 +56,15 @@ export function fakeDeployOps(options: FakeDeployOpsOptions = {}): FakeDeployOps
   const begins: Array<Parameters<OpsDeploy['beginSiteDeploy']>[0]> = [];
   const finishedAfterAllUploads: boolean[] = [];
   const batches: number[] = [];
+  const spendAlerts: SpendAlert[] = [];
   let expected = new Set<string>();
   const platform = new Set<string>();
   let failedOnce = false;
   const bucketSize = options.bucketSize ?? 100;
   const fake = {
-    calls, incidents, steps, uploads, uploaded, begins, finishedAfterAllUploads, probeBatches: batches,
+    calls, incidents, steps, uploads, uploaded, begins, finishedAfterAllUploads, probeBatches: batches, spendAlerts,
     failNextUpload: false,
+    async spendAlert(alert: SpendAlert) { calls.push(`spendAlert:${alert.level}`); spendAlerts.push(alert); },
     async beginSiteDeploy(input: Parameters<OpsDeploy['beginSiteDeploy']>[0]): Promise<OpsDeployBegin> {
       steps.push('begin');
       begins.push(input);

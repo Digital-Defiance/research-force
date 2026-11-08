@@ -2,7 +2,7 @@ import { runInDurableObject } from 'cloudflare:test';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { CONTAIN_AT_MS, VERIFY_BY_MS } from '@researchforce/db/containment';
 import { OPERATIONS } from '@researchforce/domain/settings';
-import { PROBE_BATCH_MAX, PUBLISHER_SLICE_BUDGET } from '@researchforce/domain/slice-budget';
+import { FREE_PLAN_SITE_VIEW_CEILING, PROBE_BATCH_MAX, PUBLISHER_SLICE_BUDGET } from '@researchforce/domain/slice-budget';
 import { asTimestamp } from '@researchforce/domain/types';
 import type { Timestamp } from '@researchforce/domain/types';
 import { encodeShellBundle } from '@researchforce/public-render/shell-bundle';
@@ -162,12 +162,20 @@ const seedRemovedPages = (count: number) => runInDurableObject(stub(), (_i, stat
   }
 });
 
+/** The site-size System_Alert events for `level`, one per Administrator recipient. */
+const siteAlerts = (level: 'approach' | 'over') => core().prepare('SELECT member_id AS memberId, detail FROM notification_events WHERE event_type = \'system_alert\' AND alert_key = ?1')
+  .bind(`publication:site_views_${level}`).all<{ memberId: string; detail: string }>().then((r) => r.results);
+/** A render that counts how often the Publisher calls it. */
+function counted(render: RenderFn): RenderFn & { calls: number } {
+  const wrapped = Object.assign(async (deps: StageDeps, now: Timestamp) => { wrapped.calls++; return render(deps, now); }, { calls: 0 });
+  return wrapped;
+}
 const probeCalls = (ops: FakeDeployOps) => ops.calls.filter((call) => call.startsWith('probe:'));
 
 beforeEach(async () => {
   await core().batch([core().prepare("DELETE FROM outbox WHERE topic = 'publish'"), core().prepare("DELETE FROM counters WHERE k IN ('epoch', 'frozen')")]);
   await pub().batch([pub().prepare('DELETE FROM public_views'), pub().prepare('DELETE FROM publish_runs'), pub().prepare('DELETE FROM site_files')]);
-  await core().prepare("DELETE FROM notification_events WHERE alert_key = 'publication:unconfirmed_removal'").run();
+  await core().prepare("DELETE FROM notification_events WHERE alert_key IN ('publication:unconfirmed_removal', 'publication:site_views_approach', 'publication:site_views_over')").run();
   for (const bucket of [priv(), pubBucket()]) {
     for (;;) {
       const listed = await bucket.list({ limit: 1000 });
@@ -177,7 +185,7 @@ beforeEach(async () => {
   }
   await runInDurableObject(stub(), async (instance: Publisher, state) => {
     state.storage.sql.exec('DELETE FROM publish_run');
-    for (const table of ['deploy_buckets', 'deploy_removed', 'verify_probes', 'pending_file_deletions']) state.storage.sql.exec(`DELETE FROM ${table}`);
+    for (const table of ['deploy_buckets', 'deploy_removed', 'verify_probes', 'pending_file_deletions', 'deploy_staged', 'site_size_alerts']) state.storage.sql.exec(`DELETE FROM ${table}`);
     instance.setRenderForTest(undefined);
     await state.storage.deleteAlarm();
   });
@@ -251,8 +259,10 @@ describe('Free plan: the sized site', () => {
   it(`a first deploy of ${SIZED_FILES} files completes in bounded alarms, each inside the budget, promoting once after the last upload; an incremental deploy of 20 changed files takes at most 3 alarms`, async () => {
     const ops = fakeDeployOps({ bucketSize: 100, retainUploads: true });
     await seedRun({ runId: 'run-sized-first', phase: 'deploy', urgent: false, ageMs: 6 * 60_000 });
-    const first = await drainWithCounts(ops, 'sized first deploy', { render: syntheticSite(SIZED_FILES) });
+    const firstRender = counted(syntheticSite(SIZED_FILES));
+    const first = await drainWithCounts(ops, 'sized first deploy', { render: firstRender });
     expect(first.length).toBeLessThanOrEqual(200);
+    expect(firstRender.calls).toBe(1); // rendered ONCE for the generation, however many stage slices follow
     expect(ops.steps.filter((step) => step === 'begin')).toHaveLength(1);
     expect(ops.steps.filter((step) => step === 'finish')).toHaveLength(1); // one promotion
     expect(ops.steps.at(-1)).toBe('finish'); // after the last upload
@@ -287,7 +297,7 @@ describe('Free plan: the sized site', () => {
 // ---------------------------------------------------------------------------
 // (3b) The REAL loader and renderer at scale: no render override, Cross_Link neighbours in every view.
 // ---------------------------------------------------------------------------
-const REAL_ITEMS = 2_000;
+const REAL_ITEMS = FREE_PLAN_SITE_VIEW_CEILING - 1; // plus the Project view: exactly at the ceiling
 describe('Free plan: the real render at scale', () => {
   it(`stages ${REAL_ITEMS} cross-linked items through the real loader and renderer with every alarm inside the per-statement D1 budget`, async () => {
     const projectKey = `p:${world.projectId}`;
@@ -326,11 +336,97 @@ describe('Free plan: the real render at scale', () => {
     expect(ops.steps.filter((step) => step === 'finish')).toHaveLength(1);
     const worst = maxCounts(ticks);
     // The stage step's D1 cost does not grow with the site: the site loader is one 9-statement batch plus a few singles.
-    // Measured: 2,336 files in 20 alarms; stage slices 16 statements each (11 round trips), worst alarm 22 statements.
-    expect(worst.d1).toBeLessThanOrEqual(25);
+    // Measured at the ceiling (750 views): 1,035 files in 9 alarms. The first alarm renders once and raises the approach
+    // alert (34 statements, 11 round trips, inside the 40-statement budget); every later stage slice reads the staged
+    // render and costs 3 to 7 statements (it was 16 per slice when each slice re-rendered).
+    expect(worst.d1).toBeLessThanOrEqual(PUBLISHER_SLICE_BUDGET.d1);
+    expect(Math.max(...ticks.slice(1).map((t) => t.counts.d1))).toBeLessThanOrEqual(8);
+    // At the ceiling (>= 80%) the approach alert went out once on each channel; the deploy was not refused.
+    expect((await siteAlerts('approach')).map((alert) => alert.memberId)).toEqual([world.ids.admin]);
+    expect(ops.spendAlerts).toEqual([{ level: 'warning', meter: 'public_site_views', usagePercent: 100, budgetAmount: FREE_PLAN_SITE_VIEW_CEILING, currency: 'count' }]);
+    expect((await runRow('run-real-scale'))!.verifiedAt).not.toBeNull();
     expect(worst.external).toBeLessThanOrEqual(PUBLISHER_SLICE_BUDGET.external);
     expect(ticks.length).toBeLessThanOrEqual(30);
   }, 600_000);
+});
+// ---------------------------------------------------------------------------
+// (3c) Over the Free-plan site-size ceiling: refuse before rendering, alert once, never claim success.
+// ---------------------------------------------------------------------------
+describe('Free plan: the site-size ceiling', () => {
+  const seedViews = async (count: number) => {
+    for (let start = 0; start < count; start += 50) {
+      await pub().batch(Array.from({ length: Math.min(50, count - start) }, (_, offset) => pub().prepare(
+        `INSERT INTO public_views (unit_key, valid_from, valid_from_at, valid_to_at, effective, project_id, root_key, path, view_json, view_hash)
+          VALUES (?1, 1, ?2, NULL, 'public', ?3, ?1, NULL, '{}', ?1)`,
+      ).bind(`u:big${start + offset}`, world.at, world.projectId)));
+    }
+  };
+  const over = FREE_PLAN_SITE_VIEW_CEILING + 1;
+  it('an addition run over the ceiling refuses before rendering, closes without verified_at, and alerts once on both channels', async () => {
+    await seedViews(over);
+    const ops = fakeDeployOps();
+    const render = counted(syntheticSite(3));
+    await seedRun({ runId: 'run-over-1', phase: 'deploy', urgent: false, ageMs: 6 * 60_000 });
+    const ticks = await drainWithCounts(ops, 'over ceiling', { render });
+    expect(ticks).toHaveLength(1); // refused in one alarm: no wedge, no loop
+    expect(render.calls).toBe(0);
+    expect(ops.steps).toEqual([]); // nothing staged, uploaded or promoted
+    const row = await runRow('run-over-1');
+    expect(row!.finishedAt).not.toBeNull();
+    expect(row!.verifiedAt).toBeNull();
+    expect(await pub().prepare('SELECT count(*) AS n FROM site_files').first<{ n: number }>()).toEqual({ n: 0 });
+    const alerts = await siteAlerts('over');
+    expect(alerts.map((alert) => alert.memberId)).toEqual([world.ids.admin]);
+    expect(JSON.parse(alerts[0]!.detail)).toMatchObject({ views: over, ceiling: FREE_PLAN_SITE_VIEW_CEILING }); // counts only
+    expect(ops.spendAlerts.map((alert) => alert.level)).toEqual(['breach']);
+    // A second run over the ceiling refuses again but does not alert again (de-duplicated).
+    await seedRun({ runId: 'run-over-2', phase: 'deploy', urgent: false, ageMs: 6 * 60_000 });
+    await drainWithCounts(ops, 'over ceiling again', { render });
+    expect((await runRow('run-over-2'))!.verifiedAt).toBeNull();
+    expect(await siteAlerts('over')).toHaveLength(1);
+    expect(ops.spendAlerts).toHaveLength(1);
+  });
+  it('an urgent run over the ceiling deploys nothing and waits for the 4-minute Containment deadline without busy alarms', async () => {
+    await seedViews(over);
+    const ops = fakeDeployOps({ probe: () => 'absent' });
+    const render = counted(syntheticSite(3));
+    await seedRun({ runId: 'run-over-urgent', phase: 'deploy', urgent: true });
+    const startedMs = await runInDurableObject(stub(), (_i, state) => state.storage.sql.exec<{ started_ms: number }>('SELECT started_ms FROM publish_run').one().started_ms);
+    expect((await tick(ops, render)).phase).toBe('verify');
+    const waiting = await tick(ops, render);
+    expect(waiting.phase).toBe('verify');
+    expect(waiting.alarm).toBe(startedMs + CONTAIN_AT_MS); // the next decision point, not an immediate re-arm
+    expect(render.calls).toBe(0);
+    expect(ops.steps).toEqual([]);
+    expect(probeCalls(ops)).toEqual([]); // an absent probe can never stand for an undeployed removal
+    expect(ops.calls.filter((call) => call === 'containPublicHosts')).toHaveLength(0);
+  });
+  it('an urgent run over the ceiling contains at four minutes and never claims success while unconfirmed', async () => {
+    await seedViews(over);
+    const ops = fakeDeployOps({ probe: () => 'absent' });
+    await seedRun({ runId: 'run-over-contain', phase: 'deploy', urgent: true, ageMs: CONTAIN_AT_MS + 1_000 });
+    expect((await tick(ops)).phase).toBe('verify');
+    const contained = await tick(ops);
+    assertWithinFreePlan(contained.counts, 'over ceiling, contain', PUBLISHER_SLICE_BUDGET);
+    expect(contained.phase).toBe('verify');
+    expect(ops.calls.filter((call) => call === 'containPublicHosts')).toHaveLength(1);
+    expect(ops.incidents).toHaveLength(1);
+    expect(ops.incidents[0]!.unverifiedTargets).toHaveLength(1); // the site origin only: content-free
+    expect(ops.incidents[0]!.unverifiedTargets[0]).toMatch(/^https?:\/\/[^/]+\/$/);
+    expect(await containmentColumn()).toBe(1);
+    expect((await runRow('run-over-contain'))!.verifiedAt).toBeNull();
+  });
+  it('an urgent run over the ceiling with nothing confirmable at five minutes declares the incident and raises the System_Alert', async () => {
+    await seedViews(over);
+    const ops = fakeDeployOps({ capabilities: { canDeny: false, blockingReason: 'no edge plan' } });
+    await seedRun({ runId: 'run-over-incident', phase: 'deploy', urgent: true, ageMs: VERIFY_BY_MS + 1_000 });
+    expect((await tick(ops)).phase).toBe('verify');
+    const result = await tick(ops);
+    expect(result.phase).toBeNull(); // closed
+    expect(ops.incidents).toHaveLength(1);
+    expect((await systemAlerts()).map((alert) => alert.memberId)).toContain(world.ids.admin);
+    expect((await runRow('run-over-incident'))!.verifiedAt).toBeNull();
+  });
 });
 // ---------------------------------------------------------------------------
 // (4) SIZED removal: an urgent run that removes 2,000 pages.
