@@ -68,9 +68,10 @@ const baseScriptSrc = (): string => (WEB_ANALYTICS ? `script-src 'self'${analyti
  * {@link WEB_ANALYTICS} is off this is byte-for-byte the launch policy; turning it on adds only the cookieless
  * analytics beacon origin to `script-src`/`connect-src` (R45.19).
  */
-export const BASE_CSP = `default-src 'self'; img-src 'self' ${FILES_ORIGIN} data:; `
+export const baseCsp = (filesOrigin: string = FILES_ORIGIN): string => `default-src 'self'; img-src 'self' ${filesOrigin} data:; `
   + baseScriptSrc()
-  + `connect-src 'self' ${FILES_ORIGIN}${analyticsConnectSrc()}; frame-ancestors 'none'; base-uri 'none'`;
+  + `connect-src 'self' ${filesOrigin}${analyticsConnectSrc()}; frame-ancestors 'none'; base-uri 'none'`;
+export const BASE_CSP = baseCsp();
 
 /**
  * The form-page Content-Security-Policy for the Outside_Submission_Form, the Response_Link form, and the consent
@@ -106,15 +107,19 @@ const FORM_PATHS: readonly string[] = ['/submit', '/submit/*', '/respond', '/con
 
 /**
  * Generate the Public_Site `_headers` file (R45.17 to R45.19). Cloudflare reads it as a path pattern line followed by
- * indented `Header: value` lines, and the last matching rule wins, so the `/*` default comes first and the form-page
- * rules override the CSP for their addresses. The file emits no `Set-Cookie` (R45.18).
+ * indented `Header: value` lines. A request that matches several rules INHERITS every rule's headers, and a header set
+ * twice has its values joined with a comma, which a browser reads as two policies that are BOTH enforced
+ * (https://developers.cloudflare.com/workers/static-assets/headers/). So each form-page rule first DETACHES the
+ * default policy (`! Content-Security-Policy`) and then sets the form policy, leaving exactly one CSP on a form page;
+ * otherwise the default `script-src` would still block the Bot_Check. Both policies name the installation's own
+ * files origin. The file emits no `Set-Cookie` (R45.18).
  */
 export function headersFile(forms?: FormsOrigins): string {
   return [
     '/*',
-    `  Content-Security-Policy: ${BASE_CSP}`,
+    `  Content-Security-Policy: ${baseCsp(forms?.filesOrigin)}`,
     ...COMMON_HEADERS,
-    ...FORM_PATHS.flatMap((path) => [path, `  Content-Security-Policy: ${formCsp(forms)}`]),
+    ...FORM_PATHS.flatMap((path) => [path, '  ! Content-Security-Policy', `  Content-Security-Policy: ${formCsp(forms)}`]),
     '',
   ].join('\n');
 }
