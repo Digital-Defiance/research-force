@@ -345,7 +345,7 @@ export interface GraphGate {
   readonly requiredEvidence: readonly string[];
 }
 
-interface GateBuilder {
+export interface GateBuilder {
   readonly title: string;
   readonly requirements: readonly GateRequirement[];
 }
@@ -364,7 +364,7 @@ const requirement = (id: string, description: string, infra: EvidenceKind, criti
  * the least-privilege provider and consent/moderation/AI checks. final_checkpoint_49 requires the
  * full mandatory suites with no required acceptance suite skipped.
  */
-const GATE_BUILDERS: Readonly<Record<string, GateBuilder>> = {
+export const GATE_BUILDERS: Readonly<Record<string, GateBuilder>> = {
   team_archive: {
     title: 'Team-archive gate (custodial team use)',
     requirements: [

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   acceptanceRejection, applySuppressions, classifyRpo, classifyRto, EXERCISED_HERE, exerciseCheckpointInterruption,
   liveEnvironmentReady, liveHandlesFromEnv, missingLiveHandles, preflightDecision, RECOVERY_OBJECTIVES, reconcileBootstrapIdentity,
-  rehearsalEvidence, REQUIRES_LIVE, runRehearsal, SCENARIOS, suppressionDigest, syntheticCorpus, syntheticManifest,
+  rehearsalEvidence, rehearsalEvidenceEntries, REQUIRES_LIVE, runRehearsal, SCENARIOS, suppressionDigest, syntheticCorpus, syntheticManifest,
   syntheticRegistry,
 } from '../recovery/rehearse';
 import type { LiveHandles, SuppressionRecord } from '../recovery/rehearse';
@@ -223,5 +223,29 @@ describe('runRehearsal end to end', () => {
     const record = await runRehearsal({ handles: ALL_HANDLES, now: NOW });
     expect(record.rto.blocked).toBe(true); // no measured live restore from this tool
     expect(rehearsalEvidence(record).result).toBe('blocked');
+  });
+
+  it('emits both restore entries and a deployed scope only for a live, measured, verified restore', async () => {
+    const live = await runRehearsal({ handles: ALL_HANDLES, now: NOW, measuredElapsedHours: 3, verifiedCopyAgeHours: 6 });
+    expect(live.rto.blocked).toBe(false);
+    expect(live.rpo.blocked).toBe(false);
+    const staging = rehearsalEvidenceEntries(live, 'staging');
+    expect(staging.map((e) => `${e.gate}/${e.requirement}`)).toEqual(['team_archive/independent_recovery', 'final_checkpoint_49/final_restore']);
+    expect(staging.every((e) => e.kind === 'infra-restore' && e.result === 'passed' && e.scope === 'deployed-staging')).toBe(true);
+    expect(rehearsalEvidenceEntries(live).every((e) => e.scope === 'deployed-production')).toBe(true);
+    expect(rehearsalEvidence(live, 'staging').scope).toBe('deployed-staging');
+  });
+
+  it('never passes a dry run, an unmeasured live claim, or an over-objective restore', async () => {
+    const dry = await runRehearsal({ now: NOW, handles: {} as LiveHandles });
+    const unmeasured = await runRehearsal({ handles: ALL_HANDLES, now: NOW });
+    const slow = await runRehearsal({ handles: ALL_HANDLES, now: NOW, measuredElapsedHours: 9, verifiedCopyAgeHours: 6 });
+    const stale = await runRehearsal({ handles: ALL_HANDLES, now: NOW, measuredElapsedHours: 3, verifiedCopyAgeHours: 48 });
+    for (const record of [dry, unmeasured, slow, stale]) {
+      for (const entry of rehearsalEvidenceEntries(record, 'staging')) {
+        expect(entry.result).toBe('blocked');
+        expect(entry.scope).toBe('local-synthetic');
+      }
+    }
   });
 });

@@ -33,6 +33,8 @@
     "check:specs": "node --import tsx tools/check-specs.ts",
     "specs:write": "node --import tsx tools/check-specs.ts --write",
     "check:launch": "node --import tsx tools/check-launch.ts",
+    "record:evidence": "node --import tsx tools/record-evidence.ts",
+    "record:staging-results": "node --import tsx tools/record-staging-results.ts",
     "dev": "node --import tsx scripts/dev.ts",
     "dev:reset": "node --import tsx scripts/dev.ts --reset --seed-only",
     "dev:seed": "node --import tsx tools/dev-seed.ts",

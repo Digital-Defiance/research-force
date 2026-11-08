@@ -26,7 +26,7 @@ endpoints.
 | Spec | Requirements | What it verifies against staging | Gate |
 | --- | --- | --- | --- |
 | `gate-contract.spec.ts` | (contract) | `gateStatus` blocks (never skips/ready) on any missing handle | — (runs everywhere) |
-| `access-and-bearer.spec.ts` | R1.1, R1.3 | Access redirects the Workspace host to the configured IdP; scoped bearer-link exceptions admit only their scoped path | Workspace |
+| `access-and-bearer.spec.ts` | R1.1, R1.3 | Access redirects the Workspace host to the configured IdP; a live `/t/` or `/x/` download link admits only its own path on the download host (tampered token, other prefix and other paths are refused) and is no Workspace credential | Workspace |
 | `r2-upload-checksums.spec.ts` | R12.10 | real single-part and multipart upload checksum behaviour and CORS (PUT from Workspace+apex origins with checksum headers) against the real bucket | team-archive |
 | `graph-mail.spec.ts` | R20.19, R20.21, R20.22, R20.24, R20.26, R45.21, R28.17 | least-privilege send (only the ResearchForce mailbox), certificate rotation, SPF/DKIM/DMARC, acceptance-vs-delivery, MIME/plain text, no residual retention; Turnstile sitekey | outbound-mail |
 | `public-change-containment.spec.ts` | R24.11, R24.12, R24.16, R24.17 | public change timing; independently verified containment across pages/index/files/People/policy/release assets; injected deploy/quota failures; old-generation retries | public-release |
@@ -60,7 +60,7 @@ install.
 | --- | --- | --- |
 | `STAGING_WORKSPACE_ORIGIN` | Workspace, R2 | the authenticated Workspace origin behind Access |
 | `STAGING_IDP_HOST` | Workspace | the configured Identity_Provider host the Access redirect targets |
-| `STAGING_BEARER_LINK`, `STAGING_BEARER_SCOPE_PATH` | Workspace | a scoped bearer link and the Workspace path it is scoped to |
+| `STAGING_BEARER_LINK` | Workspace | the full URL of one live `/t/<token>` or `/x/<token>` download link on the download host (secret while valid; links last 15 minutes) |
 | `STAGING_PUBLIC_ORIGIN` | R2, mail, containment | the apex / Public_Site origin |
 | `STAGING_FILES_ORIGIN` | R2 | the public-files origin (CORS PUT origin check) |
 | `STAGING_R2_ENDPOINT`, `STAGING_R2_BUCKET` | team-archive | the real R2 S3 endpoint and bucket name |
@@ -70,6 +70,7 @@ install.
 | `STAGING_TURNSTILE_SITEKEY` | outbound-mail | the configured Turnstile sitekey the forms must serve |
 | `STAGING_CONTAINMENT_ENDPOINT`, `STAGING_CONTAINMENT_TOKEN` | public-release | the operator containment/timing route and its token |
 | `STAGING_ABUSE_ENDPOINT`, `STAGING_ABUSE_TOKEN`, `STAGING_OPERATING_PROFILE` | abuse-resilience | the Abuse_Profile harness route, its token, and the certified operating profile |
+| `STAGING_DISTRIBUTED_ABUSE_ENDPOINT`, `STAGING_DISTRIBUTED_ABUSE_TOKEN` | public launch | the distributed-abuse / removal-failure harness route and its token (`distributed-abuse.spec.ts`) |
 | `STAGING_BACKUP_ENDPOINT`, `STAGING_BACKUP_TOKEN` | recovery | the operator backup/restore rehearsal route and its token |
 | `STAGING_BACKUP_RECOVERY_KEY_ID`, `STAGING_BACKUP_EVIDENCE_DEST` | recovery | the independent recovery key id and the sanitized-evidence destination |
 | `STAGING_WALKTHROUGH_ENDPOINT`, `STAGING_WALKTHROUGH_TOKEN` | team-acceptance | the operator walkthrough-evidence route and its token |
@@ -78,6 +79,60 @@ install.
 The operator tokens authorize read-only or rehearsal routes on the staging Worker; no token or secret
 value is logged, and the backup/walkthrough evidence the suites read back is sanitized (counts and
 verification only — no research, PII, or secrets).
+
+## Which handles each suite needs
+
+Only the first two rows can run today. The rest call operator routes that do not exist in the
+deployed code yet, so they report BLOCKED even with every variable set.
+
+| Suite | Runnable today | Handles it needs |
+| --- | --- | --- |
+| `gate-contract.spec.ts` | yes, no handles | none |
+| `access-and-bearer.spec.ts` | yes | `STAGING_WORKSPACE_ORIGIN`, `STAGING_IDP_HOST`, `STAGING_BEARER_LINK` |
+| `r2-upload-checksums.spec.ts` | yes | `STAGING_R2_ENDPOINT`, `STAGING_R2_BUCKET`, `STAGING_R2_ACCESS_KEY_ID`, `STAGING_R2_SECRET_ACCESS_KEY`, `STAGING_WORKSPACE_ORIGIN`, `STAGING_PUBLIC_ORIGIN` (`STAGING_FILES_ORIGIN` and `STAGING_R2_REGION` are optional) |
+| `graph-mail.spec.ts` | no (route missing) | `STAGING_GRAPH_VERIFY_ENDPOINT`, `STAGING_GRAPH_VERIFY_TOKEN`, `STAGING_SENDING_ADDRESS`, `STAGING_TURNSTILE_SITEKEY`, `STAGING_PUBLIC_ORIGIN` |
+| `public-change-containment.spec.ts` | no (route missing) | `STAGING_CONTAINMENT_ENDPOINT`, `STAGING_CONTAINMENT_TOKEN` |
+| `abuse-reserve.spec.ts` | no (route missing) | `STAGING_ABUSE_ENDPOINT`, `STAGING_ABUSE_TOKEN`, `STAGING_OPERATING_PROFILE` |
+| `distributed-abuse.spec.ts` | no (route missing) | `STAGING_DISTRIBUTED_ABUSE_ENDPOINT`, `STAGING_DISTRIBUTED_ABUSE_TOKEN` |
+| `backup-restore.spec.ts` | no (route missing) | `STAGING_BACKUP_ENDPOINT`, `STAGING_BACKUP_TOKEN`, `STAGING_BACKUP_RECOVERY_KEY_ID`, `STAGING_BACKUP_EVIDENCE_DEST` |
+| `team-walkthroughs.spec.ts` | no (route missing) | `STAGING_WALKTHROUGH_ENDPOINT`, `STAGING_WALKTHROUGH_TOKEN` |
+
+The authoritative list per suite is the `describeGate(...)` call at the top of each spec.
+
+## Recording results as launch evidence
+
+A passing run is not evidence until it is written to `docs/acceptance/launch-evidence.json`, which
+`npm run check:launch` reads. Only record what a real run produced.
+
+```sh
+# 1. Run the runnable suites against staging and keep the JSON report:
+PLAYWRIGHT_JSON_OUTPUT_NAME=staging-results.json npx playwright test \
+  --config playwright.staging.config.ts --reporter=json access-and-bearer r2-upload-checksums
+
+# 2. Dry run: show what would be recorded (nothing is written):
+npm run -s record:staging-results -- --results staging-results.json \
+  --release <releaseId> --evidence-ref <path-to-sanitized-summary>
+
+# 3. Record it (add --replace to overwrite an earlier entry for the same release):
+npm run -s record:staging-results -- --results staging-results.json \
+  --release <releaseId> --evidence-ref <path-to-sanitized-summary> --write
+
+# Or record one entry by hand (for example a manual check):
+npm run -s record:evidence -- --gate team_archive --requirement drafts_files \
+  --result passed --scope deployed-staging --release <releaseId> --evidence-ref <path>
+```
+
+The mapping from spec file to gate requirement lives in one table, `RESULT_MAPPINGS` in
+`tools/src/staging-results.ts`. A spec file counts only when every test in it passed. A file that
+covers only part of a requirement is reported but not recorded as passed, because the requirement
+would still be unproven. Failed files are recorded as `failed`; blocked, skipped or missing runs are
+not recorded. The `tests/security` canary and file-safety suites and the presentation accessibility
+suite are mapped but disabled: they default to local dev origins and the security suite needs the
+download HMAC key, so a report cannot show they ran against staging.
+
+The raw Playwright report can contain response text. Write a short sanitized summary (suite names and
+pass/fail counts) and use that as `--evidence-ref`; the recorder refuses references or notes that look
+like tokens, keys or bearer links.
 
 ## Operator mail verifier
 
