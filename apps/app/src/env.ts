@@ -39,6 +39,8 @@ export interface Env {
   PUBLIC_SITE_ORIGIN?: string;
   /** The public files origin (`https://files.researchforce.org`) the verify step HEADs removed file copies at (R24.16). */
   PUBLIC_FILES_ORIGIN?: string;
+  /** The Publisher's public-site size ceiling in current Public_Views (positive integer string); unset or invalid uses the Free-plan default of 750. */
+  PUBLISHER_SITE_VIEW_CEILING?: string;
   /** The Outside_Submission worker origin (`https://submit.researchforce.org`, or the staging host) the public form pages call; unset uses the production host. */
   PUBLIC_SUBMIT_ORIGIN?: string;
   /** The Turnstile site key (public) the public form pages mount the Bot_Check with; unset leaves the forms unavailable. */

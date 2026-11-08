@@ -21,7 +21,7 @@ import { renderToStaging, stageWindow } from '../publisher/stage';
 import type { StageDeps, StagingStore } from '../publisher/stage';
 import { SliceMeter } from '../publisher/slice-budget';
 import {
-  FREE_PLAN_SITE_VIEW_CEILING, PROBES_PER_SLICE, PROBE_BATCH_MAX, SITE_VIEW_ALERT_SHARE, UPLOAD_SESSION_MAX_MS,
+  siteViewCeiling, PROBES_PER_SLICE, PROBE_BATCH_MAX, SITE_VIEW_ALERT_SHARE, UPLOAD_SESSION_MAX_MS,
 } from '@researchforce/domain/slice-budget';
 import type { OpsSpendAlert } from '@researchforce/domain/ops';
 import { canServerSideCopy } from '../files/s3';
@@ -624,20 +624,21 @@ export class Publisher extends DurableObject<Env> {
    */
   async #overSiteCeiling(run: RunState, io: { readonly core: D1Database; readonly pub: D1Database }, meter: SliceMeter, now: Timestamp): Promise<boolean> {
     const views = (await io.pub.prepare('SELECT count(*) AS n FROM public_views WHERE valid_to_at IS NULL').first<{ n: number }>())?.n ?? 0;
-    const over = views > FREE_PLAN_SITE_VIEW_CEILING;
-    if (views < FREE_PLAN_SITE_VIEW_CEILING * SITE_VIEW_ALERT_SHARE) {
+    const ceiling = siteViewCeiling(this.env.PUBLISHER_SITE_VIEW_CEILING);
+    const over = views > ceiling;
+    if (views < ceiling * SITE_VIEW_ALERT_SHARE) {
       this.ctx.storage.sql.exec('DELETE FROM site_size_alerts'); // back under the approach line: re-arm both alerts
       return false;
     }
     const level = over ? 'over' : 'approach';
-    if (over) this.#log('error', 'publish_site_over_ceiling', { run: run.run, views, ceiling: FREE_PLAN_SITE_VIEW_CEILING, urgent: run.urgent });
+    if (over) this.#log('error', 'publish_site_over_ceiling', { run: run.run, views, ceiling: ceiling, urgent: run.urgent });
     const sent = (key: string) => this.ctx.storage.sql.exec('SELECT 1 FROM site_size_alerts WHERE key = ?', key).toArray().length > 0;
     const mark = (key: string) => this.ctx.storage.sql.exec('INSERT OR IGNORE INTO site_size_alerts (key) VALUES (?)', key);
     // Content-free: counts only. A failing channel is logged and retried on the next render, never fatal.
     if (!sent(`${level}:app`)) {
       try {
         await notifySystemAlert(new GuardedBatch(io.core, { id: null, now }, { ignoreFreeze: true }), `publication:site_views_${level}`, {
-          views, ceiling: FREE_PLAN_SITE_VIEW_CEILING, at: now,
+          views, ceiling: ceiling, at: now,
         }).commit();
         mark(`${level}:app`);
       } catch (error) { this.#log('error', 'publish_site_size_alert_failed', { run: run.run, channel: 'app', error }); }
@@ -649,7 +650,7 @@ export class Publisher extends DurableObject<Env> {
         meter.charge('external');
         await alerting.spendAlert({
           level: over ? 'breach' : 'warning', meter: 'public_site_views',
-          usagePercent: Math.round((views / FREE_PLAN_SITE_VIEW_CEILING) * 100), budgetAmount: FREE_PLAN_SITE_VIEW_CEILING, currency: 'count',
+          usagePercent: Math.round((views / ceiling) * 100), budgetAmount: ceiling, currency: 'count',
         });
         mark(`${level}:ops`);
       } catch (error) { this.#log('error', 'publish_site_size_alert_failed', { run: run.run, channel: 'ops', error }); }

@@ -55,6 +55,16 @@ export const PROBES_PER_SLICE = 100;
  * larger sites need Workers Paid or the incremental renderer (follow-up). docs/instance/installation.md documents it.
  */
 export const FREE_PLAN_SITE_VIEW_CEILING = 750;
+/**
+ * The ceiling in force: the installation var `PUBLISHER_SITE_VIEW_CEILING` (a positive integer string) when valid,
+ * otherwise {@link FREE_PLAN_SITE_VIEW_CEILING}. A missing, non-numeric, fractional, zero or negative value falls back.
+ */
+export function siteViewCeiling(raw: string | undefined): number {
+  const text = raw?.trim() ?? '';
+  if (!/^[0-9]{1,9}$/.test(text)) return FREE_PLAN_SITE_VIEW_CEILING;
+  const value = Number(text);
+  return value > 0 ? value : FREE_PLAN_SITE_VIEW_CEILING;
+}
 /** The share of {@link FREE_PLAN_SITE_VIEW_CEILING} at which the Publisher raises its one-time approach alert. */
 export const SITE_VIEW_ALERT_SHARE = 0.8;
 /** An upload session older than this restarts at `begin` (the platform's upload token lasts one hour). */

@@ -50,6 +50,8 @@ interface Tick {
 }
 
 const originals: Record<string, unknown> = {};
+/** The PUBLISHER_SITE_VIEW_CEILING installation var the live Publisher sees (unset by default). */
+let ceilingVar: string | undefined;
 
 /** ONE alarm on the live Publisher with independently counted bindings; the alarm is disarmed so the test drives every slice. */
 async function tick(ops: FakeDeployOps, render?: RenderFn): Promise<Tick> {
@@ -62,6 +64,7 @@ async function tick(ops: FakeDeployOps, render?: RenderFn): Promise<Tick> {
     env['RF_PRIVATE_BUCKET'] = counter.wrapR2(original('RF_PRIVATE_BUCKET'));
     env['RF_PUBLIC_BUCKET'] = counter.wrapR2(original('RF_PUBLIC_BUCKET'));
     env['ASSETS'] = counter.wrapFetcher(shellFetcher, 'assets');
+    env['PUBLISHER_SITE_VIEW_CEILING'] = ceilingVar;
     instance.setOpsForTest(counter.wrapFetcher(ops, 'service'));
     instance.setRenderForTest(render);
     await state.storage.deleteAlarm();
@@ -385,6 +388,19 @@ describe('Free plan: the site-size ceiling', () => {
     expect((await runRow('run-over-2'))!.verifiedAt).toBeNull();
     expect(await siteAlerts('over')).toHaveLength(1);
     expect(ops.spendAlerts).toHaveLength(1);
+  });
+  it('an installation var raises the ceiling: the same site is rendered and deployed, with no over-ceiling alert', async () => {
+    await seedViews(over);
+    ceilingVar = String(over + 100);
+    try {
+      const ops = fakeDeployOps();
+      const render = counted(syntheticSite(3));
+      await seedRun({ runId: 'run-raised', phase: 'deploy', urgent: false, ageMs: 6 * 60_000 });
+      await drainWithCounts(ops, 'raised ceiling', { render });
+      expect(render.calls).toBeGreaterThan(0);
+      expect((await runRow('run-raised'))!.verifiedAt).not.toBeNull();
+      expect(await siteAlerts('over')).toHaveLength(0);
+    } finally { ceilingVar = undefined; }
   });
   it('an urgent run over the ceiling deploys nothing and waits for the 4-minute Containment deadline without busy alarms', async () => {
     await seedViews(over);
