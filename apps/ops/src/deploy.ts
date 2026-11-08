@@ -142,6 +142,9 @@ export class SiteDeploy {
    * concurrent/obsolete re-entry reuses the same durable row rather than deploying twice. `assets` supplies
    * the bytes of the files the platform reports missing; `containmentActive` is whether independent
    * containment is currently in force. `now` is the record timestamp.
+   *
+   * NOT an RPC: `Ops` no longer exposes it. One call carries every file of the site through one invocation, which
+   * is unsafe for large sites on the Free plan; it remains only as the composition the rf-ops tests exercise.
    */
   async deploySite(input: {
     readonly manifest: SiteManifest;

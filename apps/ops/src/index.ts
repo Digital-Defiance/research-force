@@ -24,7 +24,7 @@ import { AccessSync } from './access';
 import { Analytics } from './analytics';
 import { type MonitoredEndpoint, OperationalAlerts } from './alerts';
 import { Containment } from './containment';
-import { type AssetBody, SiteDeploy } from './deploy';
+import { SiteDeploy } from './deploy';
 import { Waf } from './waf';
 
 export interface OpsEnv {
@@ -195,19 +195,6 @@ export default class Ops extends WorkerEntrypoint<OpsEnv> implements OpsAccess, 
   // Public submit-host WAF budget shed (task 34.2, R28.5, R28.6): the `Budget` DO (34.1) flips this on at the
   // Public_Traffic_Budget-minus-margin threshold and off at the 00:00 UTC reset.
   async setSubmitBlock(enabled: boolean): Promise<void> { await this.#waf().setSubmitBlock(enabled); }
-
-  async deploySite(input: Parameters<OpsDeploy['deploySite']>[0]): Promise<OpsDeployResult> {
-    // The 32.5 caller passes the bytes of only the missing files keyed by hash; adapt them to the AssetSource.
-    const missing: Record<string, AssetBody> = { ...input.missing };
-    return this.#deploy().deploySite({
-      manifest: input.manifest,
-      generation: { run: input.run, epoch: input.epoch },
-      operationId: input.operationId,
-      assets: async (hash) => missing[hash] ?? null,
-      containmentActive: input.containmentActive,
-      now: new Date().toISOString() as Timestamp,
-    });
-  }
 
   // The stepped deploy the Publisher drives one alarm slice at a time (bounded cost per call).
   async beginSiteDeploy(input: Parameters<OpsDeploy['beginSiteDeploy']>[0]): Promise<OpsDeployBegin> {

@@ -63,7 +63,6 @@ describe('rf-ops Access sync', () => {
       'containPublicHosts',
       'containmentCapabilities',
       'declareIncident',
-      'deploySite',
       'fetch',
       'finishSiteDeploy',
       'probePublicAddress',

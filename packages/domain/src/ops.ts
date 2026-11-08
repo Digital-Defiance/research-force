@@ -312,23 +312,6 @@ export interface OpsWaf {
  */
 export interface OpsDeploy {
   /**
-   * Deploy `manifest` (path -> {hash, size}) as a new `rf-site` version, fenced by `epoch` under the durable
-   * `operationId`. `run` is the Publisher generation id; `missing` supplies the base64 bytes and content type
-   * for each file hash the platform reports missing (only missing files are uploaded); `containmentActive` is
-   * whether independent containment is currently in force. Returns the live result the 32.5 orchestrator acts
-   * on: whether the version was promoted, whether containment must remain, the created version id, and the
-   * settled operation state. Throws only on a definite Cloudflare refusal; a lost/uncertain answer is returned
-   * as an `uncertain` outcome, never a blind retry.
-   */
-  deploySite(input: {
-    readonly manifest: Readonly<Record<string, { readonly hash: string; readonly size: number }>>;
-    readonly run: string;
-    readonly epoch: number;
-    readonly operationId: string;
-    readonly missing: Readonly<Record<string, { readonly base64: string; readonly contentType: string }>>;
-    readonly containmentActive: boolean;
-  }): Promise<OpsDeployResult>;
-  /**
    * Stepped deploy, step 1 (one platform fetch): record the epoch-labelled operation and register the manifest.
    * Answers `upload` (one-hour upload token + the platform's missing-hash buckets), `ready` (nothing to upload),
    * or `settled` when the operation already confirmed or is uncertain (never redone blindly).

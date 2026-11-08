@@ -18,13 +18,15 @@ import type {
   ConfidentialityIncident,
   ContainmentCapabilities,
   ContainmentState,
+  OpsDeployBegin,
   OpsDeployResult,
 } from '@researchforce/domain/ops';
 import type { Timestamp } from '@researchforce/domain/types';
 import { fc, FC_RUNS } from '@researchforce/testing/fc';
 import {
   DEPLOY_TARGET,
-  deployRun,
+  beginDeploy,
+  deployFinish,
   mayReleaseAfterRestore,
   reconcileUncertainDeploy,
   releaseAfterRestore,
@@ -110,7 +112,7 @@ type DeployFault = 'ok' | 'uncertain' | 'refuse';
 interface FakeProviderOptions {
   /** When true, every out-of-band HEAD probe answers `unknown`: a provider outage / unreachable control path. */
   readonly providerDown: boolean;
-  /** The answer the provider gives the NEXT `deploySite` call. */
+  /** The answer the provider gives the NEXT `finishSiteDeploy` call. */
   readonly deployFault: DeployFault;
   /** Whether the plan can enable the precreated public-host deny rules at all (false is a launch blocker, R60.4). */
   readonly canContain: boolean;
@@ -134,21 +136,24 @@ class FakeOps implements DeployOps {
   authorizedGeneration: string | null = null;
   /** The content-free incidents declared through the independent channel (R24.17/R60.6). */
   readonly incidents: ConfidentialityIncident[] = [];
-  /** Operation ids seen by `deploySite`, so a duplicate/late deploy is observable to the test. */
+  /** Operation ids seen by `finishSiteDeploy`, so a duplicate/late deploy is observable to the test. */
   readonly deploysSeen: string[] = [];
   options: FakeProviderOptions = { providerDown: false, deployFault: 'ok', canContain: true, containVerifiable: true };
 
-  // The stepped deploy RPCs: the Publisher does not call them yet (it still calls deploySite), so they are inert here.
-  async beginSiteDeploy(): Promise<never> { throw new Error('beginSiteDeploy is not used by the single-call Publisher yet.'); }
-  async uploadSiteAssets(): Promise<never> { throw new Error('uploadSiteAssets is not used by the single-call Publisher yet.'); }
-  async finishSiteDeploy(): Promise<never> { throw new Error('finishSiteDeploy is not used by the single-call Publisher yet.'); }
+  /** The manifest each operation registered at `beginSiteDeploy`, which `finishSiteDeploy` then promotes. */
+  readonly begun = new Map<string, DeployManifest>();
 
-  async deploySite(input: {
-    readonly manifest: DeployManifest;
+  async beginSiteDeploy(input: { readonly manifest: DeployManifest; readonly operationId: string }): Promise<OpsDeployBegin> {
+    this.begun.set(input.operationId, input.manifest);
+    return { state: 'ready', completionToken: 'completion' };
+  }
+  async uploadSiteAssets(): Promise<{ completionToken: string | null }> { return { completionToken: 'completion' }; }
+
+  async finishSiteDeploy(input: {
     readonly run: string;
     readonly epoch: number;
     readonly operationId: string;
-    readonly missing: Readonly<Record<string, { readonly base64: string; readonly contentType: string }>>;
+    readonly completionToken: string;
     readonly containmentActive: boolean;
   }): Promise<OpsDeployResult> {
     this.deploysSeen.push(input.operationId);
@@ -161,7 +166,7 @@ class FakeOps implements DeployOps {
       return { promoted: false, keepContainment: input.containmentActive, versionId: `v-${input.run}`, operationId: input.operationId, operationState: 'uncertain', reason: 'uncertain' };
     }
     // A clean promotion: the manifest becomes the live set of reachable addresses (added paths appear, dropped ones go).
-    const next = new Set(Object.keys(input.manifest).map((path) => absoluteUrl(path)));
+    const next = new Set(Object.keys(this.begun.get(input.operationId) ?? {}).map((path) => absoluteUrl(path)));
     this.reachable.clear();
     for (const url of next) this.reachable.add(url);
     return { promoted: true, keepContainment: false, versionId: `v-${input.run}`, operationId: input.operationId, operationState: 'confirmed', reason: 'promoted' };
@@ -267,6 +272,14 @@ async function resetPerRun(): Promise<void> {
 }
 
 const gen = (run: string, epoch: number): Generation => ({ run, epoch });
+/**
+ * One whole deploy as the Publisher drives it: the epoch fence first (every slice, before any side effect), then
+ * `begin`, then the promotion. A stale generation is refused by the fence and never reaches rf-ops.
+ */
+async function deployRun(ops: DeployOps, generation: Generation, authoritative: number, manifest: DeployManifest, _assets: unknown, containmentActive: boolean) {
+  if (fence(generation, authoritative, 'promotion').authorized) await beginDeploy(ops, generation, manifest, containmentActive);
+  return deployFinish(ops, generation, authoritative, 'completion', containmentActive);
+}
 
 describe('Property 113: Publication generations never reintroduce suppressed material', () => {
   it('never lets a stale generation, a late retry, an uncertain reconcile, or a restore reintroduce suppressed material, across additions, suppressions, outages and epoch changes', async () => {

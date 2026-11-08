@@ -60,7 +60,10 @@ export const localRuntime: LocalRuntimeAdapter = {
       // The local runtime captures only; it never deploys the public site or touches a real edge. The
       // Publisher's deploy phase (task 32.5) is effectively inert here: a deploy reports it was not promoted
       // (so nothing is claimed live) and Containment is reported unavailable, matching "no external change".
-      deploySite: async (input: Parameters<OpsDeploy['deploySite']>[0]) =>
+      beginSiteDeploy: async (input: Parameters<OpsDeploy['beginSiteDeploy']>[0]) =>
+        ({ state: 'settled', result: { promoted: false, keepContainment: false, versionId: null, operationId: input.operationId, operationState: 'uncertain', reason: 'uncertain' } as OpsDeployResult }),
+      uploadSiteAssets: async () => ({ completionToken: null }),
+      finishSiteDeploy: async (input: Parameters<OpsDeploy['finishSiteDeploy']>[0]) =>
         ({ promoted: false, keepContainment: false, versionId: null, operationId: input.operationId, operationState: 'uncertain', reason: 'uncertain' } as OpsDeployResult),
       containmentCapabilities: async () => ({ canDeny: false, verifiable: false, canAlert: false, blockingReason: 'The local runtime provides no edge Containment.' }),
       containPublicHosts: async () => { throw new Error('The local runtime provides no edge Containment.'); },

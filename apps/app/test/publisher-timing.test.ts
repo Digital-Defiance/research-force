@@ -1,6 +1,6 @@
 import { runInDurableObject } from 'cloudflare:test';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ConfidentialityIncident, ContainmentCapabilities, ContainmentState, OpsDeployResult } from '@researchforce/domain/ops';
+import { fakeDeployOps as fakeOps } from '@researchforce/testing/fake-deploy-ops';
 import { VERIFY_BY_MS } from '@researchforce/db/containment';
 import type { ULID } from '@researchforce/domain/types';
 import type { DeployOps } from '../src/publisher/deploy';
@@ -25,43 +25,6 @@ const world = itemWorld();
 const core = () => world.bindings.RF_CORE;
 const pub = () => world.bindings.RF_PUBLIC;
 const stub = () => world.bindings.PUBLISHER.getByName('publisher');
-
-// ---------------------------------------------------------------------------
-// A fake OPS surface, mirroring publisher-deploy.test.ts: records calls, answers deterministically.
-// ---------------------------------------------------------------------------
-
-interface FakeOpsOptions {
-  readonly deploy?: Partial<OpsDeployResult>;
-  readonly probe?: (url: string) => 'present' | 'absent' | 'unknown';
-  readonly capabilities?: Partial<ContainmentCapabilities>;
-  readonly containment?: ContainmentState;
-}
-
-function fakeOps(options: FakeOpsOptions = {}): DeployOps & { calls: string[]; incidents: ConfidentialityIncident[] } {
-  const calls: string[] = [];
-  const incidents: ConfidentialityIncident[] = [];
-  return {
-    calls,
-    incidents,
-    async deploySite(input: { operationId: string }) {
-      calls.push('deploySite');
-      return {
-        promoted: true, keepContainment: false, versionId: 'v1', operationId: input.operationId,
-        operationState: 'confirmed', reason: 'promoted', ...options.deploy,
-      } as OpsDeployResult;
-    },
-    async containmentCapabilities() {
-      return { canDeny: true, verifiable: true, canAlert: true, blockingReason: null, ...options.capabilities };
-    },
-    async containPublicHosts() { calls.push('containPublicHosts'); },
-    async releaseContainment(authorizedGeneration: string) { calls.push(`releaseContainment:${authorizedGeneration}`); },
-    async verifyContainment() { calls.push('verifyContainment'); return options.containment ?? { active: false, verified: false }; },
-    async probePublicAddress(url: string) { calls.push(`probe:${url}`); return options.probe?.(url) ?? 'absent'; },
-    async declareIncident(incident: ConfidentialityIncident) { calls.push('declareIncident'); incidents.push(incident); },
-    async addMember() {}, async removeMember() {}, async revokeSessions() {},
-    fetch: async () => new Response(null, { status: 404 }),
-  } as unknown as DeployOps & { calls: string[]; incidents: ConfidentialityIncident[] };
-}
 
 // ---------------------------------------------------------------------------
 // DO-state helpers: reach into the Publisher's own SQLite through runInDurableObject.
