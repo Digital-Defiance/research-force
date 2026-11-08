@@ -233,3 +233,37 @@ describe('stalled-run recovery on kick', () => {
     expect(row!.verifiedAt).toBeNull();
   });
 });
+
+describe('a kick opens a run only for queued work (the one-minute cron must not redeploy an unchanged site)', () => {
+  const clearState = async (): Promise<void> => {
+    await core().prepare("DELETE FROM outbox WHERE topic = 'publish'").run();
+    await runInDurableObject(stub(), async (_instance, state) => {
+      state.storage.sql.exec('DELETE FROM publish_run WHERE only = 1');
+      await state.storage.deleteAlarm();
+    });
+  };
+  const runOpen = () => runInDurableObject(stub(), (_instance, state) =>
+    state.storage.sql.exec<{ run_id: string }>('SELECT run_id FROM publish_run WHERE only = 1').toArray().length > 0);
+
+  it('opens no run and sets no alarm when nothing is queued and no run is active', async () => {
+    await clearState();
+    await runInDurableObject(stub(), (instance: Publisher) => instance.kick('publish'));
+    expect(await runOpen()).toBe(false);
+    expect(await currentAlarm()).toBeNull();
+  });
+
+  it('opens a run when a publish row is queued', async () => {
+    await clearState();
+    await publishRow('member:01M6SA486HRZWG3TDVY8RD4E7Q');
+    await runInDurableObject(stub(), (instance: Publisher) => instance.kick('publish'));
+    expect(await runOpen()).toBe(true);
+    expect(await currentAlarm()).not.toBeNull();
+  });
+
+  it('republish (the restore release) opens a run even with nothing queued', async () => {
+    await clearState();
+    await runInDurableObject(stub(), (instance: Publisher) => instance.republish());
+    expect(await runOpen()).toBe(true);
+    expect(await currentAlarm()).not.toBeNull();
+  });
+});

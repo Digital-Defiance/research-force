@@ -11,6 +11,7 @@ import { createLogger } from '../log';
 import { isFrozen, runProjectionSlice } from '../publisher/projection';
 import type { ProjectionDeps } from '../publisher/projection';
 import { deleteManifestRows, headersFile, raiseFileCountAlert, renderPlanned } from '../publisher/render';
+import { readOutbox } from '../outbox';
 import type { PlannedRender } from '../publisher/render';
 import { loadShellAssets } from '../publisher/shell-assets';
 import type { FormsConfig } from '@researchforce/public-render/site';
@@ -137,6 +138,21 @@ export class Publisher extends DurableObject<Env> {
     if (topic !== 'publish') return;
     // A frozen rf-core (restore in progress) is left untouched; no run opens until it clears, so restored
     // material stays quarantined. A later kick or the one-minute cron retries once unfrozen (R36.16, R59.3).
+    if (await isFrozen(this.env.RF_CORE)) return;
+    // Open a run only for queued work. The one-minute cron kicks every owner; without this check every kick opened a
+    // fresh run and redeployed the unchanged site each minute (about 170 R2 calls per deploy, past the free tier).
+    // An existing run is always advanced (and recovered when stale), so a pending removal is never dropped.
+    if (this.#load() === null && (await readOutbox(this.env.RF_CORE, 'publish', 1)).length === 0) return;
+    await this.#ensureRun();
+    await this.#recoverStale();
+    await this.#wake(Date.now());
+  }
+
+  /**
+   * Open a run and re-render the whole site even when nothing is queued: the explicit restore release, whose restored
+   * rows enqueue no `publish` outbox rows by design (backup/derived.ts), so a plain {@link kick} would do nothing.
+   */
+  async republish(): Promise<void> {
     if (await isFrozen(this.env.RF_CORE)) return;
     await this.#ensureRun();
     await this.#recoverStale();

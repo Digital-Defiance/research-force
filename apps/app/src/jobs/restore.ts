@@ -544,8 +544,9 @@ export async function releaseRestore(env: Env, id: ULID, releasedBy: ULID, now: 
   if (report.blockedBy !== undefined && report.blockedBy.length > 0) return false;
   await env.RF_CORE.prepare('UPDATE restores SET state = ?2, released_at = ?3, released_by = ?4 WHERE id = ?1 AND state = ?5')
     .bind(id, 'released', now, releasedBy, 'quarantined').run();
-  // Kick the Publisher so it resumes now that the quarantine has lifted; a later kick/cron also picks it up.
-  try { await env.PUBLISHER.getByName('publisher').kick('publish'); } catch { /* the cron sweep retries */ }
+  // Republish now that the quarantine has lifted. The restored rows queue no `publish` outbox rows, so this must
+  // open a run explicitly; a plain kick only advances queued work.
+  try { await env.PUBLISHER.getByName('publisher').republish(); } catch { /* the operator can release-retry; see runbook */ }
   return true;
 }
 
