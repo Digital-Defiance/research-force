@@ -218,6 +218,7 @@ export default class Ops extends WorkerEntrypoint<OpsEnv> implements OpsAccess, 
       operationId: input.operationId,
       completionToken: input.completionToken,
       containmentActive: input.containmentActive,
+      ...(input.headers === undefined ? {} : { headers: input.headers }),
       now: new Date().toISOString() as Timestamp,
     });
   }

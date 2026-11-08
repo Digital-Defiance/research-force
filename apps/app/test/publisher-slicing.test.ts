@@ -165,11 +165,12 @@ describe('Free-plan slicing: the empty site', () => {
     expect(rest).toHaveLength(0);
     expect(only!.phase).toBe('verify');
     // BEFORE (HEAD dae03cc, one alarm): ASSETS 64, service RPC 1, R2 173, D1 173 (3 batches).
-    // AFTER (measured, this alarm): ASSETS 1, service RPC 3 (begin + one upload + finish), R2 173, D1 26 (2 batches).
+    // AFTER (measured, this alarm): ASSETS 1, service RPC 3 (begin + one upload + finish), R2 172, D1 26 (2 batches).
+    // `_headers` is no longer uploaded (it is version configuration), so one R2 read and one uploaded hash fewer.
     expect(only!.counts).toMatchObject({ assets: 1, service: 3, fetch: 0 });
-    expect(only!.counts.r2).toBe(173);
+    expect(only!.counts.r2).toBe(172);
     expect(ops.steps).toEqual(['begin', 'upload', 'finish']);
-    expect(ops.uploaded.size).toBe(86);
+    expect(ops.uploaded.size).toBe(85);
   });
 });
 
@@ -203,6 +204,11 @@ describe('Free-plan slicing: a 60-finding site', () => {
     expect(ops.steps.at(-1)).toBe('finish'); // promoted once, after the last upload
     expect(ops.finishedAfterAllUploads).toEqual([true]);
     expect(ops.uploaded.size).toBeGreaterThan(150);
+    // `_headers` is version configuration, never an uploaded page: it is left out of the manifest and its rules go
+    // to the finish step, where rf-ops puts them in the version's `assets.config._headers`.
+    expect(Object.keys(ops.begins[0]!.manifest)).not.toContain('/_headers');
+    expect(ops.finishes).toHaveLength(1);
+    expect(ops.finishes[0]!.headers).toContain('Content-Security-Policy');
   }, 180_000);
 });
 

@@ -152,6 +152,7 @@ export class SiteDeploy {
     readonly operationId: string;
     readonly assets: AssetSource;
     readonly containmentActive: boolean;
+    readonly headers?: string;
     readonly now: Timestamp;
   }): Promise<DeployOutcome> {
     const { manifest, generation, operationId: id, assets, containmentActive, now } = input;
@@ -178,7 +179,7 @@ export class SiteDeploy {
       if (!last) throw new CloudflareApiError(201, []);
       completionToken = last;
     }
-    return this.finishSiteDeploy({ generation, operationId: id, completionToken, containmentActive, now });
+    return this.finishSiteDeploy({ generation, operationId: id, completionToken, containmentActive, ...(input.headers === undefined ? {} : { headers: input.headers }), now });
   }
   /**
    * Step 1: short-circuit on a settled prior attempt, record the epoch-labelled operation, and register the
@@ -234,6 +235,8 @@ export class SiteDeploy {
     readonly operationId: string;
     readonly completionToken: string;
     readonly containmentActive: boolean;
+    /** The `_headers` rules, applied through the version's asset config (never uploaded as a file). */
+    readonly headers?: string;
     readonly now: Timestamp;
   }): Promise<DeployOutcome> {
     const { generation, operationId: id, completionToken, containmentActive, now } = input;
@@ -246,7 +249,7 @@ export class SiteDeploy {
     // -retry — a later reconcile against actual provider state must decide first (R24.17, R60.2).
     let versionId: string;
     try {
-      versionId = await this.#createVersion(completionToken);
+      versionId = await this.#createVersion(completionToken, input.headers);
     } catch (error) {
       if (error instanceof CloudflareApiError) {
         await settleOperation(this.db, id, { state: 'failed', detail: `create:${error.status}` }, now);
@@ -344,12 +347,14 @@ export class SiteDeploy {
     return { token, buckets };
   }
   // --- Direct Upload phase 3a: create the assets-only version (no script module) with fixed routing ---
-  async #createVersion(completionToken: string): Promise<string> {
+  async #createVersion(completionToken: string, headers?: string): Promise<string> {
     // The script Versions endpoint takes multipart/form-data with a `metadata` part, not a JSON body (Direct Upload
     // docs, "Create/Deploy New Version"); a JSON body is refused with HTTP 415. An assets-only version has no module.
     const form = new FormData();
     form.append('metadata', new Blob(
-      [JSON.stringify({ assets: { jwt: completionToken, config: SITE_ASSET_CONFIG }, compatibility_date: COMPAT_DATE })],
+      // `_headers` is configuration, not an asset: Workers Static Assets apply it from `assets.config._headers`
+      // (as wrangler does); an uploaded `/_headers` file would be served as a plain page and never applied.
+      [JSON.stringify({ assets: { jwt: completionToken, config: { ...SITE_ASSET_CONFIG, ...(headers === undefined ? {} : { _headers: headers }) } }, compatibility_date: COMPAT_DATE })],
       { type: 'application/json' },
     ));
     const result = await this.#send<{ id?: string }>(

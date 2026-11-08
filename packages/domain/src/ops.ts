@@ -341,6 +341,11 @@ export interface OpsDeploy {
     readonly operationId: string;
     readonly completionToken: string;
     readonly containmentActive: boolean;
+    /**
+     * The site's `_headers` rules (CSP and other response headers). Workers Static Assets read these from the
+     * version's `assets.config._headers`, not from an uploaded file, so they travel here and never in the manifest.
+     */
+    readonly headers?: string;
   }): Promise<OpsDeployResult>;
 }
 

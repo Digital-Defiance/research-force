@@ -135,6 +135,16 @@ describe('rf-ops rf-site Direct Upload deploy (task 32.1)', () => {
     expect(await readOperation(core(), id)).toMatchObject({ state: 'confirmed', providerRef: 'version-xyz' });
   });
 
+  it('applies the _headers rules through the version asset config, never as an uploaded file', async () => {
+    await setEpoch(2);
+    const id = operationId('deploy', 'r-headers', 2, 'rf-site');
+    const { requests, fetcher } = recorder(happy('version-headers'));
+    const headers = '/*\n  Content-Security-Policy: default-src \'self\'\n';
+    await new SiteDeploy(config, core(), fetcher).deploySite({ manifest, generation: gen('r-headers', 2), operationId: id, assets, containmentActive: false, headers, now: now() });
+    const version = requests.find((r) => classify(r.url) === 'version')!;
+    expect(version.json).toMatchObject({ assets: { jwt: 'completion-jwt', config: { ...SITE_ASSET_CONFIG, _headers: headers } } });
+  });
+
   it('skips the upload phase entirely when the platform reports no missing files', async () => {
     await setEpoch(1);
     const noneMissing = (phase: Phase): Response => phase === 'session'

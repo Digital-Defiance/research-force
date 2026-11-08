@@ -38,6 +38,8 @@ export interface FakeDeployOps extends DeployOpsSurface, OpsSpendAlert {
   readonly begins: Array<Parameters<OpsDeploy['beginSiteDeploy']>[0]>;
   /** For each finishSiteDeploy call: whether every hash the begin step asked for had been uploaded. */
   readonly finishedAfterAllUploads: boolean[];
+  /** The inputs passed to finishSiteDeploy, in order (the `_headers` rules travel here, not in the manifest). */
+  readonly finishes: Array<Parameters<OpsDeploy['finishSiteDeploy']>[0]>;
   /** The size of each probePublicAddresses call, in order. */
   readonly probeBatches: number[];
   /** The independent-channel spend alerts the Publisher sent (the Free-plan site-size alerts), in order. */
@@ -55,6 +57,7 @@ export function fakeDeployOps(options: FakeDeployOpsOptions = {}): FakeDeployOps
   const uploaded = new Set<string>();
   const begins: Array<Parameters<OpsDeploy['beginSiteDeploy']>[0]> = [];
   const finishedAfterAllUploads: boolean[] = [];
+  const finishes: Array<Parameters<OpsDeploy['finishSiteDeploy']>[0]> = [];
   const batches: number[] = [];
   const spendAlerts: SpendAlert[] = [];
   let expected = new Set<string>();
@@ -62,7 +65,7 @@ export function fakeDeployOps(options: FakeDeployOpsOptions = {}): FakeDeployOps
   let failedOnce = false;
   const bucketSize = options.bucketSize ?? 100;
   const fake = {
-    calls, incidents, steps, uploads, uploaded, begins, finishedAfterAllUploads, probeBatches: batches, spendAlerts,
+    calls, incidents, steps, uploads, uploaded, begins, finishedAfterAllUploads, finishes, probeBatches: batches, spendAlerts,
     failNextUpload: false,
     async spendAlert(alert: SpendAlert) { calls.push(`spendAlert:${alert.level}`); spendAlerts.push(alert); },
     async beginSiteDeploy(input: Parameters<OpsDeploy['beginSiteDeploy']>[0]): Promise<OpsDeployBegin> {
@@ -93,6 +96,7 @@ export function fakeDeployOps(options: FakeDeployOpsOptions = {}): FakeDeployOps
     async finishSiteDeploy(input: Parameters<OpsDeploy['finishSiteDeploy']>[0]): Promise<OpsDeployResult> {
       steps.push('finish');
       calls.push('deploySite');
+      finishes.push(input);
       finishedAfterAllUploads.push([...expected].every((hash) => uploaded.has(hash)));
       return {
         promoted: true, keepContainment: false, versionId: 'v1', operationId: input.operationId,

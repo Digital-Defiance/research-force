@@ -160,6 +160,7 @@ export async function deployFinish(
   authoritative: number,
   completionToken: string,
   containmentActive: boolean,
+  headers?: string,
 ): Promise<DeployRunResult> {
   const id = deployOperationId(generation);
 
@@ -190,6 +191,7 @@ export async function deployFinish(
     operationId: id,
     completionToken,
     containmentActive,
+    ...(headers === undefined ? {} : { headers }),
   });
   return { outcome, operationId: id, deployed: outcome.promoted, fencedOut: false };
 }

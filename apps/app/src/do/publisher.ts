@@ -10,7 +10,7 @@ import type { Env } from '../env';
 import { createLogger } from '../log';
 import { isFrozen, runProjectionSlice } from '../publisher/projection';
 import type { ProjectionDeps } from '../publisher/projection';
-import { deleteManifestRows, raiseFileCountAlert, renderPlanned } from '../publisher/render';
+import { deleteManifestRows, headersFile, raiseFileCountAlert, renderPlanned } from '../publisher/render';
 import type { PlannedRender } from '../publisher/render';
 import { loadShellAssets } from '../publisher/shell-assets';
 import type { FormsConfig } from '@researchforce/public-render/site';
@@ -411,7 +411,7 @@ export class Publisher extends DurableObject<Env> {
             await this.#reconcile(run, now, authoritative, progress, io.ops);
             return;
           }
-          const result = await deployFinish(io.ops, run, await readEpoch(io.core), progress.completionToken, this.#containmentActive());
+          const result = await deployFinish(io.ops, run, await readEpoch(io.core), progress.completionToken, this.#containmentActive(), headersFile(this.#forms().forms));
           await this.#afterFinish(run, now, authoritative, progress, result, io.ops);
           return;
         }
@@ -803,7 +803,8 @@ export class Publisher extends DurableObject<Env> {
   async #manifest(pub: D1Database): Promise<DeployManifest> {
     const result = await pub.prepare('SELECT path, hash, size FROM site_files').all<{ path: string; hash: string; size: number }>();
     const manifest: Record<string, { hash: string; size: number }> = {};
-    for (const row of result.results) manifest[row.path] = { hash: row.hash, size: row.size };
+    // `_headers` is applied as version configuration at finish (see deployFinish), never uploaded as a page.
+    for (const row of result.results) if (row.path !== HEADERS_PATH) manifest[row.path] = { hash: row.hash, size: row.size };
     return manifest;
   }
 
@@ -815,6 +816,9 @@ export class Publisher extends DurableObject<Env> {
     };
   }
 }
+
+/** The rendered `_headers` rules' manifest path; it is configuration for the version, not a served file. */
+const HEADERS_PATH = '/_headers';
 
 /** A run with no completed slice for this long is stale: 10 minutes, above the 5-minute addition ceiling and the alarm retry backoff. */
 const STALE_RUN_MS = 10 * 60_000;
