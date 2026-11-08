@@ -46,8 +46,12 @@ function recorder(respond: (phase: Phase, url: string) => Response | Promise<Res
     const phase = classify(url);
     let json: unknown = null;
     let formKeys: string[] = [];
-    if (init?.body instanceof FormData) formKeys = [...init.body.keys()];
-    else if (init?.body != null) json = JSON.parse(String(init.body));
+    if (init?.body instanceof FormData) {
+      formKeys = [...init.body.keys()];
+      // The Versions endpoint carries its settings in a `metadata` part (Direct Upload docs); decode it for assertions.
+      const metadata = init.body.get('metadata');
+      if (metadata instanceof Blob) json = JSON.parse(await metadata.text());
+    } else if (init?.body != null) json = JSON.parse(String(init.body));
     requests.push({ url, method: init?.method ?? 'GET', headers: new Headers(init?.headers), json, formKeys });
     return respond(phase, url);
   }) as typeof fetch;
@@ -108,8 +112,8 @@ describe('rf-ops rf-site Direct Upload deploy (task 32.1)', () => {
 
     const outcome = await deploy.deploySite({ manifest, generation: gen('r1', 4), operationId: id, assets, containmentActive: false, now: now() });
 
-    // The four Direct Upload phases in order: session -> upload -> version -> deploy.
-    expect(requests.map((r) => classify(r.url))).toEqual(['session', 'upload', 'upload', 'version', 'deploy']);
+    // The Direct Upload phases in order: session -> upload (ONE request per platform bucket) -> version -> deploy.
+    expect(requests.map((r) => classify(r.url))).toEqual(['session', 'upload', 'version', 'deploy']);
     // Only the two MISSING files were uploaded (the 404.html the platform already had is never uploaded).
     const uploadKeys = requests.filter((r) => classify(r.url) === 'upload').flatMap((r) => r.formKeys);
     expect(uploadKeys.sort()).toEqual(['aaaa0000', 'bbbb1111']);
@@ -117,8 +121,11 @@ describe('rf-ops rf-site Direct Upload deploy (task 32.1)', () => {
     expect(requests[0]!.json).toEqual({ manifest });
     expect(requests[0]!.headers.get('authorization')).toBe('Bearer synthetic-deploy-token');
     for (const r of requests.filter((x) => classify(x.url) === 'upload')) expect(r.headers.get('authorization')).toBe('Bearer upload-jwt');
-    // The created version uses the fixed assets-only routing and the completion token.
+    // The created version is multipart/form-data with a `metadata` part (a JSON body is refused with HTTP 415), carrying
+    // the fixed assets-only routing and the completion token. FormData sets its own boundary, so no content type is forced.
     const version = requests.find((r) => classify(r.url) === 'version')!;
+    expect(version.formKeys).toEqual(['metadata']);
+    expect(version.headers.get('content-type')).toBeNull();
     expect(version.json).toMatchObject({ assets: { jwt: 'completion-jwt', config: SITE_ASSET_CONFIG } });
     // The deploy promotes the created version to 100%.
     expect(requests.find((r) => classify(r.url) === 'deploy')!.json).toEqual({ strategy: 'percentage', versions: [{ version_id: 'version-xyz', percentage: 100 }] });
@@ -126,6 +133,16 @@ describe('rf-ops rf-site Direct Upload deploy (task 32.1)', () => {
     expect(outcome).toMatchObject({ promoted: true, keepContainment: false, versionId: 'version-xyz', operationState: 'confirmed', reason: 'promoted' });
     // The exact Worker version id is recorded as the operation's provider reference (R60.2).
     expect(await readOperation(core(), id)).toMatchObject({ state: 'confirmed', providerRef: 'version-xyz' });
+  });
+
+  it('applies the _headers rules through the version asset config, never as an uploaded file', async () => {
+    await setEpoch(2);
+    const id = operationId('deploy', 'r-headers', 2, 'rf-site');
+    const { requests, fetcher } = recorder(happy('version-headers'));
+    const headers = '/*\n  Content-Security-Policy: default-src \'self\'\n';
+    await new SiteDeploy(config, core(), fetcher).deploySite({ manifest, generation: gen('r-headers', 2), operationId: id, assets, containmentActive: false, headers, now: now() });
+    const version = requests.find((r) => classify(r.url) === 'version')!;
+    expect(version.json).toMatchObject({ assets: { jwt: 'completion-jwt', config: { ...SITE_ASSET_CONFIG, _headers: headers } } });
   });
 
   it('skips the upload phase entirely when the platform reports no missing files', async () => {
@@ -147,7 +164,7 @@ describe('rf-ops rf-site Direct Upload deploy (task 32.1)', () => {
     const outcome = await new SiteDeploy(config, core(), fetcher).deploySite({ manifest, generation: gen('r1', 4), operationId: id, assets, containmentActive: true, now: now() });
 
     // The version was created, but the deploy (promotion) phase never ran.
-    expect(requests.map((r) => classify(r.url))).toEqual(['session', 'upload', 'upload', 'version']);
+    expect(requests.map((r) => classify(r.url))).toEqual(['session', 'upload', 'version']);
     expect(outcome).toMatchObject({ promoted: false, keepContainment: true, versionId: 'version-xyz', reason: 'stale_before', operationState: 'failed' });
     // An obsolete operation cannot reopen a contained host: containment is kept.
     expect(outcome.keepContainment).toBe(true);

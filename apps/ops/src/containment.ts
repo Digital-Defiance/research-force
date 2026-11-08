@@ -16,6 +16,7 @@ import {
   escalate,
   mayReleaseContainment,
 } from '@researchforce/db/containment';
+import { PROBE_BATCH_MAX } from '@researchforce/domain/slice-budget';
 import { CLOUDFLARE_API, CloudflareApiError } from './access';
 import { postIndependentAlert } from './independent-channel';
 
@@ -24,6 +25,9 @@ import { postIndependentAlert } from './independent-channel';
 // unchanged, so 59.2's tests and every existing importer keep working against `./containment`.
 export { CONTAIN_AT_MS, VERIFY_BY_MS, escalate, mayReleaseContainment };
 export type { ContainmentStatus, EscalationAction, EscalationDecision, Observation };
+
+/** Simultaneous HEAD probes in one {@link Containment.probePublicAddresses} call (the Workers connection limit). */
+const PROBE_CONCURRENCY = 6;
 
 /**
  * The rf-ops edge-Containment control surface and the urgent-removal incident state machine (task 59.2,
@@ -171,6 +175,26 @@ export class Containment implements OpsContainment, OpsBackupAlert {
     if (outcome === 'absent') return 'absent';
     if (outcome === 'denied') return 'present'; // A denied-but-reachable host still "exists"; it is not removed.
     return 'unknown';
+  }
+
+  /**
+   * Probe up to {@link PROBE_BATCH_MAX} addresses in one call: one HEAD per address (exactly `urls.length` fetches), at
+   * most six in flight at once (the Workers simultaneous-connection limit), each mapped exactly as
+   * {@link probePublicAddress} maps it, so a denied host is still 'present'.
+   */
+  async probePublicAddresses(urls: readonly string[]): Promise<Record<string, 'present' | 'absent' | 'unknown'>> {
+    if (urls.length > PROBE_BATCH_MAX) throw new RangeError(`At most ${PROBE_BATCH_MAX} addresses may be probed per call.`);
+    const statuses: Record<string, 'present' | 'absent' | 'unknown'> = {};
+    let next = 0;
+    const worker = async (): Promise<void> => {
+      for (;;) {
+        const url = urls[next++];
+        if (url === undefined) return;
+        statuses[url] = await this.probePublicAddress(url);
+      }
+    };
+    await Promise.all(Array.from({ length: Math.min(PROBE_CONCURRENCY, urls.length) }, worker));
+    return statuses;
   }
 
   async declareIncident(incident: ConfidentialityIncident): Promise<void> {

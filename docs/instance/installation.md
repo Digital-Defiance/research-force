@@ -120,7 +120,48 @@ fallback and never the ResearchForce.org wording as a default.
   (`npm run release:check`) fingerprints the source so a stale manifest is caught
   before deploy.
 
-## 4. Release material hygiene
+## 4. Public site size on the Workers Free plan
+On the Cloudflare Workers Free plan the Publisher supports a public site of at
+most **750 current Public_Views** (every published or Withheld unit: Projects,
+Research_Items, attachments, replies, notes). 750 is the default of
+`FREE_PLAN_SITE_VIEW_CEILING` in `packages/domain/src/slice-budget.ts`.
+- **Raising it.** Set the installation var `PUBLISHER_SITE_VIEW_CEILING` to a
+  positive integer (for example on Workers Paid). A missing, non-numeric,
+  fractional, zero or negative value falls back to 750. The approach alert
+  follows the configured value (80% of it). Raising it costs memory and CPU at
+  the measured sizes below; on the Free plan the isolate limits are 128 MB and
+  10 ms of Worker CPU, so keep the Free default.
+- **Why.** The Publisher renders the whole site in one Durable Object
+  invocation, and the 128 MB isolate memory limit bounds that render. Measured
+  with `node --expose-gc --import tsx scripts/measure-stage-render.ts` (the real
+  loader, renderer, shell assets and hashing), one render of 751 views needs
+  about 57 MB of heap and 320 ms of CPU. 1,001 views need about 67 MB, 2,001
+  about 97 MB, and 4,001 about 158 MB. The ceiling keeps the peak at about half
+  the isolate limit.
+- **Approaching it.** At 80% (600 views) the Publisher raises a content-free
+  System_Alert for Administrators and a `public_site_views` warning on the
+  independent rf-ops alert channel, once. They are raised again only after the
+  site falls back under 80%.
+- **Over it.** The Publisher does not render. A run that only adds content is
+  closed without being marked verified, so the live site stays as it was. It
+  raises the over-ceiling System_Alert and an rf-ops `breach` alert, once each.
+  A run that removes content cannot deploy the removal. It goes straight to the
+  Containment path instead: edge Containment at 4 minutes, verified
+  Containment at 5 minutes, otherwise an UNCONFIRMED incident and System_Alert.
+  It is never reported as a verified removal.
+- **rf-ops CPU per step.** Measured with
+  `node --import tsx scripts/measure-ops-cpu.ts` (Node, network stubbed, warm
+  JIT; the platform's meter differs). One upload chunk (100 files, 4 MiB of
+  base64) costs about 1.2 ms. A 25-address probe batch costs under 0.1 ms. The
+  begin step hashes and registers the whole manifest, so it grows with the file
+  count: about 1 ms at 1,000 files, 1.3 ms at 2,500, 2.5 ms at 5,000 and 11 to
+  23 ms at 16,000 (runs vary). The first three sit well inside the Free 10 ms
+  Worker CPU limit. At 16,000 files begin can exceed it on Free, because the
+  platform takes the full manifest in one call, so that size needs Workers Paid.
+- **Larger sites** need the Workers Paid plan with a raised
+  `PUBLISHER_SITE_VIEW_CEILING`, or the incremental renderer (planned), which
+  renders a window of pages per invocation.
+## 5. Release material hygiene
 
 Source distributions and release archives contain **only** code, migrations,
 synthetic fixtures, and documentation. They must never include real research,

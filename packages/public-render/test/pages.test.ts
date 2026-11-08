@@ -353,6 +353,45 @@ describe('form pages', () => {
   });
 });
 
+describe('form pages carry the installation form config', () => {
+  const forms = { siteKey: '0xSITEKEY', submitOrigin: 'https://submit-staging.example.org', filesOrigin: 'https://files-staging.example.org' };
+  const files = build(site({ forms }));
+  const formOf = (file: string, attribute: string): Record<string, string> | undefined => {
+    const found = find(page(files, file).main.children, (node) => node.tag === 'form' && node.attributes.has(attribute));
+    return found === undefined ? undefined : Object.fromEntries(found.attributes);
+  };
+  it('puts the Turnstile site key and origins on the form each script binds to', () => {
+    for (const file of ['submit.html', 'submit/general.html', 'p/alpha/submit.html']) {
+      const attributes = formOf(file, 'data-submit-form')!;
+      expect(attributes['data-turnstile-sitekey']).toBe('0xSITEKEY');
+      expect(attributes['data-content-licence']).toBe(site().licence.name);
+      expect(attributes['data-submit-origin']).toBe(forms.submitOrigin);
+      expect(attributes['data-status-url']).toBe(`${forms.filesOrigin}/status.json`);
+    }
+    for (const [file, attribute] of [['respond.html', 'data-respond-form'], ['consent.html', 'data-consent-form'], ['consent/change.html', 'data-consent-form']] as const) {
+      const attributes = formOf(file, attribute)!;
+      expect(attributes['data-turnstile-sitekey']).toBe('0xSITEKEY');
+      expect(attributes['data-submit-origin']).toBe(forms.submitOrigin);
+    }
+    expect(formOf('consent.html', 'data-consent-form')!['data-consent-mode']).toBe('consent');
+    expect(formOf('consent/change.html', 'data-consent-form')!['data-consent-mode']).toBe('change');
+  });
+  it('carries the project id and preselection for the script', () => {
+    const project = formOf('p/alpha/submit.html', 'data-submit-form')!;
+    expect(project['data-submit-project']).toBe('1');
+    const general = formOf('submit/general.html', 'data-submit-form')!;
+    expect(general['data-submit-general']).toBe('true');
+    const select = find(page(files, 'submit.html').main.children, (node) => node.tag === 'select' && node.attributes.get('id') === 'destination')!;
+    const ids = findAll(select.children, byTag('option')).map((node) => node.attributes.get('data-project-id'));
+    expect(ids).toEqual([undefined, '1', '2', undefined]);
+  });
+  it('omits the site key and origins when no forms config is given, and keeps consent pages unlisted', () => {
+    const bare = build();
+    expect(bare.get('submit.html')!.content).not.toContain('data-turnstile-sitekey');
+    expect(bare.get('consent.html')).toBeDefined();
+    expect(bare.get('sitemap.xml')!.content).not.toContain('/consent');
+  });
+});
 describe('site files', () => {
   it('writes the sitemap without the not-found and response pages, and robots.txt', () => {
     const files = build();

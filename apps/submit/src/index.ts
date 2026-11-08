@@ -29,6 +29,8 @@ export interface Env {
   R2_ACCESS_KEY_ID?: string;
   R2_SECRET_ACCESS_KEY?: string;
   PRIVATE_BUCKET_NAME?: string;
+  /** The public site's origin (`https://researchforce.org`, or the staging host): the one origin allowed to call this Worker, and the host of emailed Response, Consent, and change links. */
+  PUBLIC_SITE_ORIGIN?: string;
 }
 
 /** The Budget object's per-address HMAC counting, used to enforce the per-hour-per-address submission limit (R46.20). */
@@ -113,20 +115,42 @@ async function readJson(request: Request): Promise<Record<string, unknown> | nul
  * is returned with no D1 work (design, R28.5, R28.11).
  */
 export async function handle(request: Request, env: Env, now: number = Date.now()): Promise<Response> {
+  const cors = corsHeaders(request, env);
+  if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
+  return withHeaders(await admitted(request, env, now), cors);
+}
+/** CORS for the public site only: the Public_Site calls this Worker from its own origin, so only that origin is answered (R45.17). */
+function corsHeaders(request: Request, env: Env): Headers {
+  const headers = new Headers();
+  const allowed = env.PUBLIC_SITE_ORIGIN;
+  if (allowed === undefined || allowed === '') return headers;
+  headers.set('Vary', 'Origin');
+  if (request.headers.get('Origin') !== allowed) return headers;
+  headers.set('Access-Control-Allow-Origin', allowed);
+  headers.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  headers.set('Access-Control-Allow-Headers', 'Content-Type');
+  headers.set('Access-Control-Max-Age', '3600');
+  return headers;
+}
+function withHeaders(response: Response, extra: Headers): Response {
+  const headers = new Headers(response.headers);
+  extra.forEach((value, name) => headers.set(name, value));
+  return new Response(response.body, { status: response.status, headers });
+}
+async function admitted(request: Request, env: Env, now: number): Promise<Response> {
   const url = new URL(request.url);
   const path = url.pathname;
   if (request.method !== 'POST') return json({ error: 'not_found', message: 'Not found.' }, 404);
-
   const admission = await budget(env).admit({ rowsRead: 0, rowsWritten: 0 });
   if (!admission.admitted) return json(admission.refusal, 503);
-
   try {
     return await route(request, env, path, now);
   } finally {
     await budget(env).report(admission.reservationId, { rowsRead: 0, rowsWritten: 0 });
   }
 }
-
+/** The origin of the change link emailed after an answer: the public site, which serves `/consent/change`; the request's own origin when unset. */
+const linkOrigin = (request: Request, env: Env): string => env.PUBLIC_SITE_ORIGIN || new URL(request.url).origin;
 async function route(request: Request, env: Env, path: string, now: number): Promise<Response> {
   // POST /v1/sessions — open a session after a one-use Turnstile check (R31.3).
   if (path === '/v1/sessions') {
@@ -246,14 +270,14 @@ async function route(request: Request, env: Env, path: string, now: number): Pro
   // POST /v1/consent/answer — record a Consent_Answer after the Bot_Check (R51.6 to R51.8).
   if (path === '/v1/consent/answer') {
     const body = await readJson(request);
-    const result = await answerConsent(env, new URL(request.url).origin, body, now);
+    const result = await answerConsent(env, linkOrigin(request, env), body, now);
     return 'error' in result ? consentRefusalResponse(result) : json(result, 201);
   }
 
   // POST /v1/consent/change — record a withdrawal through a Change_Link after the Bot_Check (R51.10).
   if (path === '/v1/consent/change') {
     const body = await readJson(request);
-    const result = await changeConsent(env, new URL(request.url).origin, body, now);
+    const result = await changeConsent(env, linkOrigin(request, env), body, now);
     return 'error' in result ? consentRefusalResponse(result) : json(result, 201);
   }
 

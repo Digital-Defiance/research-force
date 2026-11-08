@@ -1,4 +1,5 @@
-import type { OpsContainment, OpsDeploy, OpsDeployResult } from '@researchforce/domain/ops';
+import type { OpsContainment, OpsDeploy, OpsDeployBegin, OpsDeployResult } from '@researchforce/domain/ops';
+import { UPLOAD_CHUNK } from '@researchforce/domain/slice-budget';
 import {
   type Generation,
   fence,
@@ -13,7 +14,7 @@ import {
   escalate,
 } from '@researchforce/db/containment';
 import { base64Of } from './plan';
-import type { PlannedFile, SitePlan } from './plan';
+import type { SitePlan } from './plan';
 import type { DeletionRetryState, FileOpsResult } from './files';
 import { publicFileKey } from './files';
 
@@ -34,7 +35,7 @@ import { publicFileKey } from './files';
  *   - {@link verifyObservation} — turns the HEAD-probe results of the removed addresses plus the elapsed time
  *     and Containment state into the {@link Observation} the 59.2 {@link escalate} state machine consumes.
  *
- * The I/O orchestration ({@link deployRun}, {@link verifyRemoval}, {@link reconcileUncertainDeploy},
+ * The I/O orchestration ({@link beginDeploy}, {@link deployFinish}, {@link verifyRemoval}, {@link reconcileUncertainDeploy},
  * {@link releaseAfterRestore}) takes the `rf-ops` surface and D1 handles as parameters, so the Publisher DO
  * passes `env.OPS`/`env.RF_CORE`/`env.RF_PUBLIC` and tests pass fakes. `apps/app` may not import `apps/ops`,
  * so the escalation/release logic is imported from `@researchforce/db/containment` (moved there by this task).
@@ -102,8 +103,8 @@ export function deployWhen(run: DeployWhenInput, nowMs: number): DeployWhen {
 /** The manifest the Publisher deploys: the `rf-public.site_files` set 32.3 wrote, path -> {hash, size}. */
 export type DeployManifest = Readonly<Record<string, { readonly hash: string; readonly size: number }>>;
 
-/** The bytes of the files a deploy may need to upload (the added/changed files of the plan), keyed by content hash. */
-export type DeployAssets = Readonly<Record<string, { readonly base64: string; readonly contentType: string }>>;
+/** The bytes of one upload call's files, keyed by content hash, base64-encoded as the Direct Upload API needs. */
+export type UploadFiles = Readonly<Record<string, { readonly base64: string; readonly contentType: string }>>;
 
 /** The target label a deploy's operation id carries: the manifest digest stands in for the concrete site version. */
 export const DEPLOY_TARGET = 'rf-site';
@@ -123,28 +124,45 @@ export interface DeployRunResult {
   readonly fencedOut: boolean;
 }
 
+/** The deterministic, epoch-labelled operation id a run's deploy carries (the same for begin, upload, finish and reconcile). */
+export const deployOperationId = (generation: Generation): string =>
+  operationId('deploy', generation.run, generation.epoch, DEPLOY_TARGET);
+
 /**
- * Deploy the rendered site for `generation` through `rf-ops`, fenced against the current authoritative epoch
- * (R24.16, R24.17, R30.7). The pure {@link fence} refuses the promotion up front when the generation is stale:
- * a stale generation may never promote (deploy back) suppressed output. When authorized, rf-ops itself runs
- * the serialized before/after epoch recheck (32.1 `deploySite`) and records the operation identity; this
- * function surfaces the result. It NEVER blind-retries an uncertain answer — {@link reconcileUncertainDeploy}
- * must decide first.
- *
- * `fileOps` gates linking: the deploy links a public file only once its copy has landed (R24.3), so the
- * manifest passed here already reflects the render, and `fileOps.copiesFailed` is for the caller to withhold.
- * `assets` supplies the bytes of the added/changed files keyed by hash; rf-ops uploads only the subset the
- * platform reports missing.
+ * Step 1 of the stepped deploy: register the manifest with `rf-ops` under the run's durable operation id (one rf-ops
+ * call). The caller has already passed the epoch fence for this slice; `rf-ops` records the epoch-labelled operation
+ * and answers with the platform's missing-hash buckets, `ready` (nothing to upload), or `settled` (the operation
+ * already confirmed or is uncertain, never redone blindly).
  */
-export async function deployRun(
+export async function beginDeploy(
+  ops: DeployOps,
+  generation: Generation,
+  manifest: DeployManifest,
+  containmentActive: boolean,
+): Promise<{ readonly operationId: string; readonly begin: OpsDeployBegin }> {
+  const id = deployOperationId(generation);
+  const begin = await ops.beginSiteDeploy({ manifest, run: generation.run, epoch: generation.epoch, operationId: id, containmentActive });
+  return { operationId: id, begin };
+}
+
+/**
+ * The last step of the stepped deploy: promote the version, fenced against the current authoritative epoch (R24.16,
+ * R24.17, R30.7). The pure {@link fence} refuses the promotion up front when the generation is stale: a stale
+ * generation may never promote (deploy back) suppressed output, and `rf-ops` is not called at all. When authorized,
+ * `rf-ops` itself runs the serialized before/after epoch recheck and records the operation identity; this function
+ * surfaces the result. It NEVER blind-retries an uncertain answer; {@link reconcileUncertainDeploy} must decide first.
+ * `completionToken` is the platform's upload-completion token, issued after the last asset is uploaded, so the site
+ * is promoted exactly once and only after every file has landed (atomic from the public's view).
+ */
+export async function deployFinish(
   ops: DeployOps,
   generation: Generation,
   authoritative: number,
-  manifest: DeployManifest,
-  assets: DeployAssets,
+  completionToken: string,
   containmentActive: boolean,
+  headers?: string,
 ): Promise<DeployRunResult> {
-  const id = operationId('deploy', generation.run, generation.epoch, DEPLOY_TARGET);
+  const id = deployOperationId(generation);
 
   // Fence BEFORE the deploy leaves rf-app: a promotion under a stale epoch is refused so a stale generation
   // can never deploy back suppressed output (R24.16, R30.7). A removal-carrying deploy stays authorized under
@@ -167,13 +185,13 @@ export async function deployRun(
     };
   }
 
-  const outcome = await ops.deploySite({
-    manifest,
+  const outcome = await ops.finishSiteDeploy({
     run: generation.run,
     epoch: generation.epoch,
     operationId: id,
-    missing: assets,
+    completionToken,
     containmentActive,
+    ...(headers === undefined ? {} : { headers }),
   });
   return { outcome, operationId: id, deployed: outcome.promoted, fencedOut: false };
 }
@@ -248,10 +266,14 @@ export function verifyObservation(
   probes: readonly ProbeResult[],
   elapsedMs: number,
   containment: { readonly active: boolean; readonly verified: boolean; readonly canContain: boolean },
+  complete = true,
 ): Observation {
-  // `every` is true for an empty set, so a run with nothing to suppress is trivially verified (R24.16).
-  const removalVerified = probes.every((p) => p.status === 'absent');
-  const providerDown = probes.length > 0 && probes.every((p) => p.status === 'unknown');
+  // `every` is true for an empty set, so a run with nothing to suppress is trivially verified (R24.16). A PARTIAL pass
+  // (the sliced verify has not probed every removed address yet) can never verify the removal.
+  const removalVerified = complete && probes.every((p) => p.status === 'absent');
+  // Every probe unknown means the control path is unreachable. On a partial pass that is only concluded once the
+  // five-minute mark is reached, so a few early unknowns never become an incident on their own.
+  const providerDown = probes.length > 0 && probes.every((p) => p.status === 'unknown') && (complete || elapsedMs >= VERIFY_BY_MS);
   return {
     elapsedMs,
     removalVerified,
@@ -260,6 +282,32 @@ export function verifyObservation(
     canContain: containment.canContain,
     providerDown,
   };
+}
+
+/**
+ * The next addresses of `urls` that have no probe result yet, at most `limit` of them, in order (pure). The sliced
+ * verify phase probes a window per slice and stores the results, so a pass resumes where it stopped.
+ */
+export function probeWindow(urls: readonly string[], doneUrls: ReadonlySet<string>, limit: number): string[] {
+  const window: string[] = [];
+  for (const url of urls) {
+    if (window.length >= limit) break;
+    if (!doneUrls.has(url)) window.push(url);
+  }
+  return window;
+}
+
+/** How often a partial probe pass re-evaluates the escalation once the four-minute mark has passed. */
+export const EVALUATE_EVERY_MS = 15_000;
+
+/**
+ * Whether the sliced verify phase must run the escalation now (pure). A COMPLETE pass always evaluates. A partial pass
+ * evaluates only from the four-minute mark on (so containment and the five-minute checks fire on time however long a
+ * pass takes) and then at most once per {@link EVALUATE_EVERY_MS}; before four minutes there is nothing to decide.
+ */
+export function shouldEvaluate(input: { passComplete: boolean; elapsedMs: number; lastEvalMs: number; nowMs: number }): boolean {
+  if (input.passComplete) return true;
+  return input.elapsedMs >= CONTAIN_AT_MS && input.nowMs - input.lastEvalMs >= EVALUATE_EVERY_MS;
 }
 
 /** The outcome of one verify step: the next action the escalation decided, and whether the public state is safe. */
@@ -300,16 +348,33 @@ export async function verifyRemoval(
   const urls = removedProbeUrls(removed, origins);
   const probes: ProbeResult[] = [];
   for (const url of urls) probes.push({ url, status: await ops.probePublicAddress(url) });
+  return escalateAfterProbes(ops, generation, probes, true, elapsedMs);
+}
 
+/**
+ * Everything {@link verifyRemoval} does after probing: read the containment state, build the observation, decide with
+ * {@link escalate}, and perform the decided side effect (contain, verify containment, declare the incident). The sliced
+ * verify phase calls it with the probes stored so far; `complete` says every removed address has been probed, and only
+ * a complete all-absent set can verify the removal. `unprobed` are removed addresses with no result yet: they are
+ * unconfirmed, so a declared incident lists them with the still-reachable ones.
+ */
+export async function escalateAfterProbes(
+  ops: DeployOps,
+  generation: Generation,
+  probes: readonly ProbeResult[],
+  complete: boolean,
+  elapsedMs: number,
+  unprobed: readonly string[] = [],
+): Promise<VerifyResult> {
   const capabilities = await ops.containmentCapabilities();
   const containmentState = await ops.verifyContainment();
   const observation = verifyObservation(probes, elapsedMs, {
     active: containmentState.active,
     verified: containmentState.verified,
     canContain: capabilities.canDeny,
-  });
+  }, complete);
   const decision = escalate(observation);
-  const unverified = probes.filter((p) => p.status !== 'absent').map((p) => p.url);
+  const unverified = [...probes.filter((p) => p.status !== 'absent').map((p) => p.url), ...unprobed];
 
   switch (decision.action) {
     case 'contain': {
@@ -393,30 +458,47 @@ export async function releaseAfterRestore(
 }
 
 // ---------------------------------------------------------------------------
-// Assets helper: the bytes of the plan's added/changed files, for the deploy's `missing` map.
+// Upload chunks: the bytes of the next files to upload, read from `rf-private/build/{hash}`.
 // ---------------------------------------------------------------------------
 
+/** One upload call's worth of files, and how far down the hash list it got. */
+export interface UploadChunk {
+  /** The files to send in one `uploadSiteAssets` call (base64 bytes and the content type render stored). */
+  readonly files: UploadFiles;
+  /** How many hashes of the input list this chunk consumed (found or reported missing). */
+  readonly consumed: number;
+  /** Hashes whose `build/{hash}` object does not exist: the manifest is out of step with R2 and must be re-staged. */
+  readonly missing: readonly string[];
+}
+
 /**
- * Collect the bytes of every file the deploy might have to upload — the added and changed files of the plan —
- * from `rf-private/build/{hash}` (32.3 stored them there), keyed by content hash and base64-encoded as the
- * Direct Upload API needs (R24.7). rf-ops uploads only the subset the platform reports missing; supplying the
- * added/changed set is sufficient because unchanged files are already uploaded in a prior version. Content is
- * addressed by hash, so two files with identical bytes contribute one entry.
+ * Build the next upload chunk from `hashes` (the platform's missing hashes for one bucket, from `offset` on), reading
+ * each `rf-private/build/{hash}` object that 32.3 stored. The chunk honours {@link UPLOAD_CHUNK} (at most `maxFiles`
+ * files and about `maxBytes` of base64, but always at least one file so progress is guaranteed) and `maxReads`, the
+ * R2 reads the slice budget still allows. The content type is the one render stored on the object (so stylesheets,
+ * scripts and fonts keep their real type). A missing object is reported, never silently dropped.
  */
-export async function collectDeployAssets(
+export async function uploadChunk(
   privateBucket: R2Bucket,
-  plan: SitePlan,
-  contentTypeOf: (file: PlannedFile) => string,
-): Promise<DeployAssets> {
-  const assets: Record<string, { base64: string; contentType: string }> = {};
-  for (const file of [...plan.added, ...plan.changed]) {
-    if (assets[file.hash]) continue;
-    const object = await privateBucket.get(`build/${file.hash}`);
-    if (object === null) continue; // a missing build object is surfaced by rf-ops as a deploy error, not here
-    const bytes = new Uint8Array(await object.arrayBuffer());
-    assets[file.hash] = { base64: base64Of(bytes), contentType: contentTypeOf(file) };
+  hashes: readonly string[],
+  maxReads: number = UPLOAD_CHUNK.maxFiles,
+): Promise<UploadChunk> {
+  const files: Record<string, { base64: string; contentType: string }> = {};
+  const missing: string[] = [];
+  let bytes = 0;
+  let consumed = 0;
+  const limit = Math.min(UPLOAD_CHUNK.maxFiles, Math.max(1, maxReads));
+  while (consumed < hashes.length && Object.keys(files).length + missing.length < limit) {
+    const hash = hashes[consumed]!;
+    const object = await privateBucket.get(`build/${hash}`);
+    if (object === null) { missing.push(hash); consumed += 1; continue; }
+    const base64 = base64Of(new Uint8Array(await object.arrayBuffer()));
+    if (Object.keys(files).length > 0 && bytes + base64.length > UPLOAD_CHUNK.maxBytes) break;
+    files[hash] = { base64, contentType: object.httpMetadata?.contentType ?? 'application/octet-stream' };
+    bytes += base64.length;
+    consumed += 1;
   }
-  return assets;
+  return { files, consumed, missing };
 }
 
 // ---------------------------------------------------------------------------

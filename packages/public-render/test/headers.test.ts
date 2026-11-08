@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BASE_CSP, COMMON_HEADERS, FORM_CSP, WEB_ANALYTICS, headersFile } from '../src/headers';
+import { BASE_CSP, COMMON_HEADERS, FORM_CSP, WEB_ANALYTICS, formCsp, headersFile } from '../src/headers';
 
 /**
  * The Public_Site `_headers` file (R45.17 to R45.19): the default CSP and the common security headers on every
@@ -7,19 +7,52 @@ import { BASE_CSP, COMMON_HEADERS, FORM_CSP, WEB_ANALYTICS, headersFile } from '
  * anywhere, and the launch-off Cloudflare Web Analytics flag whose only effect is the cookieless beacon origin.
  */
 
-/** The last rule whose path matches an address wins in a Cloudflare `_headers` file; this reads the effective CSP. */
-function effectiveCsp(headers: string, address: string): string | undefined {
+/**
+ * The Content-Security-Policy values a browser receives for an address, following Cloudflare's documented `_headers`
+ * semantics: every matching rule's headers are inherited in file order, a repeated header is joined (so it reaches the
+ * browser as several enforced policies), and `! Name` detaches what earlier rules set. Returns every policy sent.
+ */
+function cspsFor(headers: string, address: string): string[] {
   const toRegex = (pattern: string): RegExp => new RegExp(`^${pattern.replace(/[.+?^${}()|[\]\\]/gu, '\\$&').replace(/\*/gu, '.*')}$`, 'u');
-  let csp: string | undefined;
+  let csps: string[] = [];
   let current: RegExp | undefined;
   for (const line of headers.split('\n')) {
     if (!line.startsWith(' ') && line.trim() !== '') { current = toRegex(line.trim()); continue; }
+    if (!current?.test(address)) continue;
+    if (/^ {2}! Content-Security-Policy$/u.test(line)) { csps = []; continue; }
     const match = /^ {2}Content-Security-Policy: (?<value>.*)$/u.exec(line);
-    if (match?.groups && current?.test(address)) csp = match.groups['value'];
+    if (match?.groups) csps.push(match.groups['value']!);
   }
-  return csp;
+  return csps;
 }
 
+/** The single policy an address receives; fails when it receives none or several (several would ALL be enforced). */
+function effectiveCsp(headers: string, address: string): string | undefined {
+  const csps = cspsFor(headers, address);
+  expect(csps, `${address} must receive exactly one Content-Security-Policy`).toHaveLength(1);
+  return csps[0];
+}
+
+describe('the _headers file for a configured installation', () => {
+  const forms = { submitOrigin: 'https://submit-staging.example.org', filesOrigin: 'https://files-staging.example.org' };
+  it('names the configured submit and files origins on the form pages, with the base form pages included', () => {
+    const headers = headersFile(forms);
+    for (const address of ['/submit', '/submit/general', '/respond', '/consent', '/consent/change', '/p/alpha/submit']) {
+      const csp = effectiveCsp(headers, address);
+      expect(csp).toBe(formCsp(forms));
+      expect(csp).toContain('https://submit-staging.example.org');
+      expect(csp).not.toContain('submit.researchforce.org');
+    }
+    // A non-form address gets the default policy with the installation's own files origin, never production's.
+    const base = effectiveCsp(headers, '/index.html');
+    expect(base).toContain('https://files-staging.example.org');
+    expect(base).not.toContain('files.researchforce.org');
+  });
+  it('is the production file when nothing is configured', () => {
+    expect(formCsp()).toBe(FORM_CSP);
+    expect(headersFile()).toBe(headersFile(undefined));
+  });
+});
 describe('the Public_Site _headers file', () => {
   const headers = headersFile();
 

@@ -202,6 +202,7 @@ const PROD = {
   workspaceHost: 'app.researchforce.org',
   workspaceOrigin: 'https://app.researchforce.org',
   apexOrigin: 'https://researchforce.org',
+  publicOrigin: 'https://researchforce.org',
   submitHost: 'submit.researchforce.org',
   downloadHost: 'dl.researchforce.org',
   filesHost: 'files.researchforce.org',
@@ -215,6 +216,8 @@ const STAGING = {
   workspaceHost: 'staging.researchforce.org',
   workspaceOrigin: 'https://staging.researchforce.org',
   apexOrigin: 'https://researchforce.org',
+  // The staging public site (rf-site-staging) is a different origin from the apex, so it needs its own CORS entry.
+  publicOrigin: 'https://staging-public.researchforce.org',
   submitHost: 'submit-staging.researchforce.org',
   downloadHost: 'dl-staging.researchforce.org',
   filesHost: 'files-staging.researchforce.org',
@@ -243,7 +246,7 @@ function environment(name: EnvironmentName, host: typeof PROD | typeof STAGING):
         cors: [
           {
             allowedMethods: ['PUT'],
-            allowedOrigins: [host.workspaceOrigin, host.apexOrigin],
+            allowedOrigins: [...new Set([host.workspaceOrigin, host.apexOrigin, host.publicOrigin])],
             allowedHeaders: ['content-length', 'x-amz-checksum-sha256', 'if-none-match'],
             exposeHeaders: ['ETag'],
             maxAgeSeconds: 3600,

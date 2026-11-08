@@ -45,10 +45,11 @@ beforeEach(async () => {
   bindings = await migrated();
   await bindings.RF_PUBLIC_BUCKET.delete(STATUS_OBJECT_KEY);
   // A fresh object for each test: clear any prior day/ledger/address state.
-  await runInDurableObject(bindings.BUDGET.getByName('budget'), (_instance, state) => {
+  await runInDurableObject(bindings.BUDGET.getByName('budget'), async (_instance, state) => {
     for (const table of ['day', 'reservations', 'neuron_ledger', 'addr_counts', 'addr_keys']) {
       try { state.storage.sql.exec(`DELETE FROM ${table}`); } catch { /* table may not exist yet */ }
     }
+    await state.storage.delete('status_day');
   });
 });
 
@@ -139,6 +140,72 @@ describe('the 00:00 UTC reset', () => {
     // Yesterday's address key and its counts are gone (R46.20).
     const afterCounts = await runInDurableObject(stub, (_instance, state) => state.storage.sql.exec("SELECT count(*) AS n FROM addr_counts WHERE daily_key = '2020-01-01'").toArray()[0] as { n: number });
     expect(afterCounts.n).toBe(0);
+  });
+
+  it('rollover on a fresh install publishes the first status.json and sets the midnight alarm', async () => {
+    const waf = fakeWaf();
+    const { stub, ready } = budgetStub(waf);
+    await ready;
+    expect(await statusObject()).toBeNull();
+    expect(await stub.rollover(Date.now())).toBe(true);
+    expect(await statusObject()).toMatchObject({ form: true, consentView: true, search: true });
+    const alarm = await runInDurableObject(stub, (_instance, state) => state.storage.getAlarm());
+    expect(alarm).not.toBeNull();
+    expect(waf.calls).toEqual([]);
+  });
+
+  it('rollover publishes status.json once a day even when today\'s row was written before any reset', async () => {
+    const waf = fakeWaf();
+    const { stub, ready } = budgetStub(waf);
+    await ready;
+    // Another path (e.g. the mail recipient cap) wrote today's row first, so no reset will run today.
+    await setDay(stub, TODAY, 7);
+    expect(await statusObject()).toBeNull();
+    expect(await stub.rollover(Date.now())).toBe(false);
+    expect(await statusObject()).toMatchObject({ form: true });
+    expect((await stub.usage()).counters.requests).toBe(7); // the day in progress is untouched
+    // A second check the same day does not rewrite it.
+    await bindings.RF_PUBLIC_BUCKET.delete(STATUS_OBJECT_KEY);
+    await stub.rollover(Date.now());
+    expect(await statusObject()).toBeNull();
+  });
+
+  it('rollover during the day never zeroes the day in progress', async () => {
+    const waf = fakeWaf();
+    const { stub, ready } = budgetStub(waf);
+    await ready;
+    await setDay(stub, TODAY, 1234);
+    expect(await stub.rollover(Date.now())).toBe(false);
+    expect((await stub.usage()).counters.requests).toBe(1234);
+  });
+
+  it('rollover on the day after a shed lifts the submit WAF block and republishes an available status.json', async () => {
+    const waf = fakeWaf();
+    const { stub, ready } = budgetStub(waf);
+    await ready;
+    // Yesterday shed: its day row still carries the WAF block (as it would if the alarm never fired).
+    await runInDurableObject(stub, (_instance, state) => {
+      state.storage.sql.exec(
+        "INSERT OR REPLACE INTO day (only, day, requests, rows_read, rows_written, reserved_requests, reserved_rows_read, reserved_rows_written, recipient_cap, neurons_committed, neurons_reserved, waf_blocked) VALUES (1, '2020-01-01', ?1, 0, 0, 0, 0, 0, 0, 0, 0, 1)",
+        REQUEST_THRESHOLD);
+    });
+    expect(await stub.rollover(Date.now())).toBe(true);
+    expect(waf.calls).toEqual([false]); // the edge block was lifted
+    expect(await statusObject()).toMatchObject({ form: true });
+    expect((await stub.usage()).counters.requests).toBe(0);
+  });
+
+  it('entering shedding schedules the 00:00 UTC reset, so a shed day is always lifted', async () => {
+    const waf = fakeWaf();
+    const { stub, ready } = budgetStub(waf);
+    await ready;
+    await setDay(stub, TODAY, REQUEST_THRESHOLD);
+    await runInDurableObject(stub, (_instance, state) => state.storage.deleteAlarm());
+    await stub.admit({ rowsRead: 0, rowsWritten: 0 });
+    expect(waf.calls).toEqual([true]);
+    const alarm = await runInDurableObject(stub, (_instance, state) => state.storage.getAlarm());
+    const nextMidnight = Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate() + 1);
+    expect(alarm).toBe(nextMidnight);
   });
 
   it('is idempotent on a same-day call', async () => {

@@ -1,0 +1,22 @@
+{
+  "$schema": "../../../node_modules/wrangler/config-schema.json",
+  // Run ONCE per environment by the operator to create the public site Worker. It ships only a placeholder 404; every
+  // later deploy goes through Publisher -> rf-ops (Direct Upload addresses this existing script). Never run by CI.
+  //   staging:    wrangler deploy --config apps/ops/site-bootstrap/wrangler.jsonc --env staging
+  //   production: wrangler deploy --config apps/ops/site-bootstrap/wrangler.jsonc   (at launch only)
+  "name": "rf-site",
+  "compatibility_date": "2025-01-01",
+  "workers_dev": false,
+  "preview_urls": false,
+  "assets": { "directory": "./placeholder" },
+  "routes": [{ "pattern": "researchforce.org", "custom_domain": true }],
+  "env": {
+    "staging": {
+      "name": "rf-site-staging",
+      "workers_dev": false,
+      "preview_urls": false,
+      "assets": { "directory": "./placeholder" },
+      "routes": [{ "pattern": "staging-public.researchforce.org", "custom_domain": true }]
+    }
+  }
+}

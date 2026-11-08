@@ -13,12 +13,13 @@ import type { Timestamp, ULID } from '@researchforce/domain/types';
 import type { ApiEnv } from '../api/app';
 import type { Env } from '../env';
 import { JOB_HANDLERS } from '../do/jobs';
-import type { JobHandler, JsonValue, SliceResult } from '../do/jobs';
-import { backupPreflight } from '../backup/preflight';
+import type { JobHandler, JobRecord, JsonValue, SliceResult } from '../do/jobs';
+import { backupPreflight, destinationEligibility } from '../backup/preflight';
 import type { PreflightProblem } from '../backup/preflight';
 import { reconcileBootstrapIdentity } from '../backup/reconcile';
 import type { BackedUpMember, ReconcileConflict } from '../backup/reconcile';
-import { canonicalRowHash, decideInsert, recordCheckpoint } from '../backup/checkpoints';
+import { canonicalRowHash, decideInsert, readCheckpoint, recordCheckpoint } from '../backup/checkpoints';
+import { isSeedOwnedTable, isUntouchedSeedRow } from '../backup/seed-owned';
 import type { ConflictReason } from '../backup/checkpoints';
 import { applySuppressions, quarantineReleasePrecondition } from '../backup/quarantine';
 import type { QuarantineGateName, SuppressionRecord } from '../backup/quarantine';
@@ -26,6 +27,8 @@ import { bucketKeyOf } from './export';
 import { backupPrefix } from './backup';
 import { decryptBodyPart } from '../backup/decrypt';
 import { rebuildDerivedData } from '../backup/derived';
+import { isDailyLimitError } from '../api/errors';
+import { createLogger } from '../log';
 
 /**
  * The Internal_Backup RESTORE JOB (task 38.5; R36.4, R36.5, R36.8, R36.9, R36.10, R36.11, R36.13, R36.15, R36.16,
@@ -76,6 +79,13 @@ export interface RestoreReport {
   readonly insertConflict?: { readonly table: string; readonly rowKey: string; readonly reason: ConflictReason };
   /** The suppression fault (a tampered ledger) that denied release (R36.16), when one occurred. */
   readonly suppressionFault?: { readonly element: string };
+  /**
+   * An UNEXPECTED fault (an unhandled exception during a stage, e.g. a SQLite constraint `installRow` hit) that failed
+   * the restore closed (R36.8). CONTENT-FREE by construction — a stage/element/detail descriptor only, never a research
+   * body, PII, or secret — so the restore reaches a terminal `failed` state and releases containment instead of being
+   * left wedged `running` with the quarantine held open.
+   */
+  readonly fault?: { readonly stage: Cursor['phase']; readonly element: string; readonly detail: string };
   /** The numbers of rows recreated and remaining, for the resume report (R36.10). */
   readonly counts?: { readonly recreated: number; readonly tablesDone: number; readonly tablesTotal: number };
   /** The release gates still blocking containment release (R36.16); empty once every gate passes. */
@@ -245,6 +255,37 @@ async function installRow(env: Env, table: string, row: Record<string, unknown>)
   await env.RF_CORE.prepare(`INSERT INTO ${table} (${columns.map((column) => `"${column}"`).join(', ')}) VALUES (${placeholders})`).bind(...values).run();
 }
 
+/** Bind-safe value of a row image column: JSON column values (objects/arrays) are bound as their canonical JSON text. */
+const bindable = (value: unknown): string | number | null =>
+  value !== null && typeof value === 'object' ? JSON.stringify(value) : value as string | number | null;
+
+/** This restore's checkpoint payload hash for a key, or null when it has not installed the row. */
+async function readCheckpointHash(env: Env, restoreId: string, table: string, rowKey: string): Promise<string | null> {
+  return (await readCheckpoint(env, restoreId, table, rowKey))?.payloadHash ?? null;
+}
+
+/** The destination row at a backed-up image's primary key with EVERY stored column, exactly as stored (no JSON re-parse). */
+async function readRawRow(
+  env: Env, table: string, pk: readonly string[], image: Record<string, unknown>,
+): Promise<Record<string, unknown> | null> {
+  const where = pk.map((column, index) => `"${column}" = ?${index + 1}`).join(' AND ');
+  return env.RF_CORE.prepare(`SELECT * FROM ${table} WHERE ${where} LIMIT 1`)
+    .bind(...pk.map((column) => image[column] as string | number | null)).first<Record<string, unknown>>();
+}
+
+/**
+ * Replace the untouched seed row at the image's primary key with the backed-up image, in place (an UPDATE, so foreign
+ * keys onto the row — e.g. a Member's role — are never disturbed). Only called after {@link isUntouchedSeedRow}.
+ */
+async function replaceRow(env: Env, table: string, pk: readonly string[], image: Record<string, unknown>): Promise<void> {
+  const columns = Object.keys(image).filter((column) => !pk.includes(column));
+  const keyColumns = pk.map((column, index) => `"${column}" = ?${columns.length + index + 1}`).join(' AND ');
+  if (columns.length === 0) return;
+  const sets = columns.map((column, index) => `"${column}" = ?${index + 1}`).join(', ');
+  await env.RF_CORE.prepare(`UPDATE ${table} SET ${sets} WHERE ${keyColumns}`)
+    .bind(...columns.map((column) => bindable(image[column])), ...pk.map((column) => bindable(image[column]))).run();
+}
+
 /** Read the independently retained suppression ledger for the source package's recovery point (opaque ids only, R36.16). */
 async function readSuppressionLedger(env: Env, sourceExportId: string): Promise<SuppressionRecord[]> {
   const rows = (await env.RF_CORE.prepare(
@@ -281,6 +322,27 @@ export const restoreJob: JobHandler = {
     const params = job.params as unknown as RestoreParams;
     const id = params.restoreId;
     const cursor = (cursorValue as Cursor | null) ?? firstCursor;
+    // FAIL CLOSED on ANY unexpected fault in ANY stage (R36.8). A handled conflict/preflight/suppression path returns a
+    // terminal `fail()` itself; but an UNHANDLED exception — a SQLite constraint `installRow` hits, a decrypt/R2 fault,
+    // any unexpected throw — would otherwise propagate to the Jobs runner, which marks only the `jobs` row `failed` and
+    // leaves the `restores` row `running` forever, holding the restore quarantine/write-freeze open and hanging the
+    // Backups UI. Routing the exception through the SAME `fail()` path writes `restores.state='failed'` with a
+    // content-free report and releases containment exactly as a handled failure does. A DAILY-LIMIT error is NOT a
+    // restore failure: it must propagate so the runner pauses and resumes the slice idempotently from the last cursor.
+    try {
+      return await runSlice(env, job, now, id, cursor);
+    } catch (error) {
+      if (isDailyLimitError(error)) throw error;
+      // Keep the cause for the operator: the report is content-free by design, so the real error goes to the log only.
+      createLogger()('error', 'restore_slice_failed', { restore: id, stage: cursor.phase, error });
+      return fail(env, id, { fault: { stage: cursor.phase, element: 'restore-slice', detail: `the ${cursor.phase} stage failed with an unexpected fault` }, counts: { recreated: cursor.recreated, tablesDone: cursor.tableIndex, tablesTotal: BACKUP_TABLES.length } }, now);
+    }
+  },
+};
+
+/** The restore slice's stages (preflight → bootstrap → insert → validate), wrapped by `restoreJob.slice`'s fail-closed guard. */
+async function runSlice(env: Env, job: JobRecord, now: Timestamp, id: ULID, cursor: Cursor): Promise<SliceResult> {
+    const params = job.params as unknown as RestoreParams;
     const registry = restoreRegistry(env);
     const prefix = bucketKeyOf(backupPrefix(params.sourceExportId));
 
@@ -288,6 +350,10 @@ export const restoreJob: JobHandler = {
     if (cursor.phase === 'preflight') {
       const preflight = await backupPreflight(env, env.RF_PRIVATE_BUCKET, params.sourceExportId, registry);
       if (!preflight.ok) return fail(env, id, { problems: preflight.problems }, now);
+      // The destination must be an EMPTY installation (R36.4): refuse before inserting anything, so a restore into a
+      // live installation can never resurrect material deleted since the backup.
+      const occupied = await destinationEligibility(env.RF_CORE, job.requestedBy ?? '');
+      if (occupied.length > 0) return fail(env, id, { problems: occupied }, now);
       // Preflight passed: the package is authentic and every byte/reference/count checks out. Move to the bootstrap.
       return step(cursor, { phase: 'bootstrap' });
     }
@@ -308,7 +374,15 @@ export const restoreJob: JobHandler = {
       const idMap: Record<string, string> = {};
       if (reconciliation.mapping.kind === 'matched') {
         idMap[reconciliation.mapping.fromBootstrapId] = reconciliation.mapping.toBackedUpId;
-        await env.RF_CORE.prepare('DELETE FROM members WHERE id = ?1').bind(reconciliation.mapping.fromBootstrapId).run();
+        // The transient Member's own profile data goes with it: the backed-up Member's Profile, specialties, affiliations,
+        // preferences, and mutes install under the ORIGINAL id. Left behind, a bootstrap Profile that carries the same
+        // display name (the human recreating themselves) collides with the backed-up Profile's unique display-name key.
+        const transientId = reconciliation.mapping.fromBootstrapId;
+        await env.RF_CORE.batch([
+          ...['profile_specialties', 'profile_affiliations', 'notification_prefs', 'muted_projects', 'profiles']
+            .map((table) => env.RF_CORE.prepare(`DELETE FROM ${table} WHERE member_id = ?1`).bind(transientId)),
+          env.RF_CORE.prepare('DELETE FROM members WHERE id = ?1').bind(transientId),
+        ]);
       }
 
       // Read and AUTHENTICATE the independent suppression ledger so a suppressed id is never reinstated (R36.15, R36.16).
@@ -359,6 +433,21 @@ export const restoreJob: JobHandler = {
           await recordCheckpoint(env, id, entry.table, rowKey, hash, now);
           continue;
         }
+        // A migration-seeded default row that is STILL the untouched installation default (never modified in the
+        // destination) is replaced by the backed-up copy and checkpointed, so a restore into a genuinely fresh
+        // installation does not fail on defaults whose only difference is the migration-apply time. A modified seed row,
+        // or any other pre-existing row, falls through to `decideInsert` and stays an `unexpected-duplicate` conflict.
+        // Only when this restore has NOT already checkpointed the key (a checkpointed key is `decideInsert`'s to judge).
+        if (existing !== null && isSeedOwnedTable(entry.table)
+            && await readCheckpointHash(env, id, entry.table, rowKey) === null) {
+          const raw = await readRawRow(env, entry.table, pk, image);
+          if (raw !== null && isUntouchedSeedRow(entry.table, raw)) {
+            await replaceRow(env, entry.table, pk, image);
+            await recordCheckpoint(env, id, entry.table, rowKey, hash, now);
+            recreated += 1;
+            continue;
+          }
+        }
         const decision = await decideInsert(env, id, entry.table, rowKey, hash, () => Promise.resolve(existing !== null));
 
         if (decision.decision === 'conflict') {
@@ -401,8 +490,7 @@ export const restoreJob: JobHandler = {
     // never releases automatically (R36.16). A gate that did not pass keeps it quarantined with the outstanding gates.
     await writeState(env, id, 'quarantined', now, report, true);
     return step(cursor, { phase: 'validate' }, true, 'complete');
-  },
-};
+}
 
 /** Decrypt and parse one table's body part into row images, or an empty list when the table has no rows. */
 async function readBodyRows(env: Env, prefix: string, table: string, manifest: RootManifest): Promise<Record<string, unknown>[]> {
@@ -456,8 +544,9 @@ export async function releaseRestore(env: Env, id: ULID, releasedBy: ULID, now: 
   if (report.blockedBy !== undefined && report.blockedBy.length > 0) return false;
   await env.RF_CORE.prepare('UPDATE restores SET state = ?2, released_at = ?3, released_by = ?4 WHERE id = ?1 AND state = ?5')
     .bind(id, 'released', now, releasedBy, 'quarantined').run();
-  // Kick the Publisher so it resumes now that the quarantine has lifted; a later kick/cron also picks it up.
-  try { await env.PUBLISHER.getByName('publisher').kick('publish'); } catch { /* the cron sweep retries */ }
+  // Republish now that the quarantine has lifted. The restored rows queue no `publish` outbox rows, so this must
+  // open a run explicitly; a plain kick only advances queued work.
+  try { await env.PUBLISHER.getByName('publisher').republish(); } catch { /* the operator can release-retry; see runbook */ }
   return true;
 }
 

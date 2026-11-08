@@ -4,11 +4,13 @@ import type {
   ConfidentialityIncident,
   ContainmentCapabilities,
   ContainmentState,
+  HealthCheckOptions,
   HealthReport,
   OpsAccess,
   OpsBackupAlert,
   OpsContainment,
   OpsDeploy,
+  OpsDeployBegin,
   OpsDeployResult,
   OpsAnalytics,
   OpsHealthAlert,
@@ -23,7 +25,7 @@ import { AccessSync } from './access';
 import { Analytics } from './analytics';
 import { type MonitoredEndpoint, OperationalAlerts } from './alerts';
 import { Containment } from './containment';
-import { type AssetBody, SiteDeploy } from './deploy';
+import { SiteDeploy } from './deploy';
 import { Waf } from './waf';
 
 export interface OpsEnv {
@@ -183,27 +185,41 @@ export default class Ops extends WorkerEntrypoint<OpsEnv> implements OpsAccess, 
   async releaseContainment(authorizedGeneration: string): Promise<void> { await this.#containment().releaseContainment(authorizedGeneration); }
   async verifyContainment(): Promise<ContainmentState> { return this.#containment().verifyContainment(); }
   async probePublicAddress(url: string): Promise<'present' | 'absent' | 'unknown'> { return this.#containment().probePublicAddress(url); }
+  async probePublicAddresses(urls: readonly string[]): Promise<Record<string, 'present' | 'absent' | 'unknown'>> { return this.#containment().probePublicAddresses(urls); }
   async declareIncident(incident: ConfidentialityIncident): Promise<void> { await this.#containment().declareIncident(incident); }
   async backupAgeAlert(alert: BackupAgeAlert): Promise<void> { await this.#containment().backupAgeAlert(alert); }
 
   // Independent health + spend alerts (task 67.2, R28.4, R60.6): provider-native/independent external checks
   // delivered over the operator-controlled independent channel, operable without rf-core D1 and the Graph queue.
-  async certifyHealth(): Promise<HealthReport> { return this.#alerts().certifyHealth(); }
+  async certifyHealth(options?: HealthCheckOptions): Promise<HealthReport> { return this.#alerts().certifyHealth(options); }
   async spendAlert(alert: SpendAlert): Promise<void> { await this.#alerts().spendAlert(alert); }
 
   // Public submit-host WAF budget shed (task 34.2, R28.5, R28.6): the `Budget` DO (34.1) flips this on at the
   // Public_Traffic_Budget-minus-margin threshold and off at the 00:00 UTC reset.
   async setSubmitBlock(enabled: boolean): Promise<void> { await this.#waf().setSubmitBlock(enabled); }
 
-  async deploySite(input: Parameters<OpsDeploy['deploySite']>[0]): Promise<OpsDeployResult> {
-    // The 32.5 caller passes the bytes of only the missing files keyed by hash; adapt them to the AssetSource.
-    const missing: Record<string, AssetBody> = { ...input.missing };
-    return this.#deploy().deploySite({
+  // The stepped deploy the Publisher drives one alarm slice at a time (bounded cost per call).
+  async beginSiteDeploy(input: Parameters<OpsDeploy['beginSiteDeploy']>[0]): Promise<OpsDeployBegin> {
+    return this.#deploy().beginSiteDeploy({
       manifest: input.manifest,
       generation: { run: input.run, epoch: input.epoch },
       operationId: input.operationId,
-      assets: async (hash) => missing[hash] ?? null,
       containmentActive: input.containmentActive,
+      now: new Date().toISOString() as Timestamp,
+    });
+  }
+
+  async uploadSiteAssets(input: Parameters<OpsDeploy['uploadSiteAssets']>[0]): Promise<{ completionToken: string | null }> {
+    return this.#deploy().uploadSiteAssets({ uploadToken: input.uploadToken, files: input.files });
+  }
+
+  async finishSiteDeploy(input: Parameters<OpsDeploy['finishSiteDeploy']>[0]): Promise<OpsDeployResult> {
+    return this.#deploy().finishSiteDeploy({
+      generation: { run: input.run, epoch: input.epoch },
+      operationId: input.operationId,
+      completionToken: input.completionToken,
+      containmentActive: input.containmentActive,
+      ...(input.headers === undefined ? {} : { headers: input.headers }),
       now: new Date().toISOString() as Timestamp,
     });
   }

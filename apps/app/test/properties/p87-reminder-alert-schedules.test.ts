@@ -245,6 +245,10 @@ async function breachAlerts(core: D1Database): Promise<{ day: string; count: num
 describe('Property 87 — a backup RPO breach alert repeats at most once per UTC day until resolved (R36.7)', () => {
   it('fires once on a breach day, stays silent on repeated same-day ticks, and fires again on the next UTC day', async () => {
     bindings = await migrated();
+    // The deployed config lengthens the RPO window for a manual offline copy; this leg exercises the specification's
+    // 18h / 24h defaults, so the optional override is cleared.
+    (bindings as unknown as Record<string, unknown>)['BACKUP_RPO_WARN_HOURS'] = undefined;
+    (bindings as unknown as Record<string, unknown>)['BACKUP_RPO_BREACH_HOURS'] = undefined;
     const core = bindings.RF_CORE;
     // The breach threshold is the production schedule's, not re-typed; a point this old is a breach, so the alert cadence runs.
     expect(BACKUP_SCHEDULE.breachMs).toBe(24 * HOUR_MS);

@@ -142,6 +142,12 @@ export interface OpsContainment {
    */
   probePublicAddress(url: string): Promise<'present' | 'absent' | 'unknown'>;
   /**
+   * {@link probePublicAddress} for up to `PROBE_BATCH_MAX` (25) addresses in one call (one RPC, one outbound HEAD per
+   * address, six at a time), so the Publisher's sliced verify phase stays inside the Free plan's subrequest limits.
+   * Each address gets exactly the status the single probe would give it. More than the batch maximum is a RangeError.
+   */
+  probePublicAddresses(urls: readonly string[]): Promise<Readonly<Record<string, 'present' | 'absent' | 'unknown'>>>;
+  /**
    * Declare a confidentiality incident through the independently operated alert channel, recording the last
    * verified public state and the failed actions (R24.17, R60.6). Never asserts success; it is only called
    * when neither removal nor Containment could be confirmed. The payload carries no research body, only the
@@ -200,7 +206,15 @@ export interface OpsHealthAlert {
    * certified report (also sent on the channel). Throws only when the independent channel refuses or is
    * unreachable.
    */
-  certifyHealth(): Promise<HealthReport>;
+  certifyHealth(options?: HealthCheckOptions): Promise<HealthReport>;
+}
+/** How a health check declares its result. */
+export interface HealthCheckOptions {
+  /**
+   * Post to the independent channel only when the level is not `ok`. The scheduled check sets this so a healthy
+   * installation sends nothing; a manual run leaves it unset and always posts, which also proves delivery works.
+   */
+  readonly quietWhenOk?: boolean;
 }
 
 /** The reachability of a single monitored endpoint, as a fresh out-of-band HEAD reports it (R60.6). */
@@ -312,23 +326,42 @@ export interface OpsWaf {
  */
 export interface OpsDeploy {
   /**
-   * Deploy `manifest` (path -> {hash, size}) as a new `rf-site` version, fenced by `epoch` under the durable
-   * `operationId`. `run` is the Publisher generation id; `missing` supplies the base64 bytes and content type
-   * for each file hash the platform reports missing (only missing files are uploaded); `containmentActive` is
-   * whether independent containment is currently in force. Returns the live result the 32.5 orchestrator acts
-   * on: whether the version was promoted, whether containment must remain, the created version id, and the
-   * settled operation state. Throws only on a definite Cloudflare refusal; a lost/uncertain answer is returned
-   * as an `uncertain` outcome, never a blind retry.
+   * Stepped deploy, step 1 (one platform fetch): record the epoch-labelled operation and register the manifest.
+   * Answers `upload` (one-hour upload token + the platform's missing-hash buckets), `ready` (nothing to upload),
+   * or `settled` when the operation already confirmed or is uncertain (never redone blindly).
    */
-  deploySite(input: {
+  beginSiteDeploy(input: {
     readonly manifest: Readonly<Record<string, { readonly hash: string; readonly size: number }>>;
     readonly run: string;
     readonly epoch: number;
     readonly operationId: string;
-    readonly missing: Readonly<Record<string, { readonly base64: string; readonly contentType: string }>>;
     readonly containmentActive: boolean;
+  }): Promise<OpsDeployBegin>;
+  /** Stepped deploy, step 2 (one multipart fetch): upload 1 to 100 files. `completionToken` is set once the platform issues it. */
+  uploadSiteAssets(input: {
+    readonly uploadToken: string;
+    readonly files: Readonly<Record<string, { readonly base64: string; readonly contentType: string }>>;
+  }): Promise<{ readonly completionToken: string | null }>;
+  /** Stepped deploy, step 3 (two platform fetches): create the version, fence, promote, fence, settle. */
+  finishSiteDeploy(input: {
+    readonly run: string;
+    readonly epoch: number;
+    readonly operationId: string;
+    readonly completionToken: string;
+    readonly containmentActive: boolean;
+    /**
+     * The site's `_headers` rules (CSP and other response headers). Workers Static Assets read these from the
+     * version's `assets.config._headers`, not from an uploaded file, so they travel here and never in the manifest.
+     */
+    readonly headers?: string;
   }): Promise<OpsDeployResult>;
 }
+
+/** The answer of the first stepped-deploy call. */
+export type OpsDeployBegin =
+  | { readonly state: 'upload'; readonly uploadToken: string; readonly buckets: readonly (readonly string[])[] }
+  | { readonly state: 'ready'; readonly completionToken: string }
+  | { readonly state: 'settled'; readonly result: OpsDeployResult };
 
 /** The content-free result of an `rf-site` deploy attempt (R28.6): identities and states only, no research body. */
 export interface OpsDeployResult {

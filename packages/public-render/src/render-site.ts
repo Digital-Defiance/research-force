@@ -1,7 +1,7 @@
 import type { ProjectView } from '@researchforce/kernel/views';
 import { attachmentPage } from './attachment-page';
 import { PageContext } from './blocks';
-import { formPage, formPages, respondPage, searchPage } from './forms';
+import { consentPage, formPage, formPages, respondPage, searchPage } from './forms';
 import { renderPage, type PageSpec } from './frame';
 import { itemPage, withheldPage } from './item-page';
 import { projectListings } from './listings';
@@ -13,7 +13,7 @@ import { DEFAULT_ASSETS, type SiteInput } from './site';
 export interface SiteFile { readonly path?: string; readonly file: string; readonly contentType: string; readonly content: string }
 
 /** Addresses that are not pages of their own and stay out of the sitemap. */
-const UNLISTED: ReadonlySet<string> = new Set([PAGE_PATHS.notFound, PAGE_PATHS.respond]);
+const UNLISTED: ReadonlySet<string> = new Set([PAGE_PATHS.notFound, PAGE_PATHS.respond, PAGE_PATHS.consent, PAGE_PATHS.consentChange]);
 
 /** Every page of the Public_Site, built only from the input's views, profiles, policy text, and fixed text. */
 export function buildPages(site: SiteInput): PageSpec[] {
@@ -33,7 +33,8 @@ export function buildPages(site: SiteInput): PageSpec[] {
     else if (view.tag === 'withheld' && view.project !== undefined && view.path !== undefined) pages.push(withheldPage(site, { ...view, path: view.path }));
   }
   pages.push(
-    ...formPages(publicProjects).map((page) => formPage(site, publicProjects, page, assets.formScript)), respondPage(site, assets.formScript),
+    ...formPages(publicProjects).map((page) => formPage(site, publicProjects, page, assets.formScript)), respondPage(site, assets.respondScript),
+    consentPage(site, assets.consentScript, 'consent'), consentPage(site, assets.consentScript, 'change'),
     searchPage(publicProjects, assets.searchScript),
     aboutPage(newContext()), peoplePage(newContext()), licencePage(newContext()), privacyPage(newContext()), correctionsPage(newContext()), notFoundPage(),
   );

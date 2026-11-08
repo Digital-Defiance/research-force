@@ -135,6 +135,39 @@ export async function sweepBackupCopies(env: Env, now: Timestamp): Promise<numbe
   return advanced;
 }
 
+/** Why an Administrator's offline-copy confirmation was refused, so the screen can say exactly what to fix. */
+export type OfflineConfirmFault = 'no-offline-destination' | 'not-complete' | 'fingerprint-mismatch' | 'not-verified';
+
+/** The outcome of confirming an offline copy: a verified recovery point, or the one reason it was refused. */
+export type OfflineConfirmResult = { readonly ok: true } | { readonly ok: false; readonly fault: OfflineConfirmFault };
+
+/**
+ * The Administrator attests that a COMPLETE backup's downloaded package is safe on the offline destination (R36.12). The
+ * attestation must quote the backup's manifest fingerprint, which the operator reads from the local verify tool run on
+ * the downloaded copy, so a wrong or stale copy cannot be confirmed by mistake. A requested backup has no scheduled
+ * `backup_points` row, so one is created for it. The package is then verified in place (decrypt, re-validate, every hash)
+ * through the same sweep a scheduled point uses, and only a verified point counts as a recovery point (R36.7).
+ */
+export async function confirmOfflineCopy(env: Env, exportId: string, fingerprint: string, now: Timestamp): Promise<OfflineConfirmResult> {
+  const destination = independentDestination(env);
+  if (destination === null || destination.kind !== 'offline') return { ok: false, fault: 'no-offline-destination' };
+  const exportRow = await env.RF_CORE.prepare("SELECT started_at AS startedAt FROM exports WHERE id = ?1 AND type = 'backup' AND state = 'complete'")
+    .bind(exportId).first<{ startedAt: string }>();
+  if (exportRow === null) return { ok: false, fault: 'not-complete' };
+  const stored = await env.RF_PRIVATE_BUCKET.get(`${bucketKeyOf(backupPrefix(exportId))}/manifest-fingerprint.txt`);
+  const expected = stored === null ? null : (await stored.text()).trim();
+  if (expected === null || expected !== fingerprint.trim().toLowerCase()) return { ok: false, fault: 'fingerprint-mismatch' };
+
+  await env.RF_CORE.prepare(
+    `INSERT INTO backup_points (export_id, slot_key, started_at, state, copy_state, copy_destination, copied_at, created_at)
+     VALUES (?1, ?2, ?3, 'complete', 'offline_confirmed', ?4, ?5, ?5)
+     ON CONFLICT (export_id) DO UPDATE SET state = 'complete', copy_state = 'offline_confirmed', copy_destination = excluded.copy_destination, copied_at = excluded.copied_at`,
+  ).bind(exportId, `manual-${exportId}`, exportRow.startedAt, destination.label, now).run();
+  await sweepBackupCopies(env, now);
+  const point = await env.RF_CORE.prepare('SELECT verified_at AS verifiedAt FROM backup_points WHERE export_id = ?1').bind(exportId).first<{ verifiedAt: string | null }>();
+  return point?.verifiedAt ? { ok: true } : { ok: false, fault: 'not-verified' };
+}
+
 /**
  * Persist the minimal AUTHENTICATED suppression ledger for a recovery point, independently (R36.16): the identity and
  * invalidation generation of every suppressed element (a permanent deletion) known at the snapshot, as authenticated

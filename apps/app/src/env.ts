@@ -39,6 +39,12 @@ export interface Env {
   PUBLIC_SITE_ORIGIN?: string;
   /** The public files origin (`https://files.researchforce.org`) the verify step HEADs removed file copies at (R24.16). */
   PUBLIC_FILES_ORIGIN?: string;
+  /** The Publisher's public-site size ceiling in current Public_Views (positive integer string); unset or invalid uses the Free-plan default of 750. */
+  PUBLISHER_SITE_VIEW_CEILING?: string;
+  /** The Outside_Submission worker origin (`https://submit.researchforce.org`, or the staging host) the public form pages call; unset uses the production host. */
+  PUBLIC_SUBMIT_ORIGIN?: string;
+  /** The Turnstile site key (public) the public form pages mount the Bot_Check with; unset leaves the forms unavailable. */
+  TURNSTILE_SITE_KEY?: string;
   /** Secrets: `https://<team>.cloudflareaccess.com` and the Access application's AUD tag. */
   ACCESS_TEAM_DOMAIN: string;
   ACCESS_AUD: string;
@@ -113,6 +119,13 @@ export interface Env {
    * in the operator's growth/spend model (`GROWTH_PROFILE`); this flag is the recorded approval gate.
    */
   BACKUP_COPY_BUDGET_APPROVED?: string;
+  /**
+   * OPTIONAL longer RPO alert ages, in whole hours, for an installation whose independent copy is a manual offline
+   * download (R36.7). Unset keeps the specification's 18-hour warning and 24-hour breach. Both must be set, positive,
+   * and breach after warning, or the defaults apply.
+   */
+  BACKUP_RPO_WARN_HOURS?: string;
+  BACKUP_RPO_BREACH_HOURS?: string;
   /**
    * Whether an INITIAL FRESH RESTORE rehearsal has completed successfully into an isolated environment (task 58.2,
    * R36.12, R36.17). Sole-copy research custody is refused until the operator records a completed initial restore. The

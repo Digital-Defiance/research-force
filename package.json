@@ -21,7 +21,7 @@
     "test:security": "playwright test --config playwright.security.config.ts",
     "test:staging": "playwright test --config playwright.staging.config.ts",
     "lighthouse": "node scripts/lighthouse.mjs",
-    "build": "npm run build --workspace @researchforce/app && npm run build --workspace @researchforce/site-shell",
+    "build": "npm run build --workspace @researchforce/app && npm run build --workspace @researchforce/site-shell && node --import tsx scripts/stage-shell-assets.ts",
     "ci": "npm run lint && npm run check:specs && npm run release:check && npm run typecheck && npm test",
     "check:workers": "node scripts/check-workers.mjs",
     "db:generate": "drizzle-kit generate --config packages/db/drizzle/core.config.ts && drizzle-kit generate --config packages/db/drizzle/search.config.ts && drizzle-kit generate --config packages/db/drizzle/public.config.ts",

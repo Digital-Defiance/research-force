@@ -16,7 +16,7 @@ import { renderSite, type SiteFile } from '@researchforce/public-render/render-s
 export { headersFile };
 import {
   METHODS_SET_KINDS, POLICY_PAGE_KEYS,
-  type MethodsInput, type MethodsSetKind, type MethodsValue, type PolicyPageInput, type PolicyPageKey, type SiteInput,
+  type FormsConfig, type MethodsInput, type MethodsSetKind, type MethodsValue, type PolicyPageInput, type PolicyPageKey, type SiteInput,
 } from '@researchforce/public-render/site';
 import { notifySystemAlert } from '../notifications/fanout';
 import { directUploadHash, extensionOf, manifestPath, planSite, reachesFileAlert } from './plan';
@@ -51,6 +51,8 @@ export interface RenderDeps {
    * ResearchForce.org fallback (R46.41, R46.42).
    */
   readonly publicCopy: ValidatedInstallationPublicCopy;
+  /** The Turnstile site key and the submit and files origins the form pages carry; absent leaves the form attributes out. */
+  readonly forms?: FormsConfig;
   /**
    * The compiled `site-shell` assets and fixed Design_System files (scripts, styles, print CSS, fonts, images, the
    * 404 metadata) to ship as static files. These are produced by `apps/site-shell`'s Vite build with content-hashed
@@ -75,7 +77,7 @@ export interface RenderResult {
 }
 
 /** A produced file with its bytes and content type, before it is hashed and stored. */
-interface RenderedFile { readonly path: string; readonly contentType: string; readonly content: Uint8Array }
+export interface RenderedFile { readonly path: string; readonly contentType: string; readonly content: Uint8Array }
 
 const encoder = new TextEncoder();
 
@@ -86,6 +88,42 @@ const encoder = new TextEncoder();
  * set (path, hash, size, updatedAt).
  */
 export async function renderSiteBuild(deps: RenderDeps, now: Timestamp): Promise<RenderResult> {
+  const { plan, files } = await renderPlanned(deps, now);
+
+  // Store the bytes of every added or changed file under `rf-private/build/{hash}`; unchanged content is already
+  // there. Content is addressed by hash, so two files with identical bytes share one object and one put.
+  const storedHashes = new Set<string>();
+  for (const entry of [...plan.added, ...plan.changed]) {
+    if (storedHashes.has(entry.hash)) continue;
+    storedHashes.add(entry.hash);
+    const held = files.get(entry.path)!;
+    await deps.privateBucket.put(`build/${entry.hash}`, held.file.content, { httpMetadata: { contentType: held.file.contentType } });
+  }
+
+  // Bring the manifest to exactly the produced set: upsert every produced row, delete rows for files no longer made.
+  await upsertManifestRows(deps.public, [...plan.added, ...plan.changed], now);
+  await deleteManifestRows(deps.public, plan.removed);
+
+  const alerted = reachesFileAlert(plan.all.length);
+  if (alerted) await raiseFileCountAlert(deps.core, plan.all.length, now);
+  return { plan, fileCount: plan.all.length, alerted };
+}
+
+/** What {@link renderPlanned} produced: the diff against the manifest, and every produced file's bytes by path. */
+export interface PlannedRender {
+  readonly plan: SitePlan;
+  readonly files: ReadonlyMap<string, { readonly file: RenderedFile; readonly planned: PlannedFile }>;
+}
+
+/** The inputs {@link renderPlanned} needs (no bucket: it writes nothing to R2 and nothing to the manifest). */
+export type RenderPlanDeps = Pick<RenderDeps, 'core' | 'public' | 'licence' | 'publicCopy' | 'forms' | 'shellAssets'>;
+
+/**
+ * Render the full file set in memory, hash it with the Direct Upload algorithm, and diff it against the current
+ * `site_files` manifest. It persists only the Policy_Pages' generated dates (R46.29); it stores no content and does
+ * not touch the manifest, so the sliced deploy can take the diff in windows and resume it statelessly.
+ */
+export async function renderPlanned(deps: RenderPlanDeps, now: Timestamp): Promise<PlannedRender> {
   const input = await loadSiteInput(deps, now);
   // Persist the per-page generated-content hash/date for any page whose generated content changed this build, so the
   // same last-updated date the render shows is the date later builds keep while the content is unchanged (R46.29).
@@ -103,24 +141,7 @@ export async function renderSiteBuild(deps: RenderDeps, now: Timestamp): Promise
   }
 
   const manifest = await readManifest(deps.public);
-  const plan = planSite(planned, manifest);
-
-  // Store the bytes of every added or changed file under `rf-private/build/{hash}`; unchanged content is already
-  // there. Content is addressed by hash, so two files with identical bytes share one object and one put.
-  const storedHashes = new Set<string>();
-  for (const entry of [...plan.added, ...plan.changed]) {
-    if (storedHashes.has(entry.hash)) continue;
-    storedHashes.add(entry.hash);
-    const held = files.get(entry.path)!;
-    await deps.privateBucket.put(`build/${entry.hash}`, held.file.content, { httpMetadata: { contentType: held.file.contentType } });
-  }
-
-  // Bring the manifest to exactly the produced set: upsert every produced row, delete rows for files no longer made.
-  await writeManifest(deps.public, plan, now);
-
-  const alerted = reachesFileAlert(plan.all.length);
-  if (alerted) await raiseFileCountAlert(deps.core, plan.all.length, now);
-  return { plan, fileCount: plan.all.length, alerted };
+  return { plan: planSite(planned, manifest), files };
 }
 
 /** The complete produced file set as the hasher reads it: one entry per rendered page/index/asset, each with its bytes. */
@@ -137,7 +158,7 @@ function toRenderedFiles(siteFiles: readonly SiteFile[], input: SiteInput, shell
   // The static search index: manifest, term buckets, and 64 content-hashed shards (R30.1).
   for (const file of buildSearchIndex(input.views)) add({ path: manifestPath(file), contentType: file.contentType, content: encoder.encode(file.content) });
   // `_headers` (CSP and other response headers for the assets-only rf-site, design "Headers").
-  add({ path: '/_headers', contentType: 'text/plain; charset=utf-8', content: encoder.encode(headersFile()) });
+  add({ path: '/_headers', contentType: 'text/plain; charset=utf-8', content: encoder.encode(headersFile(input.forms)) });
   // The compiled site-shell scripts/styles and the fixed Design_System assets, shipped verbatim as static files.
   for (const asset of shellAssets) add({ path: asset.path.startsWith('/') ? asset.path : `/${asset.path}`, contentType: asset.contentType, content: asset.content });
   return files;
@@ -155,7 +176,7 @@ function toRenderedFiles(siteFiles: readonly SiteFile[], input: SiteInput, shell
  * from the injected configuration. Registered Member addresses are scrubbed from profiles and policy text, exactly
  * as the projection does (R46.5, R46.9).
  */
-export async function loadSiteInput(deps: Pick<RenderDeps, 'core' | 'public' | 'licence' | 'publicCopy'>, now?: Timestamp): Promise<SiteInput> {
+export async function loadSiteInput(deps: Pick<RenderDeps, 'core' | 'public' | 'licence' | 'publicCopy' | 'forms'>, now?: Timestamp): Promise<SiteInput> {
   return buildSiteInput(deps, await loadViews(deps.public), now);
 }
 
@@ -181,7 +202,7 @@ export async function loadViewsAsOf(pub: D1Database, startedAt: string, scopePro
  * last-updated date to today (R46.29); omit it for the preview and the export, which show the date the last published
  * build recorded without advancing it.
  */
-export async function buildSiteInput(deps: Pick<RenderDeps, 'core' | 'public' | 'licence' | 'publicCopy'>, views: ReadonlyMap<UnitKey, PublicView>, now?: Timestamp): Promise<SiteInput> {
+export async function buildSiteInput(deps: Pick<RenderDeps, 'core' | 'public' | 'licence' | 'publicCopy' | 'forms'>, views: ReadonlyMap<UnitKey, PublicView>, now?: Timestamp): Promise<SiteInput> {
   const [projectRows, memberRows, specialtyRows, affiliationRows, valueRows, termRows, policyPageRows, policySectionRows, settingRows]
     = await deps.core.batch([
       deps.core.prepare('SELECT id, accent, featured, position, created_at AS createdAt, question_order AS questionOrder FROM projects ORDER BY position'),
@@ -221,6 +242,7 @@ export async function buildSiteInput(deps: Pick<RenderDeps, 'core' | 'public' | 
     questionOrder: new Map(projects.map((project) => [`p:${project.id}` as UnitKey, questionOrderKeys(project.questionOrder)])),
     licence: deps.licence,
     publicCopy: deps.publicCopy,
+    ...(deps.forms === undefined ? {} : { forms: deps.forms }),
     profiles,
     responsiblePerson,
     methods,
@@ -358,26 +380,36 @@ async function readManifest(pub: D1Database): Promise<ManifestEntry[]> {
   return result.results;
 }
 
-/** How many `site_files` upserts travel in one `rf-public` batch; large sites split the manifest write into batches. */
-const MANIFEST_BATCH_ROWS = 200;
+/** How many `site_files` rows travel in one statement (one `json_each` upsert or delete). */
+const MANIFEST_ROWS_PER_STATEMENT = 500;
 
-/** Upsert every produced row and delete the rows for files no longer produced, in bounded `rf-public` batches. */
-async function writeManifest(pub: D1Database, plan: SitePlan, now: Timestamp): Promise<void> {
-  const upserts = [...plan.added, ...plan.changed];
-  for (let start = 0; start < upserts.length; start += MANIFEST_BATCH_ROWS) {
-    const statements = upserts.slice(start, start + MANIFEST_BATCH_ROWS).map((file) => pub.prepare(
-      `INSERT INTO site_files (path, hash, size, updated_at) VALUES (?1, ?2, ?3, ?4)
+/**
+ * Upsert manifest rows, one `json_each` statement per up to {@link MANIFEST_ROWS_PER_STATEMENT} rows (not one
+ * statement per file, so a large site costs a handful of D1 statements). A row must only be written once its
+ * `rf-private/build/{hash}` object exists.
+ */
+export async function upsertManifestRows(pub: D1Database, files: readonly PlannedFile[], now: Timestamp): Promise<void> {
+  for (let start = 0; start < files.length; start += MANIFEST_ROWS_PER_STATEMENT) {
+    const rows = files.slice(start, start + MANIFEST_ROWS_PER_STATEMENT).map((file) => ({ path: file.path, hash: file.hash, size: file.size }));
+    // `WHERE true` keeps SQLite from reading `ON CONFLICT` as part of the SELECT's join clause.
+    await pub.prepare(
+      `INSERT INTO site_files (path, hash, size, updated_at)
+        SELECT json_extract(value, '$.path'), json_extract(value, '$.hash'), json_extract(value, '$.size'), ?2 FROM json_each(?1) WHERE true
         ON CONFLICT (path) DO UPDATE SET hash = excluded.hash, size = excluded.size, updated_at = excluded.updated_at`,
-    ).bind(file.path, file.hash, file.size, now));
-    if (statements.length > 0) await pub.batch(statements);
+    ).bind(JSON.stringify(rows), now).run();
   }
-  if (plan.removed.length > 0) {
-    await pub.prepare('DELETE FROM site_files WHERE path IN (SELECT value FROM json_each(?1))').bind(JSON.stringify(plan.removed)).run();
+}
+
+/** Delete the manifest rows for files no longer produced, in bounded `json_each` statements. */
+export async function deleteManifestRows(pub: D1Database, paths: readonly string[]): Promise<void> {
+  for (let start = 0; start < paths.length; start += MANIFEST_ROWS_PER_STATEMENT) {
+    await pub.prepare('DELETE FROM site_files WHERE path IN (SELECT value FROM json_each(?1))')
+      .bind(JSON.stringify(paths.slice(start, start + MANIFEST_ROWS_PER_STATEMENT))).run();
   }
 }
 
 /** The 16,000-file System_Alert for Administrators: the site is approaching the 20,000-file version ceiling (R28.16). */
-async function raiseFileCountAlert(core: D1Database, fileCount: number, now: Timestamp): Promise<void> {
+export async function raiseFileCountAlert(core: D1Database, fileCount: number, now: Timestamp): Promise<void> {
   const batch = new GuardedBatch(core, { id: null, now }, { ignoreFreeze: true });
   notifySystemAlert(batch, 'site_file_count', {
     allowance: `The public site has ${fileCount} files, nearing the ${OPERATIONS.siteFileCeiling}-file version limit`,

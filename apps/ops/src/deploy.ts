@@ -1,4 +1,4 @@
-import type { OpsDeployResult } from '@researchforce/domain/ops';
+import type { OpsDeployBegin, OpsDeployResult } from '@researchforce/domain/ops';
 import type { Timestamp } from '@researchforce/domain/types';
 import {
   type Generation,
@@ -11,6 +11,7 @@ import {
   reconcile,
   settleOperation,
 } from '@researchforce/db/publication-epoch';
+import { UPLOAD_CHUNK } from '@researchforce/domain/slice-budget';
 import { CLOUDFLARE_API, CloudflareApiError } from './access';
 
 /**
@@ -92,6 +93,8 @@ export interface SiteDeployConfig {
 
 /** The live result of a deploy attempt, for the 32.5 orchestrator to act on (the RPC surface's result shape). */
 export type DeployOutcome = OpsDeployResult;
+/** The answer of {@link SiteDeploy.beginSiteDeploy}. */
+export type SiteDeployBegin = OpsDeployBegin;
 
 // ---------------------------------------------------------------------------
 // Pure helpers (no I/O), exported for direct testing.
@@ -129,13 +132,19 @@ export class SiteDeploy {
   }
 
   /**
-   * Deploy `manifest` as a new `rf-site` version under `operationId`, fenced by `epoch`.
+   * Deploy `manifest` as a new `rf-site` version under `operationId`, fenced by `epoch`, in one call: a composition
+   * of {@link beginSiteDeploy}, one {@link uploadSiteAssets} per platform bucket, and {@link finishSiteDeploy}.
+   * The Publisher drives the three steps itself (one per Durable Object alarm slice) so no single invocation
+   * exceeds the Free plan's subrequest limits; this composition keeps the one-call contract for direct callers.
    *
    * `generation` carries the run id and the epoch the run observed; `operationId` is the deterministic
    * epoch-labelled id (`operationId('deploy', run, epoch, versionTarget)`) the 32.5 caller passes so a
    * concurrent/obsolete re-entry reuses the same durable row rather than deploying twice. `assets` supplies
    * the bytes of the files the platform reports missing; `containmentActive` is whether independent
    * containment is currently in force. `now` is the record timestamp.
+   *
+   * NOT an RPC: `Ops` no longer exposes it. One call carries every file of the site through one invocation, which
+   * is unsafe for large sites on the Free plan; it remains only as the composition the rf-ops tests exercise.
    */
   async deploySite(input: {
     readonly manifest: SiteManifest;
@@ -143,32 +152,96 @@ export class SiteDeploy {
     readonly operationId: string;
     readonly assets: AssetSource;
     readonly containmentActive: boolean;
+    readonly headers?: string;
     readonly now: Timestamp;
   }): Promise<DeployOutcome> {
     const { manifest, generation, operationId: id, assets, containmentActive, now } = input;
-
-    // A concurrent/obsolete re-entry is detected through the durable operation identity: if this id already
-    // confirmed, do not deploy again — return its recorded version. If it is uncertain, refuse to blindly
-    // redo it and ask the caller to reconcile first (R24.17, R60.2).
-    const prior = await readOperation(this.db, id);
-    if (prior?.state === 'confirmed') {
-      return { promoted: true, keepContainment: false, versionId: prior.providerRef, operationId: id, operationState: 'confirmed', reason: 'promoted' };
+    const begun = await this.beginSiteDeploy({ manifest, generation, operationId: id, containmentActive, now });
+    if (begun.state === 'settled') return begun.result;
+    let completionToken: string;
+    if (begun.state === 'ready') completionToken = begun.completionToken;
+    else {
+      const hashToPath = new Map(Object.entries(manifest).map(([path, file]) => [file.hash, path]));
+      let last: string | null = null;
+      for (const bucket of begun.buckets) {
+        for (let at = 0; at < bucket.length; at += UPLOAD_CHUNK.maxFiles) {
+          const files: Record<string, AssetBody> = {};
+          for (const hash of bucket.slice(at, at + UPLOAD_CHUNK.maxFiles)) {
+            if (!hashToPath.has(hash)) throw new Error(`The platform asked for a hash not in the manifest: ${hash}.`);
+            const body = await assets(hash);
+            if (!body) throw new Error(`No bytes available for a missing file (hash ${hash}).`);
+            files[hash] = body;
+          }
+          const uploaded = await this.uploadSiteAssets({ uploadToken: begun.uploadToken, files });
+          if (uploaded.completionToken) last = uploaded.completionToken;
+        }
+      }
+      if (!last) throw new CloudflareApiError(201, []);
+      completionToken = last;
     }
-    if (prior?.state === 'uncertain') {
-      return { promoted: false, keepContainment: containmentActive, versionId: prior.providerRef, operationId: id, operationState: 'uncertain', reason: 'uncertain' };
-    }
-
+    return this.finishSiteDeploy({ generation, operationId: id, completionToken, containmentActive, ...(input.headers === undefined ? {} : { headers: input.headers }), now });
+  }
+  /**
+   * Step 1: short-circuit on a settled prior attempt, record the epoch-labelled operation, and register the
+   * manifest with the platform (one fetch). Answers `upload` with the one-hour token and the platform's
+   * missing-hash buckets, or `ready` when nothing needs uploading.
+   */
+  async beginSiteDeploy(input: {
+    readonly manifest: SiteManifest;
+    readonly generation: Generation;
+    readonly operationId: string;
+    readonly containmentActive: boolean;
+    readonly now: Timestamp;
+  }): Promise<SiteDeployBegin> {
+    const { manifest, operationId: id, containmentActive, now } = input;
+    const prior = await this.#settled(id, containmentActive);
+    if (prior) return { state: 'settled', result: prior };
     // Record that the epoch-labelled operation is about to reach the provider (content-free: the request
     // digest names the exact version/manifest, never a research body). Idempotent on the id (R60.2).
     const requestHash = await manifestRequestHash(manifest);
     await beginOperation(this.db, { id, kind: 'deploy', requestHash }, now);
-
     // --- Direct Upload: register the manifest -> missing files + resumable (1-hour) token (R24.7) ---
     const session = await this.#startUploadSession(manifest);
-
-    // --- Upload ONLY the missing files the platform returned in `buckets`; unchanged files are skipped ---
-    const completionToken = await this.#uploadMissing(session, manifest, assets);
-
+    // An empty bucket list means nothing is missing: the upload token doubles as the completion token.
+    if (session.buckets.flat().length === 0) return { state: 'ready', completionToken: session.token };
+    return { state: 'upload', uploadToken: session.token, buckets: session.buckets };
+  }
+  /**
+   * Step 2: upload the files of ONE chunk in a single multipart request (one fetch). Returns the completion
+   * token when the platform issues one (it does on the final upload).
+   */
+  async uploadSiteAssets(input: {
+    readonly uploadToken: string;
+    readonly files: Readonly<Record<string, AssetBody>>;
+  }): Promise<{ readonly completionToken: string | null }> {
+    const hashes = Object.keys(input.files);
+    if (hashes.length === 0 || hashes.length > UPLOAD_CHUNK.maxFiles) throw new RangeError(`An upload carries 1 to ${UPLOAD_CHUNK.maxFiles} files, not ${hashes.length}.`);
+    const form = new FormData();
+    for (const hash of hashes) form.append(hash, new Blob([input.files[hash]!.base64], { type: input.files[hash]!.contentType }), hash);
+    const response = await this.#fetch(`${CLOUDFLARE_API}/accounts/${this.config.accountId}/workers/assets/upload?base64=true`, {
+      method: 'POST',
+      headers: { authorization: `Bearer ${input.uploadToken}` },
+      body: form,
+    });
+    const result = await response.json<{ success?: boolean; errors?: { code?: number }[]; result?: { jwt?: string } }>().catch(() => ({ success: false as boolean, errors: [] as { code?: number }[], result: undefined }));
+    if (!response.ok || result.success !== true) {
+      throw new CloudflareApiError(response.status, (result.errors ?? []).flatMap((e) => (typeof e.code === 'number' ? [e.code] : [])));
+    }
+    return { completionToken: result.result?.jwt ?? null };
+  }
+  /** Step 3: create the version, fence, promote, fence again, settle (two fetches). */
+  async finishSiteDeploy(input: {
+    readonly generation: Generation;
+    readonly operationId: string;
+    readonly completionToken: string;
+    readonly containmentActive: boolean;
+    /** The `_headers` rules, applied through the version's asset config (never uploaded as a file). */
+    readonly headers?: string;
+    readonly now: Timestamp;
+  }): Promise<DeployOutcome> {
+    const { generation, operationId: id, completionToken, containmentActive, now } = input;
+    const prior = await this.#settled(id, containmentActive);
+    if (prior) return prior;
     // --- Create the assets-only version (no script): fixed html/404 routing (design, R45.1) ---
     // The version is created but NOT yet promoted; promotion is fenced below. A CloudflareApiError is a
     // DEFINITE refusal (settle failed, rethrow). Any other thrown/lost answer is UNCERTAIN: we do not know
@@ -176,7 +249,7 @@ export class SiteDeploy {
     // -retry — a later reconcile against actual provider state must decide first (R24.17, R60.2).
     let versionId: string;
     try {
-      versionId = await this.#createVersion(completionToken);
+      versionId = await this.#createVersion(completionToken, input.headers);
     } catch (error) {
       if (error instanceof CloudflareApiError) {
         await settleOperation(this.db, id, { state: 'failed', detail: `create:${error.status}` }, now);
@@ -185,7 +258,6 @@ export class SiteDeploy {
       await settleOperation(this.db, id, { state: 'uncertain', detail: 'create:lost_answer' }, now);
       return { promoted: false, keepContainment: containmentActive, versionId: null, operationId: id, operationState: 'uncertain', reason: 'uncertain' };
     }
-
     // --- Serialized epoch fence, BEFORE promotion: reread the authoritative epoch (R24.16, R24.17, R60.2) ---
     const before = await readEpoch(this.db);
     if (before !== generation.epoch) {
@@ -247,8 +319,20 @@ export class SiteDeploy {
     return result;
   }
 
+  /** A concurrent/obsolete re-entry is detected through the durable operation identity: a confirmed id is not
+   *  deployed again (its recorded version is returned) and an uncertain one is never blindly redone (R24.17, R60.2). */
+  async #settled(id: string, containmentActive: boolean): Promise<DeployOutcome | null> {
+    const prior = await readOperation(this.db, id);
+    if (prior?.state === 'confirmed') {
+      return { promoted: true, keepContainment: false, versionId: prior.providerRef, operationId: id, operationState: 'confirmed', reason: 'promoted' };
+    }
+    if (prior?.state === 'uncertain') {
+      return { promoted: false, keepContainment: containmentActive, versionId: prior.providerRef, operationId: id, operationState: 'uncertain', reason: 'uncertain' };
+    }
+    return null;
+  }
   // --- Direct Upload phase 1: register the manifest, get missing hashes + the one-hour upload token ---
-  async #startUploadSession(manifest: SiteManifest): Promise<{ readonly token: string; readonly missing: readonly string[] }> {
+  async #startUploadSession(manifest: SiteManifest): Promise<{ readonly token: string; readonly buckets: readonly (readonly string[])[] }> {
     const result = await this.#call<{ jwt?: string; buckets?: string[][] }>(
       'POST',
       `/accounts/${this.config.accountId}/workers/scripts/${this.config.scriptName}/assets-upload-session`,
@@ -257,50 +341,26 @@ export class SiteDeploy {
     const token = result.jwt;
     if (!token) throw new CloudflareApiError(200, []);
     // `buckets` lists only the hashes the platform is MISSING; an absent/empty buckets means nothing to upload.
-    const missing = (result.buckets ?? []).flat();
-    return { token, missing };
+    const manifestHashes = new Set(Object.values(manifest).map((file) => file.hash));
+    const buckets = (result.buckets ?? []).filter((bucket) => bucket.length > 0);
+    for (const hash of buckets.flat()) if (!manifestHashes.has(hash)) throw new Error(`The platform asked for a hash not in the manifest: ${hash}.`);
+    return { token, buckets };
   }
-
-  // --- Direct Upload phase 2: upload ONLY the missing files; the final response carries the completion token ---
-  async #uploadMissing(
-    session: { readonly token: string; readonly missing: readonly string[] },
-    manifest: SiteManifest,
-    assets: AssetSource,
-  ): Promise<string> {
-    if (session.missing.length === 0) {
-      // Nothing missing: every file was already uploaded in a prior version. The upload token doubles as the
-      // completion token when no upload is needed.
-      return session.token;
-    }
-    const hashToPath = new Map(Object.entries(manifest).map(([path, file]) => [file.hash, path]));
-    let completionToken: string | null = null;
-    for (const hash of session.missing) {
-      if (!hashToPath.has(hash)) throw new Error(`The platform asked for a hash not in the manifest: ${hash}.`);
-      const body = await assets(hash);
-      if (!body) throw new Error(`No bytes available for a missing file (hash ${hash}).`);
-      const form = new FormData();
-      form.append(hash, new Blob([body.base64], { type: body.contentType }), hash);
-      const response = await this.#fetch(`${CLOUDFLARE_API}/accounts/${this.config.accountId}/workers/assets/upload?base64=true`, {
-        method: 'POST',
-        headers: { authorization: `Bearer ${session.token}` },
-        body: form,
-      });
-      const result = await response.json<{ success?: boolean; errors?: { code?: number }[]; result?: { jwt?: string } }>().catch(() => ({ success: false as boolean, errors: [] as { code?: number }[], result: undefined }));
-      if (!response.ok || result.success !== true) {
-        throw new CloudflareApiError(response.status, (result.errors ?? []).flatMap((e) => (typeof e.code === 'number' ? [e.code] : [])));
-      }
-      if (result.result?.jwt) completionToken = result.result.jwt;
-    }
-    if (!completionToken) throw new CloudflareApiError(201, []);
-    return completionToken;
-  }
-
   // --- Direct Upload phase 3a: create the assets-only version (no script module) with fixed routing ---
-  async #createVersion(completionToken: string): Promise<string> {
-    const result = await this.#call<{ id?: string }>(
+  async #createVersion(completionToken: string, headers?: string): Promise<string> {
+    // The script Versions endpoint takes multipart/form-data with a `metadata` part, not a JSON body (Direct Upload
+    // docs, "Create/Deploy New Version"); a JSON body is refused with HTTP 415. An assets-only version has no module.
+    const form = new FormData();
+    form.append('metadata', new Blob(
+      // `_headers` is configuration, not an asset: Workers Static Assets apply it from `assets.config._headers`
+      // (as wrangler does); an uploaded `/_headers` file would be served as a plain page and never applied.
+      [JSON.stringify({ assets: { jwt: completionToken, config: { ...SITE_ASSET_CONFIG, ...(headers === undefined ? {} : { _headers: headers }) } }, compatibility_date: COMPAT_DATE })],
+      { type: 'application/json' },
+    ));
+    const result = await this.#send<{ id?: string }>(
       'POST',
       `/accounts/${this.config.accountId}/workers/scripts/${this.config.scriptName}/versions`,
-      { assets: { jwt: completionToken, config: SITE_ASSET_CONFIG }, compatibility_date: COMPAT_DATE },
+      form,
     );
     if (!result.id) throw new CloudflareApiError(200, []);
     return result.id;
@@ -317,10 +377,18 @@ export class SiteDeploy {
 
   /** Bearer-token/success-flag Cloudflare API call, returning the `result` payload (reuses the AccessSync pattern). */
   async #call<T>(method: string, path: string, body: unknown): Promise<T> {
+    return this.#send<T>(method, path, JSON.stringify(body), 'application/json');
+  }
+
+  /**
+   * Send one Cloudflare API request and return its `result`. A FormData body sets its own multipart boundary, so no
+   * content type is given for it; a string body is sent with the given content type.
+   */
+  async #send<T>(method: string, path: string, body: string | FormData, contentType?: string): Promise<T> {
     if (!this.config.accountId || !this.config.scriptName || !this.config.apiToken) throw new Error('Site deploy is not configured.');
-    const response = await this.#fetch(`${CLOUDFLARE_API}${path}`, {
-      method, body: JSON.stringify(body), headers: { authorization: `Bearer ${this.config.apiToken}`, 'content-type': 'application/json' },
-    });
+    const headers: Record<string, string> = { authorization: `Bearer ${this.config.apiToken}` };
+    if (contentType !== undefined) headers['content-type'] = contentType;
+    const response = await this.#fetch(`${CLOUDFLARE_API}${path}`, { method, body, headers });
     const result = await response.json<{ success?: boolean; errors?: { code?: number }[]; result?: T }>().catch(() => ({ success: false as boolean, errors: [] as { code?: number }[], result: undefined }));
     if (!response.ok || result.success !== true) {
       throw new CloudflareApiError(response.status, (result.errors ?? []).flatMap((e) => (typeof e.code === 'number' ? [e.code] : [])));

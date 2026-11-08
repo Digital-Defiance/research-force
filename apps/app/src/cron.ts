@@ -126,6 +126,23 @@ export async function runScheduled(cron: string, env: Env, scheduledAt: Date, lo
     } catch (error) {
       log('error', 'usage_alert_check_failed', { error });
     }
+    // The public-traffic day rollover: lift a shed day's submit WAF block and republish status.json once a new UTC
+    // day starts (and publish the first status.json on a fresh install). Cheap when nothing is due (R28.6, R28.11).
+    try {
+      if (await env.BUDGET.getByName('budget').rollover(scheduledAt.getTime())) log('info', 'budget_day_rollover', {});
+    } catch (error) {
+      log('error', 'budget_rollover_failed', { error });
+    }
+    // The independent health check every 15 minutes: HEAD the monitored public/app endpoints and read the live
+    // Containment control path through rf-ops, alerting the independent channel only when not healthy (R28.6, R60.6).
+    if (scheduledAt.getUTCMinutes() % 15 === 0) {
+      try {
+        const report = await env.OPS.certifyHealth({ quietWhenOk: true });
+        log(report.level === 'ok' ? 'info' : 'warn', 'health_check', { level: report.level });
+      } catch (error) {
+        log('error', 'health_check_failed', { error });
+      }
+    }
     await kickAll(env, log);
   } else if (cron === HOURLY) await runSweeps(env, scheduledAt.toISOString() as Timestamp, log);
   else log('warn', 'cron_unknown', { cron });

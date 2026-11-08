@@ -6,6 +6,8 @@ import type { ULID } from '@researchforce/domain/types';
 import { base64Of, directUploadHash, extensionOf, planSite, reachesFileAlert } from '../src/publisher/plan';
 import type { ManifestEntry, PlannedFile } from '../src/publisher/plan';
 import { headersFile, loadSiteInput, renderSiteBuild } from '../src/publisher/render';
+import { encodeShellBundle } from '@researchforce/public-render/shell-bundle';
+import { loadShellAssets } from '../src/publisher/shell-assets';
 import { runProjectionSlice } from '../src/publisher/projection';
 import type { ProjectionDeps } from '../src/publisher/projection';
 import { TEST_PUBLIC_COPY, TEST_PUBLIC_COPY_INPUT } from '@researchforce/testing/site';
@@ -171,6 +173,29 @@ describe('publicCopyOf and the Installation_Public_Copy refusal gate (R46.41, R4
   });
 });
 
+describe('the form configuration', () => {
+  it('puts the Turnstile site key and origins in the form pages and the _headers CSP', async () => {
+    const forms = { siteKey: '0xSYNTHETICKEY', submitOrigin: 'https://submit-staging.example.test', filesOrigin: 'https://files-staging.example.test' };
+    await renderSiteBuild({ ...renderDeps(), forms }, NOW());
+    const stored = async (path: string): Promise<string> => {
+      const row = await manifestRow(path);
+      return new TextDecoder().decode(await (await priv().get(`build/${row!.hash}`))!.arrayBuffer());
+    };
+    const submit = await stored('/submit.html');
+    expect(submit).toContain('data-turnstile-sitekey="0xSYNTHETICKEY"');
+    expect(submit).toContain('data-submit-origin="https://submit-staging.example.test"');
+    expect(await stored('/consent.html')).toContain('data-turnstile-sitekey="0xSYNTHETICKEY"');
+    const headers = await stored('/_headers');
+    expect(headers).toContain('https://submit-staging.example.test');
+    expect(headers).toContain('\n/submit\n');
+  });
+  it('leaves the form attributes out when no site key is configured', async () => {
+    await renderSiteBuild(renderDeps(), NOW());
+    const row = await manifestRow('/submit.html');
+    const html = new TextDecoder().decode(await (await priv().get(`build/${row!.hash}`))!.arrayBuffer());
+    expect(html).not.toContain('data-turnstile-sitekey');
+  });
+});
 describe('a full render', () => {
   it('produces the page set, sitemap.xml, robots.txt, _headers, and the search index, and writes the manifest', async () => {
     const finding = await world.created('author', 'finding');
@@ -292,5 +317,38 @@ describe('the 16,000-file alert', () => {
     expect(result.alerted).toBe(true);
     const alerts = await core().prepare("SELECT count(*) AS n FROM notification_events WHERE event_type = 'system_alert' AND alert_key = 'site_file_count'").first<{ n: number }>();
     expect((alerts?.n ?? 0)).toBeGreaterThan(0);
+  });
+});
+describe('staged shell assets', () => {
+  const entries = [
+    { path: '/assets/form.js', contentType: 'text/javascript', content: new TextEncoder().encode('x') },
+    { path: '/fonts/a.woff2', contentType: 'font/woff2', content: new TextEncoder().encode('y') },
+  ];
+  const html = () => new Response('<!doctype html>', { headers: { 'content-type': 'text/html' } });
+  const bundleFetcher = (bytes: Uint8Array | null, calls: string[] = []): Fetcher => ({
+    fetch: async (input: RequestInfo | URL) => {
+      calls.push(String(input));
+      return bytes ? new Response(bytes as BodyInit, { headers: { 'content-type': 'application/octet-stream' } }) : html();
+    },
+  }) as unknown as Fetcher;
+  it('loads every bundled file with its path and content type', async () => {
+    const assets = await loadShellAssets(bundleFetcher(encodeShellBundle(entries)));
+    expect(assets.map((a) => [a.path, a.contentType])).toEqual([['/assets/form.js', 'text/javascript'], ['/fonts/a.woff2', 'font/woff2']]);
+    expect(new TextDecoder().decode(assets[0]!.content)).toBe('x');
+  });
+  it('ships none when there is no binding or no bundle', async () => {
+    expect(await loadShellAssets(undefined)).toEqual([]);
+    expect(await loadShellAssets(bundleFetcher(null))).toEqual([]);
+  });
+  it('fails rather than ship a partial set when the bundle is truncated', async () => {
+    const bytes = encodeShellBundle(entries);
+    await expect(loadShellAssets(bundleFetcher(bytes.slice(0, bytes.length - 1)))).rejects.toThrow('truncated');
+  });
+  it('performs exactly one ASSETS fetch for a 63-file shell', async () => {
+    const many = Array.from({ length: 63 }, (_, i) => ({ path: `/assets/f${i}.js`, contentType: 'text/javascript', content: new TextEncoder().encode(`f${i}`) }));
+    const calls: string[] = [];
+    const assets = await loadShellAssets(bundleFetcher(encodeShellBundle(many), calls));
+    expect(assets).toHaveLength(63);
+    expect(calls).toEqual(['https://assets.local/_shell/bundle.bin']);
   });
 });

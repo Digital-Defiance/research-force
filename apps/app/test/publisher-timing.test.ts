@@ -1,6 +1,6 @@
 import { runInDurableObject } from 'cloudflare:test';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ConfidentialityIncident, ContainmentCapabilities, ContainmentState, OpsDeployResult } from '@researchforce/domain/ops';
+import { fakeDeployOps as fakeOps } from '@researchforce/testing/fake-deploy-ops';
 import { VERIFY_BY_MS } from '@researchforce/db/containment';
 import type { ULID } from '@researchforce/domain/types';
 import type { DeployOps } from '../src/publisher/deploy';
@@ -25,43 +25,6 @@ const world = itemWorld();
 const core = () => world.bindings.RF_CORE;
 const pub = () => world.bindings.RF_PUBLIC;
 const stub = () => world.bindings.PUBLISHER.getByName('publisher');
-
-// ---------------------------------------------------------------------------
-// A fake OPS surface, mirroring publisher-deploy.test.ts: records calls, answers deterministically.
-// ---------------------------------------------------------------------------
-
-interface FakeOpsOptions {
-  readonly deploy?: Partial<OpsDeployResult>;
-  readonly probe?: (url: string) => 'present' | 'absent' | 'unknown';
-  readonly capabilities?: Partial<ContainmentCapabilities>;
-  readonly containment?: ContainmentState;
-}
-
-function fakeOps(options: FakeOpsOptions = {}): DeployOps & { calls: string[]; incidents: ConfidentialityIncident[] } {
-  const calls: string[] = [];
-  const incidents: ConfidentialityIncident[] = [];
-  return {
-    calls,
-    incidents,
-    async deploySite(input: { operationId: string }) {
-      calls.push('deploySite');
-      return {
-        promoted: true, keepContainment: false, versionId: 'v1', operationId: input.operationId,
-        operationState: 'confirmed', reason: 'promoted', ...options.deploy,
-      } as OpsDeployResult;
-    },
-    async containmentCapabilities() {
-      return { canDeny: true, verifiable: true, canAlert: true, blockingReason: null, ...options.capabilities };
-    },
-    async containPublicHosts() { calls.push('containPublicHosts'); },
-    async releaseContainment(authorizedGeneration: string) { calls.push(`releaseContainment:${authorizedGeneration}`); },
-    async verifyContainment() { calls.push('verifyContainment'); return options.containment ?? { active: false, verified: false }; },
-    async probePublicAddress(url: string) { calls.push(`probe:${url}`); return options.probe?.(url) ?? 'absent'; },
-    async declareIncident(incident: ConfidentialityIncident) { calls.push('declareIncident'); incidents.push(incident); },
-    async addMember() {}, async removeMember() {}, async revokeSessions() {},
-    fetch: async () => new Response(null, { status: 404 }),
-  } as unknown as DeployOps & { calls: string[]; incidents: ConfidentialityIncident[] };
-}
 
 // ---------------------------------------------------------------------------
 // DO-state helpers: reach into the Publisher's own SQLite through runInDurableObject.
@@ -221,5 +184,86 @@ describe('R36.9 restore pauses the Publisher', () => {
     await kick(world.bindings, ['publish'], createLogger());
     await vi.waitFor(async () => expect(await pendingPublish()).toBe(0), { timeout: 5000, interval: 50 });
     await vi.waitFor(async () => expect(await pub().prepare('SELECT count(*) AS n FROM publish_runs WHERE started_at IS NOT NULL').first<{ n: number }>().then((r) => r!.n)).toBeGreaterThanOrEqual(1), { timeout: 5000, interval: 50 });
+  });
+});
+// ---------------------------------------------------------------------------
+// 4. Wedge: a run whose alarm never fires again must be advanced by a later kick.
+// ---------------------------------------------------------------------------
+describe('stalled-run recovery on kick', () => {
+  const kickDo = () => runInDurableObject(stub(), async (instance: Publisher, state) => {
+    await instance.kick('publish');
+    return { alarm: await state.storage.getAlarm(), phase: state.storage.sql.exec<{ run_id: string; phase: string }>('SELECT run_id, phase FROM publish_run WHERE only = 1').toArray()[0] ?? null };
+  });
+  it('(a) reschedules when the run has no alarm, or only an overdue one', async () => {
+    await seedRun({ runId: 'run-noalarm', epoch: 0, phase: 'deploy', urgent: false, startedMs: Date.now(), lastChangeMs: Date.now(), verifyStartMs: 0 });
+    const missing = await kickDo();
+    expect(missing.alarm).not.toBeNull();
+    await runInDurableObject(stub(), (_i, state) => state.storage.setAlarm(Date.now() - 120_000));
+    const overdue = await kickDo();
+    expect(overdue.alarm === null || overdue.alarm > Date.now() - 60_000).toBe(true);
+    expect(overdue.phase?.run_id).toBe('run-noalarm'); // a fresh run is resumed, not replaced
+  });
+  it('(b) a run that stopped making progress is replaced so a later kick publishes once the cause is fixed', async () => {
+    const finding = await world.created('author', 'finding');
+    await makePublic(finding.id);
+    await publishRow(`root:${finding.id}`);
+    const old = Date.now() - 20 * 60_000;
+    await seedRun({ runId: 'run-wedged', epoch: 0, phase: 'project', urgent: false, startedMs: old, lastChangeMs: old, verifyStartMs: 0 });
+    const kicked = await kickDo();
+    expect(kicked.phase?.run_id).not.toBe('run-wedged');
+    expect(kicked.phase?.phase).toBe('project');
+    const closed = await runRow('run-wedged');
+    expect(closed!.finishedAt).not.toBeNull();
+    expect(closed!.verifiedAt).toBeNull(); // success is never claimed for the abandoned run
+    await tickWith(fakeOps());
+    expect(await pendingPublish()).toBe(0); // the replacement run drained the outbox
+  });
+  it('(c) a stale urgent verify run is resumed, never dropped, and ends in an incident rather than silent success', async () => {
+    await pub().prepare('INSERT INTO site_files (path, hash, size, updated_at) VALUES (?1, ?2, ?3, ?4)')
+      .bind('/r/RF-SECRET.html', 'oldhash', 10, world.at).run();
+    const old = Date.now() - (VERIFY_BY_MS + 20 * 60_000);
+    await seedRun({ runId: 'run-stale-urgent', epoch: 0, phase: 'verify', urgent: true, startedMs: old, lastChangeMs: 0, verifyStartMs: old });
+    const kicked = await kickDo();
+    expect(kicked.phase).toEqual({ run_id: 'run-stale-urgent', phase: 'verify' });
+    const ops = fakeOps({ probe: () => 'present', capabilities: { canDeny: false, blockingReason: 'no edge plan' } });
+    await tickWith(ops);
+    expect(ops.incidents).toHaveLength(1);
+    const row = await runRow('run-stale-urgent');
+    expect(row!.finishedAt).not.toBeNull();
+    expect(row!.verifiedAt).toBeNull();
+  });
+});
+
+describe('a kick opens a run only for queued work (the one-minute cron must not redeploy an unchanged site)', () => {
+  const clearState = async (): Promise<void> => {
+    await core().prepare("DELETE FROM outbox WHERE topic = 'publish'").run();
+    await runInDurableObject(stub(), async (_instance, state) => {
+      state.storage.sql.exec('DELETE FROM publish_run WHERE only = 1');
+      await state.storage.deleteAlarm();
+    });
+  };
+  const runOpen = () => runInDurableObject(stub(), (_instance, state) =>
+    state.storage.sql.exec<{ run_id: string }>('SELECT run_id FROM publish_run WHERE only = 1').toArray().length > 0);
+
+  it('opens no run and sets no alarm when nothing is queued and no run is active', async () => {
+    await clearState();
+    await runInDurableObject(stub(), (instance: Publisher) => instance.kick('publish'));
+    expect(await runOpen()).toBe(false);
+    expect(await currentAlarm()).toBeNull();
+  });
+
+  it('opens a run when a publish row is queued', async () => {
+    await clearState();
+    await publishRow('member:01M6SA486HRZWG3TDVY8RD4E7Q');
+    await runInDurableObject(stub(), (instance: Publisher) => instance.kick('publish'));
+    expect(await runOpen()).toBe(true);
+    expect(await currentAlarm()).not.toBeNull();
+  });
+
+  it('republish (the restore release) opens a run even with nothing queued', async () => {
+    await clearState();
+    await runInDurableObject(stub(), (instance: Publisher) => instance.republish());
+    expect(await runOpen()).toBe(true);
+    expect(await currentAlarm()).not.toBeNull();
   });
 });

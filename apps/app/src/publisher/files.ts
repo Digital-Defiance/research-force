@@ -224,3 +224,86 @@ export async function runFileOps(env: Env, ops: FileOps, retry: DeletionRetrySta
 
   return { deleted, deletionsPending, copied, copiesFailed };
 }
+
+// ---------------------------------------------------------------------------
+// The sliced driver: the same ordering, in bounded calls resumed by cursors.
+// ---------------------------------------------------------------------------
+
+/** Where the previous {@link runFileOpsSlice} call stopped: the last identifier attempted in each pass ('' = start). */
+export interface FileOpsCursors { readonly deletion: string; readonly copy: string }
+
+/** What one {@link runFileOpsSlice} call may do. */
+export interface FileOpsLimits {
+  /** The most deletions this call attempts (each costs two R2 calls: delete and head). */
+  readonly deletions: number;
+  /** The most copies this call attempts. */
+  readonly copies: number;
+  /** Called with 1 for each copy that goes out as an S3 CopyObject fetch (an external subrequest, not an R2 call). */
+  readonly chargeExternal?: (n: number) => void;
+}
+
+/** One sliced call's outcome: the {@link FileOpsResult} fields for this call, whether each pass is finished, and the new cursors. */
+export interface FileOpsSliceResult extends FileOpsResult {
+  readonly deletionsDone: boolean;
+  readonly copiesDone: boolean;
+  readonly cursors: FileOpsCursors;
+}
+
+const byIdentifier = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
+
+/**
+ * {@link runFileOps} in bounded slices (the Workers Free plan caps the calls one invocation may make). The ordering
+ * is unchanged and strict: the deletion pass runs over the sorted retry ids past the deletion cursor, and copies do
+ * not start until it has no ids left (R24.3, R25.3). Each attempted id advances the cursor whether or not it
+ * succeeded, so a persistently failing id cannot spin a run; a failed deletion stays in the durable retry set exactly
+ * as before (retried by the next run and by verify), and never blocks the copies. A failed copy is reported
+ * `copiesFailed` and the cursor moves past it for this run.
+ */
+export async function runFileOpsSlice(
+  env: Env,
+  ops: FileOps,
+  retry: DeletionRetryState,
+  cursors: FileOpsCursors,
+  limits: FileOpsLimits,
+): Promise<FileOpsSliceResult> {
+  for (const identifier of ops.deletions) retry.add(identifier);
+
+  const deleted: string[] = [];
+  const deletionsPending: string[] = [];
+  let deletion = cursors.deletion;
+  const owed = [...retry.pending()].filter((identifier) => identifier > deletion).sort(byIdentifier);
+  const dueDeletions = owed.slice(0, Math.max(0, limits.deletions));
+  for (const identifier of dueDeletions) {
+    try {
+      await deletePublicFile(env, identifier);
+      if (await publicFileAbsent(env, identifier)) { retry.clear(identifier); deleted.push(identifier); }
+      else deletionsPending.push(identifier);
+    } catch {
+      deletionsPending.push(identifier);
+    }
+    deletion = identifier;
+  }
+  const deletionsDone = owed.length <= dueDeletions.length;
+
+  const copied: string[] = [];
+  const copiesFailed: string[] = [];
+  let copy = cursors.copy;
+  let copiesDone = false;
+  if (deletionsDone) {
+    const wanted = [...ops.copies].filter((entry) => entry.itemIdentifier > copy).sort((a, b) => byIdentifier(a.itemIdentifier, b.itemIdentifier));
+    const dueCopies = wanted.slice(0, Math.max(0, limits.copies));
+    for (const entry of dueCopies) {
+      if (canServerSideCopy(env) && env.PUBLIC_BUCKET_NAME) limits.chargeExternal?.(1);
+      try {
+        await copyPublicFile(env, entry);
+        copied.push(entry.itemIdentifier);
+      } catch {
+        copiesFailed.push(entry.itemIdentifier);
+      }
+      copy = entry.itemIdentifier;
+    }
+    copiesDone = wanted.length <= dueCopies.length;
+  }
+
+  return { deleted, deletionsPending, copied, copiesFailed, deletionsDone, copiesDone, cursors: { deletion, copy } };
+}

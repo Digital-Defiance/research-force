@@ -31,7 +31,7 @@ export interface AnalyticsConfig {
  *   - `d1StorageAdaptiveGroups` → D1 stored bytes PER DATABASE (the latest `databaseSizeBytes` sample).
  *   - `r2StorageAdaptiveGroups` → R2 stored bytes (the latest `payloadSize` + `metadataSize` sample).
  *   - `r2OperationsAdaptiveGroups` → R2 operations grouped by `actionType`, split into Class A vs Class B.
- *   - `workersAiInferenceAdaptiveGroups` → Workers AI Neurons (summed `neurons`).
+ *   - `aiInferenceAdaptiveGroups` → Workers AI Neurons (summed `neurons`).
  *
  * Every dataset is filtered by the same account and the same `[$from, $to)` window. The query is written
  * against the documented Analytics schema; {@link Analytics.usage} parses the response DEFENSIVELY, so a
@@ -55,10 +55,10 @@ export const USAGE_QUERY = `query RfUsage($accountTag: String!, $from: Time!, $t
         max { payloadSize metadataSize }
       }
       r2OperationsAdaptiveGroups(limit: 10000, filter: { datetime_geq: $from, datetime_lt: $to }) {
-        dimensions { actionType actionClass }
+        dimensions { actionType }
         sum { requests }
       }
-      workersAiInferenceAdaptiveGroups(limit: 10000, filter: { datetime_geq: $from, datetime_lt: $to }) {
+      aiInferenceAdaptiveGroups(limit: 10000, filter: { datetime_geq: $from, datetime_lt: $to }) {
         sum { totalNeurons }
       }
     }
@@ -67,9 +67,9 @@ export const USAGE_QUERY = `query RfUsage($accountTag: String!, $from: Time!, $t
 
 /**
  * The R2 Class A action types (writes, lists, and other mutating calls). Any action type not in this set is
- * counted as Class B (reads). Cloudflare also returns an `actionClass` dimension; {@link Analytics.usage}
- * prefers that when present and falls back to this classification so the split stays correct if the class
- * dimension is absent.
+ * counted as Class B (reads). The GraphQL schema has no `actionClass` dimension on `r2OperationsAdaptiveGroups`
+ * (requesting it fails the whole query), so the query asks for `actionType` only and this set decides the class;
+ * {@link Analytics.usage} still honours an `actionClass` if a test or a future schema supplies one.
  */
 const R2_CLASS_A_ACTIONS: ReadonlySet<string> = new Set([
   'PutObject', 'CopyObject', 'CompleteMultipartUpload', 'CreateMultipartUpload', 'UploadPart',
@@ -101,7 +101,7 @@ interface AccountNode {
     readonly dimensions?: { readonly actionType?: string; readonly actionClass?: string };
     readonly sum?: { readonly requests?: number };
   }[];
-  readonly workersAiInferenceAdaptiveGroups?: readonly { readonly sum?: { readonly totalNeurons?: number } }[];
+  readonly aiInferenceAdaptiveGroups?: readonly { readonly sum?: { readonly totalNeurons?: number } }[];
 }
 
 /** Coerce an untrusted analytics value to a finite non-negative number; anything else reads as zero. */
@@ -178,7 +178,7 @@ export class Analytics implements OpsAnalytics {
       { classA: 0, classB: 0 },
     );
 
-    const aiNeurons = (account?.workersAiInferenceAdaptiveGroups ?? []).reduce((total, node) => total + count(node.sum?.totalNeurons), 0);
+    const aiNeurons = (account?.aiInferenceAdaptiveGroups ?? []).reduce((total, node) => total + count(node.sum?.totalNeurons), 0);
 
     return { window, workerRequests, d1, r2StoredBytes, r2Operations, aiNeurons };
   }

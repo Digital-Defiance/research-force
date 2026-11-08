@@ -229,8 +229,9 @@ export class Budget extends DurableObject<Env> {
   /**
    * The 00:00 UTC reset. Idempotent: it resets the day counters to a fresh day, disables the submit WAF rule,
    * rewrites `status.json` to fully available, and drops the prior day's address key (and any address key
-   * older than 24h, R46.20). The every-minute cron calls this; an alarm set for the next 00:00 UTC also drives
-   * it if the cron is missed.
+   * older than 24h, R46.20). It ZEROES the current day, so it must run only at a day boundary: the every-minute
+   * cron calls {@link rollover}, which runs this only when the stored day is not today; the alarm it sets for the
+   * next 00:00 UTC drives it otherwise.
    */
   async reset(now: number = Date.now()): Promise<void> {
     const today = utcDay(now);
@@ -253,6 +254,24 @@ export class Budget extends DurableObject<Env> {
     await this.#scheduleReset(now);
   }
 
+  /**
+   * The every-minute cron's cheap check (R28.6, R28.11). It runs {@link reset} only when the stored day is not today
+   * or no day has been recorded yet, which also publishes the first `status.json` on a fresh install. Otherwise it
+   * only makes sure the next 00:00 UTC alarm is set. It never zeroes a day in progress. Returns whether a reset ran.
+   * Without it, nothing started the reset cycle, so a day that shed would keep the submit WAF block and the
+   * "unavailable" status.json in force indefinitely.
+   */
+  async rollover(now: number = Date.now()): Promise<boolean> {
+    const today = utcDay(now);
+    const stored = this.ctx.storage.sql.exec<{ day: string }>('SELECT day FROM day WHERE only = 1').toArray()[0]?.day;
+    if (stored !== today) { await this.reset(now); return true; }
+    // Today's row can exist before any reset ran (another path, e.g. the mail recipient cap, wrote it first), so
+    // status.json is republished once per day here too; otherwise a fresh install might never publish it.
+    if ((await this.ctx.storage.get<string>(STATUS_DAY_KEY)) !== today) await this.#rewriteStatus();
+    await this.#scheduleReset(now);
+    return false;
+  }
+
   override async alarm(): Promise<void> {
     await this.reset(Date.now());
   }
@@ -266,6 +285,8 @@ export class Budget extends DurableObject<Env> {
     if (this.#dayRow(day).waf_blocked === 1) { await this.#rewriteStatus(); return; }
     await this.#setWaf(true);
     await this.#rewriteStatus();
+    // A shed day must always be lifted at 00:00 UTC, even if the cron is not running.
+    await this.#scheduleReset(Date.now());
   }
 
   /** Toggle the precreated submit WAF block through rf-ops and record the flag in the day row. */
@@ -288,6 +309,7 @@ export class Budget extends DurableObject<Env> {
     const generation = await readEpoch(this.env.RF_CORE);
     const status: PublicStatus = statusJson(decision, generation);
     await writeStatus(this.env.RF_PUBLIC_BUCKET, status);
+    await this.ctx.storage.put(STATUS_DAY_KEY, day);
   }
 
   /** The rf-ops WAF surface the Budget calls; a test may inject a fake through {@link setOpsForTest}. */
@@ -384,6 +406,9 @@ export class Budget extends DurableObject<Env> {
     if (current === null || current !== next) await this.ctx.storage.setAlarm(next);
   }
 }
+
+/** Durable-storage key holding the UTC day `status.json` was last written, so the rollover publishes it once a day. */
+const STATUS_DAY_KEY = 'status_day';
 
 /** The fixed public-traffic refuse response: no D1 query, no per-request content. Precomputed once (R28.5, R28.11). */
 export const UNAVAILABLE_UNTIL_RESET = Object.freeze({

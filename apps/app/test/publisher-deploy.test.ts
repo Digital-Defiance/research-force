@@ -1,70 +1,27 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import type { ConfidentialityIncident, ContainmentCapabilities, ContainmentState, OpsDeployResult } from '@researchforce/domain/ops';
+import { fakeDeployOps as fakeOps } from '@researchforce/testing/fake-deploy-ops';
 import { CONTAIN_AT_MS, VERIFY_BY_MS } from '@researchforce/db/containment';
 import type { Generation } from '@researchforce/db/publication-epoch';
 import {
   ADDITION_MAX_WAIT_MS,
   ADDITION_QUIET_MS,
-  type DeployManifest,
-  type DeployOps,
-  collectDeployAssets,
-  deployRun,
+  deployFinish,
   deployWhen,
+  escalateAfterProbes,
   fileOpsFor,
   mayReleaseAfterRestore,
+  probeWindow,
   reconcileUncertainDeploy,
   releaseAfterRestore,
   removedProbeUrls,
+  shouldEvaluate,
+  uploadChunk,
   verifyObservation,
   verifyRemoval,
 } from '../src/publisher/deploy';
-import type { PlannedFile, SitePlan } from '../src/publisher/plan';
 import { itemWorld } from './items';
 
 const gen = (run: string, epoch: number): Generation => ({ run, epoch });
-
-// ---------------------------------------------------------------------------
-// A fake OPS surface that records calls and answers deterministically, standing in for the rf-ops service
-// binding (which the workers harness stubs with a 503). Each test wires the answers it needs.
-// ---------------------------------------------------------------------------
-
-interface FakeOpsOptions {
-  readonly deploy?: Partial<OpsDeployResult>;
-  readonly probe?: (url: string) => 'present' | 'absent' | 'unknown';
-  readonly capabilities?: Partial<ContainmentCapabilities>;
-  readonly containment?: ContainmentState;
-  readonly containError?: boolean;
-}
-
-function fakeOps(options: FakeOpsOptions = {}): DeployOps & { calls: string[]; incidents: ConfidentialityIncident[] } {
-  const calls: string[] = [];
-  const incidents: ConfidentialityIncident[] = [];
-  return {
-    calls,
-    incidents,
-    async deploySite(input: { operationId: string }) {
-      calls.push('deploySite');
-      return {
-        promoted: true, keepContainment: false, versionId: 'v1', operationId: input.operationId,
-        operationState: 'confirmed', reason: 'promoted', ...options.deploy,
-      } as OpsDeployResult;
-    },
-    async containmentCapabilities() {
-      return { canDeny: true, verifiable: true, canAlert: true, blockingReason: null, ...options.capabilities };
-    },
-    async containPublicHosts() {
-      calls.push('containPublicHosts');
-      if (options.containError) throw new Error('contain failed');
-    },
-    async releaseContainment(authorizedGeneration: string) { calls.push(`releaseContainment:${authorizedGeneration}`); },
-    async verifyContainment() { calls.push('verifyContainment'); return options.containment ?? { active: false, verified: false }; },
-    async probePublicAddress(url: string) { calls.push(`probe:${url}`); return options.probe?.(url) ?? 'absent'; },
-    async declareIncident(incident: ConfidentialityIncident) { calls.push('declareIncident'); incidents.push(incident); },
-    // Unused OpsAccess surface for the type.
-    async addMember() {}, async removeMember() {}, async revokeSessions() {},
-    fetch: async () => new Response(null, { status: 404 }),
-  } as unknown as DeployOps & { calls: string[]; incidents: ConfidentialityIncident[] };
-}
 
 // ---------------------------------------------------------------------------
 // Urgency batching (pure).
@@ -154,15 +111,13 @@ describe('fileOpsFor', () => {
 });
 
 // ---------------------------------------------------------------------------
-// deployRun: epoch fencing + the ambiguous-promotion reconcile.
+// deployFinish: epoch fencing + the ambiguous-promotion reconcile.
 // ---------------------------------------------------------------------------
 
-const manifest: DeployManifest = { '/index.html': { hash: 'h1', size: 10 } };
-
-describe('deployRun epoch fencing', () => {
+describe('deployFinish epoch fencing', () => {
   it('deploys when the generation is current', async () => {
     const ops = fakeOps();
-    const result = await deployRun(ops, gen('r1', 3), 3, manifest, {}, false);
+    const result = await deployFinish(ops, gen('r1', 3), 3, 'token', false);
     expect(ops.calls).toContain('deploySite');
     expect(result.deployed).toBe(true);
     expect(result.fencedOut).toBe(false);
@@ -170,7 +125,7 @@ describe('deployRun epoch fencing', () => {
 
   it('refuses to deploy a stale generation and never calls rf-ops (a stale retry cannot deploy suppressed output)', async () => {
     const ops = fakeOps();
-    const result = await deployRun(ops, gen('stale', 2), 5, manifest, {}, true);
+    const result = await deployFinish(ops, gen('stale', 2), 5, 'token', true);
     expect(ops.calls).not.toContain('deploySite'); // fenced out before it reaches the provider
     expect(result.fencedOut).toBe(true);
     expect(result.deployed).toBe(false);
@@ -179,7 +134,7 @@ describe('deployRun epoch fencing', () => {
 
   it('a failed deploy is not treated as success and keeps containment', async () => {
     const ops = fakeOps({ deploy: { promoted: false, keepContainment: true, operationState: 'failed', reason: 'raced_after', versionId: 'v2' } });
-    const result = await deployRun(ops, gen('r1', 3), 3, manifest, {}, true);
+    const result = await deployFinish(ops, gen('r1', 3), 3, 'token', true);
     expect(result.deployed).toBe(false);
     expect(result.outcome.keepContainment).toBe(true);
   });
@@ -293,34 +248,114 @@ describe('mayReleaseAfterRestore / releaseAfterRestore', () => {
 });
 
 // ---------------------------------------------------------------------------
-// collectDeployAssets: reads the added/changed build content from rf-private.
+// uploadChunk: reads the build content of the next files to upload from rf-private.
 // ---------------------------------------------------------------------------
 
 const world = itemWorld();
 const priv = () => world.bindings.RF_PRIVATE_BUCKET;
 
-const planned = (path: string, hash: string): PlannedFile => ({ path, hash, size: 1 });
-const emptyPlan = (over: Partial<SitePlan>): SitePlan => ({ added: [], changed: [], removed: [], unchanged: [], all: [], ...over });
-
-describe('collectDeployAssets', () => {
+describe('uploadChunk', () => {
   beforeEach(async () => {
     const listed = await priv().list({ prefix: 'build/' });
     for (const object of listed.objects) await priv().delete(object.key);
   });
 
-  it('collects base64 bytes of added and changed files, de-duplicating by hash', async () => {
-    await priv().put('build/hA', 'alpha bytes');
+  it('collects base64 bytes with the content type render stored, in order', async () => {
+    await priv().put('build/hA', 'alpha bytes', { httpMetadata: { contentType: 'text/css' } });
     await priv().put('build/hB', 'beta bytes');
-    const plan = emptyPlan({ added: [planned('/a.html', 'hA')], changed: [planned('/b.json', 'hB'), planned('/b2.json', 'hB')] });
 
-    const assets = await collectDeployAssets(priv(), plan, () => 'text/html');
-    expect(Object.keys(assets).sort()).toEqual(['hA', 'hB']); // hB de-duplicated
-    expect(atob(assets['hA']!.base64)).toBe('alpha bytes');
+    const chunk = await uploadChunk(priv(), ['hA', 'hB']);
+    expect(Object.keys(chunk.files)).toEqual(['hA', 'hB']);
+    expect(chunk.consumed).toBe(2);
+    expect(atob(chunk.files['hA']!.base64)).toBe('alpha bytes');
+    expect(chunk.files['hA']!.contentType).toBe('text/css'); // the stored type, not octet-stream
+    expect(chunk.files['hB']!.contentType).toBe('application/octet-stream'); // no stored type
   });
 
-  it('skips a missing build object (rf-ops surfaces it as a deploy error, not here)', async () => {
-    const plan = emptyPlan({ added: [planned('/x.html', 'missing-hash')] });
-    const assets = await collectDeployAssets(priv(), plan, () => 'text/html');
-    expect(assets).toEqual({});
+  it('stops at the file limit and reports how far it got, so the next call resumes there', async () => {
+    for (const hash of ['h1', 'h2', 'h3']) await priv().put(`build/${hash}`, hash);
+    const first = await uploadChunk(priv(), ['h1', 'h2', 'h3'], 2);
+    expect(Object.keys(first.files)).toEqual(['h1', 'h2']);
+    expect(first.consumed).toBe(2);
+    const second = await uploadChunk(priv(), ['h3']);
+    expect(Object.keys(second.files)).toEqual(['h3']);
+  });
+
+  it('reports a missing build object instead of silently dropping it', async () => {
+    await priv().put('build/hA', 'alpha');
+    const chunk = await uploadChunk(priv(), ['hA', 'missing-hash']);
+    expect(Object.keys(chunk.files)).toEqual(['hA']);
+    expect(chunk.missing).toEqual(['missing-hash']);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// The sliced verify: partial passes, the probe window, and when to evaluate (pure).
+// ---------------------------------------------------------------------------
+
+describe('verifyObservation on a partial pass', () => {
+  const containment = { active: false, verified: false, canContain: true };
+  const absent = [{ url: 'a', status: 'absent' as const }];
+
+  it('never verifies the removal from a partial pass, even when every probe so far is absent', () => {
+    expect(verifyObservation(absent, 0, containment, false).removalVerified).toBe(false);
+    expect(verifyObservation(absent, 0, containment, true).removalVerified).toBe(true);
+  });
+
+  it('declares the provider down on a partial pass only from the five-minute mark', () => {
+    const unknown = [{ url: 'a', status: 'unknown' as const }];
+    expect(verifyObservation(unknown, VERIFY_BY_MS - 1, containment, false).providerDown).toBe(false);
+    expect(verifyObservation(unknown, VERIFY_BY_MS, containment, false).providerDown).toBe(true);
+    expect(verifyObservation(unknown, 0, containment, true).providerDown).toBe(true);
+  });
+});
+
+describe('probeWindow', () => {
+  it('returns the next unprobed addresses in order, at most the limit', () => {
+    const urls = ['a', 'b', 'c', 'd', 'e'];
+    expect(probeWindow(urls, new Set(), 2)).toEqual(['a', 'b']);
+    expect(probeWindow(urls, new Set(['a', 'b']), 2)).toEqual(['c', 'd']);
+    expect(probeWindow(urls, new Set(['a', 'c', 'e']), 10)).toEqual(['b', 'd']);
+    expect(probeWindow(urls, new Set(urls), 10)).toEqual([]);
+    expect(probeWindow([], new Set(), 10)).toEqual([]);
+  });
+});
+
+describe('shouldEvaluate', () => {
+  const base = { passComplete: false, elapsedMs: 0, lastEvalMs: 0, nowMs: 1_000_000 };
+
+  it('always evaluates a complete pass', () => {
+    expect(shouldEvaluate({ ...base, passComplete: true })).toBe(true);
+    expect(shouldEvaluate({ ...base, passComplete: true, elapsedMs: CONTAIN_AT_MS + 1, lastEvalMs: base.nowMs })).toBe(true);
+  });
+
+  it('never evaluates a partial pass before four minutes', () => {
+    expect(shouldEvaluate({ ...base, elapsedMs: 0 })).toBe(false);
+    expect(shouldEvaluate({ ...base, elapsedMs: CONTAIN_AT_MS - 1 })).toBe(false);
+  });
+
+  it('forces an evaluation mid-pass at four minutes, then at most every 15 seconds', () => {
+    expect(shouldEvaluate({ ...base, elapsedMs: CONTAIN_AT_MS })).toBe(true);
+    expect(shouldEvaluate({ ...base, elapsedMs: CONTAIN_AT_MS, lastEvalMs: base.nowMs - 14_999 })).toBe(false);
+    expect(shouldEvaluate({ ...base, elapsedMs: VERIFY_BY_MS + 60_000, lastEvalMs: base.nowMs - 15_000 })).toBe(true);
+  });
+});
+
+describe('escalateAfterProbes', () => {
+  it('contains and declares once on a partial pass at four minutes, listing unprobed addresses as unverified', async () => {
+    const ops = fakeOps();
+    const result = await escalateAfterProbes(ops, gen('r1', 2), [{ url: 'https://public.test/a', status: 'absent' }], false, CONTAIN_AT_MS, ['https://public.test/b']);
+    expect(result.decision.action).toBe('contain');
+    expect(result.safe).toBe(false);
+    expect(ops.calls.filter((call) => call === 'containPublicHosts')).toHaveLength(1);
+    expect(ops.incidents).toHaveLength(1);
+    expect(ops.incidents[0]!.unverifiedTargets).toEqual(['https://public.test/b']);
+  });
+
+  it('does not resolve a partial all-absent pass', async () => {
+    const ops = fakeOps();
+    const result = await escalateAfterProbes(ops, gen('r1', 2), [{ url: 'u', status: 'absent' }], false, 1_000);
+    expect(result.safe).toBe(false);
+    expect(result.decision.action).toBe('wait');
   });
 });

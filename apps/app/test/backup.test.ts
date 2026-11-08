@@ -317,6 +317,34 @@ describe('the sealed manifest counts and digests match the seeded rows across sh
       { numRuns: Math.min(FC_RUNS, 40) },
     );
   }, 600_000);
+
+  it('pages a table past one page in the middle of a batched group, and every table still matches (R36.1)', async () => {
+    // `settings` sits inside the first batched group; 1,100 extra rows force its first page to be full, so the group
+    // stops there, the table continues on the per-page path for two more pages, and the following tables start a new
+    // group. Every manifest count and digest must still equal the live rows and the stored body part.
+    await resetRecords(core());
+    await core().batch([core().prepare('DELETE FROM exports'), core().prepare('DELETE FROM jobs'), core().prepare('DELETE FROM write_freeze_leases'), core().prepare('DELETE FROM backup_file_pins')]);
+    const insert = core().prepare('INSERT INTO settings (key, value, updated_at, updated_seq) VALUES (?1, ?2, ?3, 0)');
+    const rows = Array.from({ length: 1_100 }, (_v, index) => insert.bind(`test.bulk.${String(index).padStart(4, '0')}`, JSON.stringify(index), world.at));
+    for (let start = 0; start < rows.length; start += 100) await core().batch(rows.slice(start, start + 100));
+
+    const { id } = await (await startBackup()).json<{ id: ULID }>();
+    const { outcome } = await runBackup(id);
+    expect(outcome).toBe('complete');
+    const manifest = await openManifest(id);
+    expect(validateManifest(manifest)).toEqual([]);
+    expect(manifest.tables.map((t) => t.table).sort()).toEqual(BACKUP_TABLES.map((t) => t.table).sort());
+    for (const entry of manifest.tables) {
+      const live = (await core().prepare(`SELECT count(*) AS n FROM ${entry.table}`).first<{ n: number }>())!.n;
+      expect(entry.rows, `${entry.table} row count matches the live table`).toBe(live);
+      const object = await priv().get(`${bucketKeyOf(backupPrefix(id))}/body/${entry.table}.jsonl`);
+      const bytes = object === null ? new Uint8Array(0) : new Uint8Array(await object.arrayBuffer());
+      const digest = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)), (b) => b.toString(16).padStart(2, '0')).join('');
+      expect(entry.sha256, `${entry.table} digest matches its body part`).toBe(digest);
+    }
+    expect(manifest.tables.find((t) => t.table === 'settings')!.rows).toBeGreaterThan(1_100);
+    await core().prepare("DELETE FROM settings WHERE key LIKE 'test.bulk.%'").run();
+  }, 120_000);
 });
 
 describe('the authoritative backup inventory (R60.1)', () => {

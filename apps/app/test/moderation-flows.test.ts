@@ -170,6 +170,8 @@ describe('moderation flows (R32.5, R32.6, R32.8, R32.9, R32.10)', () => {
     const link = await world.core().prepare('SELECT token_hash AS tokenHash, expires_at AS expiresAt FROM response_links WHERE outside_submission_id = ?1').bind(id).first<{ tokenHash: string; expiresAt: string }>();
     expect(link).not.toBeNull();
     expect(Date.parse(link!.expiresAt) - START).toBe(RETENTION.responseLinks.validDays * DAY_MS);
+    // The Response_Link points at the public site, which serves the Response page.
+    expect(result.email.body.join('\n')).toContain(`${env().PUBLIC_SITE_ORIGIN}/respond#`);
     // The clear token never appears in the stored hash.
     const token = result.email.body.join('\n').match(/respond#([0-9A-HJ-NP-TV-Z]+)/u)?.[1];
     expect(token).toBeDefined();

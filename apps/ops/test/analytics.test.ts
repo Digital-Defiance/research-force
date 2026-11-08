@@ -32,7 +32,7 @@ function syntheticAccount() {
       { dimensions: { actionType: 'HeadObject' }, sum: { requests: 25 } }, // no class dim → fall back by actionType (B)
       { dimensions: { actionType: 'CopyObject' }, sum: { requests: 5 } }, // no class dim → fall back by actionType (A)
     ],
-    workersAiInferenceAdaptiveGroups: [{ sum: { totalNeurons: 450 } }, { sum: { totalNeurons: 90 } }],
+    aiInferenceAdaptiveGroups: [{ sum: { totalNeurons: 450 } }, { sum: { totalNeurons: 90 } }],
   };
 }
 
@@ -67,7 +67,7 @@ describe('rf-ops usage analytics (R19.10)', () => {
       'd1StorageAdaptiveGroups',
       'r2StorageAdaptiveGroups',
       'r2OperationsAdaptiveGroups',
-      'workersAiInferenceAdaptiveGroups',
+      'aiInferenceAdaptiveGroups',
     ]) {
       expect(request.body.query).toContain(dataset);
     }

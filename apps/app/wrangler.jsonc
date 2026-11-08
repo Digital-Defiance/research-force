@@ -14,9 +14,18 @@
     "DOWNLOAD_ORIGIN": "https://dl.researchforce.org",
     "PUBLIC_SITE_ORIGIN": "https://researchforce.org",
     "PUBLIC_FILES_ORIGIN": "https://files.researchforce.org",
+    "PUBLIC_SUBMIT_ORIGIN": "https://submit.researchforce.org",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAF30_Z6vvx281GwH",
     "R2_ACCOUNT_ID": "48ca646fd701c00c0069952c95299dad",
     "PRIVATE_BUCKET_NAME": "rf-private",
-    "PUBLIC_BUCKET_NAME": "rf-public"
+    "PUBLIC_BUCKET_NAME": "rf-public",
+    "BACKUP_COPY_BUDGET_APPROVED": "true",
+    "BACKUP_RPO_WARN_HOURS": "576",
+    "BACKUP_RPO_BREACH_HOURS": "744",
+    "BACKUP_INITIAL_RESTORE_DONE": "true",
+    "BACKUP_COPY_DESTINATION": "{\"kind\":\"offline\",\"label\":\"operator-local-drive\"}",
+    "CONTENT_LICENCE_NAME": "CC BY 4.0",
+    "CONTENT_LICENCE_URL": "https://creativecommons.org/licenses/by/4.0/"
   },
   "d1_databases": [
     {
@@ -105,8 +114,6 @@
   "env": {
     "staging": {
       "name": "rf-app-staging",
-      // Cloudflare allows 5 Cron Triggers per account; production needs them, so staging has none.
-      // Run background work on staging by hand when testing.
       "triggers": { "crons": [] },
       "workers_dev": false,
       "preview_urls": false,
@@ -115,9 +122,13 @@
         "DOWNLOAD_ORIGIN": "https://dl-staging.researchforce.org",
         "PUBLIC_SITE_ORIGIN": "https://staging-public.researchforce.org",
         "PUBLIC_FILES_ORIGIN": "https://files-staging.researchforce.org",
+        "PUBLIC_SUBMIT_ORIGIN": "https://submit-staging.researchforce.org",
+        "TURNSTILE_SITE_KEY": "0x4AAAAAAF30__B85zSmN2Jc",
         "R2_ACCOUNT_ID": "48ca646fd701c00c0069952c95299dad",
         "PRIVATE_BUCKET_NAME": "rf-private-staging",
-        "PUBLIC_BUCKET_NAME": "rf-public-staging"
+        "PUBLIC_BUCKET_NAME": "rf-public-staging",
+        "CONTENT_LICENCE_NAME": "CC BY 4.0",
+        "CONTENT_LICENCE_URL": "https://creativecommons.org/licenses/by/4.0/"
       },
       "routes": [{ "pattern": "staging.researchforce.org", "custom_domain": true }],
       "d1_databases": [
