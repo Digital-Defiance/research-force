@@ -6,7 +6,12 @@ import { DEFAULT_RESOURCE_PROFILE } from './resource-profile';
 export const FREE_PLAN_LIMITS = {
   /** External subrequests (global fetch, ASSETS binding, service bindings) per invocation. */
   externalSubrequests: 50,
-  /** D1 queries per invocation; a batch counts each statement. */
+  /**
+   * D1 queries per invocation. The platform counts a `db.batch()` as ONE query against this limit, not one per
+   * statement (developers.cloudflare.com/d1/platform/limits, "Queries per Worker invocation"; re-checked for this
+   * change). The project phase is held to that platform metric (round trips); the deploy and verify phases are held to
+   * the stricter per-statement count, which bounds the round trips too.
+   */
   d1Queries: 50,
   /** Calls to Cloudflare services (R2, D1, DO, KV, ...) per invocation. */
   internalSubrequests: 1000,

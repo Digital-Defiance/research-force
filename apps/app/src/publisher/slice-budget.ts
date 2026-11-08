@@ -40,6 +40,15 @@ export class SliceMeter {
     return true;
   }
 
+  /**
+   * The kinds whose spent calls went past the budget. The step machine only checks the budget BETWEEN units (the first
+   * unit of a slice always runs, and each unit sizes its own window from {@link remaining}), so a unit whose cost was
+   * mis-estimated can overshoot; the Durable Object reports any overshoot after the slice so it is visible, not silent.
+   */
+  overBudget(): SliceKind[] {
+    return (['d1', 'r2', 'external'] as const).filter((kind) => this.#used[kind] > this.#budget[kind]);
+  }
+
   #reserve(kind: SliceKind): number {
     if (kind === 'd1') return this.#budget.reserveD1;
     if (kind === 'external') return this.#budget.reserveExternal;

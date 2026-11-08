@@ -371,6 +371,41 @@ describe('Free-plan slicing: the manifest invariant', () => {
   });
 });
 
+describe('Free-plan slicing: a missing build object', () => {
+  const uploading = (restages: number) => JSON.stringify({ step: 'upload', uploadToken: 'tok', bucket: 0, offset: 0, sessionStartMs: Date.now(), restages });
+  const seedMissing = async () => {
+    await pub().prepare("INSERT INTO site_files (path, hash, size, updated_at) VALUES ('/gone.html', 'h-missing', 1, ?1)").bind(world.at).run();
+    await runInDurableObject(stub(), (_i, state) => { state.storage.sql.exec("INSERT INTO deploy_buckets (idx, hashes) VALUES (0, '[\"h-missing\"]')"); });
+  };
+  it('drops the manifest row and restarts at stage, counting the restart', async () => {
+    await seedRun({ runId: 'run-missing', phase: 'deploy', urgent: true, deployJson: uploading(0) });
+    await seedMissing();
+    const result = await tick(fakeDeployOps(), syntheticRender(1));
+    expect(result.error).toBeUndefined();
+    expect(await deployJson()).toMatchObject({ step: 'stage', restages: 1 });
+    expect(await pub().prepare("SELECT count(*) AS n FROM site_files WHERE hash = 'h-missing'").first<{ n: number }>()).toEqual({ n: 0 });
+  });
+  it('fails the slice instead of looping once the restart bound is spent', async () => {
+    await seedRun({ runId: 'run-missing-bound', phase: 'deploy', urgent: true, deployJson: uploading(3) });
+    await seedMissing();
+    const ops = fakeDeployOps();
+    const result = await tick(ops, syntheticRender(1));
+    expect(String(result.error)).toMatch(/still missing after 3 re-stages/);
+    expect(ops.steps).not.toContain('finish'); // nothing was promoted
+    expect(await deployJson()).toMatchObject({ step: 'upload', restages: 3 });
+  });
+});
+describe('Free-plan slicing: the slice meter', () => {
+  it('reports the kinds whose spent calls went past the budget', () => {
+    const meter = new SliceMeter();
+    meter.charge('d1', 40);
+    meter.charge('r2', 300);
+    expect(meter.overBudget()).toEqual([]);
+    meter.charge('d1');
+    meter.charge('external', 31);
+    expect(meter.overBudget()).toEqual(['d1', 'external']);
+  });
+});
 // ---------------------------------------------------------------------------
 // (h) Stale-run recovery (c634e17) and the step machine.
 // ---------------------------------------------------------------------------

@@ -214,6 +214,10 @@ export class Publisher extends DurableObject<Env> {
       // the next kick recovers the stale run (see #recoverStale) rather than leaving it wedged.
       this.#log('error', 'publish_phase_failed', { run: run.run, phase: run.phase, error });
       throw error;
+    } finally {
+      // A unit that overshot its slice budget (a mis-estimated STEP_NEEDS or window) is reported, content-free.
+      const over = meter.overBudget();
+      if (over.length > 0) this.#log('warn', 'publish_slice_over_budget', { run: run.run, phase: run.phase, over, used: meter.used() });
     }
     // The slice completed without throwing: that is progress (a no-op when the run just finished).
     this.ctx.storage.sql.exec('UPDATE publish_run SET progress_ms = ? WHERE only = 1', Date.now());
@@ -356,10 +360,14 @@ export class Publisher extends DurableObject<Env> {
           const hashes = (JSON.parse(row.hashes) as string[]).slice(progress.offset);
           const chunk = await uploadChunk(io.priv, hashes, meter.remaining('r2'));
           if (chunk.missing.length > 0) {
+            // A bounded retry: after MAX_RESTAGES restarts the slice fails instead of looping on the same missing objects.
+            if (progress.restages >= MAX_RESTAGES) {
+              throw new Error(`Build objects still missing after ${MAX_RESTAGES} re-stages (${chunk.missing.length} hashes).`);
+            }
             // A manifest row whose build object is gone: drop the rows so the stage step re-renders and re-stores them.
             await io.pub.prepare('DELETE FROM site_files WHERE hash IN (SELECT value FROM json_each(?1))').bind(JSON.stringify(chunk.missing)).run();
             this.ctx.storage.sql.exec('DELETE FROM deploy_buckets');
-            this.#saveDeploy({ ...DEFAULT_DEPLOY });
+            this.#saveDeploy({ ...DEFAULT_DEPLOY, restages: progress.restages + 1 });
             await this.#wake(Date.now());
             return;
           }
@@ -724,12 +732,21 @@ interface DeployProgress {
   /** True once rf-ops answered `uncertain`: later slices reconcile and never re-send the promotion. */
   readonly uncertain: boolean;
   readonly versionId: string | null;
+  /** How many times this deploy restarted at `stage` because a manifest row's `build/{hash}` object was missing. */
+  readonly restages: number;
 }
 
 const DEFAULT_DEPLOY: DeployProgress = {
   step: 'stage', deletionCursor: '', copyCursor: '', sessionStartMs: 0, uploadToken: '', completionToken: '',
-  bucket: 0, offset: 0, uncertain: false, versionId: null,
+  bucket: 0, offset: 0, uncertain: false, versionId: null, restages: 0,
 };
+
+/**
+ * The most restarts at `stage` one deploy makes for missing build objects. Beyond it the slice fails (throws), so a
+ * stage that keeps believing an object is stored cannot loop forever; the platform's alarm retries and the stale-run
+ * recovery then take over, exactly as for any other failing deploy slice.
+ */
+const MAX_RESTAGES = 3;
 
 /** The verify phase's persisted progress. */
 interface VerifyProgress {

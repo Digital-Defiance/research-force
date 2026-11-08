@@ -285,6 +285,54 @@ describe('Free plan: the sized site', () => {
 });
 
 // ---------------------------------------------------------------------------
+// (3b) The REAL loader and renderer at scale: no render override, Cross_Link neighbours in every view.
+// ---------------------------------------------------------------------------
+const REAL_ITEMS = 2_000;
+describe('Free plan: the real render at scale', () => {
+  it(`stages ${REAL_ITEMS} cross-linked items through the real loader and renderer with every alarm inside the per-statement D1 budget`, async () => {
+    const projectKey = `p:${world.projectId}`;
+    const ref = { key: projectKey, name: 'Synthetic Project', slug: 'synthetic', path: '/p/synthetic' };
+    const status = { kind: 'hypothesis', status: { id: '00000000000000000000000002', name: 'Eliminated' } };
+    const pathOf = (index: number) => `/r/S${String(index).padStart(5, '0')}-0000-0000`;
+    const views: { key: string; path: string; json: unknown }[] = [
+      { key: projectKey, path: ref.path, json: { tag: 'project', key: projectKey, path: ref.path, name: ref.name, description: 'A synthetic project.', slug: ref.slug } },
+    ];
+    for (let index = 0; index < REAL_ITEMS; index++) {
+      const neighbour = (index + 1) % REAL_ITEMS;
+      views.push({ key: `u:s${index}`, path: pathOf(index), json: {
+        tag: 'research_item', key: `u:s${index}`, path: pathOf(index), kind: 'hypothesis', title: `Synthetic item ${index}`,
+        itemDate: { value: '1952', approx: false }, logDate: { value: '1953-01-01', approx: false }, credit: [{ name: 'Carla Imported' }],
+        identifier: `S${String(index).padStart(5, '0')}-0000-0000`, status, project: ref, firstPublicOn: '2026-01-06', attachments: [],
+        // A Cross_Link to the next item and one from the previous: each view carries its neighbours.
+        links: [
+          { direction: 'outgoing', relation: { id: '01V00000000000000000000008', name: 'Related' }, target: { tag: 'link', key: `u:s${neighbour}`, path: pathOf(neighbour), type: 'research_item', title: `Synthetic item ${neighbour}`, kind: 'hypothesis', status } },
+          { direction: 'incoming', relation: { id: '01V00000000000000000000008', name: 'Related' }, target: { tag: 'link', key: `u:s${(index + REAL_ITEMS - 1) % REAL_ITEMS}`, path: pathOf((index + REAL_ITEMS - 1) % REAL_ITEMS), type: 'research_item', title: 'Neighbour', kind: 'hypothesis', status } },
+        ],
+      } });
+    }
+    for (let start = 0; start < views.length; start += 50) {
+      await pub().batch(views.slice(start, start + 50).map((view) => pub().prepare(
+        `INSERT INTO public_views (unit_key, valid_from, valid_from_at, valid_to_at, effective, project_id, root_key, path, view_json, view_hash)
+          VALUES (?1, 1, ?2, NULL, 'public', ?3, ?1, ?4, ?5, ?1)`,
+      ).bind(view.key, world.at, world.projectId, view.path, JSON.stringify(view.json))));
+    }
+    const ops = fakeDeployOps({ bucketSize: 100 });
+    await seedRun({ runId: 'run-real-scale', phase: 'deploy', urgent: false, ageMs: 6 * 60_000 });
+    // No render override: every stage slice runs loadSiteInput + renderSite + hashing + the manifest diff for real,
+    // and drainWithCounts holds every alarm to the per-STATEMENT D1 budget.
+    const ticks = await drainWithCounts(ops, 'real render at scale');
+    const files = await pub().prepare('SELECT count(*) AS n FROM site_files').first<{ n: number }>();
+    expect(files!.n).toBeGreaterThan(REAL_ITEMS);
+    expect(ops.steps.filter((step) => step === 'finish')).toHaveLength(1);
+    const worst = maxCounts(ticks);
+    // The stage step's D1 cost does not grow with the site: the site loader is one 9-statement batch plus a few singles.
+    // Measured: 2,336 files in 20 alarms; stage slices 16 statements each (11 round trips), worst alarm 22 statements.
+    expect(worst.d1).toBeLessThanOrEqual(25);
+    expect(worst.external).toBeLessThanOrEqual(PUBLISHER_SLICE_BUDGET.external);
+    expect(ticks.length).toBeLessThanOrEqual(30);
+  }, 600_000);
+});
+// ---------------------------------------------------------------------------
 // (4) SIZED removal: an urgent run that removes 2,000 pages.
 // ---------------------------------------------------------------------------
 
