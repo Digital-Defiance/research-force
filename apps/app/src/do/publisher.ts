@@ -67,12 +67,13 @@ export class Publisher extends DurableObject<Env> {
       seq_to INTEGER NOT NULL DEFAULT 0, urgent INTEGER NOT NULL DEFAULT 0,
       phase TEXT NOT NULL DEFAULT 'project', started_ms INTEGER NOT NULL DEFAULT 0,
       last_change_ms INTEGER NOT NULL DEFAULT 0, verify_start_ms INTEGER NOT NULL DEFAULT 0,
-      containment INTEGER NOT NULL DEFAULT 0)`);
+      containment INTEGER NOT NULL DEFAULT 0, progress_ms INTEGER NOT NULL DEFAULT 0)`);
     // Older instances created the table before these columns existed; add them if missing (no rf-public change).
     const columns = [
       `phase TEXT NOT NULL DEFAULT ${PROJECT_PHASE_DEFAULT}`,
       'started_ms INTEGER NOT NULL DEFAULT 0', 'last_change_ms INTEGER NOT NULL DEFAULT 0',
       'verify_start_ms INTEGER NOT NULL DEFAULT 0', 'containment INTEGER NOT NULL DEFAULT 0',
+      'progress_ms INTEGER NOT NULL DEFAULT 0',
     ];
     for (const column of columns) {
       try { ctx.storage.sql.exec(`ALTER TABLE publish_run ADD COLUMN ${column}`); } catch { /* already present */ }
@@ -104,7 +105,46 @@ export class Publisher extends DurableObject<Env> {
     // material stays quarantined. A later kick or the one-minute cron retries once unfrozen (R36.16, R59.3).
     if (await isFrozen(this.env.RF_CORE)) return;
     await this.#ensureRun();
+    await this.#recoverStale();
     await this.#wake(Date.now());
+  }
+
+  /**
+   * Un-wedge a run that has made no progress for {@link STALE_RUN_MS}. Root cause of the staging wedge: a slice
+   * that throws (deploy/render/ops failure) is retried by the platform a limited number of times and then its
+   * alarm is dropped, leaving a durable `publish_run` row that nothing advances, while a kick only ever
+   * re-used that row. Policy per phase, chosen so nothing safety-relevant is dropped:
+   *  - project, or a non-urgent deploy: REPLACE in place with a fresh run at the current epoch. The outbox rows
+   *    are only marked done after a successful projection, so the new run re-reads them; urgency and edge
+   *    Containment carry over (a reset can never clear them). The old `publish_runs` row is closed with no
+   *    `verified_at`, so success is never claimed for it.
+   *  - urgent deploy, or verify: RESUME (never abandon). The removal must still be deployed and verified, and
+   *    the verify clock keeps running so the 4-/5-minute contain/verify-Containment/incident escalation fires.
+   */
+  async #recoverStale(): Promise<void> {
+    const run = this.#load();
+    if (!run) return;
+    const nowMs = Date.now();
+    if (nowMs - Math.max(run.progressMs, run.startedMs, run.lastChangeMs) < STALE_RUN_MS) return;
+    if (run.phase === 'verify' || (run.phase === 'deploy' && run.urgent)) {
+      this.#log('warn', 'publish_run_stale_resumed', { run: run.run, phase: run.phase });
+      this.ctx.storage.sql.exec('UPDATE publish_run SET progress_ms = ? WHERE only = 1', nowMs);
+      return;
+    }
+    this.#log('warn', 'publish_run_stale_replaced', { run: run.run, phase: run.phase });
+    const now = new Date(nowMs).toISOString() as Timestamp;
+    const epoch = await readEpoch(this.env.RF_CORE);
+    const runId = newULID(now);
+    await this.env.RF_PUBLIC.prepare(
+      'UPDATE publish_runs SET finished_at = ?2, seq_to = ?3, urgent = ?4 WHERE id = ?1 AND finished_at IS NULL',
+    ).bind(run.run, now, run.seqTo || null, run.urgent ? 1 : 0).run();
+    await this.env.RF_PUBLIC.prepare(
+      'INSERT INTO publish_runs (id, started_at, urgent) VALUES (?1, ?2, ?3) ON CONFLICT (id) DO NOTHING',
+    ).bind(runId, now, run.urgent ? 1 : 0).run();
+    this.ctx.storage.sql.exec(
+      "UPDATE publish_run SET run_id = ?, epoch = ?, seq_to = 0, phase = 'project', started_ms = ?, last_change_ms = ?, verify_start_ms = 0, progress_ms = ? WHERE only = 1",
+      runId, epoch, nowMs, nowMs, nowMs,
+    );
   }
 
   override async alarm(): Promise<void> {
@@ -137,9 +177,18 @@ export class Publisher extends DurableObject<Env> {
     // A restore in progress holds rf-core frozen: do nothing and leave the run where it is until it clears, so
     // restored/held material stays quarantined (R36.16, R59.3). A later kick or the cron resumes it.
     if (await isFrozen(this.env.RF_CORE)) { await this.#wake(Date.now() + 60_000); return; }
-    if (run.phase === 'project') return this.#projectSlice(run);
-    if (run.phase === 'deploy') return this.#deployPhase(run);
-    return this.#verifyPhase(run);
+    try {
+      if (run.phase === 'project') await this.#projectSlice(run);
+      else if (run.phase === 'deploy') await this.#deployPhase(run);
+      else await this.#verifyPhase(run);
+    } catch (error) {
+      // Content-free: the run id and phase only. Rethrow so the platform retries the alarm; if it gives up,
+      // the next kick recovers the stale run (see #recoverStale) rather than leaving it wedged.
+      this.#log('error', 'publish_phase_failed', { run: run.run, phase: run.phase, error });
+      throw error;
+    }
+    // The slice completed without throwing: that is progress (a no-op when the run just finished).
+    this.ctx.storage.sql.exec('UPDATE publish_run SET progress_ms = ? WHERE only = 1', Date.now());
   }
 
   /** Projection phase: drain the `publish` outbox in bounded slices; on completion, move to the deploy phase. */
@@ -311,7 +360,9 @@ export class Publisher extends DurableObject<Env> {
 
   async #wake(atMs: number): Promise<void> {
     const current = await this.ctx.storage.getAlarm();
-    if (current === null || current > atMs) await this.ctx.storage.setAlarm(atMs);
+    // An alarm that is missing, later than wanted, or already overdue (at or before now, so evidently not going
+    // to fire) is replaced; otherwise a wedged run is never advanced.
+    if (current === null || current > atMs || current <= Date.now()) await this.ctx.storage.setAlarm(atMs);
   }
 
   #update(change: {
@@ -338,13 +389,13 @@ export class Publisher extends DurableObject<Env> {
   #load(): RunState | null {
     const row = this.ctx.storage.sql.exec<{
       run_id: string; epoch: number; seq_to: number; urgent: number; phase: string;
-      started_ms: number; last_change_ms: number; verify_start_ms: number; containment: number;
-    }>('SELECT run_id, epoch, seq_to, urgent, phase, started_ms, last_change_ms, verify_start_ms, containment FROM publish_run WHERE only = 1').toArray()[0];
+      started_ms: number; last_change_ms: number; verify_start_ms: number; containment: number; progress_ms: number;
+    }>('SELECT run_id, epoch, seq_to, urgent, phase, started_ms, last_change_ms, verify_start_ms, containment, progress_ms FROM publish_run WHERE only = 1').toArray()[0];
     if (!row) return null;
     return {
       run: row.run_id, epoch: row.epoch, seqTo: row.seq_to, urgent: row.urgent === 1,
       phase: (row.phase as RunPhase) ?? 'project', startedMs: row.started_ms, lastChangeMs: row.last_change_ms,
-      verifyStartMs: row.verify_start_ms, containment: row.containment === 1,
+      verifyStartMs: row.verify_start_ms, containment: row.containment === 1, progressMs: row.progress_ms,
     };
   }
 
@@ -403,6 +454,9 @@ export class Publisher extends DurableObject<Env> {
   }
 }
 
+/** A run with no completed slice for this long is stale: 10 minutes, above the 5-minute addition ceiling and the alarm retry backoff. */
+const STALE_RUN_MS = 10 * 60_000;
+
 /** The phases a run moves through: drain the outbox, deploy the rendered site, then verify an urgent removal. */
 type RunPhase = 'project' | 'deploy' | 'verify';
 
@@ -415,4 +469,5 @@ interface RunState extends Generation {
   readonly lastChangeMs: number;
   readonly verifyStartMs: number;
   readonly containment: boolean;
+  readonly progressMs: number;
 }

@@ -223,3 +223,50 @@ describe('R36.9 restore pauses the Publisher', () => {
     await vi.waitFor(async () => expect(await pub().prepare('SELECT count(*) AS n FROM publish_runs WHERE started_at IS NOT NULL').first<{ n: number }>().then((r) => r!.n)).toBeGreaterThanOrEqual(1), { timeout: 5000, interval: 50 });
   });
 });
+// ---------------------------------------------------------------------------
+// 4. Wedge: a run whose alarm never fires again must be advanced by a later kick.
+// ---------------------------------------------------------------------------
+describe('stalled-run recovery on kick', () => {
+  const kickDo = () => runInDurableObject(stub(), async (instance: Publisher, state) => {
+    await instance.kick('publish');
+    return { alarm: await state.storage.getAlarm(), phase: state.storage.sql.exec<{ run_id: string; phase: string }>('SELECT run_id, phase FROM publish_run WHERE only = 1').toArray()[0] ?? null };
+  });
+  it('(a) reschedules when the run has no alarm, or only an overdue one', async () => {
+    await seedRun({ runId: 'run-noalarm', epoch: 0, phase: 'deploy', urgent: false, startedMs: Date.now(), lastChangeMs: Date.now(), verifyStartMs: 0 });
+    const missing = await kickDo();
+    expect(missing.alarm).not.toBeNull();
+    await runInDurableObject(stub(), (_i, state) => state.storage.setAlarm(Date.now() - 120_000));
+    const overdue = await kickDo();
+    expect(overdue.alarm === null || overdue.alarm > Date.now() - 60_000).toBe(true);
+    expect(overdue.phase?.run_id).toBe('run-noalarm'); // a fresh run is resumed, not replaced
+  });
+  it('(b) a run that stopped making progress is replaced so a later kick publishes once the cause is fixed', async () => {
+    const finding = await world.created('author', 'finding');
+    await makePublic(finding.id);
+    await publishRow(`root:${finding.id}`);
+    const old = Date.now() - 20 * 60_000;
+    await seedRun({ runId: 'run-wedged', epoch: 0, phase: 'project', urgent: false, startedMs: old, lastChangeMs: old, verifyStartMs: 0 });
+    const kicked = await kickDo();
+    expect(kicked.phase?.run_id).not.toBe('run-wedged');
+    expect(kicked.phase?.phase).toBe('project');
+    const closed = await runRow('run-wedged');
+    expect(closed!.finishedAt).not.toBeNull();
+    expect(closed!.verifiedAt).toBeNull(); // success is never claimed for the abandoned run
+    await tickWith(fakeOps());
+    expect(await pendingPublish()).toBe(0); // the replacement run drained the outbox
+  });
+  it('(c) a stale urgent verify run is resumed, never dropped, and ends in an incident rather than silent success', async () => {
+    await pub().prepare('INSERT INTO site_files (path, hash, size, updated_at) VALUES (?1, ?2, ?3, ?4)')
+      .bind('/r/RF-SECRET.html', 'oldhash', 10, world.at).run();
+    const old = Date.now() - (VERIFY_BY_MS + 20 * 60_000);
+    await seedRun({ runId: 'run-stale-urgent', epoch: 0, phase: 'verify', urgent: true, startedMs: old, lastChangeMs: 0, verifyStartMs: old });
+    const kicked = await kickDo();
+    expect(kicked.phase).toEqual({ run_id: 'run-stale-urgent', phase: 'verify' });
+    const ops = fakeOps({ probe: () => 'present', capabilities: { canDeny: false, blockingReason: 'no edge plan' } });
+    await tickWith(ops);
+    expect(ops.incidents).toHaveLength(1);
+    const row = await runRow('run-stale-urgent');
+    expect(row!.finishedAt).not.toBeNull();
+    expect(row!.verifiedAt).toBeNull();
+  });
+});
