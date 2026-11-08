@@ -194,7 +194,8 @@ function start(form: HTMLFormElement): void {
 
   const refresh = (): void => {
     if (fileList !== null) renderFiles(fileList, state.files);
-    if (submitButton !== null) submitButton.disabled = !allFilesComplete(state) || sessionId === null || token === '';
+    // Usable once every file is uploaded, the link carries its token, and the Bot_Check passed or a session is open.
+    if (submitButton !== null) submitButton.disabled = !allFilesComplete(state) || (sessionId === null && turnstileToken === null) || token === '';
   };
 
   // Gate on the dynamic form admission status: an exhausted budget hides the form and shows the notice (R28.11).
@@ -268,12 +269,15 @@ function start(form: HTMLFormElement): void {
         callback: (value) => {
           turnstileToken = value;
           announce(status, 'Verification complete.');
+          refresh();
         },
         'expired-callback': () => {
           turnstileToken = null;
+          refresh();
         },
         'error-callback': () => {
           turnstileToken = null;
+          refresh();
         },
         });
       });

@@ -452,7 +452,10 @@ function start(form: HTMLFormElement): void {
   const persist = (): void => writeUnsent(config.formKey, state);
   const refresh = (): void => {
     if (fileList !== null) renderFiles(fileList, state.files);
-    if (submitButton !== null) submitButton.disabled = !allFilesComplete(state) || sessionId === null;
+    // Send is usable once every file is uploaded and the Bot_Check has passed (a token) or a session is already open;
+    // pressing it opens the session from the token (ensureSession). Waiting for a session alone left a submission
+    // without files unsendable, because only adding a file or sending ever opens one.
+    if (submitButton !== null) submitButton.disabled = !allFilesComplete(state) || (sessionId === null && token === null);
   };
 
   // Restore kept input into the controls, including fully uploaded files (R28.10).
@@ -507,12 +510,15 @@ function start(form: HTMLFormElement): void {
           callback: (value) => {
             token = value;
             announce(status, 'Verification complete.');
+            refresh();
           },
           'expired-callback': () => {
             token = null;
+            refresh();
           },
           'error-callback': () => {
             token = null;
+            refresh();
           },
         });
       });

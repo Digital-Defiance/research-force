@@ -147,3 +147,39 @@ describe('the scripts call the origin the page names', () => {
     expect(calls.some((call) => call.url.startsWith(`${ORIGIN}/v1/consent`))).toBe(true);
   });
 });
+
+describe('the Send button follows the Bot_Check, not only an open session', () => {
+  /** A Turnstile stub that renders but yields its token only when the test calls `pass()`. */
+  function pendingTurnstile(): { pass: () => void; expire: () => void } {
+    let callbacks: { callback: (token: string) => void; 'expired-callback'?: () => void } | undefined;
+    vi.stubGlobal('turnstile', {
+      render: (_host: HTMLElement, options: { callback: (token: string) => void; 'expired-callback'?: () => void }) => { callbacks = options; return 'widget-1'; },
+      reset: () => {},
+    });
+    return { pass: () => callbacks!.callback('synthetic-token'), expire: () => callbacks!['expired-callback']?.() };
+  }
+  const sendButton = (): HTMLButtonElement => document.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+
+  it('enables Send on the submission form once the check passes, with no file added, and disables it when the check expires', async () => {
+    document.body.innerHTML = submitMarkup();
+    mockFetch();
+    const turnstile = pendingTurnstile();
+    await load(() => import('../src/form'));
+    expect(sendButton().disabled).toBe(true);
+    turnstile.pass();
+    expect(sendButton().disabled).toBe(false);
+    turnstile.expire();
+    expect(sendButton().disabled).toBe(true);
+  });
+
+  it('enables Send on the Response form once the check passes, with no file added', async () => {
+    document.body.innerHTML = `<form data-respond-form ${attributes}><p data-respond-status></p><textarea name="message"></textarea><ul data-file-list></ul><div data-turnstile></div><button type="submit">Send</button></form>`;
+    location.hash = `#${TOKEN}`;
+    mockFetch({ '/v1/respond/check': { status: 200, body: { usable: true } } });
+    const turnstile = pendingTurnstile();
+    await load(() => import('../src/respond'));
+    expect(sendButton().disabled).toBe(true);
+    turnstile.pass();
+    expect(sendButton().disabled).toBe(false);
+  });
+});
