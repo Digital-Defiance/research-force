@@ -1,5 +1,6 @@
 import type {
   EndpointHealth,
+  HealthCheckOptions,
   HealthReport,
   OpsHealthAlert,
   OpsSpendAlert,
@@ -113,7 +114,7 @@ export class OperationalAlerts implements OpsHealthAlert, OpsSpendAlert {
     this.#controlAvailable = controlAvailable;
   }
 
-  async certifyHealth(): Promise<HealthReport> {
+  async certifyHealth(options: HealthCheckOptions = {}): Promise<HealthReport> {
     // ACTUAL certification, not a stored flag: HEAD every monitored endpoint out-of-band and read the live
     // control path. A reachable-but-blocked host answers `denied`; an unreachable one answers `unreachable`.
     const endpoints: EndpointHealth[] = [];
@@ -132,6 +133,8 @@ export class OperationalAlerts implements OpsHealthAlert, OpsSpendAlert {
         : 'ok';
 
     const report: HealthReport = { level, endpoints, controlAvailable };
+    // The scheduled check stays silent while healthy; anything else is always declared (R28.6, R60.6).
+    if (options.quietWhenOk === true && report.level === 'ok') return report;
     // Content-free payload: endpoint labels, reachability states, and the live control flag only (R28.6, R60.6).
     await postIndependentAlert(
       this.#fetch,

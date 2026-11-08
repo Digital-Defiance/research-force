@@ -23,7 +23,9 @@
     "CF_SUBMIT_BLOCK_RULESET_ID": "32432f67a81d4e5f934d3965b166e2f7",
     "CF_SUBMIT_BLOCK_RULE_ID": "7fd6829442614b3fb06b88f824df2d05",
     // The independent operator alert channel (ntfy push; R28.6, R60.6). Its bearer is the INCIDENT_ALERT_TOKEN secret.
-    "INCIDENT_ALERT_WEBHOOK_URL": "https://ntfy.sh/rf-alerts-6505c35861a585092a45314d"
+    "INCIDENT_ALERT_WEBHOOK_URL": "https://ntfy.sh/rf-alerts-6505c35861a585092a45314d",
+    // The independent health check probes these every 15 minutes and alerts only when one is not healthy (R60.6).
+    "HEALTH_CHECK_ENDPOINTS": "site=https://researchforce.org/,files=https://files.researchforce.org/status.json,app=https://app.researchforce.org/"
   },
   "d1_databases": [
     { "binding": "RF_CORE", "database_name": "rf-core", "database_id": "5f5ba177-402d-4faf-a67b-fcbda09fa94d" }

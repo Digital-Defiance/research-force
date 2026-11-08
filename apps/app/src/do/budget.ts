@@ -262,8 +262,12 @@ export class Budget extends DurableObject<Env> {
    * "unavailable" status.json in force indefinitely.
    */
   async rollover(now: number = Date.now()): Promise<boolean> {
+    const today = utcDay(now);
     const stored = this.ctx.storage.sql.exec<{ day: string }>('SELECT day FROM day WHERE only = 1').toArray()[0]?.day;
-    if (stored !== utcDay(now)) { await this.reset(now); return true; }
+    if (stored !== today) { await this.reset(now); return true; }
+    // Today's row can exist before any reset ran (another path, e.g. the mail recipient cap, wrote it first), so
+    // status.json is republished once per day here too; otherwise a fresh install might never publish it.
+    if ((await this.ctx.storage.get<string>(STATUS_DAY_KEY)) !== today) await this.#rewriteStatus();
     await this.#scheduleReset(now);
     return false;
   }
@@ -305,6 +309,7 @@ export class Budget extends DurableObject<Env> {
     const generation = await readEpoch(this.env.RF_CORE);
     const status: PublicStatus = statusJson(decision, generation);
     await writeStatus(this.env.RF_PUBLIC_BUCKET, status);
+    await this.ctx.storage.put(STATUS_DAY_KEY, day);
   }
 
   /** The rf-ops WAF surface the Budget calls; a test may inject a fake through {@link setOpsForTest}. */
@@ -401,6 +406,9 @@ export class Budget extends DurableObject<Env> {
     if (current === null || current !== next) await this.ctx.storage.setAlarm(next);
   }
 }
+
+/** Durable-storage key holding the UTC day `status.json` was last written, so the rollover publishes it once a day. */
+const STATUS_DAY_KEY = 'status_day';
 
 /** The fixed public-traffic refuse response: no D1 query, no per-request content. Precomputed once (R28.5, R28.11). */
 export const UNAVAILABLE_UNTIL_RESET = Object.freeze({

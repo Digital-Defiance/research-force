@@ -88,6 +88,18 @@ describe('independent health alert (external check, not a stored flag)', () => {
     expect(serialized).not.toContain('http'); // no URL/bearer link in the payload; the URL is the channel, not content
   });
 
+  it('the scheduled (quiet) check posts nothing while healthy, and still declares a degraded or down result', async () => {
+    const healthy = health({ 'https://app.example.test/': 200, 'https://public.example.test/': 200 });
+    const ok = await new OperationalAlerts(config, alwaysCanDeny, healthy.fetcher).certifyHealth({ quietWhenOk: true });
+    expect(ok.level).toBe('ok');
+    expect(healthy.requests.filter((r) => r.method === 'POST')).toHaveLength(0);
+
+    const partial = health({ 'https://app.example.test/': 200, 'https://public.example.test/': 404 });
+    const degraded = await new OperationalAlerts(config, alwaysCanDeny, partial.fetcher).certifyHealth({ quietWhenOk: true });
+    expect(degraded.level).toBe('degraded');
+    expect(partial.requests.filter((r) => r.method === 'POST')).toHaveLength(1);
+  });
+
   it('throws when the independent channel rejects, is unreachable, or is unconfigured', async () => {
     const rejecting = health({ 'https://app.example.test/': 200, 'https://public.example.test/': 200 }, () => new Response(null, { status: 500 }));
     await expect(new OperationalAlerts(config, alwaysCanDeny, rejecting.fetcher).certifyHealth()).rejects.toThrow('did not accept');

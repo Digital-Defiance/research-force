@@ -45,10 +45,11 @@ beforeEach(async () => {
   bindings = await migrated();
   await bindings.RF_PUBLIC_BUCKET.delete(STATUS_OBJECT_KEY);
   // A fresh object for each test: clear any prior day/ledger/address state.
-  await runInDurableObject(bindings.BUDGET.getByName('budget'), (_instance, state) => {
+  await runInDurableObject(bindings.BUDGET.getByName('budget'), async (_instance, state) => {
     for (const table of ['day', 'reservations', 'neuron_ledger', 'addr_counts', 'addr_keys']) {
       try { state.storage.sql.exec(`DELETE FROM ${table}`); } catch { /* table may not exist yet */ }
     }
+    await state.storage.delete('status_day');
   });
 });
 
@@ -151,6 +152,22 @@ describe('the 00:00 UTC reset', () => {
     const alarm = await runInDurableObject(stub, (_instance, state) => state.storage.getAlarm());
     expect(alarm).not.toBeNull();
     expect(waf.calls).toEqual([]);
+  });
+
+  it('rollover publishes status.json once a day even when today\'s row was written before any reset', async () => {
+    const waf = fakeWaf();
+    const { stub, ready } = budgetStub(waf);
+    await ready;
+    // Another path (e.g. the mail recipient cap) wrote today's row first, so no reset will run today.
+    await setDay(stub, TODAY, 7);
+    expect(await statusObject()).toBeNull();
+    expect(await stub.rollover(Date.now())).toBe(false);
+    expect(await statusObject()).toMatchObject({ form: true });
+    expect((await stub.usage()).counters.requests).toBe(7); // the day in progress is untouched
+    // A second check the same day does not rewrite it.
+    await bindings.RF_PUBLIC_BUCKET.delete(STATUS_OBJECT_KEY);
+    await stub.rollover(Date.now());
+    expect(await statusObject()).toBeNull();
   });
 
   it('rollover during the day never zeroes the day in progress', async () => {

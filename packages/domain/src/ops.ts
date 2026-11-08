@@ -206,7 +206,15 @@ export interface OpsHealthAlert {
    * certified report (also sent on the channel). Throws only when the independent channel refuses or is
    * unreachable.
    */
-  certifyHealth(): Promise<HealthReport>;
+  certifyHealth(options?: HealthCheckOptions): Promise<HealthReport>;
+}
+/** How a health check declares its result. */
+export interface HealthCheckOptions {
+  /**
+   * Post to the independent channel only when the level is not `ok`. The scheduled check sets this so a healthy
+   * installation sends nothing; a manual run leaves it unset and always posts, which also proves delivery works.
+   */
+  readonly quietWhenOk?: boolean;
 }
 
 /** The reachability of a single monitored endpoint, as a fresh out-of-band HEAD reports it (R60.6). */

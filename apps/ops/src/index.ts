@@ -4,6 +4,7 @@ import type {
   ConfidentialityIncident,
   ContainmentCapabilities,
   ContainmentState,
+  HealthCheckOptions,
   HealthReport,
   OpsAccess,
   OpsBackupAlert,
@@ -190,7 +191,7 @@ export default class Ops extends WorkerEntrypoint<OpsEnv> implements OpsAccess, 
 
   // Independent health + spend alerts (task 67.2, R28.4, R60.6): provider-native/independent external checks
   // delivered over the operator-controlled independent channel, operable without rf-core D1 and the Graph queue.
-  async certifyHealth(): Promise<HealthReport> { return this.#alerts().certifyHealth(); }
+  async certifyHealth(options?: HealthCheckOptions): Promise<HealthReport> { return this.#alerts().certifyHealth(options); }
   async spendAlert(alert: SpendAlert): Promise<void> { await this.#alerts().spendAlert(alert); }
 
   // Public submit-host WAF budget shed (task 34.2, R28.5, R28.6): the `Budget` DO (34.1) flips this on at the
