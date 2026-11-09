@@ -251,7 +251,7 @@ async function planAcceptance(
     for (const plan of state.plans) plan.write(batch, issued);
     if (uploads.length > 0) {
       const list = JSON.stringify(uploads);
-      batch.guard('upload_ready', sql`(SELECT count(*) FROM uploads WHERE id IN (SELECT value FROM json_each(${list})) AND owner_id = ${actor} AND state = 'complete' AND attached_at IS NULL) = ${uploads.length}`);
+      batch.guard('upload_ready', sql`(SELECT count(*) FROM uploads WHERE id IN (SELECT value FROM json_each(${list})) AND owner_id = ${actor} AND state = 'complete' AND hash_verified_at IS NOT NULL AND attached_at IS NULL) = ${uploads.length}`);
       batch.run(sql`UPDATE uploads SET attached_at = ${now}, state = 'attached' WHERE id IN (SELECT value FROM json_each(${list}))`);
     }
     // One outbox row per distinct scope and topic, in one statement each, so a many-Item acceptance stays bounded.
@@ -349,10 +349,14 @@ async function planAttachment(c: Context<ApiEnv>, selection: Extract<Selection, 
   const parent = resolveParent(selection.parent, index, state);
   const upload = await c.get('accountant').track(c.env.RF_CORE.prepare(
     `SELECT id, group_id AS groupId, state, owner_type AS ownerType, owner_id AS ownerId, r2_key AS r2Key, file_name AS fileName,
-        size_bytes AS sizeBytes, sha256, mode, multipart_id AS multipartId, created_at AS createdAt, completed_at AS completedAt, attached_at AS attachedAt
+        size_bytes AS sizeBytes, sha256, mode, multipart_id AS multipartId, created_at AS createdAt, completed_at AS completedAt, attached_at AS attachedAt, hash_verified_at AS hashVerifiedAt
       FROM uploads WHERE id = ?1 AND owner_type = 'member' AND owner_id = ?2`,
   ).bind(selection.uploadId, state.actor).all<UploadRow>());
   const file = upload.results[0];
+  if (file?.state === 'complete' && file.hashVerifiedAt === null) {
+    state.issues.push({ field: `items.${index}.uploadId`, rule: 'The uploaded file is still being verified. Wait a moment and retry.' });
+    return;
+  }
   if (!file || file.state !== 'complete' || file.completedAt === null || file.attachedAt !== null) {
     state.issues.push({ field: `items.${index}.uploadId`, rule: 'The uploaded file is unavailable, incomplete, or already used.' });
     return;

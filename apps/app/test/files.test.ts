@@ -4,6 +4,7 @@ import { SINGLE_UPLOAD_BYTES, UPLOAD_PART_BYTES } from '@researchforce/domain/fi
 import { asTimestamp } from '@researchforce/domain/types';
 import { BUILT_IN_VALUE_IDS } from '@researchforce/domain/value-sets';
 import { sweepUploads } from '../src/files/uploads';
+import { uploadVerifyJob } from '../src/jobs/upload-verify';
 import { checksum64, compositeEtag } from '../src/files/s3';
 import { itemBody, itemWorld } from './items';
 import { attachedFile, completedUpload, configureFiles, fileInput } from './files';
@@ -38,6 +39,7 @@ describe('file upload and atomic Attachments', () => {
     const key = `files/${body.id}`;
     await world.bindings.RF_PRIVATE_BUCKET.put(key, '', { sha256: sha });
     const complete = await world.request('author', 'POST', `/uploads/${body.id}/complete`, {}); expect(complete.status).toBe(200);
+    expect(await complete.json()).toMatchObject({ verified: true });
     expect((await world.request('author', 'POST', `/uploads/${body.id}/complete`, {})).status).toBe(200);
     expect((await world.request('colleague', 'GET', `/uploads/${body.id}`)).status).toBe(404);
   });
@@ -102,9 +104,45 @@ describe('file upload and atomic Attachments', () => {
       expect((await world.request('author', 'POST', `/uploads/${id}/complete`, body)).status).toBe(422);
       expect(await world.core().prepare('SELECT state FROM uploads WHERE id = ?1').bind(id).first('state')).toBe('uploading');
       correct = true;
-      expect((await world.request('author', 'POST', `/uploads/${id}/complete`, body)).status).toBe(200);
+      const done = await world.request('author', 'POST', `/uploads/${id}/complete`, body); expect(done.status).toBe(200);
+      expect(await done.json()).toMatchObject({ verified: false });
       expect(posts).toBe(1);
+      // Not attachable until the verification job has confirmed the whole-file SHA-256.
+      expect(await world.core().prepare("SELECT count(*) AS n FROM jobs WHERE type = 'upload_verify' AND params = ?1").bind(JSON.stringify({ uploadId: id })).first('n')).toBe(1);
+      expect(await (await world.request('author', 'GET', `/uploads/${id}`)).json()).toMatchObject({ state: 'complete', verified: false });
+      const parent = await world.created('author', 'topic');
+      const refused = await world.request('author', 'POST', '/attachments', { parentId: parent.id, files: [fileInput(id)] });
+      expect(refused.status).toBe(422); expect(await refused.text()).toContain('still being verified');
+      expect((await world.request('author', 'POST', `/uploads/${id}/complete`, body)).status).toBe(200);
+      expect(await world.core().prepare("SELECT count(*) AS n FROM jobs WHERE type = 'upload_verify'").first('n')).toBe(1);
     } finally { mocked.mockRestore(); }
+  });
+  async function unverifiedMultipart(bytes: Uint8Array, declared: string) {
+    const id = await completedUpload(world);
+    await world.core().prepare("UPDATE uploads SET mode = 'multipart', multipart_id = 'synthetic-multipart', size_bytes = ?1, sha256 = ?2, hash_verified_at = NULL WHERE id = ?3").bind(bytes.length, declared, id).run();
+    await world.bindings.RF_PRIVATE_BUCKET.put(`files/${id}`, bytes);
+    return id;
+  }
+  const verify = (id: string) => uploadVerifyJob.slice({ env: world.bindings, job: { id: 'synthetic-job', type: 'upload_verify', params: { uploadId: id }, requestedBy: null }, now: world.at }, null);
+  it('verifies a multipart upload whole-file SHA-256 and then allows attaching it', async () => {
+    const bytes = new TextEncoder().encode('Synthetic multipart bytes');
+    const hash = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)), (b) => b.toString(16).padStart(2, '0')).join('');
+    const id = await unverifiedMultipart(bytes, hash);
+    expect(await verify(id)).toMatchObject({ done: true, outcome: 'complete' });
+    expect(await world.core().prepare('SELECT hash_verified_at AS at FROM uploads WHERE id = ?1').bind(id).first('at')).toBe(world.at);
+    expect(await verify(id)).toMatchObject({ done: true, outcome: 'complete' });
+  });
+  it('deletes a multipart upload whose stored bytes do not match the declared SHA-256 or size', async () => {
+    const bytes = new TextEncoder().encode('Synthetic multipart bytes');
+    const wrongHash = await unverifiedMultipart(bytes, sha);
+    const wrongSize = await unverifiedMultipart(bytes, sha);
+    await world.core().prepare('UPDATE uploads SET size_bytes = ?1 WHERE id = ?2').bind(bytes.length + 1, wrongSize).run();
+    for (const id of [wrongHash, wrongSize]) {
+      expect(await verify(id)).toMatchObject({ done: true, outcome: 'incomplete' });
+      expect(await world.bindings.RF_PRIVATE_BUCKET.head(`files/${id}`)).toBeNull();
+      expect(await world.core().prepare('SELECT count(*) AS n FROM uploads WHERE id = ?1').bind(id).first('n')).toBe(0);
+      expect((await world.request('author', 'GET', `/uploads/${id}`)).status).toBe(404);
+    }
   });
   it('refuses to complete a multipart upload whose part has no MD5', async () => {
     const id = await completedUpload(world);

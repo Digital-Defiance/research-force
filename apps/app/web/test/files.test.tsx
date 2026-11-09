@@ -66,6 +66,28 @@ describe('upload interactions', () => {
     expect(api.calls.find((call) => call.path === '/uploads/upload-1/parts')!.body).toEqual({ partNumber: 1, sha256: 'a'.repeat(64), md5: 'd'.repeat(32) });
     expect(requests[0]!.headers).toEqual({ 'content-md5': 'digest' });
   });
+  it('shows a multipart file as verifying until the server confirms its checksum, and reports a removed mismatch', async () => {
+    vi.stubGlobal('Worker', HashWorker); fakeXhr([200, 200]); let verified = false; let number = 0;
+    const api = fakeApi({ 'GET /uploads/limits': { maximumBytes: 100 },
+      'POST /uploads': () => ({ id: `upload-${++number}`, mode: 'multipart', url: null, headers: {} }),
+      'POST /uploads/upload-1/parts': { url: 'https://r2.example.test/part', headers: {} }, 'POST /uploads/upload-2/parts': { url: 'https://r2.example.test/part', headers: {} },
+      'POST /uploads/upload-1/complete': { verified: false }, 'POST /uploads/upload-2/complete': { verified: false },
+      'GET /uploads/upload-1': () => ({ id: 'upload-1', state: 'complete', verified }),
+      'GET /uploads/upload-2': failure(404, 'not_found'),
+    });
+    renderScreen(<Harness />, { client: api.client });
+    await waitFor(() => expect((screen.getByLabelText('Add files') as HTMLInputElement).disabled).toBe(false));
+    fireEvent.change(screen.getByLabelText('Add files'), { target: { files: [new File(['abc'], 'Synthetic.txt')] } });
+    await screen.findByText('Verifying the file checksum');
+    fireEvent.change(screen.getByLabelText('Origin (required)'), { target: { value: 'Synthetic output.' } });
+    expect((screen.getByRole('button', { name: 'Submit' }) as HTMLButtonElement).disabled).toBe(true);
+    verified = true;
+    await screen.findByText('Upload complete', undefined, { timeout: 5_000 });
+    expect((screen.getByRole('button', { name: 'Submit' }) as HTMLButtonElement).disabled).toBe(false);
+    fireEvent.click(screen.getByRole('button', { name: 'Remove file' }));
+    fireEvent.change(screen.getByLabelText('Add files'), { target: { files: [new File(['abc'], 'Synthetic-2.txt')] } });
+    await screen.findByText('Failed: The stored file did not match its checksum and was removed. Retry the file.', undefined, { timeout: 5_000 });
+  }, 15_000);
   it('refuses over-limit files before hashing or transfer and keeps accepted files', async () => {
     const worker = vi.fn(() => new HashWorker()); vi.stubGlobal('Worker', worker); fakeXhr([200]);
     const api = fakeApi({ 'GET /uploads/limits': { maximumBytes: 2 } }); renderScreen(<Harness />, { client: api.client });

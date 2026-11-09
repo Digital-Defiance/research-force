@@ -6,7 +6,7 @@ import { flag, oneOf, versioned } from '../columns';
 export const OUTBOX_TOPICS = ['publish', 'search', 'mail', 'jobs'] as const;
 export const UPLOAD_OWNER_TYPES = ['member', 'outside_session'] as const;
 export const UPLOAD_MODES = ['single', 'multipart'] as const;
-export const JOB_TYPES = ['journal_import', 'bulk_import', 'public_export', 'internal_backup', 'restore', 'deletion', 'preview'] as const;
+export const JOB_TYPES = ['journal_import', 'bulk_import', 'public_export', 'internal_backup', 'restore', 'deletion', 'preview', 'upload_verify'] as const;
 export const JOB_STATES = ['queued', 'running', 'paused', 'complete', 'incomplete', 'failed'] as const;
 export const IMPORT_ROW_OUTCOMES = ['pending', 'created', 'skipped', 'failed'] as const;
 export const EXPORT_TYPES = ['public', 'backup'] as const;
@@ -50,6 +50,7 @@ export const uploads = sqliteTable('uploads', {
   createdAt: text('created_at').notNull(),
   completedAt: text('completed_at'),
   attachedAt: text('attached_at'), // set when a completed Submission uses the file (R12.8)
+  hashVerifiedAt: text('hash_verified_at'), // set once the stored bytes are confirmed to match `sha256`; a multipart upload waits for its `upload_verify` job
 }, (t) => [
   uniqueIndex('uploads_r2_key').on(t.r2Key),
   index('uploads_owner').on(t.ownerType, t.ownerId),

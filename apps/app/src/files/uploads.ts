@@ -2,7 +2,7 @@ import type { Context } from 'hono';
 import { and, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { GuardedBatch } from '@researchforce/db/batch';
-import { uploads } from '@researchforce/db/schema/core';
+import { jobs, uploads } from '@researchforce/db/schema/core';
 import { SINGLE_UPLOAD_BYTES, UPLOAD_PART_BYTES } from '@researchforce/domain/files';
 import { newULID } from '@researchforce/domain/identifiers';
 import { SETTINGS } from '@researchforce/domain/settings';
@@ -26,7 +26,7 @@ export async function uploadLimit(c: Context<ApiEnv>): Promise<number> {
 export async function loadUpload(c: Context<ApiEnv>, id: string): Promise<UploadRow> {
   const row = await c.get('accountant').track(c.env.RF_CORE.prepare(`SELECT id, group_id AS groupId, state, owner_type AS ownerType, owner_id AS ownerId,
     r2_key AS r2Key, file_name AS fileName, size_bytes AS sizeBytes, sha256, mode, multipart_id AS multipartId, created_at AS createdAt,
-    completed_at AS completedAt, attached_at AS attachedAt FROM uploads WHERE id = ?1 AND owner_type = 'member' AND owner_id = ?2 AND state <> 'deleting'`)
+    completed_at AS completedAt, attached_at AS attachedAt, hash_verified_at AS hashVerifiedAt FROM uploads WHERE id = ?1 AND owner_type = 'member' AND owner_id = ?2 AND state <> 'deleting'`)
     .bind(id, c.get('session').member.id).all<UploadRow>());
   if (!row.results[0]) throw new ApiError('not_found');
   return row.results[0];
@@ -82,7 +82,7 @@ export async function completeUpload(c: Context<ApiEnv>, id: string, body: unkno
   await authorize(c, [{ permission: 'attachment.upload' }]);
   const input = parse(completeSchema, body);
   const row = await loadUpload(c, id);
-  if (row.state === 'complete') return { id, completedAt: row.completedAt };
+  if (row.state === 'complete') return { id, completedAt: row.completedAt, verified: row.hashVerifiedAt !== null };
   if (row.state !== 'uploading') fail(row.fileName, 'This upload was already submitted.');
   let expected = checksum64(row.sha256);
   const storedBefore = row.mode === 'multipart' ? await c.env.RF_PRIVATE_BUCKET.head(row.r2Key) : null;
@@ -111,10 +111,18 @@ export async function completeUpload(c: Context<ApiEnv>, id: string, body: unkno
     fail(row.fileName, 'The stored file size or checksum does not match. Retry or remove this file.');
   }
   const now = c.get('now');
-  await new GuardedBatch(c.env.RF_CORE, { id: c.get('session').member.id, now })
+  // A single PUT is verified by R2 against the declared SHA-256. A multipart object has no R2 SHA-256, so an `upload_verify`
+  // job streams it and the upload stays unverified (and cannot be attached) until that job confirms size and SHA-256.
+  const verified = row.mode === 'single';
+  const batch = new GuardedBatch(c.env.RF_CORE, { id: c.get('session').member.id, now })
     .guard('upload_ready', sql`EXISTS (SELECT 1 FROM uploads WHERE id = ${id} AND state = 'uploading')`)
-    .update(uploads, { completedAt: now, state: 'complete' }, eq(uploads.id, id)).commit(c.get('accountant'));
-  return { id, completedAt: now };
+    .update(uploads, { completedAt: now, state: 'complete', hashVerifiedAt: verified ? now : null }, eq(uploads.id, id));
+  if (!verified) {
+    const jobId = newULID(now);
+    batch.insert(jobs, { id: jobId, type: 'upload_verify', state: 'queued', requestedBy: c.get('session').member.id, params: { uploadId: id }, createdAt: now, updatedAt: now }).outbox('jobs', `job:${jobId}`);
+  }
+  await batch.commit(c.get('accountant'));
+  return { id, completedAt: now, verified };
 }
 async function abortMultipart(bucket: R2Bucket, row: { r2Key: string; multipartId: string | null }): Promise<void> {
   if (!row.multipartId) return;

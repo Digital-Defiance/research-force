@@ -1,12 +1,13 @@
 import { Hono } from 'hono';
 import { authorizeRead } from '../../auth/authorize';
 import { completeUpload, loadUpload, removeUpload, signPart, startUpload, uploadLimit } from '../../files/uploads';
+import '../../jobs/upload-verify';
 import type { ApiEnv } from '../app';
 import { readJson } from '../input';
 export const uploadRoutes = new Hono<ApiEnv>();
 uploadRoutes.get('/limits', async (c) => { await authorizeRead(c); return c.json({ maximumBytes: await uploadLimit(c), maximumFiles: 100 }); });
 uploadRoutes.post('/', async (c) => c.json(await startUpload(c, await readJson(c)), 201));
-uploadRoutes.get('/:id', async (c) => { await authorizeRead(c); const row = await loadUpload(c, c.req.param('id')); return c.json({ id: row.id, state: row.state }); });
+uploadRoutes.get('/:id', async (c) => { await authorizeRead(c); const row = await loadUpload(c, c.req.param('id')); return c.json({ id: row.id, state: row.state, verified: row.hashVerifiedAt !== null }); });
 uploadRoutes.post('/:id/parts', async (c) => c.json(await signPart(c, c.req.param('id'), await readJson(c))));
 uploadRoutes.post('/:id/complete', async (c) => c.json(await completeUpload(c, c.req.param('id'), await readJson(c))));
 uploadRoutes.delete('/:id', async (c) => { await removeUpload(c, c.req.param('id')); return c.body(null, 204); });
