@@ -6,8 +6,8 @@ import { ACCESS_LEVEL_NAMES, accessLevelName } from '../access/access';
 import type { MemberRow, ProjectRecord } from '../types';
 import { Button, LoadState, Notice, SaveFailure, SelectField, useLoad } from '../ui';
 import { hashFile } from '../files/upload';
-import { readImportEntries } from './preview';
-import type { ImportMetadataEntry, ImportPreview } from './preview';
+import { readEntryDates, readImportEntries } from './preview';
+import type { EntryDates, ImportMetadataEntry, ImportPreview } from './preview';
 import type { PreviewRequest, PreviewResult } from './import-worker';
 
 /**
@@ -165,6 +165,7 @@ export function JournalImportScreen({ compute = previewInWorker }: JournalImport
   const [journal, setJournal] = useState<File | undefined>(undefined);
   const [folderFiles, setFolderFiles] = useState<readonly File[] | undefined>(undefined);
   const [entries, setEntries] = useState<readonly ImportMetadataEntry[] | undefined>(undefined);
+  const [entryDates, setEntryDates] = useState<EntryDates | undefined>(undefined);
   const [preview, setPreview] = useState<ImportPreview | undefined>(undefined);
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<unknown>(undefined);
@@ -186,6 +187,11 @@ export function JournalImportScreen({ compute = previewInWorker }: JournalImport
     catch (error) { setEntries(undefined); setMetadataError(error instanceof Error ? error.message : 'The metadata JSON could not be read.'); }
   };
 
+  const chooseEntryDates = async (file: File) => {
+    setMetadataError(undefined);
+    try { setEntryDates(readEntryDates(await file.text())); }
+    catch (error) { setEntryDates(undefined); setMetadataError(error instanceof Error ? error.message : 'The entry dates JSON could not be read.'); }
+  };
   const runPreview = async () => {
     if (journal === undefined) return;
     setBusy(true); setFailure(undefined); setPreview(undefined);
@@ -244,7 +250,7 @@ export function JournalImportScreen({ compute = previewInWorker }: JournalImport
         if (file === undefined) throw new Error(`The file ${entry.fileName} was not found in the chosen folder.`);
         attachments.push(await uploadAttachment(entry, file, groupId));
       }
-      const body = { projectId, journal: await journal.text(), accessLevel, ...(attachments.length > 0 ? { attachments } : {}) };
+      const body = { projectId, journal: await journal.text(), accessLevel, ...(entryDates !== undefined ? { meta: entryDates } : {}), ...(attachments.length > 0 ? { attachments } : {}) };
       const { jobId } = await client.post<{ jobId: string }>('/imports/journal', body);
       setStartedLevel(accessLevel);
       setStatus({ state: 'queued' });
@@ -275,6 +281,9 @@ export function JournalImportScreen({ compute = previewInWorker }: JournalImport
         <label className="rf-field"><span className="rf-field__label">Attachment metadata (JSON)</span>
           <input type="file" accept=".json,application/json" onChange={(event) => { const file = event.target.files?.[0]; if (file) void chooseMetadata(file); event.target.value = ''; }} /></label>
         {entries !== undefined && <p className="rf-meta">{`Metadata entries: ${entries.length}`}</p>}
+        <label className="rf-field"><span className="rf-field__label">Entry dates (JSON, optional)</span>
+          <input type="file" accept=".json,application/json" onChange={(event) => { const file = event.target.files?.[0]; if (file) void chooseEntryDates(file); event.target.value = ''; }} /></label>
+        {entryDates !== undefined && <p className="rf-meta">{`Entry dates for ${Object.keys(entryDates).length} entries`}</p>}
         {metadataError !== undefined && <Notice tone="danger" title={metadataError} />}
         {creditWarnings.length > 0 && <Notice tone="warning" title="Some metadata entries credit a Member id that is not in this Workspace:"><ul className="rf-list">{creditWarnings.map((name) => <li key={name}>{name}</li>)}</ul></Notice>}
         <div className="rf-actions"><Button onClick={() => void runPreview()} disabled={busy || journal === undefined}>Preview the import</Button></div>
