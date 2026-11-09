@@ -50,8 +50,8 @@ const sourceRow = (access: { level: string; members: string }): string[] => row(
 const findingRow = (): string[] => row({
   row_key: 'r-finding', kind: 'finding', title: 'A finding', claim: 'The claim holds.', scope_caveat: 'Within the sampled range.', parties: 'Unknown Donor',
 });
-/** A Hypothesis row; the kind requires both the statement and scope columns present and filled. */
-const hypothesisRow = (): string[] => row({ row_key: 'r-hypothesis', kind: 'hypothesis', title: 'A hypothesis', statement: 'The signal persists.', scope: 'All known samples.' });
+/** A Hypothesis row; the kind requires only the statement (R37.15). */
+const hypothesisRow = (): string[] => row({ row_key: 'r-hypothesis', kind: 'hypothesis', title: 'A hypothesis', statement: 'The signal persists.' });
 
 // --- Job driver -----------------------------------------------------------------
 

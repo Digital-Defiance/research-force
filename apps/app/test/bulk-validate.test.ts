@@ -22,6 +22,8 @@ const valueSets: Readonly<Partial<Record<ValueSetKind, readonly ConfigValue[]>>>
     { id: BUILT_IN_VALUE_IDS.rightsUnknown, name: 'Unknown', retired: false },
     { id: RIGHTS_PUBLIC, name: 'Public domain', retired: false },
   ],
+  hypothesis_status: [{ id: BUILT_IN_VALUE_IDS.hypothesisOpen, name: 'Open', retired: false }],
+  run_outcome: [{ id: asULID('0000000000000000000000R002'), name: 'Completed', retired: false }],
   finding_status: [{ id: BUILT_IN_VALUE_IDS.findingOpen, name: 'Open', retired: false }],
 };
 
@@ -221,6 +223,31 @@ describe('validateBulkImport — kind-specific columns (R37.15)', () => {
   });
 });
 
+describe('validateBulkImport — Run and Hypothesis columns (R37.15)', () => {
+  const RUN_HEADER = ['row_key', 'kind', 'title', 'date', 'scope', 'parameters', 'tool_name', 'tool_version', 'compute_resource', 'run_outcome'] as const;
+  const runRow = ['r1', 'run', 'A run', '2026-01-02T03:04:05Z', 'Scope text', 'Params', 'tool', '1.0', 'laptop', 'Completed'];
+  it('accepts a Run with the required columns and leaves end time, Resume_Point and notes optional', () => {
+    const result = validateBulkImport(csv(RUN_HEADER, [runRow]), catalog());
+    expect(result.errors).toEqual([]);
+  });
+  it('accepts a Run that fills the optional end time, Resume_Point and notes', () => {
+    const header = [...RUN_HEADER, 'end_time', 'resume_point', 'notes'];
+    const result = validateBulkImport(csv(header, [[...runRow, '2026-01-02T04:04:05Z', 'Step 3', 'Some notes']]), catalog());
+    expect(result.errors).toEqual([]);
+  });
+  it('requires the scope of a Run', () => {
+    const row = [...runRow];
+    row[4] = '';
+    const result = validateBulkImport(csv(RUN_HEADER, [row]), catalog());
+    expect(result.errors.some((error) => error.column === 'scope' && /is required/u.test(error.reason))).toBe(true);
+  });
+  it('needs only the statement for a Hypothesis and rejects a filled scope', () => {
+    const header = ['row_key', 'kind', 'title', 'statement'] as const;
+    expect(validateBulkImport(csv(header, [['h1', 'hypothesis', 'A hypothesis', 'It holds.']]), catalog()).errors).toEqual([]);
+    const withScope = validateBulkImport(csv([...header, 'scope'], [['h1', 'hypothesis', 'A hypothesis', 'It holds.', 'Stray']]), catalog());
+    expect(withScope.errors.some((error) => error.column === 'scope' && /does not belong/u.test(error.reason))).toBe(true);
+  });
+});
 describe('validateBulkImport — per-kind schema (R37.3)', () => {
   it('surfaces a schema failure naming the column it maps from', () => {
     // An over-length title (>200 code points) fails the schema on the title column.

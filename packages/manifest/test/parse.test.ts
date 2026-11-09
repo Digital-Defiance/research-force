@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { utils, write } from 'xlsx';
 import type { WorkBook } from 'xlsx';
 import {
+  KIND_OPTIONAL_COLUMNS,
   KIND_REQUIRED_COLUMNS,
   MANIFEST_COLUMNS,
   REQUIRED_COLUMNS,
@@ -175,7 +176,11 @@ describe('exported shape for reuse by the printer and validator', () => {
   });
 
   it('maps each kind to its required kind-specific columns', () => {
-    expect([...KIND_REQUIRED_COLUMNS.run]).toContain('run_outcome');
+    // R37.15: a Run requires scope, parameters, tool name/version, compute resource and outcome;
+    // end time, Resume_Point and notes are optional. A Hypothesis requires only its statement.
+    expect([...KIND_REQUIRED_COLUMNS.run]).toEqual(['scope', 'parameters', 'tool_name', 'tool_version', 'compute_resource', 'run_outcome']);
+    expect([...(KIND_OPTIONAL_COLUMNS.run ?? [])]).toEqual(['end_time', 'resume_point', 'notes']);
+    expect([...KIND_REQUIRED_COLUMNS.hypothesis]).toEqual(['statement']);
     expect([...KIND_REQUIRED_COLUMNS.correspondence]).toEqual(['direction', 'channel', 'content']);
     expect([...KIND_REQUIRED_COLUMNS.source]).toEqual([]);
   });
