@@ -71,7 +71,8 @@ export async function copyObject(
   if (!response.ok) throw new Error(`R2 CopyObject failed (${response.status}).`);
   return response;
 }
-export async function compositeChecksum(hashes: readonly string[]): Promise<string> {
-  const bytes = Uint8Array.from(hashes.flatMap((hash) => hash.match(/../g)!.map((pair) => parseInt(pair, 16))));
-  return `${btoa(String.fromCharCode(...new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))))}-${hashes.length}`;
+/** The multipart ETag S3 and R2 report: the MD5 of the concatenated binary part MD5s, then the part count. */
+export async function compositeEtag(md5Hexes: readonly string[]): Promise<string> {
+  const bytes = Uint8Array.from(md5Hexes.flatMap((digest) => digest.match(/../g)!.map((pair) => parseInt(pair, 16))));
+  return `${hex(await crypto.subtle.digest('MD5', bytes))}-${md5Hexes.length}`;
 }

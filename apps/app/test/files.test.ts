@@ -4,7 +4,7 @@ import { SINGLE_UPLOAD_BYTES, UPLOAD_PART_BYTES } from '@researchforce/domain/fi
 import { asTimestamp } from '@researchforce/domain/types';
 import { BUILT_IN_VALUE_IDS } from '@researchforce/domain/value-sets';
 import { sweepUploads } from '../src/files/uploads';
-import { checksum64, compositeChecksum } from '../src/files/s3';
+import { checksum64, compositeEtag } from '../src/files/s3';
 import { itemBody, itemWorld } from './items';
 import { attachedFile, completedUpload, configureFiles, fileInput } from './files';
 
@@ -62,34 +62,40 @@ describe('file upload and atomic Attachments', () => {
     try {
       const response = await start(SINGLE_UPLOAD_BYTES + 3); expect(response.status).toBe(201);
       const row = await response.json<{ id: string; mode: string }>(); expect(row.mode).toBe('multipart');
+      expect(mocked.mock.calls[0]![1]!.headers).toEqual({});
+      const md5 = 'a'.repeat(32);
       for (const partNumber of [1, 5]) {
-        const part = await world.request('author', 'POST', `/uploads/${row.id}/parts`, { partNumber, sha256: sha }); expect(part.status).toBe(200);
+        const part = await world.request('author', 'POST', `/uploads/${row.id}/parts`, { partNumber, sha256: sha, md5 }); expect(part.status).toBe(200);
         const body = await part.json<{ url: string; headers: Record<string, string> }>();
         expect(body.headers['content-length']).toBe(String(partNumber === 1 ? UPLOAD_PART_BYTES : 3));
+        expect(body.headers['content-md5']).toBe(checksum64(md5)); expect(body.headers['x-amz-checksum-sha256']).toBeUndefined();
+        expect(new URL(body.url).searchParams.get('X-Amz-SignedHeaders')).toBe('content-length;content-md5;host');
         expect(new URL(body.url).searchParams.get('partNumber')).toBe(String(partNumber));
       }
       expect((await world.request('author', 'POST', `/uploads/${row.id}/complete`, { parts: [] })).status).toBe(422);
       expect(mocked).toHaveBeenCalledTimes(1);
     } finally { mocked.mockRestore(); }
   });
-  it('computes the S3 composite from binary digests in part order', async () => {
-    const expected = await crypto.subtle.digest('SHA-256', Uint8Array.from((sha + sha).match(/../g)!.map((p) => parseInt(p, 16))));
-    expect(await compositeChecksum([sha, sha])).toBe(`${btoa(String.fromCharCode(...new Uint8Array(expected)))}-2`);
+  it('computes the S3 composite ETag from binary MD5 digests in part order', async () => {
+    const first = 'a1'.repeat(16); const second = 'b2'.repeat(16);
+    const expected = await crypto.subtle.digest('MD5', Uint8Array.from((first + second).match(/../g)!.map((p) => parseInt(p, 16))));
+    expect(await compositeEtag([first, second])).toBe(`${Array.from(new Uint8Array(expected), (b) => b.toString(16).padStart(2, '0')).join('')}-2`);
   });
   it('checks the multipart composite returned by S3 HEAD and safely retries finalization', async () => {
     const id = await completedUpload(world); const key = `files/${id}`; const bytes = new TextEncoder().encode('Synthetic parts');
+    const partMd5 = 'c3'.repeat(16);
     const hash = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)), (b) => b.toString(16).padStart(2, '0')).join('');
     await world.core().prepare("UPDATE uploads SET state = 'uploading', completed_at = NULL, mode = 'multipart', multipart_id = 'synthetic-multipart', size_bytes = ?1, sha256 = ?2 WHERE id = ?3").bind(bytes.length, hash, id).run();
-    await world.core().prepare('INSERT INTO upload_parts(upload_id,part_number,sha256,size_bytes) VALUES(?1,1,?2,?3)').bind(id, hash, bytes.length).run();
-    const composite = await compositeChecksum([hash]); let correct = false; let posts = 0;
+    await world.core().prepare('INSERT INTO upload_parts(upload_id,part_number,sha256,md5,size_bytes) VALUES(?1,1,?2,?3,?4)').bind(id, hash, partMd5, bytes.length).run();
+    const composite = await compositeEtag([partMd5]); let correct = false; let posts = 0;
     const mocked = vi.spyOn(globalThis, 'fetch').mockImplementation(async (_url, init) => {
       if (init?.method === 'POST') {
-        posts++; expect(String(init.body)).toContain(`<ChecksumSHA256>${checksum64(hash)}</ChecksumSHA256>`);
+        posts++; expect(String(init.body)).not.toContain('ChecksumSHA256');
         await world.bindings.RF_PRIVATE_BUCKET.put(key, bytes, { sha256: hash });
         return new Response('<CompleteMultipartUploadResult/>');
       }
       expect(init?.method).toBe('HEAD');
-      return new Response(null, { headers: { 'x-amz-checksum-sha256': correct ? composite : 'wrong-1' } });
+      return new Response(null, { headers: { etag: correct ? `"${composite}"` : '"wrong-1"' } });
     });
     try {
       const body = { parts: [{ partNumber: 1, etag: 'abcdef' }] };
@@ -98,6 +104,16 @@ describe('file upload and atomic Attachments', () => {
       correct = true;
       expect((await world.request('author', 'POST', `/uploads/${id}/complete`, body)).status).toBe(200);
       expect(posts).toBe(1);
+    } finally { mocked.mockRestore(); }
+  });
+  it('refuses to complete a multipart upload whose part has no MD5', async () => {
+    const id = await completedUpload(world);
+    await world.core().prepare("UPDATE uploads SET state = 'uploading', completed_at = NULL, mode = 'multipart', multipart_id = 'synthetic-multipart', size_bytes = 3, sha256 = ?1 WHERE id = ?2").bind(sha, id).run();
+    await world.core().prepare('INSERT INTO upload_parts(upload_id,part_number,sha256,size_bytes) VALUES(?1,1,?2,3)').bind(id, sha).run();
+    const mocked = vi.spyOn(globalThis, 'fetch');
+    try {
+      expect((await world.request('author', 'POST', `/uploads/${id}/complete`, { parts: [{ partNumber: 1, etag: 'abcdef' }] })).status).toBe(422);
+      expect(mocked).not.toHaveBeenCalled();
     } finally { mocked.mockRestore(); }
   });
   it('creates all 100 files in one Submission with exact names and Source rights', async () => {

@@ -22,7 +22,7 @@ export function readiness(files: readonly FileDraft[]): string[] {
 export function selectedFiles(files: readonly FileDraft[]): FileSelection[] {
   return files.map((file) => ({ uploadId: file.uploadId!, metadata: { title: file.title, origin: file.origin, ...(file.caption === '' ? {} : { caption: file.caption }) } }));
 }
-export interface Digests { sha256: string; parts: string[] }
+export interface Digests { sha256: string; parts: string[]; md5s: string[] }
 export function hashFile(file: File, signal: AbortSignal): Promise<Digests> {
   return new Promise((resolve, reject) => {
     const worker = new Worker(new URL('./hash-worker.ts', import.meta.url), { type: 'module' });
@@ -85,7 +85,7 @@ async function transfer(client: ApiClient, draft: FileDraft, file: File, groupId
   if (start.mode === 'single') await putFile(start.url!, start.headers, file, signal, percentage);
   else for (const [i, sha256] of hashes.parts.entries()) {
     if (signal.aborted) return;
-    const signed = await client.post<{ url: string; headers: Record<string, string> }>(`/uploads/${start.id}/parts`, { partNumber: i + 1, sha256 });
+    const signed = await client.post<{ url: string; headers: Record<string, string> }>(`/uploads/${start.id}/parts`, { partNumber: i + 1, sha256, md5: hashes.md5s[i] });
     const etag = await putFile(signed.url, signed.headers, file.slice(i * UPLOAD_PART_BYTES, (i + 1) * UPLOAD_PART_BYTES), signal, (bytes) => percentage(i * UPLOAD_PART_BYTES + bytes));
     parts.push({ partNumber: i + 1, etag });
   }

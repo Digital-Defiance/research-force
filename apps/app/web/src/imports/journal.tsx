@@ -24,7 +24,7 @@ const RESTRICTED_STATEMENT = 'The importing Administrator, as Owner, and every A
 
 const LEVEL_OPTIONS = (['restricted', 'whole_team'] as const).map((value) => ({ value, label: ACCESS_LEVEL_NAMES[value] }));
 
-/** The file's SHA-256 and per-part checksums, matching what the job and multipart upload verify against. */
+/** The file's SHA-256 and per-part SHA-256 and MD5 checksums, matching what the job and multipart upload verify against. */
 async function fileDigests(file: File): Promise<Digests> {
   const controller = new AbortController();
   return hashFile(file, controller.signal);
@@ -219,11 +219,11 @@ export function JournalImportScreen({ compute = previewInWorker }: JournalImport
       await putFile(start.url, start.headers, file, new AbortController().signal, () => undefined);
       await client.post(`/uploads/${start.id}/complete`, {});
     } else {
-      const parts = (digests ?? await fileDigests(file)).parts;
+      const { parts, md5s } = digests ?? await fileDigests(file);
       const done: { partNumber: number; etag: string }[] = [];
       const signal = new AbortController().signal;
       for (const [i, partSha] of parts.entries()) {
-        const signed = await client.post<{ url: string; headers: Record<string, string> }>(`/uploads/${start.id}/parts`, { partNumber: i + 1, sha256: partSha });
+        const signed = await client.post<{ url: string; headers: Record<string, string> }>(`/uploads/${start.id}/parts`, { partNumber: i + 1, sha256: partSha, md5: md5s[i] });
         const etag = await putFile(signed.url, signed.headers, file.slice(i * UPLOAD_PART_BYTES, (i + 1) * UPLOAD_PART_BYTES), signal, () => undefined);
         done.push({ partNumber: i + 1, etag });
       }

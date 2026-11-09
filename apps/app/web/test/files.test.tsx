@@ -13,9 +13,9 @@ function ScopedHarness({ scope = 'test:form' }: { readonly scope?: string }) {
 afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers(); sessionStorage.clear(); });
 let digestOf = (_file: File) => 'a'.repeat(64);
 class HashWorker {
-  onmessage?: (event: { data: { sha256: string; parts: string[] } }) => void;
+  onmessage?: (event: { data: { sha256: string; parts: string[]; md5s: string[] } }) => void;
   onerror?: () => void;
-  postMessage(file: File) { queueMicrotask(() => this.onmessage?.({ data: { sha256: digestOf(file), parts: [digestOf(file)] } })); }
+  postMessage(file: File) { queueMicrotask(() => this.onmessage?.({ data: { sha256: digestOf(file), parts: [digestOf(file)], md5s: ['d'.repeat(32)] } })); }
   terminate() {}
 }
 function fakeXhr(statuses: number[]) {
@@ -51,6 +51,20 @@ describe('upload interactions', () => {
     fireEvent.change(screen.getByLabelText('Title (required)'), { target: { value: '' } });
     expect((screen.getByRole('button', { name: 'Submit' }) as HTMLButtonElement).disabled).toBe(true);
     fireEvent.click(screen.getByRole('button', { name: 'Remove file' })); expect(screen.queryByText('Synthetic.txt')).toBeNull();
+  });
+  it('sends each part\u2019s MD5 with its SHA-256 and forwards the signed Content-MD5 header', async () => {
+    vi.stubGlobal('Worker', HashWorker); const requests = fakeXhr([200]);
+    const api = fakeApi({ 'GET /uploads/limits': { maximumBytes: 100 },
+      'POST /uploads': { id: 'upload-1', mode: 'multipart', url: null, headers: {} },
+      'POST /uploads/upload-1/parts': { url: 'https://r2.example.test/part', headers: { 'content-length': '3', 'content-md5': 'digest' } },
+      'POST /uploads/upload-1/complete': {},
+    });
+    renderScreen(<Harness />, { client: api.client });
+    await waitFor(() => expect((screen.getByLabelText('Add files') as HTMLInputElement).disabled).toBe(false));
+    fireEvent.change(screen.getByLabelText('Add files'), { target: { files: [new File(['abc'], 'Synthetic.txt')] } });
+    await screen.findByText('Upload complete');
+    expect(api.calls.find((call) => call.path === '/uploads/upload-1/parts')!.body).toEqual({ partNumber: 1, sha256: 'a'.repeat(64), md5: 'd'.repeat(32) });
+    expect(requests[0]!.headers).toEqual({ 'content-md5': 'digest' });
   });
   it('refuses over-limit files before hashing or transfer and keeps accepted files', async () => {
     const worker = vi.fn(() => new HashWorker()); vi.stubGlobal('Worker', worker); fakeXhr([200]);

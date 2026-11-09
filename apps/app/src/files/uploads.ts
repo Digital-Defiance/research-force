@@ -12,7 +12,7 @@ import { ApiError } from '../api/errors';
 import { parse } from '../api/input';
 import { authorize } from '../auth/authorize';
 import type { Env } from '../env';
-import { checksum64, compositeChecksum, hex, presign, s3Request } from './s3';
+import { checksum64, compositeEtag, hex, presign, s3Request } from './s3';
 
 const shaSchema = z.string().regex(/^[a-f0-9]{64}$/);
 const startSchema = z.strictObject({ groupId: z.ulid(), fileName: z.string().min(1).max(4096), sizeBytes: z.int().nonnegative(), sha256: shaSchema });
@@ -45,7 +45,7 @@ export async function startUpload(c: Context<ApiEnv>, body: unknown) {
   if (count.results[0]!.n >= 100) fail(input.fileName, 'A Submission can contain at most 100 files.');
   let multipartId: string | null = null;
   if (mode === 'multipart') {
-    const result = await s3Request(c.env, 'POST', r2Key, { uploads: '' }, { 'x-amz-checksum-algorithm': 'SHA256' });
+    const result = await s3Request(c.env, 'POST', r2Key, { uploads: '' });
     multipartId = /<UploadId>([^<]+)<\/UploadId>/.exec(await result.text())?.[1] ?? null;
     if (!multipartId) throw new Error('R2 did not return a multipart upload id.');
   }
@@ -61,7 +61,7 @@ export async function startUpload(c: Context<ApiEnv>, body: unknown) {
   }
   return { id, mode, partBytes: UPLOAD_PART_BYTES, url, headers: mode === 'single' ? headers : {}, expiresAt: new Date(new Date(now).getTime() + 900_000).toISOString() };
 }
-const partSchema = z.strictObject({ partNumber: z.int().positive(), sha256: shaSchema });
+const partSchema = z.strictObject({ partNumber: z.int().positive(), sha256: shaSchema, md5: z.string().regex(/^[a-f0-9]{32}$/) });
 export async function signPart(c: Context<ApiEnv>, id: string, body: unknown) {
   await authorize(c, [{ permission: 'attachment.upload' }]);
   const input = parse(partSchema, body);
@@ -70,10 +70,11 @@ export async function signPart(c: Context<ApiEnv>, id: string, body: unknown) {
   const sizeBytes = Math.min(UPLOAD_PART_BYTES, row.sizeBytes - (input.partNumber - 1) * UPLOAD_PART_BYTES);
   await new GuardedBatch(c.env.RF_CORE, { id: c.get('session').member.id, now: c.get('now') })
     .guard('upload_ready', sql`EXISTS (SELECT 1 FROM uploads WHERE id = ${id} AND state = 'uploading')`)
-    .run(sql`INSERT INTO upload_parts(upload_id, part_number, sha256, size_bytes) VALUES (${id}, ${input.partNumber}, ${input.sha256}, ${sizeBytes})
-      ON CONFLICT(upload_id, part_number) DO UPDATE SET sha256 = excluded.sha256, size_bytes = excluded.size_bytes`)
+    .run(sql`INSERT INTO upload_parts(upload_id, part_number, sha256, md5, size_bytes) VALUES (${id}, ${input.partNumber}, ${input.sha256}, ${input.md5}, ${sizeBytes})
+      ON CONFLICT(upload_id, part_number) DO UPDATE SET sha256 = excluded.sha256, md5 = excluded.md5, size_bytes = excluded.size_bytes`)
     .commit(c.get('accountant'));
-  const headers = { 'content-length': String(sizeBytes), 'x-amz-checksum-sha256': checksum64(input.sha256) };
+  // R2 rejects x-amz-checksum-sha256 on UploadPart (501) but verifies Content-MD5 server-side.
+  const headers = { 'content-length': String(sizeBytes), 'content-md5': checksum64(input.md5) };
   return { url: await presign(c.env, 'PUT', row.r2Key, headers, { uploadId: row.multipartId!, partNumber: String(input.partNumber) }, new Date(c.get('now'))), headers };
 }
 const completeSchema = z.strictObject({ parts: z.array(z.strictObject({ partNumber: z.int().positive(), etag: z.string().regex(/^[a-fA-F0-9"-]+$/).max(128) })).max(10_000).optional() });
@@ -86,25 +87,28 @@ export async function completeUpload(c: Context<ApiEnv>, id: string, body: unkno
   let expected = checksum64(row.sha256);
   const storedBefore = row.mode === 'multipart' ? await c.env.RF_PRIVATE_BUCKET.head(row.r2Key) : null;
   if (row.mode === 'multipart') {
-    const parts = await c.get('accountant').track(c.env.RF_CORE.prepare('SELECT part_number AS partNumber, sha256 FROM upload_parts WHERE upload_id = ?1 ORDER BY part_number').bind(id).all<{ partNumber: number; sha256: string }>());
+    const parts = await c.get('accountant').track(c.env.RF_CORE.prepare('SELECT part_number AS partNumber, md5 FROM upload_parts WHERE upload_id = ?1 ORDER BY part_number').bind(id).all<{ partNumber: number; md5: string | null }>());
     const count = Math.ceil(row.sizeBytes / UPLOAD_PART_BYTES);
     const requested = input.parts;
-    if (!requested || parts.results.length !== count || requested.length !== count || requested.some((part, i) => part.partNumber !== i + 1 || parts.results[i]?.partNumber !== i + 1)) fail(row.fileName, 'Every part must complete once, in order.');
-    expected = await compositeChecksum(parts.results.map((part) => part.sha256));
-    const xml = `<CompleteMultipartUpload>${requested.map((part, i) => `<Part><PartNumber>${part.partNumber}</PartNumber><ETag>${part.etag.replaceAll('"', '&quot;')}</ETag><ChecksumSHA256>${checksum64(parts.results[i]!.sha256)}</ChecksumSHA256></Part>`).join('')}</CompleteMultipartUpload>`;
+    if (!requested || parts.results.length !== count || requested.length !== count || requested.some((part, i) => part.partNumber !== i + 1 || parts.results[i]?.partNumber !== i + 1) || parts.results.some((part) => part.md5 === null)) fail(row.fileName, 'Every part must complete once, in order.');
+    expected = await compositeEtag(parts.results.map((part) => part.md5!));
+    const xml = `<CompleteMultipartUpload>${requested.map((part) => `<Part><PartNumber>${part.partNumber}</PartNumber><ETag>${part.etag.replaceAll('"', '&quot;')}</ETag></Part>`).join('')}</CompleteMultipartUpload>`;
     if (!storedBefore) {
       const completed = await s3Request(c.env, 'POST', row.r2Key, { uploadId: row.multipartId! }, { 'content-type': 'application/xml' }, xml);
       if (/<Error[>\s]/.test(await completed.text())) fail(row.fileName, 'R2 could not complete the multipart upload.');
     }
   }
   const object = storedBefore ?? await c.env.RF_PRIVATE_BUCKET.head(row.r2Key);
-  let actual = object?.checksums.sha256 ? checksum64(hex(object.checksums.sha256)) : null;
-  // Multipart SHA-256 is composite and is exposed by S3 HEAD rather than the binding's full-object checksum.
-  if (object && (row.mode === 'multipart' || actual === null)) {
-    actual = (await s3Request(c.env, 'HEAD', row.r2Key, {}, { 'x-amz-checksum-mode': 'ENABLED' })).headers.get('x-amz-checksum-sha256');
+  let actual: string | null;
+  if (row.mode === 'multipart') {
+    // R2 exposes no SHA-256 for multipart objects; the composite ETag proves the stored parts are the MD5-verified ones.
+    actual = object ? (await s3Request(c.env, 'HEAD', row.r2Key, {})).headers.get('etag')?.replaceAll('"', '') ?? null : null;
+  } else {
+    actual = object?.checksums.sha256 ? checksum64(hex(object.checksums.sha256)) : null;
+    if (object && actual === null) actual = (await s3Request(c.env, 'HEAD', row.r2Key, {}, { 'x-amz-checksum-mode': 'ENABLED' })).headers.get('x-amz-checksum-sha256');
   }
   if (!object || object.size !== row.sizeBytes || actual !== expected) {
-    fail(row.fileName, 'The stored file size or SHA-256 checksum does not match. Retry or remove this file.');
+    fail(row.fileName, 'The stored file size or checksum does not match. Retry or remove this file.');
   }
   const now = c.get('now');
   await new GuardedBatch(c.env.RF_CORE, { id: c.get('session').member.id, now })

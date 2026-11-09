@@ -329,10 +329,10 @@ export const guardReviewerEligible = guardTable('_g_reviewer_eligible');
 export const guardReviewOpen = guardTable('_g_review_open');
 export const guardAccessOwner = guardTable('_g_access_owner');
 
-/** Persisted before signing; completion compares the exact ordered SHA-256 part digests. */
+/** Persisted before signing; R2 verifies each part's Content-MD5 and completion compares the composite ETag of the ordered MD5 digests. */
 export const uploadParts = sqliteTable('upload_parts', {
   uploadId: text('upload_id').notNull(), partNumber: integer('part_number').notNull(),
-  sha256: text('sha256').notNull(), sizeBytes: integer('size_bytes').notNull(),
+  sha256: text('sha256').notNull(), md5: text('md5'), sizeBytes: integer('size_bytes').notNull(),
 }, (t) => [primaryKey({ columns: [t.uploadId, t.partNumber] }), check('upload_parts_number', sql`${t.partNumber} > 0`), check('upload_parts_size', sql`${t.sizeBytes} > 0`)]);
 
 export const guardUploadReady = guardTable('_g_upload_ready');

@@ -1,3 +1,4 @@
+import { md5 } from '@noble/hashes/legacy.js';
 import { sha256 } from '@noble/hashes/sha2.js';
 import { bytesToHex } from '@noble/hashes/utils.js';
 import { UPLOAD_PART_BYTES } from '@researchforce/domain/files';
@@ -8,11 +9,13 @@ globalThis.onmessage = async (event: MessageEvent<File>) => {
     const file = event.data;
     const whole = sha256.create();
     const parts: string[] = [];
+    const md5s: string[] = [];
     for (let offset = 0; offset < file.size; offset += UPLOAD_PART_BYTES) {
       const bytes = new Uint8Array(await file.slice(offset, offset + UPLOAD_PART_BYTES).arrayBuffer());
       whole.update(bytes);
       parts.push(bytesToHex(sha256(bytes)));
+      md5s.push(bytesToHex(md5(bytes)));
     }
-    globalThis.postMessage({ sha256: bytesToHex(whole.digest()), parts });
+    globalThis.postMessage({ sha256: bytesToHex(whole.digest()), parts, md5s });
   } catch { globalThis.postMessage({ error: 'The file could not be read for its checksum.' }); }
 };
