@@ -5,7 +5,9 @@ import { useSession } from '../session';
 import { ACCESS_LEVEL_NAMES, accessLevelName } from '../access/access';
 import type { MemberRow, ProjectRecord } from '../types';
 import { Button, LoadState, Notice, SaveFailure, SelectField, useLoad } from '../ui';
-import { hashFile } from '../files/upload';
+import { hashFile, putFile } from '../files/upload';
+import type { Digests } from '../files/upload';
+import { SINGLE_UPLOAD_BYTES as SINGLE_PUT_BYTES, UPLOAD_PART_BYTES } from '@researchforce/domain/files';
 import { readEntryDates, readImportEntries } from './preview';
 import type { EntryDates, ImportMetadataEntry, ImportPreview } from './preview';
 import type { PreviewRequest, PreviewResult } from './import-worker';
@@ -22,10 +24,10 @@ const RESTRICTED_STATEMENT = 'The importing Administrator, as Owner, and every A
 
 const LEVEL_OPTIONS = (['restricted', 'whole_team'] as const).map((value) => ({ value, label: ACCESS_LEVEL_NAMES[value] }));
 
-/** The hex SHA-256 of a file, matching what the job verifies against; the real worker is wrapped so tests target the pure logic. */
-async function fileSha256(file: File): Promise<string> {
+/** The file's SHA-256 and per-part checksums, matching what the job and multipart upload verify against. */
+async function fileDigests(file: File): Promise<Digests> {
   const controller = new AbortController();
-  return (await hashFile(file, controller.signal)).sha256;
+  return hashFile(file, controller.signal);
 }
 
 /** Run the preview compute in a Web Worker so a large journal never blocks the UI thread (R27.7). Tests pass their own `compute`. */
@@ -208,12 +210,26 @@ export function JournalImportScreen({ compute = previewInWorker }: JournalImport
   /** Hash and upload one attachment through the ordinary uploads flow, returning its `AttachmentImportMeta`. */
   const uploadAttachment = async (entry: ImportMetadataEntry, file: File, groupId: string): Promise<AttachmentBody> => {
     // Assumption: the import reads files the normal /uploads flow stored under `files/{uploadId}`; the job then verifies size and sha256 (R26.3).
-    const sha256 = entry.sha256 ?? await fileSha256(file);
+    // Files over the single-request size go up in parts, like any other upload; the part checksums come from the same hash pass.
+    const multipart = file.size > SINGLE_PUT_BYTES;
+    const digests = multipart || entry.sha256 === undefined ? await fileDigests(file) : undefined;
+    const sha256 = entry.sha256 ?? digests!.sha256;
     const start = await client.post<{ id: string; mode: string; url: string | null; headers: Record<string, string> }>('/uploads', { groupId, fileName: entry.fileName, sizeBytes: file.size, sha256 });
-    if (start.mode !== 'single' || start.url === null) throw new Error(`${entry.fileName} is too large to import through this screen.`);
-    const put = await fetch(start.url, { method: 'PUT', headers: start.headers, body: file });
-    if (!put.ok) throw new Error(`The file ${entry.fileName} could not be stored.`);
-    await client.post(`/uploads/${start.id}/complete`, {});
+    if (start.mode === 'single' && start.url !== null) {
+      const put = await fetch(start.url, { method: 'PUT', headers: start.headers, body: file });
+      if (!put.ok) throw new Error(`The file ${entry.fileName} could not be stored.`);
+      await client.post(`/uploads/${start.id}/complete`, {});
+    } else {
+      const parts = (digests ?? await fileDigests(file)).parts;
+      const done: { partNumber: number; etag: string }[] = [];
+      const signal = new AbortController().signal;
+      for (const [i, partSha] of parts.entries()) {
+        const signed = await client.post<{ url: string; headers: Record<string, string> }>(`/uploads/${start.id}/parts`, { partNumber: i + 1, sha256: partSha });
+        const etag = await putFile(signed.url, signed.headers, file.slice(i * UPLOAD_PART_BYTES, (i + 1) * UPLOAD_PART_BYTES), signal, () => undefined);
+        done.push({ partNumber: i + 1, etag });
+      }
+      await client.post(`/uploads/${start.id}/complete`, { parts: done });
+    }
     const credit = entry.creditingContributor ?? session.me.member.id;
     return {
       sitePath: entry.sitePath, fileName: entry.fileName, title: entry.title ?? entry.fileName, sizeBytes: file.size, sha256,
