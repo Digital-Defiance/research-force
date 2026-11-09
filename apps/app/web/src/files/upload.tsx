@@ -34,6 +34,10 @@ export function hashFile(file: File, signal: AbortSignal): Promise<Digests> {
     worker.postMessage(file);
   });
 }
+/** The same bytes with no MIME type, so a direct PUT to R2 carries no Content-Type header (outside the bucket's CORS rule). */
+export function untyped(bytes: Blob): Blob {
+  return bytes.type === '' ? bytes : bytes.slice(0, bytes.size, '');
+}
 /** R2 receives bytes directly; browsers supply Content-Length themselves. A stalled request fails after 60 seconds. */
 export function putFile(url: string, headers: Record<string, string>, bytes: Blob, signal: AbortSignal, progress: (n: number) => void): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -51,7 +55,9 @@ export function putFile(url: string, headers: Record<string, string>, bytes: Blo
     xhr.onabort = () => fail('The transfer was interrupted.');
     xhr.onload = () => { finish(); if (xhr.status >= 200 && xhr.status < 300) { progress(bytes.size); resolve(xhr.getResponseHeader('ETag') ?? ''); } else reject(new Error(`R2 refused the file (${xhr.status}).`)); };
     signal.addEventListener('abort', abort, { once: true });
-    if (signal.aborted) abort(); else xhr.send(bytes);
+    // Send the bytes untyped: a typed Blob makes the browser add Content-Type, which the bucket's CORS rule does not allow,
+    // so the preflight fails. The presigned URL does not sign Content-Type, so dropping it changes nothing else.
+    if (signal.aborted) abort(); else xhr.send(untyped(bytes));
   });
 }
 interface UploadStart { id: string; mode: 'single' | 'multipart'; url: string | null; headers: Record<string, string> }

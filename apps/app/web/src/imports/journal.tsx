@@ -216,8 +216,7 @@ export function JournalImportScreen({ compute = previewInWorker }: JournalImport
     const sha256 = entry.sha256 ?? digests!.sha256;
     const start = await client.post<{ id: string; mode: string; url: string | null; headers: Record<string, string> }>('/uploads', { groupId, fileName: entry.fileName, sizeBytes: file.size, sha256 });
     if (start.mode === 'single' && start.url !== null) {
-      const put = await fetch(start.url, { method: 'PUT', headers: start.headers, body: file });
-      if (!put.ok) throw new Error(`The file ${entry.fileName} could not be stored.`);
+      await putFile(start.url, start.headers, file, new AbortController().signal, () => undefined);
       await client.post(`/uploads/${start.id}/complete`, {});
     } else {
       const parts = (digests ?? await fileDigests(file)).parts;
