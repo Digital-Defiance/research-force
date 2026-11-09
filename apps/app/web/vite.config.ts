@@ -46,9 +46,14 @@ export default defineConfig({
   root: fileURLToPath(new URL('.', import.meta.url)),
   plugins: [noExternalFlags, environmentHeaders, react()],
   resolve: {
-    alias: {
-      events: require.resolve('events/'),
-    },
+    alias: [
+      { find: 'events', replacement: require.resolve('events/') },
+      // micromark's `decode-named-character-reference` resolves to `index.dom.js` under the `browser` condition, which
+      // calls `document.createElement` at module load. The journal and bulk previews parse Markdown in a Web Worker,
+      // where `document` does not exist, so the worker crashed on load and every preview failed. The DOM-free entry
+      // (the package's `worker`/`default` export) decodes from a lookup table and works in both the page and workers.
+      { find: /^decode-named-character-reference$/, replacement: require.resolve('decode-named-character-reference') },
+    ],
   },
   build: { outDir: 'dist', emptyOutDir: true },
 });
