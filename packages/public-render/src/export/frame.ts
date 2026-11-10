@@ -32,8 +32,8 @@ export function renderExportPage(site: SiteInput, spec: PageSpec, inPackage: Rea
   const body = element('body', { 'data-accent': accent }, [
     // The masthead name links to the export's index; `/` is the home address, which relativising maps to `index.html` from this file (R45.2).
     relative(siteHeader({ home: '/', name: site.publicCopy.name, strapline: site.publicCopy.strapline })),
-    mainContent([element('h1', {}, [text(spec.title)]), ...spec.body.map(relative)]),
-    relative(siteFooter(site.licence)),
+    mainContent([...(spec.bleed === true ? [] : [element('h1', {}, [text(spec.title)])]), ...spec.body.map(relative)], spec.bleed === true ? 'rf-main--bleed' : undefined),
+    relative(siteFooter(site.licence, site.publicCopy.name)),
   ]);
   return renderDocument(element('html', { lang: 'en' }, [head, body]));
 }

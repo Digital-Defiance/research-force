@@ -137,3 +137,25 @@ export const formLink = (): ViewNode => element('a', { href: SITE_PATHS.submitRe
 export function latestVersion(texts: readonly FixedText[]): string {
   return texts.reduce((latest, item) => (item.version > latest ? item.version : latest), '');
 }
+/** The static copy of the Public_Site home page: hero, “How we work” cards, Featured heading, and the empty state. Not a FixedText, so no policy date moves. */
+export const HOME_TEXTS = Object.freeze({
+  eyebrow: 'An open research archive',
+  lead: ['Hard, long-running problems, worked in the open.', 'Every claim traced, every contributor credited, every dead end kept.'],
+  methodsLabel: 'Read our methods',
+  contactLabel: 'Contact or submit',
+  howEyebrow: 'How we work',
+  howHeading: 'Held to professional and scientific standards',
+  cards: [
+    { id: 'trace', title: 'Traced to the source', description: 'Each claim points to the material it rests on. A reader can follow it back and check it.' },
+    { id: 'credit', title: 'Every contributor credited', description: 'The people who did the work are named on it. Credit stays with the work.' },
+    { id: 'record', title: 'Negative results kept', description: 'Dead ends and failed attempts stay in the record. What did not work is part of what was learned.' },
+  ],
+  featuredHeading: 'Featured',
+  viewProject: 'View the project',
+  emptyMessage: 'No project has been published yet. When a project is made public, it appears here with its description and a link to its page.',
+  emptyBefore: 'In the meantime, the ',
+  emptyMethods: 'Methods page',
+  emptyMiddle: ' explains how the archive is kept, and you can read ',
+  emptyAbout: 'about the group',
+  emptyEnd: '.',
+} as const);

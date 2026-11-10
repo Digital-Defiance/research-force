@@ -1,5 +1,6 @@
-import { navigation, notice, pagination } from '@researchforce/design/components/index';
-import { GROUP_STATEMENT, SITE_PATHS } from '@researchforce/design/fixed-texts';
+import { brandMark, cardIcon, emptyState, navigation, notice, pagination } from '@researchforce/design/components/index';
+import { HOME_TEXTS, SITE_PATHS } from '@researchforce/design/fixed-texts';
+import { isProjectAccent } from '@researchforce/design/tokens';
 import { element, text, type ElementNode, type ViewNode } from '@researchforce/domain/tree';
 import { ITEM_KINDS } from '@researchforce/domain/types';
 import type { ProjectView, WithheldView } from '@researchforce/kernel/views';
@@ -29,37 +30,70 @@ function projectEntry(entry: ProjectEntry): ElementNode {
     : [disclosureLine(entry.line)]);
 }
 
-export const NO_FEATURED_NOTICE = 'No project is featured at present.';
+export const NO_FEATURED_NOTICE = 'No project has been published yet.';
 const ALL_PROJECTS_LINK = (): ElementNode => element('p', {}, [element('a', { href: PAGE_PATHS.projects }, [text('All projects')])]);
 
+/** A Featured_Project card: a Public Project with its name, description, accent, and link; a Withheld one as its Disclosure_Line alone, without link or slug (R40.1, R40.2). */
+function featuredCard(entry: ProjectEntry): ElementNode {
+  if (entry.tag !== 'project') return element('li', { class: 'rf-listing__entry' }, [disclosureLine(entry.line)]);
+  return element('li', { class: 'rf-listing__entry rf-featured__card', 'data-accent': entry.accent !== undefined && isProjectAccent(entry.accent) ? entry.accent : undefined }, [
+    element('h3', { class: 'rf-featured__name' }, [text(entry.name)]),
+    element('p', { class: 'rf-featured__description' }, [text(entry.description)]),
+    element('a', { class: 'rf-featured__link', href: entry.path }, [
+      text(HOME_TEXTS.viewProject), element('span', { class: 'rf-visually-hidden' }, [text(`: ${entry.name}`)]), element('span', { 'aria-hidden': 'true' }, [text(' →')]),
+    ]),
+  ]);
+}
+const featuredEmpty = (): ElementNode => emptyState(HOME_TEXTS.emptyMessage, element('p', {}, [
+  text(HOME_TEXTS.emptyBefore), element('a', { href: SITE_PATHS.methods }, [text(HOME_TEXTS.emptyMethods)]),
+  text(HOME_TEXTS.emptyMiddle), element('a', { href: SITE_PATHS.about }, [text(HOME_TEXTS.emptyAbout)]), text(HOME_TEXTS.emptyEnd),
+]));
+/** The hero heading: the strapline as a sentence. */
+const heroHeading = (strapline: string): string => (/[.!?]$/u.test(strapline) ? strapline : `${strapline}.`);
 /**
- * The home page: the installation masthead name and strapline, the Mission statement, then Featured_Projects that are
- * Public or Withheld in the Project_Order (or the no-featured notice), keeping the Mission before Featured Projects
- * (R40.1, R40.11, R46.41). The masthead and Mission come from the validated Installation_Public_Copy.
+ * The home page: a hero whose heading is the strapline, the “How we work” cards, Featured_Projects that are Public or Withheld in the
+ * Project_Order (or an empty state), then the Mission statement (R40.1, R40.11, R46.41). The masthead and Mission come from the validated
+ * Installation_Public_Copy; the other copy is `HOME_TEXTS`. The hero carries the page’s only `h1`, so the page is `bleed`.
  */
 export function homePage(site: SiteInput): PageSpec {
   const featured = projectsInOrder(site).filter((entry) => site.featured.has(entry.key));
   const { publicCopy } = site;
   return {
-    path: SITE_PATHS.home, title: siteName(site),
+    path: SITE_PATHS.home, title: siteName(site), bleed: true,
     body: [
-      element('p', { class: 'rf-home__strapline' }, [text(publicCopy.strapline)]),
+      element('section', { class: 'rf-hero', 'aria-labelledby': 'hero-heading' }, [
+        brandMark('rf-mark--hero'),
+        element('div', { class: 'rf-hero__inner' }, [
+          element('p', { class: 'rf-hero__eyebrow' }, [text(HOME_TEXTS.eyebrow)]),
+          element('h1', { id: 'hero-heading', class: 'rf-hero__heading' }, [text(heroHeading(publicCopy.strapline))]),
+          element('p', { class: 'rf-hero__lead' }, HOME_TEXTS.lead.flatMap((line, index) => (index === 0 ? [text(line)] : [element('br', {}, []), text(line)]))),
+          element('p', { class: 'rf-hero__actions' }, [
+            element('a', { class: 'rf-button rf-hero__action rf-hero__action--primary', href: SITE_PATHS.methods }, [text(HOME_TEXTS.methodsLabel)]),
+            element('a', { class: 'rf-button rf-hero__action rf-hero__action--secondary', href: SITE_PATHS.submit }, [text(HOME_TEXTS.contactLabel)]),
+          ]),
+        ]),
+      ]),
+      element('section', { class: 'rf-how', 'aria-labelledby': 'how-heading' }, [
+        element('p', { class: 'rf-section-eyebrow' }, [text(HOME_TEXTS.howEyebrow)]),
+        element('h2', { id: 'how-heading' }, [text(HOME_TEXTS.howHeading)]),
+        element('div', { class: 'rf-how__cards' }, HOME_TEXTS.cards.map((card) => element('article', { class: `rf-how__card rf-how__card--${card.id}` }, [
+          cardIcon(card.id),
+          element('h3', {}, [text(card.title)]),
+          element('p', {}, [text(card.description)]),
+        ]))),
+      ]),
+      element('section', { class: 'rf-home__featured', 'aria-labelledby': 'featured-heading' }, [
+        element('h2', { id: 'featured-heading' }, [text(HOME_TEXTS.featuredHeading)]),
+        featured.length === 0 ? featuredEmpty() : element('ul', { class: 'rf-featured' }, featured.map(featuredCard)),
+        ALL_PROJECTS_LINK(),
+      ]),
       element('section', { class: 'rf-home__mission', 'aria-labelledby': 'mission-heading' }, [
         element('h2', { id: 'mission-heading' }, [text(publicCopy.mission.heading)]),
         ...publicCopy.mission.paragraphs.map((paragraph) => element('p', {}, [text(paragraph)])),
       ]),
-      element('p', { class: 'rf-home__statement' }, GROUP_STATEMENT.paragraphs.map(text)),
-      element('section', { class: 'rf-home__featured', 'aria-labelledby': 'featured-heading' }, [
-        element('h2', { id: 'featured-heading' }, [text('Featured projects')]),
-        featured.length === 0
-          ? notice({ tone: 'neutral', body: [element('p', {}, [text(NO_FEATURED_NOTICE)])] })
-          : element('ul', { class: 'rf-listing' }, featured.map(projectEntry)),
-      ]),
-      ALL_PROJECTS_LINK(),
     ],
   };
 }
-
 /** Every Public and Withheld Project in the Project_Order, 50 per page (R40.2). */
 export function projectsListing(site: SiteInput): PageSpec[] {
   const pages = toPages(projectsInOrder(site));

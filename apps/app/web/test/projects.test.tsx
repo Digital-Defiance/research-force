@@ -6,7 +6,7 @@ import { EditProjectPage, ProjectForm, RESERVED_SLUG_HINT } from '../src/project
 import { ProjectHistory } from '../src/projects/history';
 import { ProjectsPage } from '../src/projects/list';
 import type { ProjectRecord } from '../src/types';
-import { failure, fakeApi, MEMBER_ID, renderScreen } from './helpers';
+import { failure, fakeApi, json, MEMBER_ID, renderScreen } from './helpers';
 
 const project = (position: number, overrides: Partial<ProjectRecord> = {}): ProjectRecord => ({
   id: `P${position}`, name: `Project ${position}`, description: 'A synthetic project.', slug: `project-${position}`, slugFixed: false, featured: false, accent: null,
@@ -59,7 +59,7 @@ describe('creating and editing Projects', () => {
   });
 
   it('says so when the Project to edit does not exist', async () => {
-    renderScreen(<EditProjectPage id="P9" />, { client: fakeApi({ 'GET /projects': { projects: PROJECTS } }).client });
+    renderScreen(<EditProjectPage id="P9" />, { client: fakeApi({ 'GET /projects': { projects: PROJECTS }, 'GET /members': { members: [] } }).client });
     expect(await screen.findByText('This Project does not exist.')).toBeTruthy();
   });
 });
@@ -125,5 +125,72 @@ describe('the Project history', () => {
       ['Creation by Ada Example at 2026-10-01 10:00 UTC', 'Name: Tils', 'Project Slug: tiles'],
     ]);
     expect(within(entries[0]!).getByRole('link', { name: 'Ada Example' }).getAttribute('href')).toBe(`/members/${MEMBER_ID}`);
+  });
+});
+
+describe('Publish settings on the Project edit screen', () => {
+  const preview = { diff: { changed: [], partyNames: [], dissent: [], licences: [] }, failures: [], token: 'TOK', holds: [] };
+  const handlers = () => ({
+    'GET /projects': { projects: [project(1, { effectiveDisclosure: 'not_published' })] },
+    'GET /members': { members: [] },
+    'POST /disclosure/preview': json(preview),
+    'POST /disclosure/apply': json({ applied: true }),
+  });
+  const choosePublic = () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Change disclosure' }));
+    fireEvent.change(screen.getByLabelText('Disclosure level'), { target: { value: 'public' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Check what this changes' }));
+  };
+
+  it('shows the level read-only and no control without the disclosure.set permission', async () => {
+    renderScreen(<EditProjectPage id="P1" />, { client: fakeApi(handlers()).client });
+    expect(await screen.findByText('Disclosure Not published, effective Not published')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Change disclosure' })).toBeNull();
+  });
+
+  it('previews with the p:<id> unit key', async () => {
+    const api = fakeApi(handlers());
+    renderScreen(<EditProjectPage id="P1" />, { client: api.client, administrator: true });
+    await screen.findByRole('button', { name: 'Change disclosure' });
+    choosePublic();
+    await screen.findByRole('button', { name: 'Apply this change' });
+    expect(api.writes()[0]!.path).toBe('/disclosure/preview');
+    expect(api.writes()[0]!.body).toEqual({ units: [{ key: 'p:P1', level: 'public' }] });
+  });
+
+  it('applies with the token on confirm and reloads the Projects', async () => {
+    const api = fakeApi(handlers());
+    renderScreen(<EditProjectPage id="P1" />, { client: api.client, administrator: true });
+    await screen.findByRole('button', { name: 'Change disclosure' });
+    choosePublic();
+    fireEvent.click(await screen.findByRole('button', { name: 'Apply this change' }));
+    expect(await screen.findByText('The change was applied.')).toBeTruthy();
+    const last = api.writes().at(-1)!;
+    expect([last.path, last.body]).toEqual(['/disclosure/apply', { token: 'TOK' }]);
+    await waitFor(() => expect(api.calls.filter((call) => call.method === 'GET' && call.path === '/projects').length).toBeGreaterThan(1));
+  });
+
+  it('applies nothing on cancel', async () => {
+    const api = fakeApi(handlers());
+    renderScreen(<EditProjectPage id="P1" />, { client: api.client, administrator: true });
+    await screen.findByRole('button', { name: 'Change disclosure' });
+    choosePublic();
+    await screen.findByRole('button', { name: 'Apply this change' });
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(api.writes().map((call) => call.path)).toEqual(['/disclosure/preview']);
+  });
+
+  it('sends a Disclosure line for Withheld', async () => {
+    const api = fakeApi(handlers());
+    renderScreen(<EditProjectPage id="P1" />, { client: api.client, administrator: true });
+    await screen.findByRole('button', { name: 'Change disclosure' });
+    fireEvent.click(screen.getByRole('button', { name: 'Change disclosure' }));
+    fireEvent.change(screen.getByLabelText('Disclosure level'), { target: { value: 'withheld' } });
+    fireEvent.change(screen.getByLabelText(/^Kind of material/u), { target: { value: 'A letter' } });
+    fireEvent.change(screen.getByLabelText(/^Date/u), { target: { value: '1944' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Check what this changes' }));
+    await waitFor(() => expect(api.writes()).toHaveLength(1));
+    expect(api.writes()[0]!.body).toEqual({ units: [{ key: 'p:P1', level: 'withheld', disclosureLine: { kindOfMaterial: 'A letter', date: { value: '1944', approx: false }, partyIds: [] } }] });
   });
 });

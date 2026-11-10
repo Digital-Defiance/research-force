@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { labelTextFor } from '@researchforce/domain/label-marks';
 import { text, type ViewNode } from '@researchforce/domain/tree';
 import {
-  attachmentList, breadcrumb, button, card, citationBlock, dataTable, disclosureLineBlock, dissentNoteBlock, emptyState, formField, labelMark, linkButton,
+  attachmentList, brandMark, breadcrumb, button, card, citationBlock, dataTable, disclosureLineBlock, dissentNoteBlock, emptyState, formField, labelMark, linkButton,
   mainContent, notice, pageHeader, pageLayout, pageWindow, pagination, siteFooter, siteHeader, skeleton, statusBlock, tabs, ACCESS_DATE_PLACEHOLDER, FORM_FOOTER_LINK,
 } from '../src/components/index';
 import { GROUP_STATEMENT, POLICY_PAGES, SITE_PATHS } from '../src/fixed-texts';
@@ -17,11 +17,14 @@ describe('page frame', () => {
   it('starts with a skip link to the main landmark and a masthead link to the given home', () => {
     const html = renderToString(siteHeader({ home: '/workspace', name: 'Synthetic Collective', strapline: 'A visibly different strapline', navigation: [{ label: 'Items', href: '/items', current: true }, { label: 'Logs', href: '/logs' }] }));
     expect(html).toMatch(/^<a class="rf-skip-link" href="#main">Skip to main content<\/a><header/u);
-    expect(html).toContain('<a class="rf-header__brand" href="/workspace"><span class="rf-header__name">Synthetic Collective</span><span class="rf-header__strapline">A visibly different strapline</span></a>');
+    expect(html).toContain('<header class="rf-header rf-header--site">');
+    expect(html).toContain('href="/workspace"><svg class="rf-mark rf-mark--header"');
+    expect(html).toContain('</svg><span class="rf-header__name">Synthetic Collective</span><span class="rf-header__strapline">A visibly different strapline</span></a>');
     expect(html).toContain('<nav class="rf-nav" aria-label="Main">');
     expect(html).toContain('href="/items" aria-current="page">Items</a>');
     expect(html).not.toContain('href="/logs" aria-current');
     expect(renderToString(mainContent([]))).toBe('<main id="main" class="rf-main" tabindex="-1"></main>');
+    expect(renderToString(mainContent([], 'rf-main--bleed'))).toBe('<main id="main" class="rf-main rf-main--bleed" tabindex="-1"></main>');
   });
 
   it('puts the Group_Statement, the copyright statement with the licence link, and the six Policy_Pages and the form in the footer', () => {
@@ -32,6 +35,21 @@ describe('page frame', () => {
     expect(visible(footer)).not.toMatch(/[{}]/u);
     const links = [...html.matchAll(/<a class="rf-footer-nav__link" href="([^"]*)">([^<]*)<\/a>/gu)].map((match) => [match[2], match[1]]);
     expect(links).toEqual([...POLICY_PAGES.map((page) => [page.title, page.path]), [FORM_FOOTER_LINK, SITE_PATHS.submit]]);
+  });
+});
+
+describe('brand mark', () => {
+  it('is a decorative inline drawing that follows the text colour', () => {
+    const html = renderToString(brandMark('rf-mark--hero'));
+    expect(html).toMatch(/^<svg class="rf-mark rf-mark--hero"/u);
+    expect(html).toContain('aria-hidden="true"');
+    expect(html).toContain('stroke="currentColor"');
+    expect(html).not.toMatch(/<title|style=|<use/u);
+  });
+
+  it('adds the wordmark to the footer only when given a name', () => {
+    expect(renderToString(siteFooter(LICENCE))).not.toContain('rf-footer__brand');
+    expect(renderToString(siteFooter(LICENCE, 'Synthetic Collective'))).toContain('<span class="rf-footer__name">Synthetic Collective</span>');
   });
 });
 

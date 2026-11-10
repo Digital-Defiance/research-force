@@ -31,6 +31,20 @@
     display: none;
   }
 
+  /* The brand band, hero, and marks are screen decoration; the footer prints on paper colours. */
+  .rf-header,
+  .rf-mark {
+    display: none;
+  }
+  .rf-hero,
+  .rf-footer {
+    background: none;
+    color: var(--rf-colour-text);
+  }
+  .rf-footer a,
+  .rf-footer__brand {
+    color: var(--rf-colour-text);
+  }
   /* Link texts stay, so a reader keeps the words of every link in the main content (R45.9). */
   a {
     color: var(--rf-colour-text);

@@ -22,6 +22,8 @@ export interface PageSpec {
   readonly scripts?: readonly string[];
   /** Pages that are not addresses of their own, such as the not-found page, print no address. */
   readonly printAddress?: boolean;
+  /** Full-width sections whose own hero supplies the page's single `h1`, as on the home page; the generated heading is left out. */
+  readonly bleed?: boolean;
 }
 
 const NAVIGATION: readonly NavItem[] = [
@@ -53,11 +55,11 @@ export function renderPage(site: SiteInput, spec: PageSpec): string {
   const body = element('body', { 'data-accent': accent }, [
     siteHeader({ home: SITE_PATHS.home, name: site.publicCopy.name, strapline: site.publicCopy.strapline, navigation: NAVIGATION.map((item) => ({ ...item, current: item.href === spec.path })) }),
     mainContent([
-      element('h1', {}, [text(spec.title)]),
+      ...(spec.bleed === true ? [] : [element('h1', {}, [text(spec.title)])]),
       ...spec.body,
       ...(spec.printAddress === false ? [] : [element('p', { class: 'rf-page-address', 'data-url': absoluteUrl(spec.path) }, [])]),
-    ]),
-    siteFooter(site.licence),
+    ], spec.bleed === true ? 'rf-main--bleed' : undefined),
+    siteFooter(site.licence, site.publicCopy.name),
   ]);
   return renderDocument(element('html', { lang: 'en' }, [head, body]));
 }

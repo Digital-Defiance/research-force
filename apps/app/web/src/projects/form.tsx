@@ -5,7 +5,8 @@ import { PROJECT_ACCENTS } from '@researchforce/design/tokens';
 import { RESERVED_PROJECT_SLUGS } from '@researchforce/domain/schemas/people';
 import { ApiFailure, useApi } from '../api';
 import { usePersistentForm } from '../persist';
-import type { ProjectRecord } from '../types';
+import type { MemberRow, ProjectRecord } from '../types';
+import { ProjectPublishSettings } from './publish';
 import { Button, CheckboxField, LoadState, Notice, RestoredNotice, SaveFailure, TextField, useLoad } from '../ui';
 
 interface ProjectValues {
@@ -106,7 +107,14 @@ export function ProjectForm({ project }: { readonly project?: ProjectRecord }) {
 
 export function EditProjectPage({ id }: { readonly id: string }) {
   const projects = useLoad<{ projects: ProjectRecord[] }>('/projects');
+  const members = useLoad<{ members: MemberRow[] }>('/members');
   if (!projects.data) return <LoadState error={projects.error} />;
+  if (!members.data) return <LoadState error={members.error} />;
   const project = projects.data.projects.find((entry) => entry.id === id);
-  return project === undefined ? <Notice tone="warning" title="This Project does not exist." /> : <ProjectForm key={project.rev} project={project} />;
+  return project === undefined ? <Notice tone="warning" title="This Project does not exist." /> : (
+    <>
+      <ProjectForm key={project.rev} project={project} />
+      <ProjectPublishSettings project={project} members={members.data.members} onApplied={projects.reload} />
+    </>
+  );
 }

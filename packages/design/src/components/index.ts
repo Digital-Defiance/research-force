@@ -4,3 +4,4 @@ export * from './layout';
 export * from './notices';
 export * from './page';
 export * from './tabs';
+export * from './brand';

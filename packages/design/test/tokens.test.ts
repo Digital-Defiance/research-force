@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { BREAKPOINTS, COLOURS, DEFAULT_ACCENT, ON_ACCENT, PROJECT_ACCENTS, PROJECT_ACCENT_IDS, TOKEN_NAMES, isProjectAccent, projectAccent, tokensCss, type Scheme } from '../src/tokens';
+import { BREAKPOINTS, COLOURS, DEFAULT_ACCENT, ON_ACCENT, PROJECT_ACCENTS, PROJECT_ACCENT_IDS, STATIC_TOKENS, TOKEN_NAMES, isProjectAccent, projectAccent, tokensCss, type Scheme } from '../src/tokens';
 
 const src = new URL('../src/', import.meta.url);
 const read = (name: string): string => readFileSync(new URL(name, src), 'utf8');
@@ -67,5 +67,20 @@ describe('contrast (R45.4, R45.5, R45.22)', () => {
       for (const name of ['text', 'text-muted', 'danger', 'success', 'warning', 'info'] as const) expect(contrast(COLOURS[name][scheme], COLOURS[surface][scheme]), name).toBeGreaterThanOrEqual(4.5);
       expect(contrast(COLOURS.border[scheme], COLOURS[surface][scheme])).toBeGreaterThanOrEqual(3);
     }
+  });
+});
+describe('brand surfaces (R45.4)', () => {
+  const token = (name: string): string => STATIC_TOKENS[name]!;
+  const backgrounds = ['colour-brand-start', 'colour-brand-mid', 'colour-brand-end', 'colour-ink', 'colour-hero-end'];
+  it('keeps on-brand and on-brand-muted text at 4.5:1 on every brand surface', () => {
+    for (const background of backgrounds) {
+      for (const foreground of ['colour-on-brand', 'colour-on-brand-muted']) expect(contrast(token(foreground), token(background)), `${foreground} on ${background}`).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+  it('keeps the hero primary button (ink on cream) readable', () => {
+    expect(contrast(token('colour-ink'), token('colour-on-brand'))).toBeGreaterThanOrEqual(4.5);
+  });
+  it('keeps the mark colours at 3:1 on the footer ink', () => {
+    for (const mark of ['colour-mark-blue', 'colour-mark-pink']) expect(contrast(token(mark), token('colour-ink'))).toBeGreaterThanOrEqual(3);
   });
 });

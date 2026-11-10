@@ -371,7 +371,7 @@ export function DisclosureDialog({ title, units, members, onCancel, onProposed, 
   );
 }
 
-const LEVEL_OPTIONS = [
+export const LEVEL_OPTIONS = [
   { value: 'not_published', label: 'Not published' },
   { value: 'withheld', label: 'Withheld' },
   { value: 'public', label: 'Public' },
