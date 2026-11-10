@@ -21,6 +21,16 @@ describe('missing hashed assets', () => {
     expect(response.status).toBe(200);
     expect(await response.text()).toBe('export {}');
   });
+  it('returns an existing asset unchanged, headers included', async () => {
+    const headers = { 'content-type': 'text/javascript', 'x-content-type-options': 'nosniff', 'cache-control': 'public, max-age=31536000' };
+    const response = await createWorker().fetch(new Request(`${origin}/assets/app-new.js`), envWith(() => new Response('export {}', { headers })), context);
+    for (const [name, value] of Object.entries(headers)) expect(response.headers.get(name)).toBe(value);
+  });
+  it('answers a missing asset as no-store plain text', async () => {
+    const response = await createWorker().fetch(new Request(`${origin}/assets/hash-worker-old.js`), envWith(spa), context);
+    expect(response.headers.get('content-type')).toContain('text/plain');
+    expect(response.headers.get('cache-control')).toBe('no-store');
+  });
   it('still serves the app shell for a page route', async () => {
     const response = await createWorker().fetch(new Request(`${origin}/members/abc`), envWith(spa), context);
     expect(response.status).toBe(200);
