@@ -226,7 +226,7 @@ describe('home and projects pages', () => {
     const files = build();
     const home = page(files, 'index.html');
     const entries = findAll(home.main.children, byClass('rf-listing__entry')).map((node) => textOf(node.children));
-    expect(entries).toEqual(['WithheldProject · 1960', 'Alpha ProjectA synthetic project.']);
+    expect(entries).toEqual(['WithheldProject · 1960', 'Alpha ProjectA synthetic project.View the project: Alpha Project →']);
     expect(files.get('index.html')!.content).not.toContain('hidden-slug');
     expect(linkTo(home, '/projects')).toContain('All projects');
     const projects = page(files, 'projects.html');
@@ -235,11 +235,37 @@ describe('home and projects pages', () => {
     ]);
   });
 
-  it('shows the no-featured notice when no Featured_Project is Public or Withheld', () => {
+  it('shows an inviting empty state when no Featured_Project is Public or Withheld', () => {
     const home = page(build(site({ featured: new Set(['p:private']) })), 'index.html');
-    expect(home.mainText).toContain('No project is featured at present.');
+    expect(home.mainText).toContain('No project has been published yet.');
+    expect(home.mainText).not.toContain('No project is featured at present.');
+    expect(linkTo(home, '/methods')).toContain('Methods page');
+    expect(linkTo(home, '/about')).toContain('about the group');
+    expect(findAll(home.main.children, byClass('rf-featured__card'))).toEqual([]);
+    expect(findAll(home.main.children, byClass('rf-empty'))).toHaveLength(1);
   });
-
+  it('renders a Featured Public Project as an accented card linking to its page', () => {
+    const home = page(build(site({ featured: new Set([PROJECT.key]) })), 'index.html');
+    const cards = findAll(home.main.children, byClass('rf-featured__card'));
+    expect(cards).toHaveLength(1);
+    expect(cards[0]!.attributes.get('data-accent')).toBe('teal');
+    expect(textOf(cards[0]!.children)).toContain(PROJECT.name);
+    expect(linkTo(home, '/p/alpha')).toEqual([expect.stringContaining('View the project')]);
+    expect(findAll(home.main.children, byClass('rf-empty'))).toEqual([]);
+  });
+  it('gives the home page one hero heading, three How we work cards, Featured, Mission, and decorative marks', () => {
+    const files = build();
+    const home = page(files, 'index.html');
+    expect(findAll(home.main.children, byTag('h1')).map((node) => textOf(node.children))).toEqual(['A visibly different strapline.']);
+    expect(findAll(home.main.children, byClass('rf-how__card'))).toHaveLength(3);
+    expect(findAll(home.main.children, byTag('h2')).map((node) => textOf(node.children)).slice(0, 2)).toEqual(['Held to professional and scientific standards', 'Featured']);
+    expect(find(home.main.children, byClass('rf-home__mission'))).toBeDefined();
+    const html = files.get('index.html')!.content;
+    const svgs = html.match(/<svg\b[^>]*>/gu) ?? [];
+    expect(svgs.length).toBeGreaterThanOrEqual(6);
+    for (const tag of svgs) expect(tag).toContain('aria-hidden="true"');
+    expect(find(page(files, 'projects.html').main.children, byTag('h1'))).toBeDefined();
+  });
   it('links the Project page to its listings, log, Withheld listing, search, and form', () => {
     const view = page(build(), 'p/alpha.html');
     const hrefs = view.links.map((link) => link.href);

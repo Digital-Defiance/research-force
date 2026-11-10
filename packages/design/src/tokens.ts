@@ -111,6 +111,27 @@ export const STATIC_TOKENS: Readonly<Record<string, string>> = {
   'width-reading': '68ch',
   'width-page': '72rem',
   'duration-fast': '120ms',
+  /** Brand colours of the Public_Site band, hero and footer; dark in both schemes, so they do not switch. */
+  'colour-brand-start': '#1b3f8f',
+  'colour-brand-mid': '#1f4fd1',
+  'colour-brand-end': '#145a6a',
+  'colour-ink': '#14213f',
+  'colour-hero-end': '#155e6e',
+  /** Text on the brand surfaces, and the quieter text colour; each keeps at least 4.5:1 on every brand stop. */
+  'colour-on-brand': '#f4f1ea',
+  'colour-on-brand-muted': '#d9e1f2',
+  'colour-mark-blue': '#6ec6ee',
+  'colour-mark-pink': '#e58bb3',
+  'colour-grid-line': 'rgb(244 241 234 / 0.07)',
+  'gradient-brand': 'linear-gradient(90deg, var(--rf-colour-brand-start), var(--rf-colour-brand-mid) 55%, var(--rf-colour-brand-end))',
+  /** Two faint grid lines over the hero gradient; the grid layers use `size-grid`, the gradient fills the rest. */
+  'gradient-hero': 'linear-gradient(to right, var(--rf-colour-grid-line) 1px, transparent 1px), linear-gradient(to bottom, var(--rf-colour-grid-line) 1px, transparent 1px), linear-gradient(135deg, var(--rf-colour-ink), var(--rf-colour-brand-start) 55%, var(--rf-colour-hero-end))',
+  'size-grid': '2rem',
+  'size-mark-sm': '2rem',
+  'size-mark-hero': 'clamp(14rem, 30vw, 24rem)',
+  'size-icon': '1.75rem',
+  'size-card-rule': '0.25rem',
+  'width-hero-copy': '40rem',
   /** The Loading_Skeleton base, derived from the raised surface so it stays light/dark-aware without altering any existing token (R13.3). */
   'colour-skeleton': 'var(--rf-colour-surface-raised)',
 };

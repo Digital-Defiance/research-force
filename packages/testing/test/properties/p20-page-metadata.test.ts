@@ -32,7 +32,8 @@ it('every title part and metadata value of every page is content the page presen
       if (file.contentType !== 'text/html; charset=utf-8') continue;
       const page = readPage(file.content);
       const shows = presented(page);
-      const heading = textOf(find(page.main.children, byTag('h1'))!.children);
+      // The home page's hero carries the strapline as its heading, while its title and `og:title` stay the installation name.
+      const heading = file.file === 'index.html' ? SITE_NAME : textOf(find(page.main.children, byTag('h1'))!.children);
       const title = textOf(find(page.head.children, byTag('title'))!.children).split(' · ');
       for (const part of title) expect(part === SITE_NAME || shows(part), `${file.file} title ${part}`).toBe(true);
       expect(title[0]).toBe(heading);

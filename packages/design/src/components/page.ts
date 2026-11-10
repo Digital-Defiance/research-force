@@ -1,6 +1,7 @@
 import { element, fragment, text, type ElementNode, type FragmentNode, type ViewNode } from '@researchforce/domain/tree';
 import { COPYRIGHT_STATEMENT, GROUP_STATEMENT, POLICY_PAGES, SITE_PATHS, fillTemplate, licenceLink, type ContentLicence } from '../fixed-texts';
 
+import { brandMark } from './brand';
 export interface NavItem { readonly label: string; readonly href: string; readonly current?: boolean }
 
 /** A list of links in a labelled `<nav>`; the current page is marked for assistive technology. */
@@ -28,9 +29,10 @@ export interface HeaderProps {
 export function siteHeader(props: HeaderProps): FragmentNode {
   return fragment([
     element('a', { class: 'rf-skip-link', href: '#main' }, [text('Skip to main content')]),
-    element('header', { class: 'rf-header' }, [
+    element('header', { class: 'rf-header rf-header--site' }, [
       element('div', { class: 'rf-header__inner' }, [
         element('a', { class: 'rf-header__brand', href: props.home }, [
+          brandMark('rf-mark--header'),
           element('span', { class: 'rf-header__name' }, [text(props.name)]),
           element('span', { class: 'rf-header__strapline' }, [text(props.strapline)]),
         ]),
@@ -44,10 +46,11 @@ export function siteHeader(props: HeaderProps): FragmentNode {
 export const FORM_FOOTER_LINK = 'Contact and submissions';
 
 /** The Public_Site footer: the Group_Statement, the copyright statement with the Content_Licence link, and the Policy_Page and form links (R29.10, R46.2). */
-export function siteFooter(licence: ContentLicence): ElementNode {
+export function siteFooter(licence: ContentLicence, name?: string): ElementNode {
   const [copyright] = COPYRIGHT_STATEMENT.paragraphs;
   return element('footer', { class: 'rf-footer' }, [
     element('div', { class: 'rf-footer__inner' }, [
+      ...(name === undefined ? [] : [element('p', { class: 'rf-footer__brand' }, [brandMark('rf-mark--footer'), element('span', { class: 'rf-footer__name' }, [text(name)])])]),
       element('p', { class: 'rf-footer__statement' }, GROUP_STATEMENT.paragraphs.map(text)),
       element('p', { class: 'rf-footer__copyright' }, fillTemplate(copyright!, { licence: licenceLink(licence) })),
       navigation('Site information', [...POLICY_PAGES.map((page) => ({ label: page.title, href: page.path })), { label: FORM_FOOTER_LINK, href: SITE_PATHS.submit }], 'rf-footer-nav'),
@@ -56,6 +59,6 @@ export function siteFooter(licence: ContentLicence): ElementNode {
 }
 
 /** The main landmark that the skip link targets. A Project_Accent applies to the whole page through `data-accent` on `<body>` (R45.3). */
-export function mainContent(children: readonly ViewNode[]): ElementNode {
-  return element('main', { id: 'main', class: 'rf-main', tabindex: '-1' }, children);
+export function mainContent(children: readonly ViewNode[], className?: string): ElementNode {
+  return element('main', { id: 'main', class: className === undefined ? 'rf-main' : `rf-main ${className}`, tabindex: '-1' }, children);
 }

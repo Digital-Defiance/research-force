@@ -64,11 +64,11 @@ describe('the synthetic second installation renders its own bundle', () => {
     }
   });
 
-  it('presents the Mission statement before Featured Projects on the home page (R40.1 order preserved)', () => {
+  it('presents the Featured section before the Mission statement on the home page, as in the approved design', () => {
     expect(home).toContain('What we do');
     expect(home).toContain('Meridian Observatory is a volunteer group that measures');
-    expect(home.indexOf('What we do')).toBeLessThan(home.indexOf('Featured projects'));
-    expect(home.indexOf('Meridian Observatory is a volunteer group that measures')).toBeLessThan(home.indexOf('Featured projects'));
+    expect(home.indexOf('id="featured-heading"')).toBeLessThan(home.indexOf('What we do'));
+    expect(home.indexOf('id="featured-heading"')).toBeLessThan(home.indexOf('Meridian Observatory is a volunteer group that measures'));
   });
 
   it('presents the ordered Principles in order on the About page', () => {
