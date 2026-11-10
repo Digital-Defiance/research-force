@@ -159,6 +159,13 @@ export class Publisher extends DurableObject<Env> {
     await this.#wake(Date.now());
   }
 
+  /** Read-only: whether a run is open, its phase, and when it started. Writes nothing. */
+  status(): { running: boolean; phase: RunPhase | null; startedAt: Timestamp | null } {
+    const run = this.#load();
+    return run === null
+      ? { running: false, phase: null, startedAt: null }
+      : { running: true, phase: run.phase, startedAt: new Date(run.startedMs).toISOString() as Timestamp };
+  }
   /**
    * Un-wedge a run that has made no progress for {@link STALE_RUN_MS}. Root cause of the staging wedge: a slice
    * that throws (deploy/render/ops failure) is retried by the platform a limited number of times and then its

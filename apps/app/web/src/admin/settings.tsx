@@ -4,6 +4,7 @@ import { useSession } from '../session';
 import type { MemberRow } from '../types';
 import { Button, LoadState, Notice, SaveFailure, SelectField, TextField, formatDate, useLoad } from '../ui';
 import { SETTING_NAMES } from './labels';
+import { PublishNow } from './publishing';
 
 /** One workspace-wide setting with its value, default, allowed range, and who last changed it (R46.37). */
 interface SettingView {
@@ -116,6 +117,7 @@ export function SettingsScreen() {
     <div className="rf-stack">
       <h1>Workspace settings</h1>
       {!canEdit && <Notice tone="neutral" title="Your Role does not permit changing settings. You can read each setting and its allowed range below." />}
+      {canEdit && <PublishNow />}
       {responsible !== undefined && (canEdit
         ? <ResponsiblePerson setting={responsible} members={members.data.members} onSaved={reload} />
         : <section className="rf-section" aria-label="Responsible person"><h3>Responsible person</h3><p className="rf-meta">{`Allowed: ${responsible.allowed}.`}</p></section>)}

@@ -447,7 +447,8 @@ img {
   color: var(--rf-colour-text-muted);
 }
 .rf-how h2,
-.rf-home__featured h2 {
+.rf-home__featured h2,
+.rf-home__mission h2 {
   margin-block-start: 0;
 }
 .rf-how__cards,

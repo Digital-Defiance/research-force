@@ -216,6 +216,57 @@ describe('the workspace settings screen', () => {
   });
 });
 
+const IDLE = { blocked: null, run: null, queued: false, lastRun: { startedAt: '2026-10-01T10:00:00.000Z', finishedAt: '2026-10-01T10:01:00.000Z', verifiedAt: null } };
+const publishApi = (publisher: Record<string, unknown>, post: ReturnType<typeof json> | (() => unknown) = () => json({ requested: true }, 202)) => fakeApi({
+  'GET /settings': json(SETTINGS), 'GET /members': json(MEMBERS), 'GET /publisher': json(publisher), 'POST /publisher/republish': post as never,
+});
+describe('Publish now', () => {
+  it('is a labelled button for an Administrator, shows the last result, and is absent for others', async () => {
+    const api = publishApi(IDLE);
+    renderScreen(<SettingsScreen />, { client: api.client, administrator: true });
+    expect(await screen.findByRole('region', { name: 'Publish now' })).toBeTruthy();
+    expect((await screen.findByText(/finished 2026-10-01 10:01 UTC, not yet verified/u))).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Publish now' }).hasAttribute('disabled')).toBe(false);
+    const other = publishApi(IDLE);
+    renderScreen(<SettingsScreen />, { client: other.client });
+    await screen.findAllByText('Your Role does not permit changing settings. You can read each setting and its allowed range below.');
+    expect(screen.getAllByRole('button', { name: 'Publish now' }).length).toBe(1);
+    expect(other.calls.some((call) => call.path === '/publisher')).toBe(false);
+  });
+  it('posts once on a keyboard-reachable click and announces the request politely', async () => {
+    const api = publishApi(IDLE);
+    renderScreen(<SettingsScreen />, { client: api.client, administrator: true });
+    const button = await screen.findByRole('button', { name: 'Publish now' });
+    await vi.waitFor(() => expect(button.hasAttribute('disabled')).toBe(false));
+    button.focus();
+    expect(document.activeElement).toBe(button);
+    fireEvent.click(button);
+    const notice = await screen.findByText('A publish was requested. The public site usually updates within a minute.');
+    expect(notice.closest('[role="status"]')).not.toBeNull();
+    expect(api.writes().filter((call) => call.path === '/publisher/republish').length).toBe(1);
+  });
+  it('shows the paused message and no success when publishing is frozen', async () => {
+    const api = publishApi(IDLE, failure(503, 'frozen', { details: { reason: 'publishing_paused' } }));
+    renderScreen(<SettingsScreen />, { client: api.client, administrator: true });
+    const button = await screen.findByRole('button', { name: 'Publish now' });
+    await vi.waitFor(() => expect(button.hasAttribute('disabled')).toBe(false));
+    fireEvent.click(button);
+    await screen.findByText('Publishing is paused for a backup or restore. Try again when it has finished.');
+    expect(screen.queryByText(/A publish was requested/u)).toBeNull();
+  });
+  it('disables the button and says why when publishing is blocked or a publish is running', async () => {
+    const blocked = publishApi({ ...IDLE, blocked: 'site_too_large' });
+    renderScreen(<SettingsScreen />, { client: blocked.client, administrator: true });
+    await screen.findByText('The public site is over its size limit, so it cannot be rebuilt here.');
+    expect(screen.getByRole('button', { name: 'Publish now' }).hasAttribute('disabled')).toBe(true);
+  });
+  it('disables the button while a publish is running', async () => {
+    const running = publishApi({ ...IDLE, run: { phase: 'deploy', startedAt: '2026-10-01T10:00:00.000Z' } });
+    renderScreen(<SettingsScreen />, { client: running.client, administrator: true });
+    await screen.findByText(/A publish is running \(phase: deploy/u);
+    expect(screen.getByRole('button', { name: 'Publish now' }).hasAttribute('disabled')).toBe(true);
+  });
+});
 const VALUE_SETS = {
   valueSets: {
     specialty: [
