@@ -318,8 +318,8 @@ const assemble = (header: readonly string[], dataLines: readonly (readonly strin
 const KIND_REQUIRED_COLUMNS_MODEL = {
   journal_entry: ['body'],
   finding: ['claim', 'scope_caveat'],
-  run: ['parameters', 'tool_name', 'tool_version', 'compute_resource', 'run_outcome', 'end_time', 'resume_point', 'notes'],
-  hypothesis: ['statement', 'scope'],
+  run: ['scope', 'parameters', 'tool_name', 'tool_version', 'compute_resource', 'run_outcome'],
+  hypothesis: ['statement'],
   correspondence: ['direction', 'channel', 'content'],
   archival_request: ['archive_or_desk', 'request_text', 'archival_request_status', 'contact', 'reply_date', 'reply_content'],
   work_item: ['log_summary'],

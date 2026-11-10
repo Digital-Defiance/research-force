@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 // The screen's file hashing uses the uploads Worker; stub it so the test needs no real Worker and gets a stable digest.
 vi.mock('../src/files/upload', () => ({
-  hashFile: () => Promise.resolve({ sha256: 'c'.repeat(64), parts: ['c'.repeat(64)] }),
+  hashFile: () => Promise.resolve({ sha256: 'c'.repeat(64), parts: ['c'.repeat(64)], md5s: ['d'.repeat(32)] }),
 }));
 
 import { BulkImportScreen } from '../src/imports/bulk';

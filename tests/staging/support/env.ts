@@ -63,12 +63,12 @@ export const FILES_ORIGIN = origin('STAGING_FILES_ORIGIN');
 export const IDP_HOST = envValue('STAGING_IDP_HOST');
 
 /**
- * A scoped bearer link (a `/t/` or `/x/` Download_Link, or a configured service token) that Access
- * is configured to admit WITHOUT the interactive redirect, and a Workspace path it is scoped to.
- * The Access suite proves the exception admits the scoped path and is refused elsewhere (R1.3).
+ * A live scoped bearer link: the FULL URL of one `/t/<token>` (Attachment file) or `/x/<token>`
+ * (export or backup volume) Download_Link on the download host (rf-dl). The token is the credential
+ * and is a secret while valid; mint it just before a run. The Access suite proves the link admits its
+ * own path and nothing else (R1.3).
  */
 export const BEARER_LINK = envValue('STAGING_BEARER_LINK');
-export const BEARER_SCOPE_PATH = envValue('STAGING_BEARER_SCOPE_PATH');
 
 /** The real staging R2 bucket name and its S3 endpoint, for the single/multipart upload + CORS checks (R12.10). */
 export const R2_ENDPOINT = origin('STAGING_R2_ENDPOINT');

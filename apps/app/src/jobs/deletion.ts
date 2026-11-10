@@ -28,7 +28,7 @@ interface Cursor {
 }
 
 /** Tables holding a unit's fields and per-Member state, each keyed by `unit_id`. */
-const UNIT_TABLES = [
+export const UNIT_TABLES = [
   'research_items', 'journal_entries', 'je_members', 'entry_sections', 'findings', 'sources', 'runs', 'run_counts', 'hypotheses', 'correspondences',
   'correspondence_parties', 'archival_requests', 'topics', 'research_questions', 'decisions', 'work_items', 'source_bibliography', 'source_creators', 'source_identifiers', 'replies', 'attachments', 'dissent_notes', 'flags', 'views',
 ] as const;

@@ -5,9 +5,11 @@ import { useSession } from '../session';
 import { ACCESS_LEVEL_NAMES, accessLevelName } from '../access/access';
 import type { MemberRow, ProjectRecord } from '../types';
 import { Button, LoadState, Notice, SaveFailure, SelectField, useLoad } from '../ui';
-import { hashFile } from '../files/upload';
-import { readImportEntries } from './preview';
-import type { ImportMetadataEntry, ImportPreview } from './preview';
+import { hashFile, putFile } from '../files/upload';
+import type { Digests } from '../files/upload';
+import { SINGLE_UPLOAD_BYTES as SINGLE_PUT_BYTES, UPLOAD_PART_BYTES } from '@researchforce/domain/files';
+import { readEntryDates, readImportEntries } from './preview';
+import type { EntryDates, ImportMetadataEntry, ImportPreview } from './preview';
 import type { PreviewRequest, PreviewResult } from './import-worker';
 
 /**
@@ -22,10 +24,10 @@ const RESTRICTED_STATEMENT = 'The importing Administrator, as Owner, and every A
 
 const LEVEL_OPTIONS = (['restricted', 'whole_team'] as const).map((value) => ({ value, label: ACCESS_LEVEL_NAMES[value] }));
 
-/** The hex SHA-256 of a file, matching what the job verifies against; the real worker is wrapped so tests target the pure logic. */
-async function fileSha256(file: File): Promise<string> {
+/** The file's SHA-256 and per-part SHA-256 and MD5 checksums, matching what the job and multipart upload verify against. */
+async function fileDigests(file: File): Promise<Digests> {
   const controller = new AbortController();
-  return (await hashFile(file, controller.signal)).sha256;
+  return hashFile(file, controller.signal);
 }
 
 /** Run the preview compute in a Web Worker so a large journal never blocks the UI thread (R27.7). Tests pass their own `compute`. */
@@ -165,6 +167,7 @@ export function JournalImportScreen({ compute = previewInWorker }: JournalImport
   const [journal, setJournal] = useState<File | undefined>(undefined);
   const [folderFiles, setFolderFiles] = useState<readonly File[] | undefined>(undefined);
   const [entries, setEntries] = useState<readonly ImportMetadataEntry[] | undefined>(undefined);
+  const [entryDates, setEntryDates] = useState<EntryDates | undefined>(undefined);
   const [preview, setPreview] = useState<ImportPreview | undefined>(undefined);
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<unknown>(undefined);
@@ -186,6 +189,11 @@ export function JournalImportScreen({ compute = previewInWorker }: JournalImport
     catch (error) { setEntries(undefined); setMetadataError(error instanceof Error ? error.message : 'The metadata JSON could not be read.'); }
   };
 
+  const chooseEntryDates = async (file: File) => {
+    setMetadataError(undefined);
+    try { setEntryDates(readEntryDates(await file.text())); }
+    catch (error) { setEntryDates(undefined); setMetadataError(error instanceof Error ? error.message : 'The entry dates JSON could not be read.'); }
+  };
   const runPreview = async () => {
     if (journal === undefined) return;
     setBusy(true); setFailure(undefined); setPreview(undefined);
@@ -202,12 +210,25 @@ export function JournalImportScreen({ compute = previewInWorker }: JournalImport
   /** Hash and upload one attachment through the ordinary uploads flow, returning its `AttachmentImportMeta`. */
   const uploadAttachment = async (entry: ImportMetadataEntry, file: File, groupId: string): Promise<AttachmentBody> => {
     // Assumption: the import reads files the normal /uploads flow stored under `files/{uploadId}`; the job then verifies size and sha256 (R26.3).
-    const sha256 = entry.sha256 ?? await fileSha256(file);
+    // Files over the single-request size go up in parts, like any other upload; the part checksums come from the same hash pass.
+    const multipart = file.size > SINGLE_PUT_BYTES;
+    const digests = multipart || entry.sha256 === undefined ? await fileDigests(file) : undefined;
+    const sha256 = entry.sha256 ?? digests!.sha256;
     const start = await client.post<{ id: string; mode: string; url: string | null; headers: Record<string, string> }>('/uploads', { groupId, fileName: entry.fileName, sizeBytes: file.size, sha256 });
-    if (start.mode !== 'single' || start.url === null) throw new Error(`${entry.fileName} is too large to import through this screen.`);
-    const put = await fetch(start.url, { method: 'PUT', headers: start.headers, body: file });
-    if (!put.ok) throw new Error(`The file ${entry.fileName} could not be stored.`);
-    await client.post(`/uploads/${start.id}/complete`, {});
+    if (start.mode === 'single' && start.url !== null) {
+      await putFile(start.url, start.headers, file, new AbortController().signal, () => undefined);
+      await client.post(`/uploads/${start.id}/complete`, {});
+    } else {
+      const { parts, md5s } = digests ?? await fileDigests(file);
+      const done: { partNumber: number; etag: string }[] = [];
+      const signal = new AbortController().signal;
+      for (const [i, partSha] of parts.entries()) {
+        const signed = await client.post<{ url: string; headers: Record<string, string> }>(`/uploads/${start.id}/parts`, { partNumber: i + 1, sha256: partSha, md5: md5s[i] });
+        const etag = await putFile(signed.url, signed.headers, file.slice(i * UPLOAD_PART_BYTES, (i + 1) * UPLOAD_PART_BYTES), signal, () => undefined);
+        done.push({ partNumber: i + 1, etag });
+      }
+      await client.post(`/uploads/${start.id}/complete`, { parts: done });
+    }
     const credit = entry.creditingContributor ?? session.me.member.id;
     return {
       sitePath: entry.sitePath, fileName: entry.fileName, title: entry.title ?? entry.fileName, sizeBytes: file.size, sha256,
@@ -244,7 +265,7 @@ export function JournalImportScreen({ compute = previewInWorker }: JournalImport
         if (file === undefined) throw new Error(`The file ${entry.fileName} was not found in the chosen folder.`);
         attachments.push(await uploadAttachment(entry, file, groupId));
       }
-      const body = { projectId, journal: await journal.text(), accessLevel, ...(attachments.length > 0 ? { attachments } : {}) };
+      const body = { projectId, journal: await journal.text(), accessLevel, ...(entryDates !== undefined ? { meta: entryDates } : {}), ...(attachments.length > 0 ? { attachments } : {}) };
       const { jobId } = await client.post<{ jobId: string }>('/imports/journal', body);
       setStartedLevel(accessLevel);
       setStatus({ state: 'queued' });
@@ -275,6 +296,9 @@ export function JournalImportScreen({ compute = previewInWorker }: JournalImport
         <label className="rf-field"><span className="rf-field__label">Attachment metadata (JSON)</span>
           <input type="file" accept=".json,application/json" onChange={(event) => { const file = event.target.files?.[0]; if (file) void chooseMetadata(file); event.target.value = ''; }} /></label>
         {entries !== undefined && <p className="rf-meta">{`Metadata entries: ${entries.length}`}</p>}
+        <label className="rf-field"><span className="rf-field__label">Entry dates (JSON, optional)</span>
+          <input type="file" accept=".json,application/json" onChange={(event) => { const file = event.target.files?.[0]; if (file) void chooseEntryDates(file); event.target.value = ''; }} /></label>
+        {entryDates !== undefined && <p className="rf-meta">{`Entry dates for ${Object.keys(entryDates).length} entries`}</p>}
         {metadataError !== undefined && <Notice tone="danger" title={metadataError} />}
         {creditWarnings.length > 0 && <Notice tone="warning" title="Some metadata entries credit a Member id that is not in this Workspace:"><ul className="rf-list">{creditWarnings.map((name) => <li key={name}>{name}</li>)}</ul></Notice>}
         <div className="rf-actions"><Button onClick={() => void runPreview()} disabled={busy || journal === undefined}>Preview the import</Button></div>

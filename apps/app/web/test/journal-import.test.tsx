@@ -1,7 +1,7 @@
 import { fireEvent, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { JournalImportScreen } from '../src/imports/journal';
-import { computeImportPreview, readImportEntries } from '../src/imports/preview';
+import { computeImportPreview, readEntryDates, readImportEntries } from '../src/imports/preview';
 import { fakeApi, json, renderScreen } from './helpers';
 
 const JOURNAL = `# The P1030680 journal
@@ -43,6 +43,15 @@ describe('the journal import preview computation', () => {
   });
 });
 
+describe('the entry dates file', () => {
+  it('keeps only the four date fields of each entry and refuses a malformed date or shape', () => {
+    expect(readEntryDates(JSON.stringify({ '0': { startDate: '2026-01-02', startDateApprox: true, basis: 'ignored' }, 'front-matter': { startDate: '2026-01-01', endDate: '2026-01-03' } })))
+      .toEqual({ '0': { startDate: '2026-01-02', startDateApprox: true }, 'front-matter': { startDate: '2026-01-01', endDate: '2026-01-03' } });
+    expect(() => readEntryDates('[]')).toThrow(/object keyed/u);
+    expect(() => readEntryDates(JSON.stringify({ '0': { startDate: '2 Jan 2026' } }))).toThrow(/YYYY-MM-DD/u);
+    expect(() => readEntryDates(JSON.stringify({ '0': { startDateApprox: 'yes' } }))).toThrow(/true or false/u);
+  });
+});
 describe('the journal import screen', () => {
   it('is hidden from a Member without import.run (R26.1)', () => {
     const api = fakeApi(baseHandlers());
@@ -106,5 +115,18 @@ describe('the journal import screen', () => {
     expect(body).toMatchObject({ projectId: '01J0000000000000000000PR01', accessLevel: 'restricted' });
     expect(body.journal).toContain('P1030680');
     expect(body.attachments).toBeUndefined();
+    expect((body as { meta?: unknown }).meta).toBeUndefined();
+  });
+  it('sends the chosen entry dates as `meta` (R26.1)', async () => {
+    const api = fakeApi({ ...baseHandlers(), 'POST /imports/journal': json({ jobId: '01J0000000000000000000JB01' }, 202), 'GET /imports/journal/01J0000000000000000000JB01': json({ state: 'queued' }) });
+    renderScreen(<JournalImportScreen />, { client: api.client, administrator: true });
+    fireEvent.change(await screen.findByLabelText('Journal file'), { target: { files: [new File([JOURNAL], 'journal.md', { type: 'text/markdown' })] } });
+    fireEvent.change(screen.getByLabelText('Project (required)'), { target: { value: '01J0000000000000000000PR01' } });
+    fireEvent.change(screen.getByLabelText('Entry dates (JSON, optional)'), { target: { files: [jsonFile(JSON.stringify({ '86': { startDate: '2026-02-03', startDateApprox: true } }), 'dates.json')] } });
+    await screen.findByText('Entry dates for 1 entries');
+    fireEvent.click(screen.getByRole('button', { name: 'Start the import' }));
+    await screen.findByText('The import is running.');
+    const posted = api.calls.find((call) => call.method === 'POST' && call.path === '/imports/journal');
+    expect((posted!.body as { meta?: unknown }).meta).toEqual({ '86': { startDate: '2026-02-03', startDateApprox: true } });
   });
 });

@@ -91,14 +91,23 @@ export const KIND_REQUIRED_COLUMNS: Readonly<Record<ItemKind, readonly ManifestC
   journal_entry: ['body'],
   finding: ['claim', 'scope_caveat'],
   source: [],
-  run: ['parameters', 'tool_name', 'tool_version', 'compute_resource', 'run_outcome', 'end_time', 'resume_point', 'notes'],
-  hypothesis: ['statement', 'scope'],
+  run: ['scope', 'parameters', 'tool_name', 'tool_version', 'compute_resource', 'run_outcome'],
+  hypothesis: ['statement'],
   correspondence: ['direction', 'channel', 'content'],
   archival_request: ['archive_or_desk', 'request_text', 'archival_request_status', 'contact', 'reply_date', 'reply_content'],
   topic: [],
   research_question: [],
   decision_record: [],
   work_item: ['log_summary'],
+});
+
+/**
+ * Kind-specific columns a kind may fill but need not (R37.15): a Run's end time,
+ * Resume_Point, and notes. They are not required in the header or in the row, yet
+ * they belong to the kind, so the validator must not reject them as out of place.
+ */
+export const KIND_OPTIONAL_COLUMNS: Readonly<Partial<Record<ItemKind, readonly ManifestColumn[]>>> = Object.freeze({
+  run: ['end_time', 'resume_point', 'notes'],
 });
 
 const KIND_SET: ReadonlySet<string> = new Set<string>(ITEM_KINDS);

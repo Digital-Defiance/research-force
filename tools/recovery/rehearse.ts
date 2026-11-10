@@ -47,6 +47,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
 import { readFileSync } from 'node:fs';
+import { parseArgs } from 'node:util';
 import { BACKUP_SCHEDULE } from '@researchforce/domain/settings';
 import { REFERENCE_ARCHIVE } from '@researchforce/domain/resource-profile';
 import {
@@ -513,6 +514,11 @@ export function acceptanceRejection(candidate: AcceptanceCandidate): AcceptanceV
 // The rehearsal orchestrator.
 // ─────────────────────────────────────────────────────────────────────────────────────────────────
 
+/** Whether a value is a usable operator-supplied number of hours. */
+function isHours(value: number | undefined): value is number {
+  return value !== undefined && Number.isFinite(value) && value >= 0;
+}
+
 /** Sanitized, content-free rehearsal record (no research body, no key bytes, no PII) (R36.17, R60.6). */
 export interface RehearsalRecord {
   readonly recordVersion: 1;
@@ -542,7 +548,14 @@ export interface RehearsalRecord {
  * the live restore executes inside the independent replacement install and the operator records its
  * result. Either way the record is sanitized and the non-acceptance contract is explicit.
  */
-export async function runRehearsal(options?: { readonly handles?: LiveHandles; readonly now?: string }): Promise<RehearsalRecord> {
+export async function runRehearsal(options?: {
+  readonly handles?: LiveHandles;
+  readonly now?: string;
+  /** Operator-measured elapsed hours of the live fresh-environment restore. Without it RTO stays BLOCKED. */
+  readonly measuredElapsedHours?: number;
+  /** Operator-verified age in hours of the latest independent recovery point. Without it RPO stays BLOCKED. */
+  readonly verifiedCopyAgeHours?: number;
+}): Promise<RehearsalRecord> {
   const now = options?.now ?? new Date().toISOString();
   const handles = options?.handles ?? liveHandlesFromEnv();
   const liveReady = liveEnvironmentReady(handles);
@@ -603,8 +616,11 @@ export async function runRehearsal(options?: { readonly handles?: LiveHandles; r
   // RPO/RTO: only a VERIFIED independent copy and a MEASURED live restore count. In the dry case there is
   // no measured restore, so RTO is BLOCKED; the RPO age of the synthetic verified copy is classified for
   // illustration but marked blocked for acceptance because it did not come from the independent inventory.
-  const rpoStatus = classifyRpo(liveReady ? corpus.recoveryPointAt : null, now);
-  const rtoStatus = classifyRto(null); // no measured live restore in the dry case
+  // With a live environment, RPO/RTO come ONLY from operator-measured values; absent, they stay BLOCKED.
+  const measuredRpo = liveReady && isHours(options?.verifiedCopyAgeHours);
+  const measuredRto = liveReady && isHours(options?.measuredElapsedHours);
+  const rpoStatus = classifyRpo(measuredRpo ? new Date(Date.parse(now) - options!.verifiedCopyAgeHours! * 3_600_000).toISOString() : null, now);
+  const rtoStatus = classifyRto(measuredRto ? options!.measuredElapsedHours! : null);
   const manifest = syntheticManifest(corpus.schemaRelease);
 
   return {
@@ -616,8 +632,8 @@ export async function runRehearsal(options?: { readonly handles?: LiveHandles; r
     missingLiveHandles: missing,
     scenarios,
     manifestEvidence: { schemaRelease: manifest.schemaRelease, counts: manifest.counts, fingerprint: manifest.trust.manifestFingerprint },
-    rpo: { state: rpoStatus.state, ageHours: rpoStatus.ageHours, blocked: !liveReady },
-    rto: { withinObjective: liveReady ? rtoStatus.withinObjective : false, elapsedHours: null, blocked: true },
+    rpo: { state: rpoStatus.state, ageHours: rpoStatus.ageHours, blocked: !measuredRpo },
+    rto: { withinObjective: rtoStatus.withinObjective, elapsedHours: measuredRto ? options!.measuredElapsedHours! : null, blocked: !measuredRto },
     notAcceptance: [
       'A package DOWNLOAD alone is NOT a recovery test (R36.17): delivery of package bytes is not acceptance.',
       'An application-only ALERT is NOT a recovery test (R36.17): an in-app backup-age alert is not a fresh-environment restore.',
@@ -635,39 +651,57 @@ export async function runRehearsal(options?: { readonly handles?: LiveHandles; r
 // 68.4 launch-gate evidence: produced ONLY from a live, verified rehearsal; a dry run is NOT acceptance.
 // ─────────────────────────────────────────────────────────────────────────────────────────────────
 
-/** The sanitized `infra-restore` evidence the 68.4 launch-gate checker consumes (R60.4). */
+/** One sanitized `infra-restore` launch-gate entry (R60.4); the rest of the entry is added by the recorder. */
 export interface RestoreEvidence {
-  readonly gate: 'team_archive';
-  readonly requirement: 'independent_recovery';
+  readonly gate: 'team_archive' | 'final_checkpoint_49';
+  readonly requirement: 'independent_recovery' | 'final_restore';
   readonly kind: 'infra-restore';
   readonly result: 'passed' | 'blocked';
-  readonly scope: 'deployed-production' | 'local-synthetic';
+  readonly scope: 'deployed-staging' | 'deployed-production' | 'local-synthetic';
   readonly note: string;
 }
 
-/**
- * Map a rehearsal record to the `infra-restore` launch-gate evidence (task 68.4, R60.4). A rehearsal is
- * acceptance ONLY when it ran against the independent fresh environment with a verified measured restore:
- * then it yields `result: 'passed'`, `scope: 'deployed-production'`. A sandbox/dry run yields
- * `result: 'blocked'`, `scope: 'local-synthetic'` — which the checker reads as NOT satisfying the gate, so
- * a dry run can never certify the team-archive recovery requirement.
- */
-export function rehearsalEvidence(record: RehearsalRecord): RestoreEvidence {
-  const live = record.environment === 'independent-fresh'
+/** Which deployed install a live rehearsal targeted. Defaults to production (the original behaviour). */
+export type RehearsalTarget = 'staging' | 'production';
+
+/** Whether the record is acceptance: a live, verified, measured restore within RPO/RTO. */
+function isLiveAcceptance(record: RehearsalRecord): boolean {
+  return record.environment === 'independent-fresh'
     && record.liveReady
     && record.scenarios.every((s) => s.status === 'passed')
     && !record.rto.blocked
     && record.rto.withinObjective
     && !record.rpo.blocked
     && record.rpo.state !== 'breach';
-  return {
-    gate: 'team_archive', requirement: 'independent_recovery', kind: 'infra-restore',
+}
+
+/**
+ * Map a rehearsal record to BOTH `infra-restore` launch-gate entries the same restore evidences:
+ * `team_archive`/`independent_recovery` and `final_checkpoint_49`/`final_restore` (task 68.4, R60.4).
+ * A rehearsal is acceptance ONLY when it ran against the independent fresh environment with a verified,
+ * measured restore: then both are `passed` with scope `deployed-staging` or `deployed-production` per
+ * `target`. A sandbox/dry run yields `blocked`/`local-synthetic`, which the checker reads as NOT
+ * satisfying either gate, so a dry run can never certify recovery.
+ */
+export function rehearsalEvidenceEntries(record: RehearsalRecord, target: RehearsalTarget = 'production'): RestoreEvidence[] {
+  const live = isLiveAcceptance(record);
+  const common = {
+    kind: 'infra-restore',
     result: live ? 'passed' : 'blocked',
-    scope: live ? 'deployed-production' : 'local-synthetic',
+    scope: live ? (target === 'staging' ? 'deployed-staging' : 'deployed-production') : 'local-synthetic',
     note: live
       ? 'verified fresh-isolated restore within RPO/RTO against the independent environment'
       : 'BLOCKED: no verified live restore; a dry/sandbox run, package download, or application alert is not acceptance',
-  };
+  } as const;
+  return [
+    { gate: 'team_archive', requirement: 'independent_recovery', ...common },
+    { gate: 'final_checkpoint_49', requirement: 'final_restore', ...common },
+  ];
+}
+
+/** The team-archive entry of {@link rehearsalEvidenceEntries} (kept for existing callers). */
+export function rehearsalEvidence(record: RehearsalRecord, target: RehearsalTarget = 'production'): RestoreEvidence {
+  return rehearsalEvidenceEntries(record, target)[0]!;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────
@@ -681,7 +715,7 @@ function readIndependentInventory(path: string | undefined): unknown {
 }
 
 /** Render the rehearsal record as a human-readable report for the CLI. */
-export function formatReport(record: RehearsalRecord): string {
+export function formatReport(record: RehearsalRecord, target: RehearsalTarget = 'production'): string {
   const lines: string[] = [];
   lines.push('Fresh-environment recovery rehearsal (task 58.5) — no account/key/network access.');
   lines.push(`recorded ${record.recordedAt} · environment: ${record.environment} · live ready: ${record.liveReady}`);
@@ -705,21 +739,55 @@ export function formatReport(record: RehearsalRecord): string {
     for (const note of record.limitations) lines.push(`  • ${note}`);
   }
   lines.push('');
-  const evidence = rehearsalEvidence(record);
-  lines.push(`68.4 launch-gate evidence: ${evidence.kind} = ${evidence.result} (scope ${evidence.scope}). ${evidence.note}`);
+  for (const evidence of rehearsalEvidenceEntries(record, target)) {
+    lines.push(`68.4 launch-gate evidence ${evidence.gate}/${evidence.requirement}: ${evidence.kind} = ${evidence.result} (scope ${evidence.scope}). ${evidence.note}`);
+  }
   return lines.join('\n');
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   void (async () => {
     try {
+      const { values } = parseArgs({
+        args: process.argv.slice(2),
+        options: {
+          target: { type: 'string' }, record: { type: 'boolean', default: false }, release: { type: 'string' },
+          'evidence-ref': { type: 'string' }, replace: { type: 'boolean', default: false },
+        },
+        strict: true,
+      });
       const handles = liveHandlesFromEnv();
       // The independent inventory, when supplied, is read as a sanitized descriptor only — never a secret.
       void readIndependentInventory(handles.independentInventoryPath);
-      const record = await runRehearsal({ handles });
-      console.log(formatReport(record));
+      // Operator-measured values from the real restore; absent, RPO/RTO stay BLOCKED and nothing can pass.
+      const hours = (name: string): number | undefined => {
+        const raw = process.env[name]?.trim();
+        return raw ? Number(raw) : undefined;
+      };
+      const record = await runRehearsal({
+        handles,
+        ...(hours('RF_RECOVERY_MEASURED_ELAPSED_HOURS') === undefined ? {} : { measuredElapsedHours: hours('RF_RECOVERY_MEASURED_ELAPSED_HOURS')! }),
+        ...(hours('RF_RECOVERY_VERIFIED_COPY_AGE_HOURS') === undefined ? {} : { verifiedCopyAgeHours: hours('RF_RECOVERY_VERIFIED_COPY_AGE_HOURS')! }),
+      });
+      const target: RehearsalTarget = values.target === 'staging' ? 'staging' : 'production';
+      console.log(formatReport(record, target));
       // A dry/sandbox run exits 0 (it did its job: exercised the pure decisions and reported BLOCKED
       // honestly). It does NOT fail the process, because BLOCKED here is the expected, correct state.
+      if (values.record) {
+        if (values.target !== 'staging' && values.target !== 'production') throw new Error('--record needs --target staging|production');
+        if (!values.release || !values['evidence-ref']) throw new Error('--record needs --release and --evidence-ref');
+        const { recordEvidence } = await import('../src/evidence-recorder');
+        const entries = rehearsalEvidenceEntries(record, target);
+        if (entries.some((entry) => entry.result !== 'passed')) {
+          console.log('Not recorded: this rehearsal is not a verified live restore, so nothing is written to the launch-evidence ledger.');
+        } else {
+          for (const entry of entries) {
+            const { note, ...rest } = entry;
+            const recorded = recordEvidence(resolve(fileURLToPath(new URL('../../', import.meta.url))), { ...rest, note, releaseId: values.release, evidenceRef: values['evidence-ref'] }, { replace: values.replace });
+            console.log(`Recorded ${recorded.gate}/${recorded.requirement} = ${recorded.result} (scope ${recorded.scope})`);
+          }
+        }
+      }
     } catch (error) {
       console.error(error instanceof Error ? error.message : String(error));
       process.exitCode = 1;

@@ -274,6 +274,20 @@ async function verifyStoredFile(env: ApiEnv['Bindings'], file: AttachmentImportM
     return { ok: false, reason: 'The stored file could not be read.' };
   }
   if (object === null) return { ok: false, reason: 'The stored file is missing.' };
+  // On Workers, hash the body as a stream so a large legacy file (tens of MB) never sits in memory whole; elsewhere
+  // (tests, Node) fall back to reading it once.
+  const DigestStreamCtor = (crypto as unknown as { DigestStream?: new (algorithm: string) => WritableStream<Uint8Array> & { digest: Promise<ArrayBuffer> } }).DigestStream;
+  if (DigestStreamCtor !== undefined && object.body !== undefined) {
+    if (object.size !== file.sizeBytes) { await object.body.cancel().catch(() => undefined); return { ok: false, reason: `The stored file is ${object.size} bytes; the source records ${file.sizeBytes}.` }; }
+    try {
+      const stream = new DigestStreamCtor('SHA-256');
+      await object.body.pipeTo(stream);
+      const hex = Array.from(new Uint8Array(await stream.digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
+      return hex === file.sha256.toLowerCase() ? { ok: true } : { ok: false, reason: 'The stored file checksum does not match the source.' };
+    } catch {
+      return { ok: false, reason: 'The stored file could not be read.' };
+    }
+  }
   let bytes: ArrayBuffer;
   try {
     bytes = await object.arrayBuffer();

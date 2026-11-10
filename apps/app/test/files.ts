@@ -14,7 +14,7 @@ export async function completedUpload(world: ItemWorld, who: Who = 'author', fil
   const id = newULID(world.at);
   await new GuardedBatch(world.core(), { id: world.ids[who], now: world.at }).insert(uploads, { id, groupId: newULID(world.at), ownerType: 'member', ownerId: world.ids[who],
     r2Key: `files/${id}`, fileName, sizeBytes: 0, sha256: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', mode: 'single',
-    state: 'complete', createdAt: world.at, completedAt: world.at }).commit();
+    state: 'complete', createdAt: world.at, completedAt: world.at, hashVerifiedAt: world.at }).commit();
   return id;
 }
 export const fileInput = (uploadId: string) => ({ uploadId, metadata: { origin: 'Synthetic research output.' } });

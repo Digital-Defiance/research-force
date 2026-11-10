@@ -4,7 +4,7 @@
   "status": "development",
   "releasedAt": null,
   "build": {
-    "packageJsonSha256": "4decbf9dd0d15bee3301b508bc15c7b0b82f286284032db96dbf46669606fe35",
+    "packageJsonSha256": "215784061e1132e8aef28232a72bd452b6d3161de722b4f5820cd25d54c27c98",
     "packageLockSha256": "0ce11c2bb60290ba470e60d77d36554dbcf0b0aa05415640ad87629000305f9b"
   },
   "resourceProfileVersion": "resource-v1",
@@ -415,8 +415,12 @@
       "sha256": "2e9c98fb6308e1f65b0b0aa2243b14c05c908c2fb9073ea99542516053fcdbba"
     },
     {
+      "path": "tools/src/evidence-recorder.ts",
+      "sha256": "13b3ef199e11a316dd40eabdf9af84916df755a67c79b12e8e552f28ad69aca3"
+    },
+    {
       "path": "tools/src/launch-gates.ts",
-      "sha256": "d66787477b9d9cea63d7654d8c56ed275a582c1b2ee953c1efba4afa1d804a11"
+      "sha256": "e07d81e0cd9e5552d4318fc9f8ad5a9f2d4f2567014bb1f404ec731e9c964824"
     },
     {
       "path": "tools/src/local-dev.ts",
@@ -449,6 +453,10 @@
     {
       "path": "tools/src/sqlite-field-adapter.ts",
       "sha256": "89b8f3793c6990eb605fecbd86a03eaa5c5e16f6a6a0fa35aaf9fc264d154c1b"
+    },
+    {
+      "path": "tools/src/staging-results.ts",
+      "sha256": "59cf0c75ba33ea390855554f93ea5f7f26b3fd1c1717e8142c5b4d160902dd5b"
     },
     {
       "path": "tools/src/upgrade-backfills.ts",
@@ -2681,6 +2689,14 @@
     {
       "path": "tools/public-copy-json.ts",
       "sha256": "2c5aa39ba82a052188557a3b54bf2d2785ae00bead1393ebc50f9cd9a421b473"
+    },
+    {
+      "path": "tools/record-evidence.ts",
+      "sha256": "a557b3821d040adf4a292c804f2f6b8fdc9a22a7aa9d83a02ac761cf19d99cda"
+    },
+    {
+      "path": "tools/record-staging-results.ts",
+      "sha256": "0d8b70478bea64063ef23fe7b022bdd7a3db8148ffbd5ede1d8d82f961942e42"
     },
     {
       "path": "tools/release.ts",

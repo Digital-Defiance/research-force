@@ -8,7 +8,7 @@ import { cpLength, isBlank } from '@researchforce/domain/text';
 import { Button, Notice, TextField } from '../ui';
 
 /** `file` is absent after a reload: the browser does not keep a chosen File, so an unfinished transfer needs the Member to choose it again (R28.10). */
-export interface FileDraft { key: string; file?: File | undefined; name: string; size: number; sha256?: string | undefined; uploadId?: string | undefined; attempt: number; state: 'uploading' | 'failed' | 'complete'; percent: number; error?: string | undefined; title: string; caption: string; origin: string }
+export interface FileDraft { key: string; file?: File | undefined; name: string; size: number; sha256?: string | undefined; uploadId?: string | undefined; attempt: number; state: 'uploading' | 'verifying' | 'failed' | 'complete'; percent: number; error?: string | undefined; title: string; caption: string; origin: string }
 export interface FileSelection { uploadId: string; metadata: { title: string; caption?: string; origin: string } }
 interface StoredUploads { groupId: string; files: Omit<FileDraft, 'file'>[] }
 export function metadataReasons(file: Pick<FileDraft, 'title' | 'caption' | 'origin'>): string[] {
@@ -16,13 +16,13 @@ export function metadataReasons(file: Pick<FileDraft, 'title' | 'caption' | 'ori
     isBlank(file.origin) || cpLength(file.origin) > 5000 ? 'Origin must contain 1 to 5,000 characters.' : ''].filter(Boolean);
 }
 export function readiness(files: readonly FileDraft[]): string[] {
-  return files.flatMap((file) => [file.state === 'uploading' ? 'The file is still uploading.' : file.state === 'failed' ? file.error ?? 'The upload failed.' : '', ...metadataReasons(file)]
+  return files.flatMap((file) => [file.state === 'uploading' ? 'The file is still uploading.' : file.state === 'verifying' ? 'The file is still being verified.' : file.state === 'failed' ? file.error ?? 'The upload failed.' : '', ...metadataReasons(file)]
     .filter(Boolean).map((reason) => `${file.name}: ${reason}`));
 }
 export function selectedFiles(files: readonly FileDraft[]): FileSelection[] {
   return files.map((file) => ({ uploadId: file.uploadId!, metadata: { title: file.title, origin: file.origin, ...(file.caption === '' ? {} : { caption: file.caption }) } }));
 }
-export interface Digests { sha256: string; parts: string[] }
+export interface Digests { sha256: string; parts: string[]; md5s: string[] }
 export function hashFile(file: File, signal: AbortSignal): Promise<Digests> {
   return new Promise((resolve, reject) => {
     const worker = new Worker(new URL('./hash-worker.ts', import.meta.url), { type: 'module' });
@@ -33,6 +33,10 @@ export function hashFile(file: File, signal: AbortSignal): Promise<Digests> {
     worker.onerror = () => { done(); reject(new Error('The file could not be read for its checksum.')); };
     worker.postMessage(file);
   });
+}
+/** The same bytes with no MIME type, so a direct PUT to R2 carries no Content-Type header (outside the bucket's CORS rule). */
+export function untyped(bytes: Blob): Blob {
+  return bytes.type === '' ? bytes : bytes.slice(0, bytes.size, '');
 }
 /** R2 receives bytes directly; browsers supply Content-Length themselves. A stalled request fails after 60 seconds. */
 export function putFile(url: string, headers: Record<string, string>, bytes: Blob, signal: AbortSignal, progress: (n: number) => void): Promise<string> {
@@ -51,7 +55,9 @@ export function putFile(url: string, headers: Record<string, string>, bytes: Blo
     xhr.onabort = () => fail('The transfer was interrupted.');
     xhr.onload = () => { finish(); if (xhr.status >= 200 && xhr.status < 300) { progress(bytes.size); resolve(xhr.getResponseHeader('ETag') ?? ''); } else reject(new Error(`R2 refused the file (${xhr.status}).`)); };
     signal.addEventListener('abort', abort, { once: true });
-    if (signal.aborted) abort(); else xhr.send(bytes);
+    // Send the bytes untyped: a typed Blob makes the browser add Content-Type, which the bucket's CORS rule does not allow,
+    // so the preflight fails. The presigned URL does not sign Content-Type, so dropping it changes nothing else.
+    if (signal.aborted) abort(); else xhr.send(untyped(bytes));
   });
 }
 interface UploadStart { id: string; mode: 'single' | 'multipart'; url: string | null; headers: Record<string, string> }
@@ -79,18 +85,20 @@ async function transfer(client: ApiClient, draft: FileDraft, file: File, groupId
   if (start.mode === 'single') await putFile(start.url!, start.headers, file, signal, percentage);
   else for (const [i, sha256] of hashes.parts.entries()) {
     if (signal.aborted) return;
-    const signed = await client.post<{ url: string; headers: Record<string, string> }>(`/uploads/${start.id}/parts`, { partNumber: i + 1, sha256 });
+    const signed = await client.post<{ url: string; headers: Record<string, string> }>(`/uploads/${start.id}/parts`, { partNumber: i + 1, sha256, md5: hashes.md5s[i] });
     const etag = await putFile(signed.url, signed.headers, file.slice(i * UPLOAD_PART_BYTES, (i + 1) * UPLOAD_PART_BYTES), signal, (bytes) => percentage(i * UPLOAD_PART_BYTES + bytes));
     parts.push({ partNumber: i + 1, etag });
   }
   if (signal.aborted) return;
   // A lost completion response is answered from the Worker's record, then confirmed against the upload itself.
-  await client.request('POST', `/uploads/${start.id}/complete`, parts.length === 0 ? {} : { parts }, undefined, { key: `upload-complete-${start.id}`,
-    committed: async () => { const state = await client.get<{ state: string }>(`/uploads/${start.id}`); if (state.state !== 'complete') throw new Error('The upload was not completed.'); } });
-  update({ state: 'complete', percent: 100 });
+  const completed = await client.request<{ verified?: boolean } | undefined>('POST', `/uploads/${start.id}/complete`, parts.length === 0 ? {} : { parts }, undefined, { key: `upload-complete-${start.id}`,
+    committed: async () => { const state = await client.get<{ state: string; verified?: boolean }>(`/uploads/${start.id}`); if (state.state !== 'complete') throw new Error('The upload was not completed.'); return state; } });
+  // A multipart file is attachable only once the server has checked its whole-file SHA-256; until then it shows as verifying.
+  update({ state: completed?.verified === false ? 'verifying' : 'complete', percent: 100 });
 }
 const INTERRUPTED = 'The page was reloaded before this file finished uploading. Select the file again to continue.';
 const EXPIRED = 'The unfinished Submission expired. Select the file again, or remove it.';
+const MISMATCH = 'The stored file did not match its checksum and was removed. Retry the file.';
 function restore(scope: string | undefined): StoredUploads | undefined {
   const stored = scope === undefined ? undefined : readUnsent<StoredUploads>(`uploads:${scope}`);
   if (!stored || !Array.isArray(stored.files) || typeof stored.groupId !== 'string') return undefined;
@@ -117,13 +125,15 @@ export function useUploads(scope?: string) {
   // A restored upload is checked against the server: one that finished, or that the sweeper removed, is settled without the local File.
   async function recheck(file: FileDraft, interrupted: boolean) {
     try {
-      const upload = await client.get<{ state: string }>(`/uploads/${file.uploadId}`);
-      if (upload.state === 'complete') update(file.key, { state: 'complete', percent: 100, error: undefined });
+      const upload = await client.get<{ state: string; verified?: boolean }>(`/uploads/${file.uploadId}`);
+      if (upload.state === 'complete') update(file.key, { state: upload.verified === false ? 'verifying' : 'complete', percent: 100, error: undefined });
       else update(file.key, { state: 'failed', error: interrupted ? INTERRUPTED : EXPIRED });
-    } catch (error) { if (error instanceof ApiFailure && error.code === 'not_found') update(file.key, { state: 'failed', error: interrupted ? INTERRUPTED : EXPIRED }); }
+    } catch (error) { if (error instanceof ApiFailure && error.code === 'not_found') update(file.key, { state: 'failed', error: file.state === 'verifying' ? MISMATCH : interrupted ? INTERRUPTED : EXPIRED }); }
   }
   useEffect(() => { if (!wasRestored.current) return; wasRestored.current = false;
-    for (const file of currentFiles.current) if (file.uploadId && (file.state === 'complete' || file.error === INTERRUPTED)) void recheck(file, file.state !== 'complete'); }, [client]);
+    for (const file of currentFiles.current) if (file.uploadId && (file.state === 'complete' || file.state === 'verifying' || file.error === INTERRUPTED)) void recheck(file, file.state === 'uploading' || file.state === 'failed'); }, [client]);
+  // Poll files the server is still verifying; a verified one becomes complete, a mismatching one was removed by the server.
+  useEffect(() => { const timer = setInterval(() => { for (const file of currentFiles.current) if (file.state === 'verifying' && file.uploadId) void recheck(file, false); }, 3_000); return () => clearInterval(timer); }, [client]);
   // Recheck completed uploads until the Submission uses them; the hourly sweeper can remove a long-open draft.
   useEffect(() => { const timer = setInterval(() => { for (const file of currentFiles.current) if (file.state === 'complete' && file.uploadId) void recheck(file, false); }, 30_000); return () => clearInterval(timer); }, [client]);
   function update(key: string, values: Partial<FileDraft>) { setFiles((list) => list.map((file) => file.key === key ? { ...file, ...values } : file)); }
@@ -181,7 +191,7 @@ export function UploadFields({ uploads }: { readonly uploads: UploadsState }) {
     {uploads.restored && uploads.files.length > 0 && <Notice title="Your files were restored after a reload. Files that had not finished uploading need to be selected again." />}
     {uploads.refusals.map((reason) => <Notice key={reason} tone="warning" title={reason} />)}
     {uploads.files.map((file) => <fieldset className="rf-stack" key={file.key}><legend>{file.name}</legend>
-      <p role="status">{file.state === 'failed' ? `Failed: ${file.error}` : file.state === 'complete' ? 'Upload complete' : `${file.percent}% uploaded`}</p>
+      <p role="status">{file.state === 'failed' ? `Failed: ${file.error}` : file.state === 'complete' ? 'Upload complete' : file.state === 'verifying' ? 'Verifying the file checksum' : `${file.percent}% uploaded`}</p>
       <progress aria-label={`Upload progress for ${file.name}`} max={100} value={file.percent} />
       <TextField label="Title" required value={file.title} onChange={(title) => uploads.update(file.key, { title })} />
       <TextField label="Caption" multiline value={file.caption} onChange={(caption) => uploads.update(file.key, { caption })} />

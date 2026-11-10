@@ -242,12 +242,12 @@ function environment(name: EnvironmentName, host: typeof PROD | typeof STAGING):
         name: `rf-private${s}`,
         binding: ['RF_PRIVATE_BUCKET'],
         publicDevAccess: false,
-        // CORS: PUT from the Workspace and apex origins with the checksum headers (design 1301, 478).
+        // CORS: PUT from the Workspace and apex origins with the checksum headers, plus Content-MD5 for multipart parts (design 1301, 478).
         cors: [
           {
             allowedMethods: ['PUT'],
             allowedOrigins: [...new Set([host.workspaceOrigin, host.apexOrigin, host.publicOrigin])],
-            allowedHeaders: ['content-length', 'x-amz-checksum-sha256', 'if-none-match'],
+            allowedHeaders: ['content-length', 'content-md5', 'x-amz-checksum-sha256', 'if-none-match'],
             exposeHeaders: ['ETag'],
             maxAgeSeconds: 3600,
           },

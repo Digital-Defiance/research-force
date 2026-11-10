@@ -340,7 +340,9 @@ export async function uploadBytes(
     };
     request.onerror = () => resolve({ ok: false, message: 'The upload failed. Retry or remove this file.' });
     request.onabort = () => resolve({ ok: false, message: 'The upload was interrupted. Retry or remove this file.' });
-    request.send(bytes);
+    // A typed Blob would make the browser add Content-Type, which the bucket's CORS rule refuses at preflight; the
+    // presigned URL does not sign it, so the bytes go untyped.
+    request.send(bytes instanceof Blob && bytes.type !== '' ? bytes.slice(0, bytes.size, '') : bytes);
   });
 }
 

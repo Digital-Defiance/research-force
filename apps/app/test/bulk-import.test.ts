@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { BUILT_IN_VALUE_IDS, LOCKED_VALUE_IDS } from '@researchforce/domain/value-sets';
 import type { ULID } from '@researchforce/domain/types';
 import { JOB_HANDLERS } from '../src/do/jobs';
@@ -50,8 +50,8 @@ const sourceRow = (access: { level: string; members: string }): string[] => row(
 const findingRow = (): string[] => row({
   row_key: 'r-finding', kind: 'finding', title: 'A finding', claim: 'The claim holds.', scope_caveat: 'Within the sampled range.', parties: 'Unknown Donor',
 });
-/** A Hypothesis row; the kind requires both the statement and scope columns present and filled. */
-const hypothesisRow = (): string[] => row({ row_key: 'r-hypothesis', kind: 'hypothesis', title: 'A hypothesis', statement: 'The signal persists.', scope: 'All known samples.' });
+/** A Hypothesis row; the kind requires only the statement (R37.15). */
+const hypothesisRow = (): string[] => row({ row_key: 'r-hypothesis', kind: 'hypothesis', title: 'A hypothesis', statement: 'The signal persists.' });
 
 // --- Job driver -----------------------------------------------------------------
 
@@ -248,5 +248,144 @@ describe('the bulk import', () => {
     expect(stored.counts.created).toBe(0);
     expect(stored.validation!.errors.length).toBeGreaterThan(0);
     expect(stored.validation!.errors.some((error) => error.column === 'date')).toBe(true);
+  });
+});
+
+/** A Source row of `count` synthetic files named f-<key>-NNN.pdf; the first `chains` chains of `length` files are version-chained and the rest stand alone. */
+function manyFilesRow(rowKey: string, count: number, chains: { count: number; length: number }, access = { level: '', members: '' }): { row: string[]; names: string[] } {
+  const names = Array.from({ length: count }, (_unused, index) => `f-${rowKey}-${String(index + 1).padStart(3, '0')}.pdf`);
+  const versions = Array.from({ length: chains.count }, (_unused, chain) => names.slice(chain * chains.length, (chain + 1) * chains.length).join(' > '));
+  return {
+    names,
+    row: row({
+      row_key: rowKey, kind: 'source', title: 'A synthetic source', date: '1850-06', source_kind: 'primary', reliability: 'High', rights_status: 'Public domain',
+      rights_holder: 'Holder A', rights_terms: 'CC-BY', origin: 'Synthetic origin.', files: names.join('; '), versions: versions.join('\n'),
+      access_level: access.level, access_members: access.members,
+    }),
+  };
+}
+const filesNamed = (names: readonly string[]) => Promise.all(names.map((name) => file(name, `content of ${name}`)));
+/** Run one slice from a cursor, as the Jobs DO does. */
+const slice = async (jobId: ULID, cursor: JsonValue) => JOB_HANDLERS.bulk_import!.slice({ env: world.bindings, job: await jobRecord(jobId), now: world.at }, cursor);
+/** Drive the remaining slices from a cursor to completion, returning the progress. */
+async function finish(jobId: ULID, from: JsonValue): Promise<Record<string, number>> {
+  let cursor = from;
+  for (let guard = 0; guard < 2000; guard++) {
+    const result = await slice(jobId, cursor);
+    if (result.done) return result.progress as Record<string, number>;
+    cursor = result.cursor;
+  }
+  throw new Error('the job did not finish');
+}
+const manyFilesImport = async (rows: readonly string[][], names: readonly string[]): Promise<ULID> => {
+  const body = { projectId: world.projectId, accessLevel: 'whole_team', manifestFormat: 'csv', manifest: encodeManifest(csv(HEADER, rows)), files: await filesNamed(names) };
+  return (await (await start(body)).json<{ jobId: ULID }>()).jobId;
+};
+const tableCounts = async () => [
+  await countOf('SELECT count(*) AS n FROM units WHERE project_id = ?1', world.projectId), await countOf('SELECT count(*) AS n FROM attachments'),
+  await countOf('SELECT count(*) AS n FROM identifiers'), await countOf('SELECT count(*) AS n FROM access_grants'),
+];
+
+describe('a bulk import row with many files', () => {
+  it('imports 45 files with multi-file version chains and a 28-file row completely, and skips both on a re-run', async () => {
+    await world.core().prepare('UPDATE profiles SET display_name = ?2 WHERE member_id = ?1').bind(world.ids.author, 'Author One').run();
+    const big = manyFilesRow('r-big', 45, { count: 7, length: 4 }, { level: 'restricted', members: 'Author One' });
+    const mid = manyFilesRow('r-mid', 28, { count: 4, length: 3 });
+    const jobId = await manyFilesImport([big.row, mid.row], [...big.names, ...mid.names]);
+    expect(await run(jobId)).toMatchObject({ created: 2, skipped: 0, failed: 0, attachments: 73 });
+    expect(await countOf("SELECT count(*) AS n FROM attachments WHERE original_name LIKE 'f-r-%'")).toBe(73);
+    for (const [key, count] of [['r-big', 45], ['r-mid', 28]] as const) {
+      const item = (await col<{ unitId: ULID }>('SELECT unit_id AS unitId FROM research_items WHERE import_row_key = ?1', key))[0]!.unitId;
+      const rows = await col<{ name: string; unitId: ULID; chainId: ULID; supersedes: ULID | null; rootId: ULID }>(
+        'SELECT a.original_name AS name, a.unit_id AS unitId, a.chain_id AS chainId, a.supersedes_unit_id AS supersedes, u.root_id AS rootId FROM attachments a JOIN units u ON u.id = a.unit_id WHERE u.root_id = ?1 ORDER BY a.original_name', item,
+      );
+      expect(rows).toHaveLength(count);
+      expect(rows.every((entry) => entry.rootId === item)).toBe(true);
+      const byName = new Map(rows.map((entry) => [entry.name, entry]));
+      const chains = key === 'r-big' ? { count: 7, length: 4 } : { count: 4, length: 3 };
+      const names = key === 'r-big' ? big.names : mid.names;
+      for (let chain = 0; chain < chains.count; chain++) {
+        const members = names.slice(chain * chains.length, (chain + 1) * chains.length).map((name) => byName.get(name)!);
+        expect(members[0]!.supersedes).toBeNull();
+        members.forEach((member, at) => {
+          expect(member.chainId).toBe(members[0]!.unitId);
+          if (at > 0) expect(member.supersedes).toBe(members[at - 1]!.unitId);
+        });
+      }
+      for (const name of names.slice(chains.count * chains.length)) expect(byName.get(name)!.chainId).toBe(byName.get(name)!.unitId);
+    }
+    const bigItem = (await col<{ unitId: ULID }>("SELECT unit_id AS unitId FROM research_items WHERE import_row_key = 'r-big'"))[0]!.unitId;
+    expect((await col('SELECT member_id FROM access_grants WHERE root_id = ?1', bigItem))).toHaveLength(1);
+    const stored = await report(jobId);
+    expect(stored.files.created).toHaveLength(73);
+
+    const before = await tableCounts();
+    const again = await manyFilesImport([big.row, mid.row], [...big.names, ...mid.names]);
+    expect(await run(again)).toMatchObject({ created: 0, skipped: 2, failed: 0 });
+    expect(await tableCounts()).toEqual(before);
+  });
+
+  it('leaves a half-written row without its Row_Key, then finishes it from a replayed cursor with no duplicates', async () => {
+    const big = manyFilesRow('r-resume', 45, { count: 5, length: 4 });
+    const jobId = await manyFilesImport([big.row], big.names);
+    const planned = await slice(jobId, null);
+    expect(planned.done).toBe(false);
+    const afterFirst = await slice(jobId, planned.cursor);
+    // One group is committed; the row holds no Row_Key, so it does not count as imported.
+    expect(await countOf("SELECT count(*) AS n FROM attachments WHERE original_name LIKE 'f-r-resume-%'")).toBe(20);
+    expect(await countOf("SELECT count(*) AS n FROM research_items WHERE kind = 'source' AND import_row_key IS NULL")).toBe(1);
+    expect(await countOf("SELECT count(*) AS n FROM research_items WHERE import_row_key = 'r-resume'")).toBe(0);
+    // The cursor write was lost, so the same slice runs again: the committed group is not written twice.
+    const replay = await slice(jobId, planned.cursor);
+    expect(replay.cursor).toEqual(afterFirst.cursor);
+    expect(await countOf("SELECT count(*) AS n FROM attachments WHERE original_name LIKE 'f-r-resume-%'")).toBe(20);
+    expect(await finish(jobId, replay.cursor)).toMatchObject({ created: 1, skipped: 0, failed: 0, attachments: 45 });
+    expect(await countOf("SELECT count(*) AS n FROM attachments WHERE original_name LIKE 'f-r-resume-%'")).toBe(45);
+    expect(await countOf("SELECT count(*) AS n FROM units WHERE root_id = (SELECT unit_id FROM research_items WHERE import_row_key = 'r-resume')")).toBe(46);
+    expect(await countOf("SELECT count(*) AS n FROM identifiers WHERE unit_id IN (SELECT id FROM units WHERE root_id = (SELECT unit_id FROM research_items WHERE import_row_key = 'r-resume'))")).toBe(46);
+    expect(await countOf('SELECT count(DISTINCT chain_id) AS n FROM attachments WHERE original_name LIKE \'f-r-resume-%\'')).toBe(5 + 25);
+  });
+
+  it('counts a row as created, not skipped, when the cursor after its last group was lost', async () => {
+    const big = manyFilesRow('r-last', 25, { count: 2, length: 4 });
+    const jobId = await manyFilesImport([big.row], big.names);
+    const planned = await slice(jobId, null);
+    const afterFirst = await slice(jobId, planned.cursor);
+    const finished = await slice(jobId, afterFirst.cursor);
+    expect(finished.progress).toMatchObject({ created: 1 });
+    const replay = await slice(jobId, afterFirst.cursor);
+    expect(replay.progress).toMatchObject({ created: 1, skipped: 0 });
+    expect(await finish(jobId, replay.cursor)).toMatchObject({ created: 1, skipped: 0, failed: 0, attachments: 25 });
+    expect(await countOf("SELECT count(*) AS n FROM attachments WHERE original_name LIKE 'f-r-last-%'")).toBe(25);
+    // A single-batch row whose cursor was lost is also created once and counted.
+    const small = manyFilesRow('r-small', 3, { count: 1, length: 3 });
+    const smallJob = await manyFilesImport([small.row], small.names);
+    const first = await slice(smallJob, null);
+    expect(first.progress).toMatchObject({ created: 1 });
+    expect((await slice(smallJob, null)).progress).toMatchObject({ created: 1, skipped: 0 });
+    expect(await countOf("SELECT count(*) AS n FROM attachments WHERE original_name LIKE 'f-r-small-%'")).toBe(3);
+  });
+
+  it('fails only a row whose write errors, removes its partial writes, and gives a reason without the error message', async () => {
+    const big = manyFilesRow('r-fail', 25, { count: 2, length: 4 });
+    const jobId = await manyFilesImport([big.row, findingRow()], big.names);
+    const original = world.bindings.RF_CORE.batch.bind(world.bindings.RF_CORE);
+    let writes = 0;
+    const spy = vi.spyOn(world.bindings.RF_CORE, 'batch').mockImplementation((statements: D1PreparedStatement[]) => {
+      // The catalog read is 4 statements; the second write batch (the row's second group) fails.
+      if (statements.length !== 4 && ++writes === 2) return Promise.reject(new Error('SECRET row content'));
+      return original(statements);
+    });
+    try {
+      expect(await run(jobId)).toMatchObject({ created: 1, failed: 1, attachments: 0 });
+    } finally {
+      spy.mockRestore();
+    }
+    expect(await countOf("SELECT count(*) AS n FROM attachments WHERE original_name LIKE 'f-r-fail-%'")).toBe(0);
+    expect(await countOf("SELECT count(*) AS n FROM research_items WHERE kind = 'source'")).toBe(0);
+    expect(await countOf("SELECT count(*) AS n FROM research_items WHERE import_row_key = 'r-finding'")).toBe(1);
+    const failed = (await report(jobId)).rows.failed;
+    expect(failed.map((entry) => entry.rowKey)).toEqual(['r-fail']);
+    expect(failed[0]!.reason).toBe('The row could not be created (Error); nothing was kept for it.');
   });
 });

@@ -1,4 +1,4 @@
-import { KIND_REQUIRED_COLUMNS, parseManifestCsv, parseManifestXlsx } from '@researchforce/manifest/parse';
+import { KIND_OPTIONAL_COLUMNS, KIND_REQUIRED_COLUMNS, parseManifestCsv, parseManifestXlsx } from '@researchforce/manifest/parse';
 import type { ManifestColumn, ManifestContext, ManifestError, ManifestRow } from '@researchforce/manifest/parse';
 import { researchItemSchema } from '@researchforce/domain/schemas/items';
 import type { ResearchItemInput } from '@researchforce/domain/schemas/items';
@@ -236,7 +236,7 @@ function checkVersions(row: ManifestRow, chains: readonly (readonly string[])[],
 
 /** Every kind-specific column, the union across kinds; used to check out-of-place fills. */
 const ALL_KIND_COLUMNS: ReadonlySet<ManifestColumn> = new Set<ManifestColumn>(
-  (Object.values(KIND_REQUIRED_COLUMNS) as readonly (readonly ManifestColumn[])[]).flat(),
+  [...Object.values(KIND_REQUIRED_COLUMNS), ...Object.values(KIND_OPTIONAL_COLUMNS)].flat(),
 );
 /** Kinds whose `date` column must be empty (R37.15). */
 const DATELESS_KINDS: ReadonlySet<ItemKind> = new Set<ItemKind>(['finding', 'hypothesis', 'topic']);
@@ -249,11 +249,12 @@ const DATELESS_KINDS: ReadonlySet<ItemKind> = new Set<ItemKind>(['finding', 'hyp
 function checkKindColumns(row: ManifestRow, kind: ItemKind): BulkError[] {
   const errors: BulkError[] = [];
   const required = new Set<ManifestColumn>(KIND_REQUIRED_COLUMNS[kind]);
+  const allowed = new Set<ManifestColumn>([...required, ...(KIND_OPTIONAL_COLUMNS[kind] ?? [])]);
   for (const column of required) {
     if (!filled(row.values[column])) errors.push(asError(row.row, column, `The column “${column}” is required for the kind “${kind}”.`));
   }
   for (const column of ALL_KIND_COLUMNS) {
-    if (!required.has(column) && filled(row.values[column])) {
+    if (!allowed.has(column) && filled(row.values[column])) {
       errors.push(asError(row.row, column, `The column “${column}” does not belong to the kind “${kind}” and must be empty.`));
     }
   }

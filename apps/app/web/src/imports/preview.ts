@@ -130,3 +130,31 @@ export function readImportEntries(json: string): ImportMetadataEntry[] {
     };
   });
 }
+
+/** The per-entry dates the journal states, keyed by phase identifier or "front-matter"; the same shape the route accepts as `meta` (R26.1). */
+export type EntryDates = Readonly<Record<string, { readonly startDate?: string; readonly startDateApprox?: boolean; readonly endDate?: string; readonly endDateApprox?: boolean }>>;
+/** Read the entry-dates JSON, keeping only the four date fields of each entry and refusing any other shape. */
+export function readEntryDates(json: string): EntryDates {
+  const parsed: unknown = JSON.parse(json);
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) throw new TypeError('The entry dates JSON must be an object keyed by phase identifier.');
+  const result: Record<string, { startDate?: string; startDateApprox?: boolean; endDate?: string; endDateApprox?: boolean }> = {};
+  for (const [key, value] of Object.entries(parsed)) {
+    if (typeof value !== 'object' || value === null || Array.isArray(value)) throw new TypeError(`The entry dates for ${key} must be an object.`);
+    const item = value as Record<string, unknown>;
+    const out: { startDate?: string; startDateApprox?: boolean; endDate?: string; endDateApprox?: boolean } = {};
+    for (const field of ['startDate', 'endDate'] as const) {
+      const text = item[field];
+      if (text === undefined) continue;
+      if (typeof text !== 'string' || !/^\d{4}-\d{2}-\d{2}$/u.test(text)) throw new TypeError(`The ${field} for ${key} must be a YYYY-MM-DD date.`);
+      out[field] = text;
+    }
+    for (const field of ['startDateApprox', 'endDateApprox'] as const) {
+      const flag = item[field];
+      if (flag === undefined) continue;
+      if (typeof flag !== 'boolean') throw new TypeError(`The ${field} for ${key} must be true or false.`);
+      out[field] = flag;
+    }
+    result[key] = out;
+  }
+  return result;
+}

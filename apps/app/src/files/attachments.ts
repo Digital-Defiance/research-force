@@ -52,7 +52,7 @@ export async function prepareAttachments(c: Context<ApiEnv>, raw: unknown, inher
   const context = input.length > 0 ? await validationContext(c) : undefined;
   const uploadRows = input.length ? await c.get('accountant').track(c.env.RF_CORE.prepare(`SELECT id, group_id AS groupId, state, owner_type AS ownerType, owner_id AS ownerId,
     r2_key AS r2Key, file_name AS fileName, size_bytes AS sizeBytes, sha256, mode, multipart_id AS multipartId, created_at AS createdAt,
-    completed_at AS completedAt, attached_at AS attachedAt FROM uploads WHERE id IN (SELECT value FROM json_each(?1)) AND owner_type = 'member' AND owner_id = ?2`)
+    completed_at AS completedAt, attached_at AS attachedAt, hash_verified_at AS hashVerifiedAt FROM uploads WHERE id IN (SELECT value FROM json_each(?1)) AND owner_type = 'member' AND owner_id = ?2`)
     .bind(JSON.stringify(input.map((file) => file.uploadId)), c.get('session').member.id).all<UploadRow>()) : undefined;
   const uploaded = new Map(uploadRows?.results.map((row) => [row.id, row]));
   const seen = new Set<string>();
@@ -62,6 +62,7 @@ export async function prepareAttachments(c: Context<ApiEnv>, raw: unknown, inher
     seen.add(file.uploadId);
     const upload = uploaded.get(file.uploadId);
     if (!upload) throw new ApiError('validation', { fields: [{ field: `files.${index}`, rule: 'The uploaded file is unavailable. Retry or remove it.' }] });
+    if (upload.state === 'complete' && upload.hashVerifiedAt === null) throw new ApiError('validation', { fields: [{ field: `files.${index}`, rule: `${upload.fileName}: This file is still being verified. Wait a moment and retry.` }] });
     if (upload.state !== 'complete' || upload.completedAt === null || upload.attachedAt !== null) throw new ApiError('validation', { fields: [{ field: `files.${index}`, rule: `${upload.fileName}: This upload is incomplete, expired, or already used. Retry or remove it.` }] });
     const defaults = inherited && !version ? { rightsStatusId: inherited.retired === 0 ? inherited.rightsStatusId ?? BUILT_IN_VALUE_IDS.rightsUnknown : BUILT_IN_VALUE_IDS.rightsUnknown,
       ...(inherited.rightsHolder === null ? {} : { rightsHolder: inherited.rightsHolder }), ...(inherited.rightsTerms === null ? {} : { rightsTerms: inherited.rightsTerms }) } : {};
@@ -76,7 +77,7 @@ export async function prepareAttachments(c: Context<ApiEnv>, raw: unknown, inher
     if (planned.length === 0) return;
     batch.guard('reply_parent', sql`EXISTS (SELECT 1 FROM units p WHERE p.id = ${parent.id} AND p.root_id = ${parent.rootId} AND p.project_id = ${parent.projectId} AND NOT EXISTS (SELECT 1 FROM deletions d WHERE d.unit_id = p.id OR d.unit_id = p.root_id))`);
     const uploadIds = JSON.stringify(planned.map((p) => p.upload.id));
-    batch.guard('upload_ready', sql`(SELECT count(*) FROM uploads WHERE id IN (SELECT value FROM json_each(${uploadIds})) AND owner_id = ${actor} AND state = 'complete' AND attached_at IS NULL) = ${planned.length}`);
+    batch.guard('upload_ready', sql`(SELECT count(*) FROM uploads WHERE id IN (SELECT value FROM json_each(${uploadIds})) AND owner_id = ${actor} AND state = 'complete' AND hash_verified_at IS NOT NULL AND attached_at IS NULL) = ${planned.length}`);
     batch.bulkInsert(units, planned.map((p) => ({ id: p.id, unitType: 'attachment' as const, projectId: parent.projectId, rootId: parent.rootId, parentId: parent.id,
       ownerId: actor, credit: [{ member: actor }], submissionId, createdAt: now })));
     batch.bulkInsert(attachments, planned.map((p) => ({ unitId: p.id, itemIdentifier: issued.get(p.id)!, ...p.metadata,
