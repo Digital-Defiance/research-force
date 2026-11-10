@@ -28,8 +28,8 @@ export function brandMark(className: string): ElementNode {
   ]);
 }
 const ICONS = {
-  /** A line with a node at its end: a claim followed back to its source. */
-  trace: [trace('cream', 'M4 20H12L20 12'), ring('cream', 22, 10), ring('cream', 4, 20)],
+  /** A document with a checkmark: a claim checked against its source. */
+  trace: [trace('cream', 'M7 3H17L22 8V25H7Z'), trace('cream', 'M17 3V8H22'), trace('cream', 'M10.5 16L13 18.5L18 13')],
   /** A person: head and shoulders. */
   credit: [svg('circle', { cx: '14', cy: '9', r: '5' }), trace('cream', 'M4 24Q14 12 24 24')],
   /** Stacked entries: a record that keeps every line. */
