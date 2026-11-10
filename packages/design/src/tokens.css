@@ -57,6 +57,9 @@
   --rf-colour-mark-blue: #6ec6ee;
   --rf-colour-mark-pink: #e58bb3;
   --rf-colour-grid-line: rgb(244 241 234 / 0.07);
+  --rf-colour-on-brand-hover: #ffffff;
+  --rf-colour-on-brand-wash: rgb(244 241 234 / 0.16);
+  --rf-grid-cards: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
   --rf-gradient-brand: linear-gradient(90deg, var(--rf-colour-brand-start), var(--rf-colour-brand-mid) 55%, var(--rf-colour-brand-end));
   --rf-gradient-hero: linear-gradient(to right, var(--rf-colour-grid-line) 1px, transparent 1px), linear-gradient(to bottom, var(--rf-colour-grid-line) 1px, transparent 1px), linear-gradient(135deg, var(--rf-colour-ink), var(--rf-colour-brand-start) 55%, var(--rf-colour-hero-end));
   --rf-size-grid: 2rem;

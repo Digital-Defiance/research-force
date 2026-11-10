@@ -123,6 +123,11 @@ export const STATIC_TOKENS: Readonly<Record<string, string>> = {
   'colour-mark-blue': '#6ec6ee',
   'colour-mark-pink': '#e58bb3',
   'colour-grid-line': 'rgb(244 241 234 / 0.07)',
+  /** Hover states of the hero buttons: the primary brightens to white, the secondary gains a faint light fill. */
+  'colour-on-brand-hover': '#ffffff',
+  'colour-on-brand-wash': 'rgb(244 241 234 / 0.16)',
+  /** Responsive card grid: as many 18rem columns as fit, one column on narrow screens. */
+  'grid-cards': 'repeat(auto-fit, minmax(min(100%, 18rem), 1fr))',
   'gradient-brand': 'linear-gradient(90deg, var(--rf-colour-brand-start), var(--rf-colour-brand-mid) 55%, var(--rf-colour-brand-end))',
   /** Two faint grid lines over the hero gradient; the grid layers use `size-grid`, the gradient fills the rest. */
   'gradient-hero': 'linear-gradient(to right, var(--rf-colour-grid-line) 1px, transparent 1px), linear-gradient(to bottom, var(--rf-colour-grid-line) 1px, transparent 1px), linear-gradient(135deg, var(--rf-colour-ink), var(--rf-colour-brand-start) 55%, var(--rf-colour-hero-end))',
