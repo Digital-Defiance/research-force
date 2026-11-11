@@ -29,7 +29,7 @@ Tests use synthetic data only. No task copies, quotes, or commits content from t
 
 ### Canonical build order after the 27 October review
 
-The JSON graph at the end is the single scheduling source. Checked leaf tasks form an inherited baseline whose evidence is reconciled in 57.1. Remaining waves are serial barriers; every leaf appears exactly once across baseline and waves. Tasks 19.1, 30.6–30.8, 30.11, 57.1–57.7, 67.1, 55.1–55.3, 62.1, 61.1, 66.1, 60.1, 60.2, 60.3, 60.4, 60.5, 60.6, 62.2, 62.3, 62.4, 62.5, 62.6, 61.2, 61.3, 63.1, 63.2, 63.3, 63.4 and the local environment in 50.1–50.3 are complete; 64.1 is the next remaining leaf. Its reconciled task 52 evidence leaves 52.4–52.6 open. A historical parent can remain checked only while all its leaf acceptance is complete; 30 is reopened for the identified gaps. Task 52's verified portions are reconciled without rerunning an applied migration; unfinished 52.4/52.5 follow the privacy helpers and 52.6 follows the Workspace lists.
+The JSON graph at the end is the single scheduling source. Checked leaf tasks form an inherited baseline whose evidence is reconciled in 57.1; every leaf checked after that baseline has an accepted record with a fresh local test receipt in `docs/acceptance/task-evidence.json`. Remaining waves are serial barriers; every leaf appears exactly once across baseline and waves. The 11 November 2026 reconciliation accepted the local work through task 68 (including 52.4–52.6, now integrated with the preview, projection loader and Workspace lists) and reopened the leaves whose acceptance needs evidence outside the local Vitest receipt or a test correction: 54.9 (a Property 104 model defect), 68.4 (the R60.9 local synthetic team walkthroughs are not yet recorded), 43.5–43.8 and 45.3 (browser presentation, print, Lighthouse and security suites with no recorded run), 48.2 and 48.5 (Microsoft 365 and staging suites that need operator infrastructure), and 46.2 and 59.4 (measured capacity and distributed-abuse runs in staging). 54.9 is the next remaining leaf. A historical parent can remain checked only while all its leaf acceptance is complete.
 
 | Milestone | Required scope and order |
 |---|---|
@@ -42,7 +42,7 @@ The JSON graph at the end is the single scheduling source. Checked leaf tasks fo
 
 Tasks 26/27 code already exist in the inherited baseline; feature additions still extend their event/preference/recipient rules. The graph linearizes shared helpers before callers: 55.2 before moves, field-version/idempotency before new records, permission coverage before apply, codec/preflight before restore, and publication/permission gates before serving releases. Every authoritative new table is registered for backup/format migrations when added. This is an implementation schedule, not authorization to activate a paid service, publish content, or ingest sole-copy research before its release evidence passes.
 
-Canonical phases: `staging_and_acceptance` → `production_activation`
+Canonical phases: `repair` → `release_tooling` → `staging_and_acceptance` → `production_activation`
 
 ## Tasks
 
@@ -580,7 +580,7 @@ Canonical phases: `staging_and_acceptance` → `production_activation`
     - **Property 47: Threads are trees in posting order**
     - **Validates: Requirements 16.3, 16.4, 41.7**
 
-- [ ] 25. Build the Activity_Service: flags, views, badges, and the Activity_Feed
+- [x] 25. Build the Activity_Service: flags, views, badges, and the Activity_Feed
   - [x] 25.1 Implement New_Flags in `apps/app/src/activity/flags.ts`
     - The batch that completes a Submission inserts a `new` flag on each of its Items for every other Member who is Active or Pending, whose account was created before completion, and who Can_Read the Item's Research_Item, with `INSERT … SELECT` joined to the `canRead` fragment from task 52.2; every flag insert, feed read, and badge count in this task uses that fragment
     - _Requirements: 18.1, 18.2, 18.6, 47.4, 47.5_
@@ -615,7 +615,7 @@ Canonical phases: `staging_and_acceptance` → `production_activation`
     - **Property 53: Mark-all-seen clears exactly the matching, older flags**
     - **Validates: Requirements 18.5**
 
-- [ ] 26. Build the Notification_Service
+- [x] 26. Build the Notification_Service
   - [x] 26.1 Implement the event fan-out in `apps/app/src/notifications/fanout.ts`
     - Done as `notify*` functions in `fanout.ts` that add their events and settle the Notifications once at commit (`GuardedBatch.defer`); a Submission of only Replies makes Reply events, not New_Submission events. Tasks 27, 32, 33, 34, 36, 42, 46 and 54 call the functions there for their events: `notifyAdministrators`, `notifyOwner`, `notifySystemAlert`, `notifyAdministratorsReminder`, and the Outside_Submission and Dissent events still to add.
     - One rule per Event_Type from the design's table, written with `INSERT … SELECT` in the batch of the causing action: New_Submission, Item_Update (Owner and Thread posters), the Administrator Item_Updates for automatic downgrades and for a non-Administrator's save that alters a Public_View, Reply, Mention (from task 24.2), Review_Requested, Review_Completed, and System_Alert; rules for Outside_Submission, Reminder, and Dissent events are added by the tasks that introduce them
@@ -641,7 +641,7 @@ Canonical phases: `staging_and_acceptance` → `production_activation`
     - **Property 55: One Notification per Submission per recipient**
     - **Validates: Requirements 19.6**
 
-- [ ] 27. Build the Mailer and email pipeline
+- [x] 27. Build the Mailer and email pipeline
   - [x] 27.1 Implement the email templates in `packages/public-render/src/email/`
     - Plain-text-first structure with an HTML version from the Design_System email components using only token typefaces and colours; sender name ResearchForce; subjects starting with "ResearchForce:"; every link's visible text is its full address; a Notification_Preferences link in every Member email
     - Items described only by their current Public_View, kind, Event_Type, actor display name, and time in the recipient's zone, with `https://app.researchforce.org/go/{ref}` login links; Outside_Submissions by Event_Type, Submission_Type, time, and days since receipt for Reminders; Elimination_Scope after Eliminated statuses; Group_Note links and views; Log_Summaries followed by their Dissent_Notes' views
@@ -681,7 +681,7 @@ Canonical phases: `staging_and_acceptance` → `production_activation`
     - 429 and 5xx retries, a provider change between attempts, the invitation-failure state, and a request body with `saveToSentItems: false` and one recipient
     - _Requirements: 2.14, 20.9, 20.11, 20.24_
 
-- [ ] 28. Build Member search
+- [x] 28. Build Member search
   - [x] 28.1 Implement the search indexer in `apps/app/src/search/indexer.ts`
     - A permanent `Jobs` instance named `indexer` draining the `search` outbox topic within seconds; one document per Item and Entry_Section, with Research_Item free-text and name fields, Attachment title, Item_Identifier, caption, Origin, and file name (never file contents), Dissent_Note documents pointing at their Research_Item with author and withdrawal marker, withdrawn and superseded markers, incomplete Submissions flagged, deleted Items removed, and creation sort keys
     - Done as `search/read.ts` (documents of a Research_Item read from rf-core), `search/indexer.ts` (rf-search writes, keyed by creation time), and the `indexer` role of `Jobs`. Outbox rows are `unit:`, `root:`, or `submission:` scopes and re-index the whole Research_Item, so saves, replies, access resets, and `completeSubmission` add a `search` row beside their `publish` row. Tasks 30, 37, and 42 add rows where they write units. The Credit filter covers Members; outside and imported Credit names are searchable text only.
@@ -707,7 +707,7 @@ Canonical phases: `staging_and_acceptance` → `production_activation`
   - Run `npm test` (`vitest --run`) and `npm run lint`; ensure all tests pass, ask the user if questions arise.
   - Done 2026-10-28 in the cloud workspace: lint and `tsc -b` clean; 945 of 946 tests pass with `--testTimeout=180000`. `p42-cross-links` takes about 24 s there against its own 200 ms-per-run limit (20 s at 100 runs) and also did on the commit before Task 25, so it is slow on that machine rather than broken.
 
-- [ ] 30. Build files: uploads, Attachments, versions, previews, Download_Links, and `rf-dl`
+- [x] 30. Build files: uploads, Attachments, versions, previews, Download_Links, and `rf-dl`
   - Reopened by the 27 October review: the earlier CI/build evidence remains valid for its tested cases, but 30.6–30.8 still need reload persistence, bounded streaming previews, and listing-versus-view flag corrections. Real R2/CORS rehearsal is mandatory in task 48; no completed code is discarded.
   - [x] 30.1 Implement uploads in `apps/app/src/files/uploads.ts` and `apps/app/src/api/routes/uploads.ts`
     - `POST /uploads` with name, size, and browser-computed SHA-256, refusing files above the Attachment_Size_Limit and the 101st file of a Submission before any transfer, naming the file and the limit
@@ -1090,7 +1090,7 @@ Canonical phases: `staging_and_acceptance` → `production_activation`
     - **Property 85: AI provenance is recorded on save**
     - **Validates: Requirements 44.6**
 
-- [x] 43. Complete the Design_System and build Policy_Page editing
+- [ ] 43. Complete the Design_System and build Policy_Page editing
   - [x] 43.1 Implement Policy_Section editing in `apps/app/src/policy/policy.ts` and `GET/PUT /policy/{page}`
     - Preview the page exactly as the Public_Site renders it and apply only on confirmation; record a Revision with Minor_Edit or Correction and reason; refuse a missing mark, an invalid reason, an empty required section, more than 20,000 characters, or a conflicting Revision, keeping the input and listing Revisions since; no route adds, removes, renames, or reorders sections; one Activity_Feed entry linking to the page's history; a publish outbox row; history and comparisons as for Items
     - _Requirements: 46.27, 46.28, 46.30, 46.31, 46.32_
@@ -1103,16 +1103,16 @@ Canonical phases: `staging_and_acceptance` → `production_activation`
   - [x] 43.4 Build the policy, settings, and value-set screens in `apps/app/web/src/admin/`
     - Policy_Page editors with preview and confirmation, history and comparisons, the Responsible_Person setting, the settings screen with allowed ranges, and the value-set screens with retire, rename, publication marks, and Public_Descriptions
     - _Requirements: 19.2, 33.8, 46.13, 46.27, 46.37_
-  - [x] 43.5 Write the print stylesheet in `packages/design/src/print.css`
+  - [ ] 43.5 Write the print stylesheet in `packages/design/src/print.css`
     - Hide navigation, the search box, pagination, buttons, and form fields; keep link texts; wrap wide tables, code, and display mathematics within the page; print the page address in full from `data-url`; keep the footer statements; always use the light scheme on A4 and US Letter
     - _Requirements: 45.9_
-  - [x] 43.6 Complete accessibility and layout across `packages/design` and `apps/app/web`
+  - [ ] 43.6 Complete accessibility and layout across `packages/design` and `apps/app/web`
     - Landmarks and a skip link, focus never hidden by sticky headers, button alternatives to every drag action including Entry_Section reordering, consistent help placement, no re-entry of information within a process, labelled errors with suggestions, reduced motion, MathML, and keyboard-operable preview controls; fluid layout from 320 to 2,560 CSS pixels with wide tables, code, mathematics, and previews scrolling inside their own containers
     - _Requirements: 45.5, 45.7_
-  - [x] 43.7 Write the Playwright presentation tests in `tests/presentation/`
+  - [ ] 43.7 Write the Playwright presentation tests in `tests/presentation/`
     - axe-core on every page type in both colour schemes; a viewport sweep from 320 to 2,560 pixels with no horizontal page scroll, overlap, or clipping; print to PDF on A4 and US Letter compared with the page text; colour-scheme switching without reload; a privacy crawl recording network requests and cookies or storage; visual regression of every component through both renderers
     - _Requirements: 45.1, 45.5, 45.7, 45.9, 45.16, 45.17, 45.18_
-  - [x] 43.8 Configure Lighthouse CI in `lighthouserc.json`
+  - [ ] 43.8 Configure Lighthouse CI in `lighthouserc.json`
     - 20 loads per representative public page under the Reference_Mobile_Profile with an empty cache, asserting the 75th percentiles of Largest Contentful Paint, Cumulative Layout Shift, and Interaction to Next Paint
     - _Requirements: 45.8_
   - [x] 43.9 Write property test for concurrent saves
@@ -1139,7 +1139,7 @@ Canonical phases: `staging_and_acceptance` → `production_activation`
     - **Property 82: Usage alerts fire on upward crossings**
     - **Validates: Requirements 19.10**
 
-- [x] 45. Add security headers and hardening checks
+- [ ] 45. Add security headers and hardening checks
   - [x] 45.1 Implement the Workspace security headers in `apps/app/src/api/security-headers.ts` and `apps/app/web/public/_headers`
     - The Workspace Content-Security-Policy from the design, `Referrer-Policy: no-referrer`, `Cross-Origin-Opener-Policy: same-origin`, HSTS with preload, `X-Content-Type-Options: nosniff`, and a minimal `Permissions-Policy`
     - _Requirements: 14.6, 45.17_
@@ -1147,7 +1147,7 @@ Canonical phases: `staging_and_acceptance` → `production_activation`
     - Generate `_headers` with the public Content-Security-Policy, the additions for form pages only (`submit.researchforce.org`, the R2 S3 endpoint, `challenges.cloudflare.com`), `Referrer-Policy: strict-origin-when-cross-origin`, HSTS, `nosniff`, and `Permissions-Policy`; no header or script sets a cookie
     - Cloudflare Web Analytics stays off at launch through `WEB_ANALYTICS = false` in the same module; turning it on adds only its cookieless beacon to the policy, and the Privacy page must then name the service
     - _Requirements: 45.17, 45.18, 45.19_
-  - [x] 45.3 Write security tests in `tests/security/`
+  - [ ] 45.3 Write security tests in `tests/security/`
     - Run browser tests against actual rf-dl/public-file delivery and previews with HTML, SVG, PDF and polyglots, checking no script or accepted cross-origin request runs as the Member, including CSP and resource-limit failure paths; test Member-bound link expiry, revocation, current restricted access, wrong object and purpose.
     - Exercise the real channel adapters with generated canaries; a registered constant refusal alone is not evidence. These tests are mandatory for the team-file and public-release gates.
     - _Requirements: 14.6, 14.10, 25.5, 25.6, 60.4_
@@ -1155,11 +1155,11 @@ Canonical phases: `staging_and_acceptance` → `production_activation`
     - No route accepts file bodies and none returns renditions; the AI model allow-list holds only Cloudflare-hosted models and no AI Gateway is configured; no secret appears in the repository; every font and icon has a licence that allows self-hosting and export; the Policy_Section list matches Requirement 46.32
     - _Requirements: 12.5, 14.9, 20.20, 44.9, 45.20, 46.32_
 
-- [x] 46. Add observability
+- [ ] 46. Add observability
   - [x] 46.1 Implement metrics and the operations status endpoint in `apps/app/src/metrics.ts` and `GET /api/v1/ops/status`
     - Structured metric events per route (requests, CPU time, D1 rows), Publisher lag from save to deploy and to verified removal, Mailer queue depth, held time, and delays against the time limits, AI Neurons per day, and Public_Traffic_Budget use; an Administrator-only summary endpoint
     - _Requirements: 24.11, 28.2, 28.3_
-  - [x] 46.2 Write the performance test harness in `tests/perf/`
+  - [ ] 46.2 Write the performance test harness in `tests/perf/`
     - Certify the selected Resource_Profile against the Reference_Archive and worst-case Unicode/spans/chunks, 100-file submissions, draft/proposal graphs, common-term 50 MB search with large result pages, 1,000-unit previews, publisher epochs/removal, and retained/transient export/backup/release copies.
     - Measure CPU, binding calls, statements, encoded bytes, peak memory, D1 growth and full transfer size, distinguishing provider limits from chosen safety margins. Reproduce 1/3/5-year growth scenarios and the 30-minute distributed invalid-download/public-API Abuse_Profile with concurrent authorized saves/downloads and a removal.
     - Record maxima, percentile data, profile/version/assumptions and pass/fail evidence; keep <=24-hour verified independent RPO and <=8-hour reference restore evidence. A profile that fails cannot be advertised or deployed for that scope.
@@ -1172,7 +1172,7 @@ Canonical phases: `staging_and_acceptance` → `production_activation`
     - D1 databases; R2 buckets with CORS (PUT from the Workspace and apex origins with checksum headers), the lifecycle rule that aborts multipart uploads after one day, `r2.dev` off, and the `files.researchforce.org` custom domain; the `www` redirect, the "bypass cache" rule and response header rule on `files`, the disabled WAF block rule for `submit`, and the rate-limiting rule for `submit` and `dl`; Bot Fight Mode and Always Online off; Worker custom domains; the Access application (24-hour session, cookie settings, one-time PIN, Google, and GitHub, the `rf-members` list and allow policy); the managed-mode Turnstile widget
     - `provision.ts --dry-run` prints the planned API calls without account access; `infra/secrets.ts` lists every secret per Worker and `tools/check-secrets.ts` reports missing ones
     - _Requirements: 1.1, 1.3, 25.2, 25.3, 28.5, 31.3, 45.18_
-  - [x] 48.2 Write the Microsoft 365 setup script in `infra/m365/Setup-ResearchForceMail.ps1`
+  - [ ] 48.2 Write the Microsoft 365 setup script in `infra/m365/Setup-ResearchForceMail.ps1`
     - Create the shared mailbox named ResearchForce at the Sending_Address; register the app with a certificate credential and no organization-wide Mail.Send consent; create the Exchange service principal, a management scope matching only the mailbox, and the "Application Mail.Send" role assignment with that scope, then run `Test-ServicePrincipalAuthorization`; turn single item recovery off, set the shortest deleted-item retention, and apply no holds; add a transport rule that rejects inbound mail to the address with an explanation of how to respond
     - _Requirements: 20.19, 20.21, 20.24, 45.21_
   - [x] 48.3 Write the DNS records and their check in `infra/dns/records.ts` and `tools/check-email-dns.ts`
@@ -1184,7 +1184,7 @@ Canonical phases: `staging_and_acceptance` → `production_activation`
     - Require the owner-configured Content_Licence before publication/agreement collection; require an approved Operating_Profile/budget, independent recovery destination/key custody, initial fresh restore and containment capability for the applicable production gates. Provisioning does not infer permission to buy plans, publish research, or select a content licence.
     - Use task 67 compatibility manifests and task 68 launch-gate checks; this script is built before operator setup and calls the completed gate checker at execution. A Workspace-only deployment must have public dynamic endpoints disabled until their own gate passes.
     - _Requirements: 2.2, 26.1, 40.12, 46.37, 46.41, 46.42, 28.1, 28.4, 36.12, 36.17, 60.3, 60.4, 60.5_
-  - [x] 48.5 Write the staging verification suites in `tests/staging/` and `infra/m365/Verify-ResearchForceMail.ps1`
+  - [ ] 48.5 Write the staging verification suites in `tests/staging/` and `infra/m365/Verify-ResearchForceMail.ps1`
     - Make real staging verification mandatory for its deployment scope: Access redirects and scoped bearer exceptions; real single/multipart R2 checksum/CORS behavior; Graph least privilege, credential rotation, SPF/DKIM/DMARC, acceptance versus delivery, MIME/plain text and residual provider retention; Turnstile and addressed snapshots.
     - Certify public change timing and independently verified containment across pages/index/files/People/policy/release assets; inject deploy/quota failures and old-generation retries; run the distributed Abuse_Profile while Members save/download and compare measured resource/spend reserve.
     - Rehearse independent encrypted backup/key recovery and fresh restore with bootstrap identity conflict, older schema, crash/resume and a later suppression. Keep sanitized evidence; missing operator infrastructure blocks the applicable gate rather than skipping tests.
@@ -1250,7 +1250,7 @@ Canonical phases: `staging_and_acceptance` → `production_activation`
     - _Requirements: 23.1_
 
 - [x] 52. Build restricted access inside the team
-  - Existing implementation and migration are present; task 57.1 reconciled acceptance individually. See `docs/acceptance/README.md` and the task-evidence ledger; 52.4–52.6 retain their preview/projection/list integration gaps. Do not recreate an already applied migration. Later kinds extend these privacy checks in their own tasks.
+  - Existing implementation and migration are present; task 57.1 reconciled acceptance individually. See `docs/acceptance/README.md` and the task-evidence ledger; 52.4–52.6 were accepted on 11 November 2026 after 31.1, 54.2, 54.5 and 40.3 closed their preview/projection/list integration gaps. Do not recreate an already applied migration. Later kinds extend these privacy checks in their own tasks.
   - [x] 52.1 Add the access data and Permissions
     - The next migration adds `research_items.access_level` (`whole_team` or `restricted`, default `whole_team`), `access_grants (root_id, member_id, granted_by, granted_at)` with primary key (`root_id`, `member_id`), the guard table `_g_access_owner`, and the Revision_Kind `access_change`; add `access_owner` to `GUARD_CODES` in `packages/db/src/batch.ts`
     - Adding `access_change` changes the `revisions_kind_values` check, so the migration rebuilds `revisions` as task 51's migration rebuilt `units`, and recreates the `revisions_immutable` trigger from `0001_raw.sql`, which dropping the table removes; extend the migration test pattern of `apps/app/test/migration-not-published.test.ts` to check the rows, the indexes, and that the trigger still refuses updates
@@ -1295,7 +1295,7 @@ Canonical phases: `staging_and_acceptance` → `production_activation`
     - **Property 105: Attachment moves keep identity and move whole Version_Chains**
     - **Validates: Requirements 12.12, 12.13, 12.14, 12.15**
 
-- [x] 54. Build Owner consent, Confidentiality_Holds, and Dual_Approvals
+- [ ] 54. Build Owner consent, Confidentiality_Holds, and Dual_Approvals
   - [x] 54.1 Add the consent, hold, and approval data
     - The next migration adds `publication_consents`, `confidentiality_holds` with its partial unique index, and `dual_approvals` as the design defines them, the Review_Request type `proposal` (the existing `review_requests` checks allow an outcome only on Publication_Requests and only Applied or Declined, so the migration rebuilds `review_requests` with a request type column and outcomes Approved and Declined for proposals, mapping existing rows), and the guard tables `_g_consent_valid`, `_g_hold_free`, `_g_dual_open`, and `_g_dual_distinct`; add the codes to `GUARD_CODES`
     - _Requirements: 23.18, 48.1, 49.2, 23.23, 23.24, 49.8_
@@ -1325,7 +1325,7 @@ Canonical phases: `staging_and_acceptance` → `production_activation`
   - [x] 54.8 Write property test for Confidentiality_Holds
     - **Property 103: Confidentiality_Holds block publication until lifted or overridden**
     - **Validates: Requirements 48.1, 48.2, 48.3, 48.4, 48.6, 48.7, 48.10**
-  - [x] 54.9 Write property test for Dual_Approvals
+  - [ ] 54.9 Write property test for Dual_Approvals
     - **Property 104: Dual_Approvals need two different active Administrators**
     - **Validates: Requirements 23.22, 47.7, 48.8, 48.9, 49.1, 49.3, 49.4, 49.5, 49.6, 49.8**
 
@@ -1385,7 +1385,7 @@ Canonical phases: `staging_and_acceptance` → `production_activation`
     - A scanner-style GET of the link changes nothing; an answer sets the statuses and sends the confirmation; a refusal on a Public Correspondence withholds it; an expired, cancelled, or used link gets the fixed notice; a withdrawal through the Change_Link downgrades and keeps Do_Not_Name on
     - _Requirements: 51.5, 51.8, 51.10, 51.12_
 
-- [ ] 57. Repair acceptance gaps and add bounded, retry-safe foundations
+- [x] 57. Repair acceptance gaps and add bounded, retry-safe foundations
   - Retain existing code; complete the reopened acceptance work rather than recreating historical migrations or discarding tested behavior.
   - [x] 57.1 Reconcile task status and acceptance evidence in `tools/check-specs.ts` and `docs/acceptance/`
     - Inventory every leaf task, requirement criterion, property, source/test path and known correction. Verify existing task 52 code/migration/read-path tests and record evidence before checking its subtasks; a file existing is not acceptance and an applied migration is not rerun.
@@ -1458,7 +1458,7 @@ Canonical phases: `staging_and_acceptance` → `production_activation`
     - **Property 112: Freeze and restore recovery never accepts mixed state**
     - **Validates: Requirements 36.8, 36.14, 36.15, 36.16, 60.5**
 
-- [x] 59. Certify publication epochs, containment and bounded public abuse
+- [ ] 59. Certify publication epochs, containment and bounded public abuse
   - [x] 59.1 Implement durable publication epochs and fenced external operations
     - Increment the public invalidation epoch in the originating transaction; add job/deploy/file operation identities, generation guards, urgent preemption and rf-ops serialized expected-epoch checks used by tasks 32.1–32.5.
     - A late provider response or old retry cannot restore a suppressed file, promote stale assets unchecked, or reopen containment. Reconcile ambiguous version promotion against actual provider state and keep denial until the latest authorized generation verifies.
@@ -1471,7 +1471,7 @@ Canonical phases: `staging_and_acceptance` → `production_activation`
     - Distinguish admitted public work, charged rejected/invalid-download invocations and provider/account totals; reserve bounded in-flight D1/work capacity before admission and settle actual use. Edge controls and profile headroom must include distributed syntactically valid but invalid-signature download tokens.
     - Keep static public search independent of optional API-budget status; dynamic forms and addressed views have separate admission. Retain the Member/removal reserve without representing an in-Worker check as preventing the invocation charge; do not auto-upgrade services.
     - _Requirements: 28.1, 28.3, 28.4, 28.5, 28.6, 28.7, 28.8, 28.11, 28.17, 60.7_
-  - [x] 59.4 Write mandatory distributed abuse and removal-failure staging scenarios
+  - [ ] 59.4 Write mandatory distributed abuse and removal-failure staging scenarios
     - Certify the initial 100 requests/second, 1,000-source, 30-minute distributed flood with ten Members saving/downloading and a hold during a long addition run. Measure the declared reserve, >=99.9% authorized interactive success and removal/containment under available control paths.
     - Inject provider outage, exhausted quotas, false HEAD results, stale job and late deploy response; prove fixed denial has no canaries and cannot block the app. A failed Free_Qualified profile disables that scope until an approved stronger profile/isolation passes.
     - _Requirements: 24.16, 24.17, 28.5, 28.6, 28.7, 28.17, 60.4, 60.7_
@@ -1484,7 +1484,7 @@ Canonical phases: `staging_and_acceptance` → `production_activation`
     - **Property 114: Admission and shedding preserve the certified reserve**
     - **Validates: Requirements 28.1, 28.3, 28.4, 28.5, 28.6, 28.7, 28.8, 28.11, 28.17, 60.7**
 
-- [ ] 60. Build work coordination and the Research_Question lifecycle
+- [x] 60. Build work coordination and the Research_Question lifecycle
   - [x] 60.1 Add Work_Item and Question lifecycle schemas, storage and Permissions
     - Add Work_Item kind throughout domain names/schemas, Research_Item kind checks, identifiers, adapters, kernel input/views, filters and export formats; add work_items/assignees/dependencies/outcomes and Question lead/state/assessment/uncertainty/next-action storage with bounded logical fields.
     - Add work.assign/edit/progress/accept permissions with own/authorized-editor versus responsible/accepted-assignee versus self scopes. Keep ownership, Log_Summary and access widening separate; assignees and Question leads must currently Can_Read. Migrate built-in and configurable Role behavior deliberately.
@@ -1511,7 +1511,7 @@ Canonical phases: `staging_and_acceptance` → `production_activation`
     - **Property 116: Question assessments retain versioned evidence and access**
     - **Validates: Requirements 50.9, 50.10, 50.11**
 
-- [ ] 61. Build evidence-backed decisions and personal acknowledgements
+- [x] 61. Build evidence-backed decisions and personal acknowledgements
   - [x] 61.1 Add Decision_Record schemas, storage and actor-specific acknowledgement guards
     - Add Decision_Record kind, alternatives, selected/deferred outcome, rationale/context, participant and evidence-version rows, personal digest-bound acknowledgements, revisit and supersession fields; enforce all R53 bounds and rebuild enum checks compatibly.
     - Adoption uses existing authorized editing, personal responses use self-only permission and content digest; changed rationale/outcome makes older acknowledgements earlier-wording, never assumed agreement. Preserve existing summary/dissent/profile protections.
@@ -1525,7 +1525,7 @@ Canonical phases: `staging_and_acceptance` → `production_activation`
     - **Property 117: Decisions never infer another Member’s agreement**
     - **Validates: Requirements 53.1, 53.2, 53.3, 53.4, 53.5**
 
-- [ ] 62. Build precise citations and original/derivative provenance
+- [x] 62. Build precise citations and original/derivative provenance
   - [x] 62.1 Add source bibliography and version-bound citation models
     - Add document creators/roles separately from Owner/Credit, date precision, identifiers/archive references/edition/language/URL/access date; implement typed citation/locator schemas and exact field/file version references with bounds and immutable identities.
     - Validate UTF-16 text boundaries, page/folio/range order, normalized image regions and current access to both ends; source changes preserve the original reference and mark earlier-version citations. Legacy source strings stay unresolved unless explicitly mapped.
@@ -1551,7 +1551,7 @@ Canonical phases: `staging_and_acceptance` → `production_activation`
     - **Property 119: Artifact derivations preserve originals and an authorized DAG**
     - **Validates: Requirements 55.1, 55.2, 55.3, 55.4, 55.5**
 
-- [ ] 63. Build reproducible compute packages and comparable scope coverage
+- [x] 63. Build reproducible compute packages and comparable scope coverage
   - [x] 63.1 Implement versioned compute manifests and held/verified artifact identity
     - Add package versions and bounded artifact/configuration/environment/scope/reproduction tables and /runs/{id}/package. Validate exact code commit/release, commands, input/output/checkpoint hashes, seeds/dependencies and all package bounds without rounding counts.
     - Distinguish held/hash-verified from unverified external references and Incomplete/Specified/Reproduced/Disputed states; list missing ingredients. Parsing/import never executes code or fetches arbitrary external URLs.
@@ -1642,7 +1642,7 @@ Canonical phases: `staging_and_acceptance` → `production_activation`
     - **Property 125: Release gates and compatibility evidence cannot be bypassed**
     - **Validates: Requirements 60.1, 60.3, 60.4, 60.5, 60.6, 60.7, 60.8, 60.9**
 
-- [x] 68. Complete permission-evidence policy and mandatory release gates
+- [ ] 68. Complete permission-evidence policy and mandatory release gates
   - [x] 68.1 Add shared Permission_Evidence and manual/emailed grant coverage
     - Add immutable grant/evidence/source/document/version/hash/use/naming/authority/expiry/withdrawal rows and common coverage helpers. Legacy hand-set statuses become unverified legacy evidence pending curation; do not invent historical grants or silently publish uncovered material.
     - Provide exact snapshot coverage helpers for 54's Owner consents and dual eligibility, Withheld neutral-name fallback and existing Do_Not_Name precedence; changing a status does not grant unlimited rights. Extend backup/recovery/release schema readers and suppression indexes.
@@ -1655,7 +1655,7 @@ Canonical phases: `staging_and_acceptance` → `production_activation`
     - Use independent models and fault injection in `apps/app/test/properties/p126-permission-evidence.test.ts`; cover the concrete scenarios in the design, including current-access and maximum encoded-input cases. This owning property file does not replace browser/staging tests.
     - **Property 126: Permission evidence covers only the exact authorized use**
     - **Validates: Requirements 51.9, 51.15, 51.16, 51.17, 51.18, 23.23, 23.24, 49.8**
-  - [x] 68.4 Enforce team-archive and public-launch acceptance evidence
+  - [ ] 68.4 Enforce team-archive and public-launch acceptance evidence
     - Implement gate manifests and checks for the mandatory R60.4 matrix; a source file, checked box or unit-only result is not substitute evidence. Team archive requires independent encrypted recovery/fresh restore, exact privacy, drafts/files, text, concurrency/lost-response and keyboard/capacity checks.
     - Public launch additionally requires real rights/consent/holds/dual approvals, public-channel canaries, browser file safety, presentation/accessibility, static index/removal/containment, provider setup and the distributed Abuse_Profile. Missing licence, independent keys/destination, profile approval or failed control paths block that scope.
     - Run and record the R60.9 local synthetic team walkthroughs, and wire protected real import/staging rehearsals into setup tasks 48.6–48.9; they must supply passing evidence before custodial use/public launch. Retain failure reports and explicit remediation tasks. The final checkpoint cannot skip any required acceptance suite.
@@ -2009,7 +2009,6 @@ This is the canonical scheduling and gate manifest. Phase names match the milest
     "54.6",
     "54.7",
     "54.8",
-    "54.9",
     "55.4",
     "55.5",
     "56.1",
@@ -2059,10 +2058,6 @@ This is the canonical scheduling and gate manifest. Phase names match the milest
     "43.2",
     "43.3",
     "43.4",
-    "43.5",
-    "43.6",
-    "43.7",
-    "43.8",
     "43.9",
     "43.10",
     "43.11",
@@ -2072,87 +2067,199 @@ This is the canonical scheduling and gate manifest. Phase names match the milest
     "44.3",
     "45.1",
     "45.2",
-    "45.3",
     "45.4",
     "46.1",
     "59.5",
     "59.6",
     "48.1",
-    "48.2",
     "48.3",
-    "48.5",
     "48.10",
-    "68.4",
     "67.4",
     "48.4",
-    "46.2",
-    "58.5",
-    "59.4"
+    "58.5"
   ],
   "phases": {
-    "staging_and_acceptance": {
+    "repair": {
       "firstWave": 0,
-      "lastWave": 4
+      "lastWave": 0
+    },
+    "release_tooling": {
+      "firstWave": 1,
+      "lastWave": 8
+    },
+    "staging_and_acceptance": {
+      "firstWave": 9,
+      "lastWave": 15
     },
     "production_activation": {
-      "firstWave": 5,
-      "lastWave": 5
+      "firstWave": 16,
+      "lastWave": 16
     }
   },
   "waves": [
     {
       "id": 0,
-      "phase": "staging_and_acceptance",
+      "phase": "repair",
       "dependsOn": [],
+      "tasks": [
+        "54.9"
+      ]
+    },
+    {
+      "id": 1,
+      "phase": "release_tooling",
+      "dependsOn": [
+        0
+      ],
+      "tasks": [
+        "68.4"
+      ]
+    },
+    {
+      "id": 2,
+      "phase": "release_tooling",
+      "dependsOn": [
+        1
+      ],
+      "tasks": [
+        "43.5"
+      ]
+    },
+    {
+      "id": 3,
+      "phase": "release_tooling",
+      "dependsOn": [
+        2
+      ],
+      "tasks": [
+        "43.6"
+      ]
+    },
+    {
+      "id": 4,
+      "phase": "release_tooling",
+      "dependsOn": [
+        3
+      ],
+      "tasks": [
+        "43.7"
+      ]
+    },
+    {
+      "id": 5,
+      "phase": "release_tooling",
+      "dependsOn": [
+        4
+      ],
+      "tasks": [
+        "43.8"
+      ]
+    },
+    {
+      "id": 6,
+      "phase": "release_tooling",
+      "dependsOn": [
+        5
+      ],
+      "tasks": [
+        "45.3"
+      ]
+    },
+    {
+      "id": 7,
+      "phase": "release_tooling",
+      "dependsOn": [
+        6
+      ],
+      "tasks": [
+        "48.2"
+      ]
+    },
+    {
+      "id": 8,
+      "phase": "release_tooling",
+      "dependsOn": [
+        7
+      ],
+      "tasks": [
+        "48.5"
+      ]
+    },
+    {
+      "id": 9,
+      "phase": "staging_and_acceptance",
+      "dependsOn": [
+        8
+      ],
       "tasks": [
         "48.6"
       ]
     },
     {
-      "id": 1,
+      "id": 10,
       "phase": "staging_and_acceptance",
       "dependsOn": [
-        0
+        9
       ],
       "tasks": [
         "48.7"
       ]
     },
     {
-      "id": 2,
+      "id": 11,
       "phase": "staging_and_acceptance",
       "dependsOn": [
-        1
+        10
       ],
       "tasks": [
         "48.8"
       ]
     },
     {
-      "id": 3,
+      "id": 12,
       "phase": "staging_and_acceptance",
       "dependsOn": [
-        2
+        11
       ],
       "tasks": [
         "48.11"
       ]
     },
     {
-      "id": 4,
+      "id": 13,
       "phase": "staging_and_acceptance",
       "dependsOn": [
-        3
+        12
+      ],
+      "tasks": [
+        "46.2"
+      ]
+    },
+    {
+      "id": 14,
+      "phase": "staging_and_acceptance",
+      "dependsOn": [
+        13
+      ],
+      "tasks": [
+        "59.4"
+      ]
+    },
+    {
+      "id": 15,
+      "phase": "staging_and_acceptance",
+      "dependsOn": [
+        14
       ],
       "tasks": [
         "48.12"
       ]
     },
     {
-      "id": 5,
+      "id": 16,
       "phase": "production_activation",
       "dependsOn": [
-        4
+        15
       ],
       "tasks": [
         "48.9"

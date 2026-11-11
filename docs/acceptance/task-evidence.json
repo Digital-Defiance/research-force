@@ -338,60 +338,6 @@
       ]
     },
     {
-      "task": "52.4",
-      "state": "partial",
-      "reason": "Access-change transactions, owner widening, atomic bulk updates and history are implemented and locally tested. The preview currently lists reset units rather than rendered removed Public_Views; task 31.1 must integrate the projection loader. Revoked-owner Dual_Approval is deliberately owned by 54.5.",
-      "sourcePaths": [
-        "apps/app/src/records/access.ts",
-        "apps/app/src/records/history.ts",
-        "packages/domain/src/history.ts"
-      ],
-      "testPaths": [
-        "apps/app/test/access.test.ts",
-        "apps/app/test/properties/p101-access-changes.test.ts"
-      ],
-      "correctionTasks": [
-        "31.1",
-        "54.5"
-      ],
-      "checks": []
-    },
-    {
-      "task": "52.5",
-      "state": "partial",
-      "reason": "The kernel restricted flag and disclosure gates exist and have tests; the promised loadProjectionInput integration is still task 31.1. Keep this task open until real database inputs reach the kernel.",
-      "sourcePaths": [
-        "packages/kernel/src/effective.ts",
-        "packages/kernel/src/input.ts",
-        "packages/kernel/src/preview.ts"
-      ],
-      "testPaths": [
-        "packages/kernel/test/preview.test.ts",
-        "packages/kernel/test/properties/p01-effective-disclosure.test.ts"
-      ],
-      "correctionTasks": [
-        "31.1"
-      ],
-      "checks": []
-    },
-    {
-      "task": "52.6",
-      "state": "partial",
-      "reason": "Access choices, labels, dialog/confirmation and reusable bulk widgets have component tests. Actual bulk selection on Workspace lists awaits task 40.3, and rendered removal previews await 31.1. This does not claim browser accessibility or staging acceptance.",
-      "sourcePaths": [
-        "apps/app/web/src/access/access.tsx",
-        "apps/app/web/src/items/page.tsx"
-      ],
-      "testPaths": [
-        "apps/app/web/test/access.test.tsx"
-      ],
-      "correctionTasks": [
-        "31.1",
-        "40.3"
-      ],
-      "checks": []
-    },
-    {
       "task": "52.7",
       "state": "accepted",
       "reason": "Verified against current local synthetic suites: the Property 100 suite models all currently implemented read endpoints and per-Member inserts. New kinds/channels must extend its generators; public delivery requires the real adapters in 57.5.",
@@ -1275,6 +1221,3079 @@
       "checks": [
         "docs/acceptance/checks/local-tests.json"
       ]
+    },
+    {
+      "task": "31.1",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement projection input loading and the preview API in apps/app/src/kernel-input.ts and apps/app/src/disclosure/preview.ts. 2 suite(s) with 24 cases exercise it, for example: 'turns rf-core rows into kernel input the projector can read'; 'marks exactly the units given a level Classified and leaves the rest as stored'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/kernel-input.ts",
+        "apps/app/src/disclosure/preview.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/disclosure-preview.test.ts",
+        "packages/kernel/test/preview.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "31.2",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement the apply API in apps/app/src/disclosure/apply.ts. 1 suite(s) with 10 cases exercise it, for example: 'needs disclosure.set'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/disclosure/apply.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/disclosure-apply.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "31.3",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement the classification and public-overview lists in apps/app/src/api/routes/disclosure.ts. 1 suite(s) with 13 cases exercise it, for example: 'needs disclosure.set'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/api/routes/disclosure.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/disclosure-lists.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "31.4",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement Publication_Request proposal, apply, and decline in apps/app/src/reviews/publication.ts. 1 suite(s) with 15 cases exercise it, for example: 'needs the review.request permission'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/reviews/publication.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/publication-requests.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "31.5",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement the rights and consent rules in apps/app/src/disclosure/rights.ts. 1 suite(s) with 8 cases exercise it, for example: 'sets it Withheld with a file-kind-and-date Disclosure_Line, a Disclosure_Change, and an Administrator Item_Update'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/disclosure/rights.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/rights.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "31.6",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement item moves in apps/app/src/records/move.ts and POST /items/{id}/move. 2 suite(s) with 10 cases exercise it, for example: 'needs item.move: a Contributor is refused'; 'applies each access change to every item or none, as the model decides'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/records/move.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/move.test.ts",
+        "apps/app/test/properties/p101-access-changes.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "31.7",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Build the disclosure screens in apps/app/web/src/disclosure/. 1 suite(s) with 23 cases exercise it, for example: 'shows the changed public views, Party names, Dissent_Notes not public, and Licence_Agreement states (R23.6, R23.16, R46.16)'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/web/src/disclosure/correspondence.tsx",
+        "apps/app/web/src/disclosure/disclosure.tsx",
+        "apps/app/web/src/disclosure/holds.tsx",
+        "apps/app/web/src/disclosure/line.tsx",
+        "apps/app/web/src/disclosure/move.tsx",
+        "apps/app/web/src/disclosure/public-summary.tsx",
+        "apps/app/web/src/disclosure/publication-request.tsx",
+        "apps/app/web/src/disclosure/records.tsx"
+      ],
+      "testPaths": [
+        "apps/app/web/test/disclosure.test.tsx"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "31.8",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property test for independent Disclosure_Levels. The Property 2 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 4 cases exercise it, for example: 'the engine reads the own level from the node and never writes it back — no input DNode is mutated across effective() calls'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "packages/domain/src/types.ts",
+        "packages/kernel/src/effective.ts"
+      ],
+      "testPaths": [
+        "packages/kernel/test/properties/p02-independent-disclosure.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "31.9",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property test for Unclassified units. The Property 4 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 6 cases exercise it, for example: 'R26.5: every Unclassified unit is Not_Published whatever its own stored level and whatever its ancestors' levels'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "packages/domain/src/types.ts",
+        "packages/kernel/src/effective.ts",
+        "packages/kernel/src/preview.ts",
+        "packages/kernel/src/project.ts",
+        "packages/kernel/src/views.ts"
+      ],
+      "testPaths": [
+        "packages/kernel/test/properties/p04-unclassified-selective-classification.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "31.10",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property test for publication gates. The Property 12 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 12 cases exercise it, for example: 'every gate failure names a GateReason and a real Disclosure_Unit, with a non-empty message'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "packages/domain/src/types.ts",
+        "packages/domain/src/value-sets.ts",
+        "packages/kernel/src/preview.ts",
+        "packages/kernel/src/views.ts"
+      ],
+      "testPaths": [
+        "packages/kernel/test/properties/p12-publication-gates.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "31.11",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property test for rights and consent invariants. The Property 13 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 6 cases exercise it, for example: 'R33.3/R34.1/R9.6: every change checkGates accepts yields a resulting state whose rights/consent invariants hold'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "packages/domain/src/dates.ts",
+        "packages/domain/src/types.ts",
+        "packages/domain/src/value-sets.ts",
+        "packages/kernel/src/input.ts",
+        "packages/kernel/src/preview.ts",
+        "packages/kernel/src/project.ts",
+        "packages/kernel/src/views.ts"
+      ],
+      "testPaths": [
+        "packages/kernel/test/properties/p13-rights-consent-invariants.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "31.12",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property test for public addresses. The Property 19 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 7 cases exercise it, for example: 'R29.8: item, attachment, and file addresses are a pure function of the Item_Identifier and fixed text'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "packages/domain/src/public-paths.ts",
+        "packages/domain/src/schemas/people.ts",
+        "packages/domain/src/types.ts",
+        "packages/kernel/src/project.ts",
+        "packages/kernel/src/views.ts",
+        "packages/public-render/src/paths.ts"
+      ],
+      "testPaths": [
+        "packages/testing/test/properties/p19-public-addresses.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "31.13",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property test for the Review_Request state machine. The Property 48 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 2 cases exercise it, for example: 'creates only with an Eligible_Reviewer, completes once by an Eligible_Reviewer, and queues exactly the open requests each Member may review'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "packages/domain/src/identifiers.ts",
+        "packages/domain/src/permissions.ts",
+        "packages/domain/src/types.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/properties/p48-review-state-machine.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "31.14",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property test for item moves. The Property 77 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 6 cases exercise it, for example: 'R39.12: a move sets the moved item's projectId to the new Project and changes no other field of its UnitRecord'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "packages/kernel/src/input.ts",
+        "packages/kernel/src/preview.ts",
+        "packages/kernel/src/project.ts",
+        "packages/kernel/src/views.ts"
+      ],
+      "testPaths": [
+        "packages/kernel/test/properties/p77-item-moves.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "31.15",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property test for Log_Summary rules. The Property 79 test models the property independently of the implementation and runs at least 100 generated cases. 2 suite(s) with 14 cases exercise it, for example: 'copies the Log_Summary text and labels when the Public_Summary is empty and nothing is proposed'; 'R41.1: a 1–2,000 code-point Log_Summary validates, counting code points not UTF-16; labels are allowed'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/web/src/disclosure/public-summary.tsx",
+        "packages/domain/src/richtext.ts",
+        "packages/domain/src/schemas/common.ts",
+        "packages/domain/src/schemas/items.ts",
+        "packages/domain/src/text.ts",
+        "packages/domain/src/types.ts"
+      ],
+      "testPaths": [
+        "apps/app/web/test/properties/p79-log-summary-rules.test.ts",
+        "packages/domain/test/properties/p79-log-summary-rules.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "32.1",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement the rf-ops site deployment in apps/ops/src/deploy.ts. 2 suite(s) with 14 cases exercise it, for example: 'runs the Direct Upload sequence and uploads ONLY the missing files, then promotes under a matching epoch'; 'spends 1 fetch to begin, 1 fetch and no D1 per upload, 2 fetches to finish, all within the rf-ops call budget'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/ops/src/deploy.ts"
+      ],
+      "testPaths": [
+        "apps/ops/test/deploy.test.ts",
+        "apps/ops/test/deploy-slices.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "32.2",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement the Publisher projection step in apps/app/src/do/publisher.ts. 2 suite(s) with 22 cases exercise it, for example: 'resolves unit, root, and project scopes to the Root_Items they touch'; 'escalates to an incident, alerts every Administrator, and never records verified_at when a removed address keeps answering present'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/do/publisher.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/publisher-projection.test.ts",
+        "apps/app/test/publisher-timing.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "32.3",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement planning and rendering in apps/app/src/publisher/plan.ts and apps/app/src/publisher/render.ts. 2 suite(s) with 36 cases exercise it, for example: 'detects added, changed, removed, and unchanged files against the current manifest'; 'an urgent deploy of the empty site (149 files, 86 hashes) reaches verify in ONE alarm inside the slice budget'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/publisher/plan.ts",
+        "apps/app/src/publisher/render.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/publisher-render.test.ts",
+        "apps/app/test/publisher-slicing.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "32.4",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement public file copies in apps/app/src/publisher/files.ts. 1 suite(s) with 16 cases exercise it, for example: 'gives benign kinds a correct, inert type'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/publisher/files.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/publisher-files.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "32.5",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement urgency, deployment, and verification in apps/app/src/publisher/deploy.ts. 2 suite(s) with 44 cases exercise it, for example: 'does not deploy while projection has not finished'; 'escalates to an incident, alerts every Administrator, and never records verified_at when a removed address keeps answering present'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/publisher/deploy.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/publisher-deploy.test.ts",
+        "apps/app/test/publisher-timing.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "32.6",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property test for Publisher convergence. The Property 15 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 3 cases exercise it, for example: 'converges the materialized Public_Views to the kernel projection of the final state under any batching'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/kernel-input.ts",
+        "apps/app/src/publisher/projection.ts",
+        "apps/app/src/publisher/render.ts",
+        "packages/db/src/batch.ts",
+        "packages/db/src/publication-epoch.ts",
+        "packages/domain/src/types.ts",
+        "packages/kernel/src/project.ts",
+        "packages/kernel/src/views.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/properties/p15-publisher-convergence.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "32.7",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write integration tests for publication timing and alerts. 1 suite(s) with 9 cases exercise it, for example: 'escalates to an incident, alerts every Administrator, and never records verified_at when a removed address keeps answering present'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/publisher/deploy.ts",
+        "apps/app/src/do/publisher.ts",
+        "apps/ops/src/alerts.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/publisher-timing.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "34.1",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement the Budget Durable Object in apps/app/src/do/budget.ts and apps/app/src/budget/status.ts. 1 suite(s) with 15 cases exercise it, for example: 'admits within budget and returns a reservation to settle'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/do/budget.ts",
+        "apps/app/src/budget/status.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/budget.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "34.2",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement the WAF switch in apps/ops/src/waf.ts. 1 suite(s) with 5 cases exercise it, for example: 'enables the precreated submit-block rule, PATCHing {enabled:true} with the WAF token'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/ops/src/waf.ts"
+      ],
+      "testPaths": [
+        "apps/ops/test/waf.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "34.3",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement submission sessions and files in apps/submit/src/index.ts and apps/submit/src/sessions.ts. 2 suite(s) with 15 cases exercise it, for example: 'opens a 2-hour session after a passed Turnstile check'; 'answers a preflight from the public site with 204 and the allowed method and header'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/submit/src/index.ts",
+        "apps/submit/src/sessions.ts"
+      ],
+      "testPaths": [
+        "apps/submit/test/sessions.test.ts",
+        "apps/submit/test/cors.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "34.4",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement the submit endpoint in apps/submit/src/submit.ts. 1 suite(s) with 12 cases exercise it, for example: 'stores the Outside_Submission, returns a reference and time, queues the acknowledgement, and fans out events'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/submit/src/submit.ts",
+        "packages/db/src/events/outside.ts"
+      ],
+      "testPaths": [
+        "apps/submit/test/submit.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "34.5",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement the public form scripts in apps/site-shell/src/form.ts and update apps/site-shell/src/search.ts. 2 suite(s) with 32 cases exercise it, for example: 'is never pre-selected in the initial state'; 'hides the form and shows the fixed notice when the dynamic budget is exhausted (R28.11)'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/site-shell/src/form.ts"
+      ],
+      "testPaths": [
+        "apps/site-shell/test/form.test.ts",
+        "apps/site-shell/test/form-dom.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "34.6",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property test for Outside_Submission limits. The Property 88 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 8 cases exercise it, for example: 'accepts a file at or below the Public_Upload_Size_Limit and refuses the first file over it'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/submit/src/index.ts",
+        "apps/submit/src/sessions.ts",
+        "apps/submit/src/submit.ts",
+        "packages/domain/src/settings.ts"
+      ],
+      "testPaths": [
+        "apps/submit/test/properties/p88-outside-submission-limits.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "35.1",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement the Moderation_Queue API in apps/app/src/moderation/queue.ts and apps/app/src/api/routes/moderation.ts. 1 suite(s) with 13 cases exercise it, for example: 'shows the queue to every active Member, Contributor or Administrator (R2.8, R32.2)'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/moderation/queue.ts",
+        "apps/app/src/api/routes/moderation.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/moderation-queue.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "35.2",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement Moderation_Decisions in apps/app/src/moderation/decide.ts. 1 suite(s) with 14 cases exercise it, for example: 'only Administrators may decide (moderation.decide)'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/moderation/decide.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/moderation-decide.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "35.3",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement Response_Links in apps/submit/src/respond.ts and apps/site-shell/src/respond.ts. 2 suite(s) with 26 cases exercise it, for example: 'reports a fresh, unused, undecided Response_Link as usable'; 'reads the token after the leading #, trimming whitespace'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/submit/src/respond.ts",
+        "apps/site-shell/src/respond.ts"
+      ],
+      "testPaths": [
+        "apps/submit/test/respond.test.ts",
+        "apps/site-shell/test/respond.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "35.4",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement Response_Target Reminders in apps/app/src/moderation/reminders.ts. 1 suite(s) with 7 cases exercise it, for example: 'is null before 10 days, then steps at 10, 14, and every 7 days after'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/moderation/reminders.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/moderation-reminders.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "35.5",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement the moderation retention sweeps in apps/app/src/moderation/retention.ts. 1 suite(s) with 8 cases exercise it, for example: 'deletes the files of a rejected Outside_Submission within 24 hours, including Response_Link files'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/moderation/retention.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/moderation-retention.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "35.6",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Build the moderation screens in apps/app/web/src/moderation/. 1 suite(s) with 31 cases exercise it, for example: 'lists submissions with type, state, Project, and the General_Choice (R32.17)'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/web/src/moderation/acceptance.tsx",
+        "apps/app/web/src/moderation/contact-review.tsx",
+        "apps/app/web/src/moderation/decide.tsx",
+        "apps/app/web/src/moderation/model.ts",
+        "apps/app/web/src/moderation/queue.tsx",
+        "apps/app/web/src/moderation/submission.tsx"
+      ],
+      "testPaths": [
+        "apps/app/web/test/moderation.test.tsx"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "35.7",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property test for not-found responses. The Property 7 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 1 cases exercise it, for example: 'serves no page for a Not_Published unit or Project and returns the same not-found response as for a nonexistent address'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "packages/domain/src/public-paths.ts",
+        "packages/domain/src/types.ts",
+        "packages/kernel/src/project.ts",
+        "packages/kernel/src/views.ts",
+        "packages/public-render/src/paths.ts",
+        "packages/public-render/src/render-site.ts"
+      ],
+      "testPaths": [
+        "packages/testing/test/properties/p07-not-found-indistinguishable.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "35.8",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property test for Project choice. The Property 78 test models the property independently of the implementation and runs at least 100 generated cases. 2 suite(s) with 6 cases exercise it, for example: 'returns the Projects by position and preselects the starting page’s Project, the only Project, or none'; 'accepts the General_Choice and every Public Project, and refuses anything not in the offered set'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "packages/db/src/batch.ts",
+        "packages/db/src/schema/core.ts",
+        "packages/domain/src/identifiers.ts",
+        "packages/domain/src/types.ts",
+        "packages/domain/src/schemas/common.ts",
+        "packages/domain/src/schemas/other.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/properties/p78-project-choice.test.ts",
+        "packages/domain/test/properties/p78-project-choice.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "35.9",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property test for Response_Links. The Property 89 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 3 cases exercise it, for example: 'refuses a malformed, unknown, expired, used, or finally-decided link identically and leaves the submission untouched'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/submit/src/index.ts",
+        "apps/submit/src/respond.ts"
+      ],
+      "testPaths": [
+        "apps/submit/test/properties/p89-response-links.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "35.10",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property test for Moderation_Decisions. The Property 90 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 1 cases exercise it, for example: 'records at most one final decision, refuses later ones showing the recorded decision, and never changes an earlier row'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "packages/domain/src/identifiers.ts",
+        "packages/domain/src/types.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/properties/p90-moderation-decisions.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "35.11",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write integration tests for moderation flows. 1 suite(s) with 7 cases exercise it, for example: 'accepting an Outside_Submission creates one Submission whose Items carry the New_Submission flags and feed entry (R32.5)'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/moderation/decide.ts",
+        "apps/app/src/moderation/queue.ts",
+        "apps/app/src/moderation/retention.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/moderation-flows.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "35.12",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement Contact_Reviews and submitter corrections in apps/app/src/moderation/contact-review.ts. 1 suite(s) with 15 cases exercise it, for example: 'schedules the first Contact_Review 12 months after accepting an Outside_Submission other than a Removal_Request'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/moderation/contact-review.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/moderation-contact-review.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "35.13",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Build the Contact_Review screens in apps/app/web/src/moderation/contact-review.tsx. 1 suite(s) with 31 cases exercise it, for example: 'lists submissions with type, state, Project, and the General_Choice (R32.17)'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/web/src/moderation/contact-review.tsx"
+      ],
+      "testPaths": [
+        "apps/app/web/test/moderation.test.tsx"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "36.1",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement the journal import job in apps/app/src/jobs/journal-import.ts and POST /imports/journal. 1 suite(s) with 17 cases exercise it, for example: 'rejects a non-Administrator and an unparseable journal'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/jobs/journal-import.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/journal-import.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "36.2",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement the attachment import in apps/app/src/jobs/journal-import.ts. 1 suite(s) with 17 cases exercise it, for example: 'rejects a non-Administrator and an unparseable journal'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/jobs/journal-import.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/journal-import.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "36.3",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Build the journal import screen in apps/app/web/src/imports/journal.tsx. 1 suite(s) with 7 cases exercise it, for example: 'counts entries, sections, and unassigned attachments, and resolves each attachment parent (R27.7, R26.15)'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/web/src/imports/journal.tsx"
+      ],
+      "testPaths": [
+        "apps/app/web/test/journal-import.test.tsx"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "36.4",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write integration tests for the journal import. 1 suite(s) with 17 cases exercise it, for example: 'rejects a non-Administrator and an unparseable journal'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/jobs/journal-import.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/journal-import.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "37.1",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement the Manifest_Parser in packages/manifest/src/parse.ts. 4 suite(s) with 38 cases exercise it, for example: 'strips a leading byte order mark before decoding'; 'begins with a UTF-8 byte order mark'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "packages/manifest/src/parse.ts"
+      ],
+      "testPaths": [
+        "packages/manifest/test/parse.test.ts",
+        "packages/manifest/test/print.test.ts",
+        "packages/manifest/test/properties/p68-manifest-round-trip.test.ts",
+        "packages/manifest/test/properties/p69-manifest-parsing.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "37.2",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement the Manifest_Printer in packages/manifest/src/print.ts. 3 suite(s) with 15 cases exercise it, for example: 'begins with a UTF-8 byte order mark'; 'parse(print(x)) === x: printed rows round-trip with their columns, order, and exact cell values (R38.4, R38.5)'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "packages/manifest/src/print.ts"
+      ],
+      "testPaths": [
+        "packages/manifest/test/print.test.ts",
+        "packages/manifest/test/properties/p68-manifest-round-trip.test.ts",
+        "packages/manifest/test/properties/p69-manifest-parsing.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "37.3",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property test for the manifest round trip. The Property 68 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 4 cases exercise it, for example: 'parse(print(x)) === x: printed rows round-trip with their columns, order, and exact cell values (R38.4, R38.5)'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "packages/manifest/src/parse.ts",
+        "packages/manifest/src/print.ts"
+      ],
+      "testPaths": [
+        "packages/manifest/test/properties/p68-manifest-round-trip.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "37.4",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property test for manifest parsing and validation. The Property 69 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 3 cases exercise it, for example: 'EXACT values: the parse output equals a model computed independently from the generated rows (R38.1, R38.3, R37.1)'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "packages/manifest/src/parse.ts",
+        "packages/manifest/src/print.ts"
+      ],
+      "testPaths": [
+        "packages/manifest/test/properties/p69-manifest-parsing.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "37.5",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement Bulk_Import validation in apps/app/src/jobs/bulk-validate.ts. 1 suite(s) with 28 cases exercise it, for example: 'maps a fully valid Source row with no errors'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/jobs/bulk-validate.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/bulk-validate.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "37.6",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement the Bulk_Import job in apps/app/src/jobs/bulk-import.ts and POST /imports/bulk. 1 suite(s) with 11 cases exercise it, for example: 'rejects a non-Administrator'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/jobs/bulk-import.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/bulk-import.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "37.7",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Build the Bulk_Import screen in apps/app/web/src/imports/bulk.tsx. 1 suite(s) with 7 cases exercise it, for example: 'parses a CSV manifest, counts rows, and lists files no row names (R37.3, R37.4)'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/web/src/imports/bulk.tsx"
+      ],
+      "testPaths": [
+        "apps/app/web/test/bulk-import.test.tsx"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "37.8",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property test for import idempotency and mapping. The Property 70 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 1 cases exercise it, for example: 'maps every row and file onto the created records, and a re-import creates nothing new'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/api/routes/imports.ts",
+        "apps/app/src/do/jobs.ts",
+        "apps/app/src/env.ts",
+        "apps/app/src/jobs/bulk-import.ts",
+        "packages/domain/src/identifiers.ts",
+        "packages/domain/src/permissions.ts",
+        "packages/domain/src/types.ts",
+        "packages/domain/src/value-sets.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/properties/p70-import-idempotency.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "37.9",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property test for import reports. The Property 71 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 4 cases exercise it, for example: 'partitions every manifest row into created/skipped/failed and accounts for every file and unreferenced file (R37.4, R37.11)'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/api/routes/imports.ts",
+        "apps/app/src/do/jobs.ts",
+        "apps/app/src/env.ts",
+        "apps/app/src/jobs/bulk-import.ts",
+        "apps/app/src/jobs/journal-import.ts",
+        "packages/domain/src/identifiers.ts",
+        "packages/domain/src/permissions.ts",
+        "packages/domain/src/types.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/properties/p71-import-reports.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "37.10",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property test for atomic saves. The Property 28 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 2 cases exercise it, for example: 'leaves the database byte-identical after every aborted save and present after every committed one'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/env.ts",
+        "packages/db/src/batch.ts",
+        "packages/db/src/schema/core.ts",
+        "packages/domain/src/identifiers.ts",
+        "packages/domain/src/types.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/properties/p28-atomic-saves.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "37.11",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property test for budget gates. The Property 81 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 5 cases exercise it, for example: 'meters exactly the allowance per UTC day, pauses beyond it, and resets on a new day'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/api/errors.ts",
+        "apps/app/src/api/routes/imports.ts",
+        "apps/app/src/do/jobs.ts",
+        "apps/app/src/env.ts",
+        "apps/app/src/jobs/bulk-import.ts",
+        "packages/domain/src/permissions.ts",
+        "packages/domain/src/settings.ts",
+        "packages/domain/src/types.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/properties/p81-budget-gates.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "38.1",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement the export templates and data files in packages/public-render/src/export/. 1 suite(s) with 18 cases exercise it, for example: 'produces the index, every exported page, the data files, the licence, the manifest, and the checksums'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "packages/public-render/src/export/assets.ts",
+        "packages/public-render/src/export/data.ts",
+        "packages/public-render/src/export/frame.ts",
+        "packages/public-render/src/export/index.ts",
+        "packages/public-render/src/export/links.ts",
+        "packages/public-render/src/export/manifest.ts",
+        "packages/public-render/src/export/paths.ts",
+        "packages/public-render/src/export/render-export.ts"
+      ],
+      "testPaths": [
+        "packages/public-render/test/export.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "38.2",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement the Public_Archive_Export job in apps/app/src/jobs/export.ts, POST /exports, and GET /exports. 1 suite(s) with 9 cases exercise it, for example: 'builds a complete package: every manifest entry gets size and sha256, the Attachment copy is present, and volumes are registered'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/jobs/export.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/export.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "38.3",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement package volume streaming in apps/dl/src/tar.ts. 2 suite(s) with 15 cases exercise it, for example: 'writes correct octal fields and a valid checksum'; 'assembles a public export volume manifest into a POSIX tar through a Download_Link'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/dl/src/tar.ts"
+      ],
+      "testPaths": [
+        "apps/dl/test/tar.test.ts",
+        "apps/dl/test/tar-volume.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "38.4",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement the Internal_Backup job in apps/app/src/jobs/backup.ts and POST /backups. 1 suite(s) with 11 cases exercise it, for example: 'seals a complete authenticated package whose counts and digests match the seeded rows, holding the lease across pages'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/jobs/backup.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/backup.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "38.5",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement restore in apps/app/src/jobs/restore.ts and POST /restores. 1 suite(s) with 18 cases exercise it, for example: 'restores every authoritative row with its original ids/attribution and reconciles the bootstrap Administrator'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/jobs/restore.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/restore.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "38.6",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Build the export and backup screens in apps/app/web/src/exports/. 1 suite(s) with 10 cases exercise it, for example: 'lists an export with its state, staleness labels, missing files, and a deletion offer for an Administrator (R35.7, R35.10)'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/web/src/exports/backups.tsx",
+        "apps/app/web/src/exports/exports.tsx"
+      ],
+      "testPaths": [
+        "apps/app/web/test/exports.test.tsx"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "38.7",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property test for Item_Identifiers. The Property 41 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 3 cases exercise it, for example: 'assigns Research_Items and Attachments canonical twelve-character Crockford identifiers through the real create path'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/records/submissions.ts",
+        "packages/db/src/schema/core.ts",
+        "packages/domain/src/identifiers.ts",
+        "packages/domain/src/types.ts",
+        "packages/domain/src/value-sets.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/properties/p41-item-identifiers.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "38.8",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property test for the export JSON round trip. The Property 72 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 1 cases exercise it, for example: 'encodes every unit of a snapshot and parses it back with each value, date, Cross_Link, Project, and child position intact'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "packages/domain/src/history.ts",
+        "packages/domain/src/richtext.ts",
+        "packages/domain/src/types.ts",
+        "packages/kernel/src/views.ts",
+        "packages/public-render/src/export/data.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/properties/p72-export-json-round-trip.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "38.9",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property test for export snapshots. The Property 73 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 1 cases exercise it, for example: . All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "packages/domain/src/text-fragments.ts",
+        "packages/kernel/src/views.ts",
+        "packages/public-render/src/export/manifest.ts",
+        "packages/public-render/src/export/paths.ts",
+        "packages/public-render/src/export/render-export.ts",
+        "packages/public-render/src/site.ts"
+      ],
+      "testPaths": [
+        "packages/testing/test/properties/p73-export-snapshots.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "38.10",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property test for backup and restore. The Property 74 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 1 cases exercise it, for example: . All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/api/routes/backups.ts",
+        "apps/app/src/do/jobs.ts",
+        "apps/app/src/jobs/backup.ts",
+        "apps/app/src/jobs/export.ts",
+        "apps/app/src/jobs/restore.ts",
+        "apps/app/src/publisher/projection.ts",
+        "packages/db/src/schema/core.ts",
+        "packages/domain/src/identifiers.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/properties/p74-backup-restore-round-trip.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "38.11",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property test for package retention and staleness. The Property 75 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 7 cases exercise it, for example: 'scheduledToDelete removes exactly the scheduled exports that are not among the 3 most recent complete ones'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/jobs/backup-retention.ts",
+        "apps/app/src/jobs/export-manifest.ts",
+        "packages/public-render/src/export/manifest.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/properties/p75-package-retention-staleness.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "38.12",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property test for retention sweeps. The Property 86 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 8 cases exercise it, for example: 'keeps an upload strictly inside the 24h window and deletes it exactly at or after the boundary'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/do/budget.ts",
+        "apps/app/src/env.ts",
+        "apps/app/src/files/uploads.ts",
+        "apps/app/src/jobs/backup-cron.ts",
+        "apps/app/src/jobs/backup-retention.ts",
+        "apps/app/src/jobs/export-cron.ts",
+        "apps/app/src/moderation/contact-review.ts",
+        "apps/app/src/moderation/retention.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/properties/p86-retention-sweeps.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "38.13",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property test for character preservation. The Property 92 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 1 cases exercise it, for example: 'renders every stored character of a title, identifier, and Credit name back unchanged, with digit strings kept as strings'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "packages/kernel/src/views.ts",
+        "packages/public-render/src/paths.ts",
+        "packages/public-render/src/render-site.ts"
+      ],
+      "testPaths": [
+        "packages/testing/test/properties/p92-character-preservation.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "40.1",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement the Project_Log in apps/app/src/projects/log.ts and GET /projects/{id}/log. 1 suite(s) with 18 cases exercise it, for example: 'lists every Research_Item of the Project newest first by Log_Date then creation time'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/projects/log.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/project-log.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "40.2",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement the Workspace lists in apps/app/src/lists/ and apps/app/src/api/routes/lists.ts. 1 suite(s) with 25 cases exercise it, for example: 'lists Findings newest first with the claim, Scope_Caveat, status, supersession, Project, and Restricted mark'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/lists/archival.ts",
+        "apps/app/src/lists/correspondences.ts",
+        "apps/app/src/lists/findings.ts",
+        "apps/app/src/lists/hypotheses.ts",
+        "apps/app/src/lists/runs.ts",
+        "apps/app/src/lists/shared.ts",
+        "apps/app/src/api/routes/lists.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/lists.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "40.3",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Build the Project_Log and list screens in apps/app/web/src/lists/ and apps/app/web/src/projects/log.tsx. 2 suite(s) with 17 cases exercise it, for example: 'shows a Finding with its Project, Restricted mark, link, and claim (R5.7, R39.15, R47.11)'; 'reads the default log, shows an entry with its flag, Log Summary, and status, and records the view (R43.1, R43.3, R18.12)'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/web/src/lists/lists.tsx",
+        "apps/app/web/src/projects/log.tsx",
+        "apps/app/web/src/activity/activity.tsx"
+      ],
+      "testPaths": [
+        "apps/app/web/test/lists.test.tsx",
+        "apps/app/web/test/project-log.test.tsx"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "40.4",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property test for query and date-range validation. The Property 64 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 6 cases exercise it, for example: 'parses a valid inclusive day range into a half-open interval that bounds the local dates exactly (R43.8)'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/activity/feed.ts",
+        "apps/app/src/api/errors.ts",
+        "apps/app/src/api/input.ts",
+        "apps/app/src/projects/log.ts",
+        "apps/app/src/search/query.ts",
+        "packages/domain/src/dates.ts",
+        "packages/domain/src/schemas/common.ts",
+        "packages/domain/src/types.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/properties/p64-query-date-validation.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "40.5",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property test for Workspace lists. The Property 65 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 5 cases exercise it, for example: 'returns the conjunction of the Project_Log filters and pages both orders losslessly'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/env.ts",
+        "apps/app/src/projects/log.ts",
+        "packages/db/src/batch.ts",
+        "packages/db/src/schema/core.ts",
+        "packages/domain/src/dates.ts",
+        "packages/domain/src/identifiers.ts",
+        "packages/domain/src/permissions.ts",
+        "packages/domain/src/types.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/properties/p65-workspace-lists.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "41.1",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement the Dissent_Note API in apps/app/src/dissent/dissent.ts and apps/app/src/api/routes/dissent.ts. 1 suite(s) with 12 cases exercise it, for example: 'records the text, author, time, and a snapshot of the Log_Summary, Not_Published, under the Research_Item'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/dissent/dissent.ts",
+        "apps/app/src/api/routes/dissent.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/dissent.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "41.2",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement Dissent_Note display in apps/app/src/dissent/display.ts and update apps/app/src/projects/log.ts. 1 suite(s) with 6 cases exercise it, for example: 'shows non-withdrawn notes directly after the Log_Summary, oldest first by attachment time'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/dissent/display.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/dissent-display.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "41.3",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Build the Dissent_Note screens in apps/app/web/src/dissent/. 1 suite(s) with 17 cases exercise it, for example: 'shows non-withdrawn notes with their author and last-saved time, then withdrawn notes with date and reason'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/web/src/dissent/dissent.tsx"
+      ],
+      "testPaths": [
+        "apps/app/web/test/dissent.test.tsx"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "41.4",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property test for new Disclosure_Units. The Property 3 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 3 cases exercise it, for example: 'starts every unit created through each real app handler Not_Published, never Public or Withheld, with no public trace'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/api/routes/imports.ts",
+        "apps/app/src/do/jobs.ts",
+        "packages/domain/src/identifiers.ts",
+        "packages/domain/src/types.ts",
+        "packages/domain/src/value-sets.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/properties/p03-new-units-not-published.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "41.5",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property test for permanent deletion. The Property 36 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 3 cases exercise it, for example: 'removes the Reply content and its attachment children while its unit row stays as the placeholder and its child Replies keep their parent'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/do/jobs.ts",
+        "apps/app/src/jobs/deletion.ts",
+        "packages/domain/src/identifiers.ts",
+        "packages/domain/src/types.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/properties/p36-permanent-deletion-tombstone.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "41.6",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property test for event recipients. The Property 54 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 1 cases exercise it, for example: 'writes exactly the modelled recipient set for each event type, deduplicated, active-only, actor-excluded'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/notifications/fanout.ts",
+        "packages/db/src/batch.ts",
+        "packages/domain/src/identifiers.ts",
+        "packages/domain/src/permissions.ts",
+        "packages/domain/src/types.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/properties/p54-event-recipients.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "41.7",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property test for Dissent_Notes. The Property 80 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 2 cases exercise it, for example: 'sets aboutEarlierWording and the comparison iff the note snapshot differs from the current wording, in text or in labels'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/dissent/display.ts",
+        "packages/domain/src/richtext.ts",
+        "packages/domain/src/types.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/properties/p80-dissent-wording.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "42.1",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement the AI draft API in apps/app/src/ai/drafts.ts, GET /ai/status, and POST /ai/drafts. 1 suite(s) with 15 cases exercise it, for example: 'is available while the setting is On and Neurons remain, reserving nothing'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/ai/drafts.ts",
+        "apps/app/src/api/routes/ai.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/ai-drafts.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "42.2",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement draft output shaping in packages/domain/src/ai-output.ts. 1 suite(s) with 22 cases exercise it, for example: 'leaves a draft within 2,000 characters unchanged in substance'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "packages/domain/src/ai-output.ts"
+      ],
+      "testPaths": [
+        "packages/domain/test/ai-output.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "42.3",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Record AI provenance on save in apps/app/src/records/pipeline.ts. 2 suite(s) with 25 cases exercise it, for example: 'lists only the fields present in the edit whose values differ, with their classes'; 'carries the model id and version through verbatim, whatever the saved text'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/records/pipeline.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/pipeline.test.ts",
+        "apps/app/test/properties/p85-ai-provenance.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "42.4",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Build the editor draft controls in apps/app/web/src/editor/ai-draft.tsx. 1 suite(s) with 9 cases exercise it, for example: 'offers the request only while GET /ai/status is available (R44.10, R44.11, R44.17)'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/web/src/editor/ai-draft.tsx"
+      ],
+      "testPaths": [
+        "apps/app/web/test/ai-draft.test.tsx"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "42.5",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property test for the AI allocation. The Property 83 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 3 cases exercise it, for example: 'keeps committed-plus-reserved within the allocation across any sequence of reservations and settlements'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/do/budget.ts",
+        "apps/app/src/env.ts",
+        "packages/domain/src/settings.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/properties/p83-ai-allocation.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "42.6",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property test for AI input and output. The Property 84 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 8 cases exercise it, for example: 'assembles title, free text, sections, Group_Note, and Attachment metadata — never file contents — in display order'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/ai/input.ts",
+        "apps/app/src/records/items.ts",
+        "apps/app/src/records/kinds/kind.ts",
+        "packages/domain/src/ai-output.ts",
+        "packages/domain/src/ai.ts",
+        "packages/domain/src/richtext.ts",
+        "packages/domain/src/text.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/properties/p84-ai-input-and-output.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "42.7",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property test for AI provenance. The Property 85 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 9 cases exercise it, for example: 'carries the model id and version through verbatim, whatever the saved text'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/records/items.ts",
+        "packages/domain/src/ai.ts",
+        "packages/domain/src/richtext.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/properties/p85-ai-provenance.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "43.1",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement Policy_Section editing in apps/app/src/policy/policy.ts and GET/PUT /policy/{page}. 1 suite(s) with 14 cases exercise it, for example: 'returns the fixed sections in order and a preview rendered as the Public_Site shows it'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/policy/policy.ts",
+        "apps/app/src/api/routes/policy.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/policy.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "43.2",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement the Responsible_Person designation and alert in apps/app/src/policy/responsible.ts. 1 suite(s) with 4 cases exercise it, for example: 'alerts every Administrator within 15 minutes of the Responsible_Person becoming Revoked'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/policy/responsible.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/responsible-person.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "43.3",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement Policy_Page generated content and last-updated dates in apps/app/src/publisher/policy-pages.ts. 1 suite(s) with 11 cases exercise it, for example: 'maps each generated input to the page that presents it, and nothing to About or Corrections'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/publisher/policy-pages.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/policy-pages.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "43.4",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Build the policy, settings, and value-set screens in apps/app/web/src/admin/. 1 suite(s) with 21 cases exercise it, for example: 'shows the fixed sections, the public-site preview, and applies only after confirmation with a mark (R46.27)'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/web/src/admin/labels.ts",
+        "apps/app/web/src/admin/policy.tsx",
+        "apps/app/web/src/admin/publishing.tsx",
+        "apps/app/web/src/admin/settings.tsx",
+        "apps/app/web/src/admin/value-sets.tsx"
+      ],
+      "testPaths": [
+        "apps/app/web/test/admin.test.tsx"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "43.9",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property test for concurrent saves. The Property 29 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 3 cases exercise it, for example: 'commits exactly one, refuses the rest with a revision-reporting conflict, stays atomic, and advances rev by one; a re-issue then commits'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "packages/db/src/schema/core.ts",
+        "packages/db/src/seed/policy-sections.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/properties/p29-concurrent-saves.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "43.10",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property test for reminder and alert schedules. The Property 87 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 7 cases exercise it, for example: 'stays silent strictly inside the interval, reminds at/after the first interval, and repeats only after a further interval'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/backup/rpo.ts",
+        "apps/app/src/env.ts",
+        "apps/app/src/jobs/export-cron.ts",
+        "apps/app/src/moderation/contact-review.ts",
+        "apps/app/src/moderation/reminders.ts",
+        "apps/app/src/notifications/reminders.ts",
+        "apps/app/src/policy/responsible.ts",
+        "packages/domain/src/identifiers.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/properties/p87-reminder-alert-schedules.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "43.11",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property test for the People page and Responsible_Person statement. The Property 95 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 3 cases exercise it, for example: 'R46.5/R46.6: the People page shows exactly the active setting-On Members, scrubbed, in alphabetical order, or the no-profile statement'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "packages/design/src/fixed-texts.ts",
+        "packages/kernel/src/substitute.ts",
+        "packages/public-render/src/paths.ts",
+        "packages/public-render/src/policy.ts",
+        "packages/public-render/src/render-site.ts"
+      ],
+      "testPaths": [
+        "packages/testing/test/properties/p95-people-and-responsible-person.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "43.12",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property test for last-updated dates. The Property 98 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 3 cases exercise it, for example: 'pageLastUpdated takes max(section, generated), is idempotent on a stable hash, and never advances without a clock'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/publisher/policy-pages.ts",
+        "packages/design/src/fixed-texts.ts",
+        "packages/domain/src/retention.ts",
+        "packages/domain/src/types.ts",
+        "packages/kernel/src/substitute.ts",
+        "packages/kernel/src/views.ts",
+        "packages/public-render/src/blocks.ts",
+        "packages/public-render/src/policy.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/properties/p98-last-updated-dates.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "44.1",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement the analytics queries in apps/ops/src/analytics.ts. 1 suite(s) with 6 cases exercise it, for example: 'POSTs the usage GraphQL query with the account filter and time window, Bearer token in the header only'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/ops/src/analytics.ts"
+      ],
+      "testPaths": [
+        "apps/ops/test/analytics.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "44.2",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement usage alerts in apps/app/src/usage/alerts.ts. 1 suite(s) with 10 cases exercise it, for example: 'alerts only on an upward crossing from below 80% while armed, then holds'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/usage/alerts.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/usage-alerts.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "44.3",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property test for usage alerts. The Property 82 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 6 cases exercise it, for example: 'folds classifyCrossing over a reading sequence and matches the independent upward-crossing count'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/env.ts",
+        "apps/app/src/usage/alerts.ts",
+        "packages/domain/src/admission.ts",
+        "packages/domain/src/identifiers.ts",
+        "packages/domain/src/ops.ts",
+        "packages/domain/src/permissions.ts",
+        "packages/domain/src/settings.ts",
+        "packages/domain/src/types.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/properties/p82-usage-alerts.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "45.1",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement the Workspace security headers in apps/app/src/api/security-headers.ts and apps/app/web/public/_headers. 1 suite(s) with 6 cases exercise it, for example: 'produces the exact Workspace CSP and the companion headers for a configured account'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/api/security-headers.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/security-headers.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "45.2",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement the Public_Site headers in packages/public-render/src/headers.ts. 1 suite(s) with 11 cases exercise it, for example: 'names the configured submit and files origins on the form pages, with the base form pages included'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "packages/public-render/src/headers.ts"
+      ],
+      "testPaths": [
+        "packages/public-render/test/headers.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "45.4",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write the CI smoke checks in tools/smoke/. 1 suite(s) with 18 cases exercise it, for example: 'finds no violations in any check'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "tools/smoke/index.ts"
+      ],
+      "testPaths": [
+        "tools/test/smoke.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "46.1",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement metrics and the operations status endpoint in apps/app/src/metrics.ts and GET /api/v1/ops/status. 1 suite(s) with 12 cases exercise it, for example: 'emits one content-free `metric` event with a request count of one, wall time, and the tracked D1 rows'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/metrics.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/metrics.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "48.1",
+      "state": "accepted",
+      "reason": "Reviewed infra/cloudflare resources and provisioning against the task text. The provisioning tests run the dry-run plan without account access and check the declared D1, R2 CORS and lifecycle, cache, WAF, rate-limit, Access and Turnstile resources plus the per-Worker secret list and missing-secret report. Real account provisioning remains the user setup task 48.6.",
+      "sourcePaths": [
+        "infra/cloudflare/resources.ts",
+        "infra/cloudflare/provision.ts",
+        "infra/secrets.ts",
+        "tools/check-secrets.ts"
+      ],
+      "testPaths": [
+        "tools/test/cloudflare-provision.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "48.3",
+      "state": "accepted",
+      "reason": "Reviewed infra/dns/records.ts and tools/check-email-dns.ts. Tests check the declared records and the checker's reporting against synthetic resolver answers. Live DNS verification is part of the user setup checklists.",
+      "sourcePaths": [
+        "infra/dns/records.ts",
+        "tools/check-email-dns.ts"
+      ],
+      "testPaths": [
+        "tools/test/check-email-dns.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "48.4",
+      "state": "accepted",
+      "reason": "Reviewed the deployment plan, bootstrap and CI workflow against the task text. Local tests cover the compatible rollout plan and scope resolution, the deploy guard refusing local entrypoints and incompatible inventories, and the bootstrap plan validating installation identity, public copy and required inputs. Synthetic fixtures only; no deployment ran. Production activation remains task 48.9.",
+      "sourcePaths": [
+        "scripts/deploy.ts",
+        "tools/bootstrap.ts",
+        "tools/src/bootstrap-plan.ts",
+        "tools/src/deployment-plan.ts",
+        ".github/workflows/ci.yml"
+      ],
+      "testPaths": [
+        "tools/test/deploy.test.ts",
+        "tools/test/bootstrap.test.ts",
+        "tools/test/release-tools.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "48.10",
+      "state": "accepted",
+      "reason": "Reviewed the Installation_Public_Copy bundle and the installation guide against the task text. Tests validate complete and partial bundles, digest stability, and render a synthetic second installation whose masthead, Mission, About prose, Principles and content licence differ, finding no ResearchForce.org wording in its pages or export and refusing generation with missing copy. The guide documents configuration and the software/content licensing boundary; LICENSE and NOTICE.md ship with the source.",
+      "sourcePaths": [
+        "docs/instance/researchforce-org-content.md",
+        "docs/instance/installation.md",
+        "packages/design/src/installation.ts",
+        "packages/public-render/src/render-site.ts"
+      ],
+      "testPaths": [
+        "packages/design/test/installation.test.ts",
+        "packages/public-render/test/installation.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "52.4",
+      "state": "accepted",
+      "reason": "Reviewed against the task text after the earlier partial record. POST /items/{id}/access and /access/bulk now preview the Members gaining access, the units a restriction resets and, through loadProjectionInput and the kernel's diffViews, the Public_Views it removes; restricting resets levels with Disclosure_Changes, events and a publish row in one batch; history lists Access_Change Revisions and Restoration keeps access. The Revoked-Owner widening goes through the Dual_Approval path in reviews/dual.ts (task 54.5). The access, Property 101, history and dual-approval suites cover these, including 'renders the Public_Views a restriction removes'. Closes the gap the partial record named (31.1 and 54.5 are now complete).",
+      "sourcePaths": [
+        "apps/app/src/records/access.ts",
+        "apps/app/src/records/history.ts",
+        "packages/domain/src/history.ts",
+        "apps/app/src/reviews/dual.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/access.test.ts",
+        "apps/app/test/properties/p101-access-changes.test.ts",
+        "apps/app/test/history.test.ts",
+        "apps/app/test/dual-approvals.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "52.5",
+      "state": "accepted",
+      "reason": "Reviewed against the task text after the earlier partial record. loadProjectionInput reads research_items.access_level into the kernel's restricted flag, effective() treats a Restricted root as a Not_Published ancestor, and checkGates refuses Public or Withheld levels, presentations, summaries and Disclosure_Lines on a Restricted item, naming it. Kernel project and preview tests cover both rules directly and the workerd access suite covers the loader path. Closes the gap the partial record named (31.1 and 54.2 are now complete).",
+      "sourcePaths": [
+        "packages/kernel/src/effective.ts",
+        "packages/kernel/src/input.ts",
+        "packages/kernel/src/project.ts",
+        "apps/app/src/kernel-input.ts"
+      ],
+      "testPaths": [
+        "packages/kernel/test/project.test.ts",
+        "packages/kernel/test/preview.test.ts",
+        "apps/app/test/access.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "52.6",
+      "state": "accepted",
+      "reason": "Reviewed against the task text after the earlier partial record. The access screens provide the item-form access fields with the Member picker and always-read statement, the Restricted mark with Owner and Access_List on item pages, lists and Thread headers, the preview-and-confirm dialog listing removed Public_Views, and bulk selection on the Workspace lists. Component tests cover the form, dialog, stale confirmation, refusals, the 1,000-record limit and bulk list selection. Closes the gap the partial record named (40.3 and 31.1 are now complete).",
+      "sourcePaths": [
+        "apps/app/web/src/access/access.tsx",
+        "apps/app/web/src/lists/lists.tsx",
+        "apps/app/web/src/items/page.tsx"
+      ],
+      "testPaths": [
+        "apps/app/web/test/access.test.tsx",
+        "apps/app/web/test/lists.test.tsx"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "53.1",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement the move API in apps/app/src/files/move.ts and POST /attachments/{id}/move. 1 suite(s) with 12 cases exercise it, for example: 'needs edit Permission on the moved Attachment: a Contributor who is not the Owner is refused'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/files/move.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/files-move.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "53.2",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Build the move dialog in apps/app/web/src/files/move.tsx. 1 suite(s) with 3 cases exercise it, for example: 'previews a move that widens a public view and confirms with the token (R12.12, R12.14)'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/web/src/files/move.tsx"
+      ],
+      "testPaths": [
+        "apps/app/web/test/files-move.test.tsx"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "53.3",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property test for Attachment moves. The Property 105 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 1 cases exercise it, for example: 'reparents the whole chain and preserves identity when allowed, and changes nothing when refused'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/env.ts",
+        "apps/app/src/files/move.ts",
+        "packages/domain/src/identifiers.ts",
+        "packages/domain/src/permissions.ts",
+        "packages/domain/src/types.ts",
+        "packages/domain/src/value-sets.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/properties/p105-attachment-moves.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "54.1",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Add the consent, hold, and approval data. 1 suite(s) with 6 cases exercise it, for example: 'rebuilds review_requests with a request_type column and maps every existing row'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "packages/db/migrations/core/0025_publication_consent.sql",
+        "packages/db/migrations/core/0027_dual_withdraw.sql",
+        "packages/db/src/schema/core/consent.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/migration-publication-consent.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "54.2",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Add the widening test and the new gates to the kernel and loadProjectionInput. 3 suite(s) with 32 cases exercise it, for example: 'is true when a unit is newly made Public and false when it is narrowed'; 'needs the consent.propose permission'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "packages/kernel/src/consent.ts",
+        "packages/kernel/src/effective.ts",
+        "packages/kernel/src/project.ts",
+        "apps/app/src/kernel-input.ts",
+        "apps/app/src/disclosure/apply.ts"
+      ],
+      "testPaths": [
+        "packages/kernel/test/consent.test.ts",
+        "apps/app/test/publication-proposals.test.ts",
+        "apps/app/test/properties/p102-publication-consent.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "54.3",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement Publication_Proposals and consents in apps/app/src/reviews/proposals.ts. 2 suite(s) with 30 cases exercise it, for example: 'needs the consent.propose permission'; 'needs the review.request permission'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/reviews/proposals.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/publication-proposals.test.ts",
+        "apps/app/test/publication-requests.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "54.4",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement Confidentiality_Holds in apps/app/src/disclosure/holds.ts. 1 suite(s) with 11 cases exercise it, for example: 'needs the hold.place permission for an active Member who can read the Item'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/disclosure/holds.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/holds.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "54.5",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement Dual_Approvals in apps/app/src/reviews/dual.ts. 1 suite(s) with 15 cases exercise it, for example: 'needs the dual.propose permission, which a Contributor lacks'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/reviews/dual.ts",
+        "apps/app/src/api/routes/dual.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/dual-approvals.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "54.6",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Build the consent, hold, and approval screens in apps/app/web/src/disclosure/ and apps/app/web/src/reviews/. 2 suite(s) with 35 cases exercise it, for example: 'offers to send a Publication_Proposal naming the Consenting_Member on an owner_consent failure (R23.17, R23.18)'; 'offer active Members other than the requester, Specialties that are not retired, and every Role'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/web/src/disclosure/holds.tsx",
+        "apps/app/web/src/disclosure/publication-request.tsx",
+        "apps/app/web/src/disclosure/disclosure.tsx"
+      ],
+      "testPaths": [
+        "apps/app/web/test/consent.test.tsx",
+        "apps/app/web/test/reviews.test.tsx"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "54.7",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property test for publication consent. The Property 102 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 3 cases exercise it, for example: 'needs no Publication_Consent when the acting Administrator is the unit\\u2019s own Consenting_Member'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/disclosure/preview.ts",
+        "packages/domain/src/consent.ts",
+        "packages/domain/src/permissions.ts",
+        "packages/domain/src/text.ts",
+        "packages/kernel/src/views.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/properties/p102-publication-consent.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "54.8",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property test for Confidentiality_Holds. The Property 103 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 3 cases exercise it, for example: 'lets the Item Owner lift a hold another Member placed on their own Item, changing no level'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/disclosure/holds.ts",
+        "apps/app/src/disclosure/preview.ts",
+        "packages/domain/src/consent.ts",
+        "packages/domain/src/permissions.ts",
+        "packages/domain/src/text.ts",
+        "packages/kernel/src/views.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/properties/p103-confidentiality-holds.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "55.4",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Render Research_Questions on the Public_Site in packages/public-render and apps/app/src/publisher/plan.ts. 3 suite(s) with 69 cases exercise it, for example: 'shows every R24 and R29 field with the companion fields in one status block'; 'creates a Not_Published, unfeatured Project last in the Project_Order with its creator and time'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "packages/public-render/src/projects.ts",
+        "packages/public-render/src/paths.ts",
+        "packages/public-render/src/render-site.ts",
+        "apps/app/src/publisher/plan.ts",
+        "apps/app/src/records/projects.ts"
+      ],
+      "testPaths": [
+        "packages/public-render/test/pages.test.ts",
+        "apps/app/test/projects.test.ts",
+        "apps/app/test/publisher-projection.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "55.5",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property test for Research_Questions. The Property 106 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 4 cases exercise it, for example: 'stores a question’s groups and entries as Addresses Cross_Links and refuses invalid submissions (R50.1, R50.2, R50.6)'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/publisher/projection.ts",
+        "apps/app/src/publisher/render.ts",
+        "packages/db/src/batch.ts",
+        "packages/db/src/publication-epoch.ts",
+        "packages/domain/src/types.ts",
+        "packages/domain/src/value-sets.ts",
+        "packages/kernel/src/views.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/properties/p106-research-questions.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "56.1",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Add the consent request data. 1 suite(s) with 7 cases exercise it, for example: 'created the five new tables and the consent_link_open guard table'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "packages/db/migrations/core/0029_warm_pepper_potts.sql",
+        "packages/db/src/schema/core/consent.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/migration-consent-requests.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "56.2",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement sending in apps/app/src/consent/requests.ts. 2 suite(s) with 20 cases exercise it, for example: 'needs the consent.request permission'; 'states who asks, the Consent_Link, and the expiry, composed only from its facts'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/consent/requests.ts",
+        "packages/public-render/src/email/consent.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/consent-requests.test.ts",
+        "packages/public-render/test/consent-email.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "56.3",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement answering and withdrawal in apps/submit/src/consent.ts and packages/db/src/consent/answer.ts. 1 suite(s) with 17 cases exercise it, for example: 'returns the stored snapshots and options for a usable Consent_Link, writing nothing'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/submit/src/consent.ts",
+        "packages/db/src/consent/answer.ts"
+      ],
+      "testPaths": [
+        "apps/submit/test/consent.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "56.4",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Build the Consent_Page and Change_Link page in apps/site-shell/src/consent.ts. 2 suite(s) with 26 cases exercise it, for example: 'reads the token after the leading #, trimming whitespace'; 'hides the form and shows the fixed notice with a link to /submit for an unusable link (R51.12)'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/site-shell/src/consent.ts"
+      ],
+      "testPaths": [
+        "apps/site-shell/test/consent.test.ts",
+        "apps/site-shell/test/consent-dom.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "56.5",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Limit emailed consent to the content shown. 2 suite(s) with 12 cases exercise it, for example: 'is false when the resulting view presents nothing the snapshot did not'; 'refuses a widening beyond the emailed snapshot, naming the recorded answer'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "packages/kernel/src/consent.ts",
+        "apps/app/src/records/pipeline.ts",
+        "apps/app/src/disclosure/apply.ts"
+      ],
+      "testPaths": [
+        "packages/kernel/test/emailed-consent.test.ts",
+        "apps/app/test/consent-emailed-coverage.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "56.6",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement reminders, expiry, and token clean-up in apps/app/src/consent/sweep.ts. 1 suite(s) with 12 cases exercise it, for example: 'sends one reminder with the same Consent_Link 14 days after sending and records reminded_at'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/consent/sweep.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/consent-sweep.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "56.7",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Build the Consent_Request screens in apps/app/web/src/consent/. 1 suite(s) with 13 cases exercise it, for example: 'previews the email and Consent Page, then confirms and sends (R51.2)'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/web/src/consent/dialog.tsx",
+        "apps/app/web/src/consent/launch.tsx",
+        "apps/app/web/src/consent/model.ts",
+        "apps/app/web/src/consent/party.tsx",
+        "apps/app/web/src/consent/requests.tsx",
+        "apps/app/web/src/consent/snapshot.tsx"
+      ],
+      "testPaths": [
+        "apps/app/web/test/consent-requests.test.tsx"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "56.8",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property test for consent links. The Property 107 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 6 cases exercise it, for example: 'refuses a malformed, unknown, expired, answered, cancelled, or expired-state link on view and on answer'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/submit/src/consent.ts",
+        "apps/submit/src/index.ts",
+        "packages/db/src/consent/answer.ts"
+      ],
+      "testPaths": [
+        "apps/submit/test/properties/p107-consent-links.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "56.9",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property test for consent coverage. The Property 108 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 3 cases exercise it, for example: 'an emailed grant covers a change exactly when the resulting view presents nothing beyond the seen snapshot'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "packages/domain/src/types.ts",
+        "packages/kernel/src/consent.ts",
+        "packages/kernel/src/preview.ts",
+        "packages/kernel/src/views.ts"
+      ],
+      "testPaths": [
+        "packages/kernel/test/properties/p108-emailed-consent.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "56.10",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write integration tests for Consent_Requests. 2 suite(s) with 23 cases exercise it, for example: 'a scanner-style view of a usable Consent_Link returns the snapshots and writes nothing (R51.5)'; 'needs the consent.request permission'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/submit/src/consent.ts",
+        "apps/app/src/consent/requests.ts",
+        "apps/app/src/consent/sweep.ts"
+      ],
+      "testPaths": [
+        "apps/submit/test/consent-integration.test.ts",
+        "apps/app/test/consent-requests.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "58.1",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Define versioned authenticated backup formats and encryption adapters. 5 suite(s) with 36 cases exercise it, for example: 'round-trips a fixed input/key to the exact bytes'; 'supports the current and two preceding releases, newest first'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "packages/manifest/src/backup/codec.ts",
+        "packages/manifest/src/backup/index.ts",
+        "packages/manifest/src/backup/inventory.ts",
+        "packages/manifest/src/backup/keys.ts",
+        "packages/manifest/src/backup/manifest.ts"
+      ],
+      "testPaths": [
+        "packages/manifest/test/backup-codec.test.ts",
+        "packages/manifest/test/backup-inventory.test.ts",
+        "packages/manifest/test/backup-keys.test.ts",
+        "packages/manifest/test/backup-manifest.test.ts",
+        "apps/app/test/backup-codec-workerd.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "58.2",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement automatic independent copies, verification and tiered retention. 3 suite(s) with 36 cases exercise it, for example: 'starts one scheduled snapshot per 12-hour slot and none a second time in the slot'; 'keeps 14 daily, 8 weekly, 12 monthly'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/backup/copies.ts",
+        "apps/app/src/backup/rpo.ts",
+        "apps/app/src/backup/custody.ts",
+        "apps/app/src/backup/custodians.ts",
+        "apps/app/src/jobs/backup-cron.ts",
+        "apps/app/src/jobs/backup-retention.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/backup-cron.test.ts",
+        "apps/app/test/backup-retention.test.ts",
+        "apps/app/test/backup.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "58.3",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement leased freeze, watchdog and file retention pins. 2 suite(s) with 15 cases exercise it, for example: 'blocks ordinary saves with the frozen 503 rule while a live lease is held, and lets them resume once it lapses'; 'pages a fake snapshot under the lease with injected faults; no lost/overrun/raced snapshot ever completes, and writers always resume'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/backup/freeze.ts",
+        "packages/db/src/batch.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/backup-freeze.test.ts",
+        "apps/app/test/properties/p128-backup-freeze-lease.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "58.4",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement restore preflight, bootstrap reconciliation and owned checkpoints. 2 suite(s) with 45 cases exercise it, for example: 'maps a bootstrap Administrator that shares an email but has a different id onto the original backed-up id'; 'restores every authoritative row with its original ids/attribution and reconciles the bootstrap Administrator'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/backup/preflight.ts",
+        "apps/app/src/backup/reconcile.ts",
+        "apps/app/src/backup/checkpoints.ts",
+        "apps/app/src/backup/quarantine.ts",
+        "apps/app/src/jobs/restore.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/restore-preflight.test.ts",
+        "apps/app/test/restore.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "58.5",
+      "state": "accepted",
+      "reason": "Reviewed tools/recovery/rehearse.ts against the task text. Its local tests exercise the deterministic restore decisions (bootstrap identity mapping and conflict refusal, corruption preflight, every checkpoint interruption and rollback, post-snapshot suppression and RPO/RTO classification) and confirm that a package download or an application-only alert is never acceptance and that a live rehearsal without operator inputs reports blocked. This accepts the tooling only; the live fresh-environment rehearsal is evidence for task 48.12.",
+      "sourcePaths": [
+        "tools/recovery/rehearse.ts"
+      ],
+      "testPaths": [
+        "tools/test/recovery-rehearse.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "58.6",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property and regression tests for independent recovery points. The Property 111 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 6 cases exercise it, for example: 'verifies a clean copy and detects every injected fault; a faulted or merely-downloaded copy is never a recovery point'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/backup/copies.ts",
+        "apps/app/src/backup/custodians.ts",
+        "apps/app/src/backup/custody.ts",
+        "apps/app/src/backup/rpo.ts",
+        "apps/app/src/env.ts",
+        "apps/app/src/jobs/backup-cron.ts",
+        "apps/app/src/jobs/backup-retention.ts",
+        "apps/app/src/jobs/backup.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/properties/p111-independent-recovery.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "58.7",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property and regression tests for freeze and restore crash safety. The Property 112 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 3 cases exercise it, for example: 'pages a snapshot under the lease with crash/overrun/race faults; a lost snapshot never completes, access is never lost, and recovery is clean'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/api/routes/backups.ts",
+        "apps/app/src/backup/freeze.ts",
+        "apps/app/src/backup/quarantine.ts",
+        "apps/app/src/do/jobs.ts",
+        "apps/app/src/jobs/backup.ts",
+        "apps/app/src/jobs/export.ts",
+        "apps/app/src/jobs/restore.ts",
+        "apps/app/src/publisher/projection.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/properties/p112-freeze-restore.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "59.1",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement durable publication epochs and fenced external operations. 2 suite(s) with 28 cases exercise it, for example: 'reads 0 before the first confidentiality-affecting save'; 'runs the Direct Upload sequence and uploads ONLY the missing files, then promotes under a matching epoch'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "packages/db/src/publication-epoch.ts",
+        "apps/app/src/publisher/deploy.ts",
+        "apps/app/src/publisher/files.ts",
+        "apps/app/src/do/publisher.ts",
+        "apps/ops/src/deploy.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/publication-epochs.test.ts",
+        "apps/ops/test/deploy.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "59.2",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Prepare independent edge containment and health/incident handling. 3 suite(s) with 37 cases exercise it, for example: 'resolves immediately when the removal is verified, at any time, without keeping Containment'; 'certifies ACTUAL reachability by HEADing each endpoint and reading the live control path'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/ops/src/containment.ts",
+        "apps/ops/src/alerts.ts",
+        "apps/ops/src/independent-channel.ts",
+        "apps/ops/src/waf.ts",
+        "packages/db/src/containment.ts"
+      ],
+      "testPaths": [
+        "apps/ops/test/containment.test.ts",
+        "apps/ops/test/alerts.test.ts",
+        "apps/ops/test/waf.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "59.3",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement profile-aware admission, rejected-traffic accounting and shedding. 2 suite(s) with 29 cases exercise it, for example: 'derives the public share, reserves and the 2% refusal threshold for Free_Qualified'; 'admits within budget and returns a reservation to settle'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "packages/domain/src/admission.ts",
+        "apps/app/src/do/budget.ts",
+        "apps/app/src/budget/status.ts"
+      ],
+      "testPaths": [
+        "packages/domain/test/admission.test.ts",
+        "apps/app/test/budget.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "59.5",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property and regression tests for publication generations and suppression. The Property 113 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 8 cases exercise it, for example: 'keeps currently-public material reachable while suppressed material stays out (current-access case)'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/env.ts",
+        "apps/app/src/publisher/deploy.ts",
+        "apps/app/src/publisher/files.ts",
+        "packages/db/src/batch.ts",
+        "packages/db/src/containment.ts",
+        "packages/db/src/publication-epoch.ts",
+        "packages/domain/src/ops.ts",
+        "packages/domain/src/types.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/properties/p113-publication-epochs.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "59.6",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property and regression tests for certified reserve accounting. The Property 114 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 14 cases exercise it, for example: 'never lets the editable Public_Traffic_Budget percent exceed the certified ceiling, and never dips into Member+urgent'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/do/budget.ts",
+        "apps/app/src/env.ts",
+        "packages/domain/src/admission.ts",
+        "packages/domain/src/ops.ts",
+        "packages/domain/src/resource-profile.ts",
+        "packages/domain/src/settings.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/properties/p114-certified-admission.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "64.1",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement author-scoped durable draft storage and recovery. 2 suite(s) with 14 cases exercise it, for example: 'saves a draft with content, form, upload group and pin, and reads it back only for its author'; 'grants draft recovery to the Administrator Role only, and still refuses an unknown Permission'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/records/drafts.ts",
+        "apps/app/src/api/routes/drafts.ts",
+        "packages/domain/src/drafts.ts",
+        "packages/db/src/schema/core/drafts.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/drafts.test.ts",
+        "apps/app/test/migration-durable-drafts.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "64.2",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement revision-bound proposed diffs and guarded acceptance. 1 suite(s) with 16 cases exercise it, for example: 'lets any readable Member propose an edit with a diff, explanation and references, keeping proposer and base fixed'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/records/proposals.ts",
+        "apps/app/src/api/routes/proposals.ts",
+        "packages/domain/src/proposals.ts",
+        "packages/db/src/schema/core/proposals.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/proposals.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "64.3",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Build draft resumption and proposal review screens. 2 suite(s) with 12 cases exercise it, for example: 'reports saved when no local change, local when the tab holds different content, and unknown after an unconfirmed save'; 'only the proposer may withdraw an open proposal, and rebase only when it is stale'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/web/src/drafts/drafts.tsx",
+        "apps/app/web/src/proposals/proposals.tsx"
+      ],
+      "testPaths": [
+        "apps/app/web/test/drafts.test.tsx",
+        "apps/app/web/test/proposals.test.tsx"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "64.4",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property and regression tests for durable drafts. The Property 121 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 2 cases exercise it, for example: 'returns the last acknowledged content only to its author, omits an unreadable target, and warns then expires only eligible working drafts'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/records/drafts.ts",
+        "packages/domain/src/drafts.ts",
+        "packages/domain/src/identifiers.ts",
+        "packages/domain/src/types.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/properties/p121-durable-drafts.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "64.5",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property and regression tests for proposed edits. The Property 122 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 2 cases exercise it, for example: 'stores the maximum encoded diff and refuses one byte more with nothing stored'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "packages/domain/src/proposals.ts",
+        "packages/domain/src/value-sets.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/properties/p122-edit-proposals.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "65.1",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement personal bookmarks, saved queries, follows and recipient union. 2 suite(s) with 19 cases exercise it, for example: 'creates, renames, reorders and deletes a Member's own bookmarks, isolated from other Members'; 'accepts a 1 to 100-character name and a ULID target, and names each faulty field'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/records/personal.ts",
+        "apps/app/src/api/routes/personal.ts",
+        "packages/domain/src/personal.ts",
+        "packages/db/src/schema/core/personal.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/personal.test.ts",
+        "packages/domain/test/personal.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "65.2",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Build My_Work and authorized team dashboards. 3 suite(s) with 18 cases exercise it, for example: 'lists open proposals of readable records that the viewer did not write, and omits their own'; 'shows an empty state per region when each result is empty, and reads only the existing endpoints (R5.3, R5.6)'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/records/dashboard.ts",
+        "apps/app/web/src/dashboard/dashboard.tsx",
+        "apps/app/web/src/me/dashboard.tsx",
+        "apps/app/web/src/me/saved.tsx",
+        "apps/app/web/src/me/team.tsx"
+      ],
+      "testPaths": [
+        "apps/app/test/dashboard.test.ts",
+        "apps/app/web/test/dashboard.test.tsx",
+        "apps/app/web/test/me-dashboard.test.tsx"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "65.3",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property and regression tests for navigation and follows. The Property 123 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 2 cases exercise it, for example: 'accepts the longest valid name and refuses a 101st code point, and fills then refuses the bookmark and saved-search count limits'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/notifications/fanout.ts",
+        "apps/app/src/search/indexer.ts",
+        "packages/db/src/batch.ts",
+        "packages/domain/src/personal.ts",
+        "packages/domain/src/text.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/properties/p123-personal-navigation.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "66.2",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement release creation, validation and publication through the kernel. 4 suite(s) with 33 cases exercise it, for example: 'lets only an Administrator create one, and requires each field'; 'runs create → artifacts → approve → seal through the mounted routes, Administrator-only'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/records/releases.ts",
+        "apps/app/src/api/routes/releases.ts",
+        "packages/domain/src/releases.ts",
+        "packages/db/src/schema/core/releases.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/releases.test.ts",
+        "apps/app/test/releases-publication.test.ts",
+        "apps/app/test/releases-publisher.test.ts",
+        "apps/app/test/migration-research-releases.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "66.3",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Build release and version-citation screens and offline export verification. 2 suite(s) with 25 cases exercise it, for example: 'lists each release with its state and sealed date, and offers a new release'; 'names the release and each readable artifact’s version-specific citation, and parses back to the same data'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/web/src/releases/releases.tsx",
+        "packages/domain/src/release-export.ts",
+        "packages/domain/src/citation-export.ts"
+      ],
+      "testPaths": [
+        "apps/app/web/test/releases.test.tsx",
+        "packages/domain/test/release-export.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "66.4",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property and regression tests for research releases. The Property 124 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 4 cases exercise it, for example: 'round-trips the sealed release\\u2019s version-specific citations through JSON, CSL, package and inert HTML, including maximum-encoded inputs (R59.5)'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/env.ts",
+        "apps/app/src/publisher/deploy.ts",
+        "apps/app/src/publisher/files.ts",
+        "apps/app/src/publisher/projection.ts",
+        "apps/app/src/publisher/render.ts",
+        "packages/db/src/publication-epoch.ts",
+        "packages/domain/src/identifiers.ts",
+        "packages/domain/src/release-export.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/properties/p124-research-releases.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "67.2",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement independent health, recovery-age, removal and spend alerts. 1 suite(s) with 10 cases exercise it, for example: 'certifies ACTUAL reachability by HEADing each endpoint and reading the live control path'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/ops/src/alerts.ts",
+        "apps/ops/src/independent-channel.ts"
+      ],
+      "testPaths": [
+        "apps/ops/test/alerts.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "67.3",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Implement reference-safe operational retention and growth reporting. 2 suite(s) with 17 cases exercise it, for example: 'reads 30d reconciled payloads, 30d closed checkpoints, 90d failure metadata from RETENTION, not a literal'; 'expires a reconciled row past 30 days, keeps one within 30 days, and never touches a pending row'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/jobs/operational-retention.ts",
+        "apps/app/src/jobs/operational-cron.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/operational-retention.test.ts",
+        "apps/app/test/operational-cron.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "67.4",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property and regression tests for release and compatibility gates. The Property 125 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 22 cases exercise it, for example: 'certifyScopes agrees with an independent re-derivation of the matrix verdict for every ledger and scope'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "packages/domain/src/compatibility.ts",
+        "packages/domain/src/resource-profile.ts",
+        "tools/src/deploy-guard.ts",
+        "tools/src/launch-gates.ts",
+        "tools/src/release-manifest.ts",
+        "tools/src/upgrade-store.ts"
+      ],
+      "testPaths": [
+        "tools/test/properties/p125-release-assurance.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "68.1",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Add shared Permission_Evidence and manual/emailed grant coverage. 2 suite(s) with 18 cases exercise it, for example: 'needs the disclosure curation permission'; 'records an immutable grant and refuses an unknown source, a short snapshot digest, or an out-of-range source'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/records/evidence.ts",
+        "apps/app/src/disclosure/records.ts",
+        "packages/db/src/schema/core/permission-evidence.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/permission-evidence.test.ts",
+        "apps/app/test/migration-permission-evidence.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "68.2",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Build evidence recording, precise permission requests and policy text. 1 suite(s) with 6 cases exercise it, for example: 'lists units that still need a grant, naming the reason, with a link to record one'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/web/src/evidence/editor.tsx",
+        "apps/app/web/src/evidence/queue.tsx",
+        "apps/app/web/src/evidence/snapshot.tsx"
+      ],
+      "testPaths": [
+        "apps/app/web/test/evidence.test.tsx"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "68.3",
+      "state": "accepted",
+      "reason": "Reviewed against the task text: Write property and regression tests for permission evidence coverage. The Property 126 test models the property independently of the implementation and runs at least 100 generated cases. 1 suite(s) with 4 cases exercise it, for example: 'covers a change through the pure helpers only for a live grant, the exact use, and the exact snapshot and content/file identity'. All passed in the 2026-11-11 full local run (synthetic fixtures). Local evidence only; release gates are evaluated separately by 68.4.",
+      "sourcePaths": [
+        "apps/app/src/records/evidence.ts",
+        "packages/domain/src/evidence.ts",
+        "packages/domain/src/types.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/properties/p126-permission-evidence.test.ts"
+      ],
+      "correctionTasks": [],
+      "checks": [
+        "docs/acceptance/checks/local-tests.json"
+      ]
+    },
+    {
+      "task": "43.5",
+      "state": "partial",
+      "reason": "print.css exists and its token use is linted by the Vitest suite, but print behaviour (A4 and US Letter, PDF text compared with the page) is exercised only by the Playwright print-pdf suite, which is outside the Vitest receipt and has no recorded passing run.",
+      "sourcePaths": [
+        "packages/design/src/print.css"
+      ],
+      "testPaths": [
+        "packages/design/test/tokens.test.ts",
+        "tests/presentation/print-pdf.spec.ts"
+      ],
+      "correctionTasks": [],
+      "checks": []
+    },
+    {
+      "task": "43.6",
+      "state": "partial",
+      "reason": "Component and layout unit tests pass locally, but the accessibility and 320 to 2,560 pixel layout claims need the browser axe and viewport suites, which have no recorded passing run. Local component tests do not establish browser accessibility.",
+      "sourcePaths": [
+        "packages/design/src/components.css",
+        "packages/design/src/components/layout.ts",
+        "packages/design/src/components/controls.ts",
+        "apps/app/web/src/styles.css"
+      ],
+      "testPaths": [
+        "packages/design/test/components.test.ts",
+        "apps/app/web/test/layout.test.tsx",
+        "tests/presentation/accessibility.spec.ts",
+        "tests/presentation/viewport-sweep.spec.ts"
+      ],
+      "correctionTasks": [],
+      "checks": []
+    },
+    {
+      "task": "43.7",
+      "state": "partial",
+      "reason": "The Playwright presentation suites are authored but are not run by the Vitest receipt, so there is no executed-check evidence. A passing browser run must be recorded before acceptance.",
+      "sourcePaths": [
+        "tests/presentation/support/helpers.ts",
+        "tests/presentation/support/pages.ts"
+      ],
+      "testPaths": [
+        "tests/presentation/accessibility.spec.ts",
+        "tests/presentation/colour-scheme.spec.ts",
+        "tests/presentation/print-pdf.spec.ts",
+        "tests/presentation/privacy-crawl.spec.ts",
+        "tests/presentation/viewport-sweep.spec.ts",
+        "tests/presentation/visual-regression.spec.ts"
+      ],
+      "correctionTasks": [],
+      "checks": []
+    },
+    {
+      "task": "43.8",
+      "state": "partial",
+      "reason": "Lighthouse CI is configured but there is no automated test of it and no recorded measured run of the 75th-percentile thresholds.",
+      "sourcePaths": [
+        "lighthouserc.json",
+        "scripts/lighthouse.mjs"
+      ],
+      "testPaths": [],
+      "correctionTasks": [],
+      "checks": []
+    },
+    {
+      "task": "45.3",
+      "state": "partial",
+      "reason": "The Playwright security suites are authored against real rf-dl and preview delivery but are not run by the Vitest receipt, and there is no recorded passing browser run. The task text makes them mandatory for the team-file and public-release gates.",
+      "sourcePaths": [
+        "tests/security/support/canaries.ts",
+        "tests/security/support/env.ts",
+        "tests/security/support/probe.ts",
+        "tests/security/support/tokens.ts"
+      ],
+      "testPaths": [
+        "tests/security/channel-adapter-canaries.spec.ts",
+        "tests/security/download-link-security.spec.ts",
+        "tests/security/file-delivery-isolation.spec.ts",
+        "tests/security/preview-isolation.spec.ts"
+      ],
+      "correctionTasks": [],
+      "checks": []
+    },
+    {
+      "task": "46.2",
+      "state": "partial",
+      "reason": "The capacity harness is authored and enumerable, but its measured cases need a real benchmark environment and Reference_Archive, and no Vitest suite or recorded run covers it. Measured cases remain blocked pending environment (task 48.11 and 48.12).",
+      "sourcePaths": [
+        "tests/perf/run.ts",
+        "tests/perf/support/worst-case.ts",
+        "tests/perf/support/growth.ts",
+        "tests/perf/support/abuse.ts",
+        "tests/perf/support/provider-margins.ts",
+        "tests/perf/support/measurement.ts"
+      ],
+      "testPaths": [],
+      "correctionTasks": [
+        "48.11",
+        "48.12"
+      ],
+      "checks": []
+    },
+    {
+      "task": "48.2",
+      "state": "partial",
+      "reason": "The PowerShell setup script exists but cannot be exercised without a Microsoft 365 tenant, and no automated test covers it. It is verified only by operator execution and the staging mail checks of 48.5.",
+      "sourcePaths": [
+        "infra/m365/Setup-ResearchForceMail.ps1"
+      ],
+      "testPaths": [],
+      "correctionTasks": [
+        "48.7"
+      ],
+      "checks": []
+    },
+    {
+      "task": "48.5",
+      "state": "partial",
+      "reason": "The staging suites are authored but need a deployed staging installation and operator credentials. No Vitest suite covers them and none has a recorded passing run; they depend on 48.11.",
+      "sourcePaths": [
+        "tests/staging/support/env.ts",
+        "tests/staging/support/gate.ts",
+        "tests/staging/support/operator.ts",
+        "tests/staging/support/r2.ts",
+        "infra/m365/Verify-ResearchForceMail.ps1"
+      ],
+      "testPaths": [
+        "tests/staging/abuse-reserve.spec.ts",
+        "tests/staging/access-and-bearer.spec.ts",
+        "tests/staging/backup-restore.spec.ts",
+        "tests/staging/distributed-abuse.spec.ts",
+        "tests/staging/gate-contract.spec.ts",
+        "tests/staging/graph-mail.spec.ts",
+        "tests/staging/public-change-containment.spec.ts",
+        "tests/staging/r2-upload-checksums.spec.ts",
+        "tests/staging/team-walkthroughs.spec.ts"
+      ],
+      "correctionTasks": [
+        "48.11",
+        "48.12"
+      ],
+      "checks": []
+    },
+    {
+      "task": "68.4",
+      "state": "partial",
+      "reason": "The gate manifests and checker are implemented and their local tests pass: a source file, checked box, unit-only or local-synthetic result does not satisfy an infrastructure requirement, and missing evidence blocks rather than skips. The third part of the task, running and recording the R60.9 local synthetic team walkthroughs, is not done: only the compute-package walkthroughs exist locally, and no recorded walkthrough evidence covers drafts, proposals, decisions, archival citation, restrict-and-publish, withdrawal under load or fresh recovery.",
+      "sourcePaths": [
+        "tools/src/launch-gates.ts",
+        "tools/check-launch.ts",
+        "tools/src/evidence-recorder.ts",
+        "tools/src/staging-results.ts"
+      ],
+      "testPaths": [
+        "tools/test/check-launch.test.ts",
+        "tools/test/evidence-recorder.test.ts",
+        "tools/test/staging-results.test.ts",
+        "tools/test/properties/p125-release-assurance.test.ts"
+      ],
+      "correctionTasks": [
+        "68.4"
+      ],
+      "checks": []
+    },
+    {
+      "task": "54.9",
+      "state": "reopened",
+      "reason": "The Property 104 model has a defect that makes the test fail intermittently. In the withdraw step it expects the proposer to withdraw even after the proposer has been Revoked, while the server correctly refuses a Revoked Member at the membership check (R2.9). A full local run on 2026-11-11 failed with the shrunk sequence propose hold_override, revoke the proposer, proposer withdraws. The production behaviour looks correct; the model needs to expect the refusal when the proposer is Revoked. Reported rather than fixed in this bookkeeping pass.",
+      "sourcePaths": [
+        "apps/app/src/reviews/dual.ts"
+      ],
+      "testPaths": [
+        "apps/app/test/properties/p104-dual-approvals.test.ts"
+      ],
+      "correctionTasks": [
+        "54.9"
+      ],
+      "checks": []
+    },
+    {
+      "task": "59.4",
+      "state": "partial",
+      "reason": "The distributed abuse and failed-removal scenarios are authored but need the staging installation and a live 30-minute flood. No Vitest suite covers them and none has a recorded run; they depend on 48.11.",
+      "sourcePaths": [
+        "tests/staging/support/gate.ts",
+        "tests/staging/support/operator.ts"
+      ],
+      "testPaths": [
+        "tests/staging/distributed-abuse.spec.ts",
+        "tests/staging/abuse-reserve.spec.ts",
+        "tests/staging/public-change-containment.spec.ts"
+      ],
+      "correctionTasks": [
+        "48.11",
+        "48.12"
+      ],
+      "checks": []
     }
   ]
 }
