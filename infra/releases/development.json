@@ -2182,7 +2182,7 @@
     },
     {
       "path": "packages/design/src/components/page.ts",
-      "sha256": "e5b432757659961dd85f21be9ba6226920f7723828267961c97429c24bf0a44d"
+      "sha256": "cb65fb617e4d4b7ffa65adbfe30dcbf89c11be402b3648a9df94dc6175346df4"
     },
     {
       "path": "packages/design/src/components/tabs.ts",
@@ -2190,11 +2190,11 @@
     },
     {
       "path": "packages/design/src/components.css",
-      "sha256": "c5097ca4a59e42bfc474ee9fd1f5a9880010e6c1fa6909d39366342ca9f12fa8"
+      "sha256": "12172dcdedeaf08fe4f647a47ff974b6478d2bbf1a9023377e553ecf6064597b"
     },
     {
       "path": "packages/design/src/fixed-texts.ts",
-      "sha256": "5e3cc6d14613d85c095f0ae30e74a140030a632e1ec0f5a4d85ed2afbcda8dd6"
+      "sha256": "23bf5dbb9920bb55feb8b7aeafebf23cdfd1fa0749fa1d88cc6daedae287c6a4"
     },
     {
       "path": "packages/design/src/font-faces.ts",
@@ -2214,7 +2214,7 @@
     },
     {
       "path": "packages/design/src/print.css",
-      "sha256": "d82a1b853af0ec628bf9a88d36208045166359022708a880e7d6624fea3cea48"
+      "sha256": "0ad2c273e3c324f7cffc4b21e184dfb554f34bdadd44088e1ec9556e6fd50952"
     },
     {
       "path": "packages/design/src/react.ts",
