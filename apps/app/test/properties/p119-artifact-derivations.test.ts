@@ -153,7 +153,9 @@ describe('Property 119: Artifact derivations preserve originals and an authorize
             const clash = rest.some((entry) => entry.out === op.out);
             const visible = seesDerivation(op.who, model, old);
             allowed = visible && old.correctedBy === null && editable(op.who, out) && everyone && op.out !== old.out && !op.ins.includes(op.out) && !clash && !reaches(rest, op.ins, op.out);
-            if (visible && old.correctedBy !== null) status = 409;
+            // A request that breaks an endpoint rule (no right to edit the output, an unreadable endpoint, an artifact derived from itself) is refused as
+            // that rule before the stale-correction conflict is looked at; only an otherwise well-formed request meets the 409.
+            if (visible && old.correctedBy !== null && editable(op.who, out) && everyone && !op.ins.includes(op.out)) status = 409;
           }
           if (op.t === 'correct' && old === undefined) {
             const response = await world.request(op.who, 'POST', '/derivations', { ...base, correctionOf: model.nodes[0]!.id });
@@ -162,7 +164,7 @@ describe('Property 119: Artifact derivations preserve originals and an authorize
           } else {
             const response = await world.request(op.who, 'POST', '/derivations', { ...base, ...(old === undefined ? {} : { correctionOf: old.id }) });
             expect(response.status === 201, `${label} -> ${response.status}`).toBe(allowed);
-            if (!allowed && old !== undefined && old.correctedBy !== null && seesDerivation(op.who, model, old)) expect(response.status).toBe(status);
+            if (!allowed && old !== undefined && old.correctedBy !== null && seesDerivation(op.who, model, old) && status === 409) expect(response.status).toBe(409);
             refused = !allowed;
             if (allowed) {
               const created = (await response.json<{ derivation: { id: string } }>()).derivation;
@@ -213,7 +215,16 @@ describe('Property 119: Artifact derivations preserve originals and an authorize
           }
         }
       }
-    }), { numRuns: Math.min(FC_RUNS, 20) });
+    }), {
+      numRuns: Math.min(FC_RUNS, 20),
+      // Seed -306256481: correcting an already-corrected derivation with a self-derived request is a 422 rule refusal, not a 409.
+      examples: [[[
+        { t: 'derive', who: 'author', out: 0, ins: [1], uncertain: false },
+        { t: 'correct', who: 'author', target: 0, out: 1, ins: [0] },
+        { t: 'correct', who: 'author', target: 0, out: 0, ins: [0] },
+        { t: 'remove', node: 0 },
+      ]]],
+    });
   }, 290_000);
 });
 
