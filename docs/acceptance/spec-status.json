@@ -2,7 +2,7 @@
   "inputs": {
     ".kiro/specs/research-collab-cms/requirements.md": "9e2d7cee953f4aeece04bad4a7dfae273a908c0df65c95beea7a4e572b71b5df",
     ".kiro/specs/research-collab-cms/design.md": "737e9d53a79551e8138761b259a4eb044872e32ac4902e2f753d8ed239d57f43",
-    ".kiro/specs/research-collab-cms/tasks.md": "c1c1221fcde0717840f01dbc37e5533069fc52a3dafdec1e457897bb6154998c",
+    ".kiro/specs/research-collab-cms/tasks.md": "ad2ff60072bd7023ae96cc83a8861be2c3a7036157b9a2d2ba892bf3a978dd3a",
     "docs/acceptance/task-evidence.json": "a181c99d589c6eee4ccb5d21745ac038e191ea5585865d74fa95ec419c496da1"
   },
   "schemaVersion": 1,
@@ -31284,17 +31284,17 @@
     },
     {
       "id": "33",
-      "checked": false,
+      "checked": true,
       "title": "Checkpoint - Ensure all tests pass"
     },
     {
       "id": "39",
-      "checked": false,
+      "checked": true,
       "title": "Checkpoint - Ensure all tests pass"
     },
     {
       "id": "47",
-      "checked": false,
+      "checked": true,
       "title": "Checkpoint - Ensure all tests pass"
     },
     {

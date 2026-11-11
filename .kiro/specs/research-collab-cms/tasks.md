@@ -838,7 +838,7 @@ Canonical phases: `repair` → `release_tooling` → `staging_and_acceptance` �
     - A stubbed `HEAD` that keeps answering 200 raises the System_Alert of Requirement 25.7; urgent runs deploy before add-only runs; a restore in progress pauses the Publisher
     - _Requirements: 24.11, 25.7, 36.9_
 
-- [ ] 33. Checkpoint - Ensure all tests pass
+- [x] 33. Checkpoint - Ensure all tests pass
   - Run `npm test` (`vitest --run`) and `npm run lint`; ensure all tests pass, ask the user if questions arise.
 
 - [x] 34. Build the `Budget` Durable Object and the public submission API in `rf-submit`
@@ -1018,7 +1018,7 @@ Canonical phases: `repair` → `release_tooling` → `staging_and_acceptance` �
     - **Property 92: Characters and digit strings survive storage and output**
     - **Validates: Requirements 7.2, 45.13**
 
-- [ ] 39. Checkpoint - Ensure all tests pass
+- [x] 39. Checkpoint - Ensure all tests pass
   - Run `npm test` (`vitest --run`) and `npm run lint`; ensure all tests pass, ask the user if questions arise.
 
 - [x] 40. Build the Project_Log and the Workspace lists
@@ -1164,7 +1164,7 @@ Canonical phases: `repair` → `release_tooling` → `staging_and_acceptance` �
     - Measure CPU, binding calls, statements, encoded bytes, peak memory, D1 growth and full transfer size, distinguishing provider limits from chosen safety margins. Reproduce 1/3/5-year growth scenarios and the 30-minute distributed invalid-download/public-API Abuse_Profile with concurrent authorized saves/downloads and a removal.
     - Record maxima, percentile data, profile/version/assumptions and pass/fail evidence; keep <=24-hour verified independent RPO and <=8-hour reference restore evidence. A profile that fails cannot be advertised or deployed for that scope.
     - _Requirements: 21.2, 28.1, 28.2, 28.3, 28.4, 28.5, 28.6, 28.7, 28.8, 28.15, 28.17, 30.6, 36.17, 60.7_
-- [ ] 47. Checkpoint - Ensure all tests pass
+- [x] 47. Checkpoint - Ensure all tests pass
   - Run `npm test` (`vitest --run`) and `npm run lint`; ensure all tests pass, ask the user if questions arise.
 
 - [ ] 48. Prepare deployment configuration and the setup checklists
