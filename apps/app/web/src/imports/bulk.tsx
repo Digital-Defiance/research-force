@@ -8,6 +8,7 @@ import { Button, LoadState, Notice, SaveFailure, SelectField, useLoad } from '..
 import { hashFile } from '../files/upload';
 import type { BulkPreview, BulkPreviewError, BulkPreviewRequest } from './bulk-preview';
 import type { BulkPreviewResult } from './bulk-worker';
+import { noteLoadFailure } from '../build/stale-build';
 
 /**
  * The Administrator affordance that starts a Bulk_Import into a Project (R37.3, R37.11, R37.17, R47.13). The Member
@@ -58,7 +59,7 @@ function previewInWorker(request: BulkPreviewRequest): Promise<BulkPreview> {
       if ('error' in event.data) reject(new Error(event.data.error));
       else resolve(event.data.preview);
     };
-    worker.onerror = () => { worker.terminate(); reject(new Error('The manifest could not be parsed.')); };
+    worker.onerror = () => { void noteLoadFailure('worker'); worker.terminate(); reject(new Error('The manifest could not be parsed.')); };
     worker.postMessage(request);
   });
 }

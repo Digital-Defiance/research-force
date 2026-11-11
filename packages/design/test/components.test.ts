@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { labelTextFor } from '@researchforce/domain/label-marks';
 import { text, type ViewNode } from '@researchforce/domain/tree';
@@ -212,5 +213,13 @@ describe('content shells', () => {
     const html2 = skeleton().map(renderToString).join('');
     expect([...html2.matchAll(/rf-skeleton__row/gu)]).toHaveLength(3);
     expect(html2).toContain('<p class="rf-visually-hidden" role="status">Loading…</p>');
+  });
+});
+describe('home page rhythm', () => {
+  it('zeroes the first heading margin in every home section so the section padding sets the gap', () => {
+    const css = readFileSync(new URL('../src/components.css', import.meta.url), 'utf8');
+    const rule = /([^{}]*)\{\s*margin-block-start:\s*0;\s*\}/gu;
+    const selectors = [...css.matchAll(rule)].flatMap((m) => m[1]!.split(',').map((x) => x.trim()));
+    for (const selector of ['.rf-how h2', '.rf-home__featured h2', '.rf-home__mission h2']) expect(selectors).toContain(selector);
   });
 });

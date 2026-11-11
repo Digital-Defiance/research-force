@@ -42,9 +42,20 @@ const environmentHeaders = {
   },
 };
 
+// Every build gets an id, embedded in the bundle and published as /build.json. A tab that loaded an older bundle compares
+// the two to learn that it is stale and offers a reload; it never reloads by itself.
+const buildId = process.env.GITHUB_SHA ?? Date.now().toString(36);
+const buildManifest = {
+  name: 'build-manifest',
+  apply: 'build' as const,
+  generateBundle(this: { emitFile(file: { type: 'asset'; fileName: string; source: string }): string }) {
+    this.emitFile({ type: 'asset', fileName: 'build.json', source: JSON.stringify({ id: buildId }) });
+  },
+};
 export default defineConfig({
   root: fileURLToPath(new URL('.', import.meta.url)),
-  plugins: [noExternalFlags, environmentHeaders, react()],
+  plugins: [noExternalFlags, environmentHeaders, buildManifest, react()],
+  define: { __RF_BUILD_ID__: JSON.stringify(buildId) },
   resolve: {
     alias: [
       { find: 'events', replacement: require.resolve('events/') },

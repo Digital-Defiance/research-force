@@ -49,6 +49,7 @@ import { PolicyIndexScreen, PolicyPageScreen } from './admin/policy';
 import { SettingsScreen } from './admin/settings';
 import { ValueSetsScreen } from './admin/value-sets';
 import type { MemberRow } from './types';
+import { StaleBuildNotice } from './build/stale-build-notice';
 import { LoadState, Notice, useLoad } from './ui';
 
 /** Workspace-wide notices, shown on every page (R28.9, R28.10). */
@@ -56,6 +57,7 @@ export function StatusNotices() {
   const status = useApiStatus();
   return (
     <>
+      <StaleBuildNotice />
       {status.dailyLimit && <Notice tone="warning" title="Saving is unavailable until 00:00 UTC.">
         <p>A daily limit of the hosting platform was reached. Everything saved before then is unchanged, and reading still works.</p>
       </Notice>}

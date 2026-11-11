@@ -11,6 +11,7 @@ import { SINGLE_UPLOAD_BYTES as SINGLE_PUT_BYTES, UPLOAD_PART_BYTES } from '@res
 import { readEntryDates, readImportEntries } from './preview';
 import type { EntryDates, ImportMetadataEntry, ImportPreview } from './preview';
 import type { PreviewRequest, PreviewResult } from './import-worker';
+import { noteLoadFailure } from '../build/stale-build';
 
 /**
  * The Administrator affordance that starts a journal import into a Project (R26.1, R26.3, R26.11, R26.15, R27.7, R27.8, R47.13).
@@ -39,7 +40,7 @@ function previewInWorker(request: PreviewRequest): Promise<ImportPreview> {
       if ('error' in event.data) reject(new Error(event.data.error));
       else resolve(event.data.preview);
     };
-    worker.onerror = () => { worker.terminate(); reject(new Error('The journal could not be parsed.')); };
+    worker.onerror = () => { void noteLoadFailure('worker'); worker.terminate(); reject(new Error('The journal could not be parsed.')); };
     worker.postMessage(request);
   });
 }

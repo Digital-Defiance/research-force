@@ -5,6 +5,7 @@ import { ApiFailure, useApi } from '../api';
 import { newULID } from '@researchforce/domain/identifiers';
 import { UPLOAD_PART_BYTES } from '@researchforce/domain/files';
 import { cpLength, isBlank } from '@researchforce/domain/text';
+import { holdReload, noteLoadFailure } from '../build/stale-build';
 import { Button, Notice, TextField } from '../ui';
 
 /** `file` is absent after a reload: the browser does not keep a chosen File, so an unfinished transfer needs the Member to choose it again (R28.10). */
@@ -30,7 +31,7 @@ export function hashFile(file: File, signal: AbortSignal): Promise<Digests> {
     signal.addEventListener('abort', abort, { once: true });
     const done = () => { worker.terminate(); signal.removeEventListener('abort', abort); };
     worker.onmessage = (event: MessageEvent<Digests & { error?: string }>) => { done(); if (event.data.error) reject(new Error(event.data.error)); else resolve(event.data); };
-    worker.onerror = () => { done(); reject(new Error('The file could not be read for its checksum.')); };
+    worker.onerror = () => { void noteLoadFailure('worker'); done(); reject(new Error('The file could not be read for its checksum.')); };
     worker.postMessage(file);
   });
 }
@@ -118,6 +119,8 @@ export function useUploads(scope?: string) {
   const active = useRef(new Map<string, AbortController>());
   const currentFiles = useRef(files); currentFiles.current = files;
   const wasRestored = useRef(restored !== undefined);
+  const transferring = files.some((file) => file.state === 'uploading' && file.file !== undefined);
+  useEffect(() => (transferring ? holdReload() : undefined), [transferring]);
   useEffect(() => { if (scope === undefined) return; if (files.length === 0) clearUnsent(`uploads:${scope}`);
     else writeUnsent(`uploads:${scope}`, { groupId: groupId.current, files: files.map(({ file: _file, ...rest }) => rest) } satisfies StoredUploads); }, [files, scope]);
   useEffect(() => { let current = true; client.get<{ maximumBytes: number }>('/uploads/limits').then((result) => { if (current) setLimit(result.maximumBytes); }, () => { if (current) setRefusals(['Upload limits could not be retrieved. Reload the page to try again.']); });

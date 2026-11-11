@@ -40,6 +40,15 @@ export function createWorker(localRuntime = false, services?: LocalRuntimeAdapte
         const result = await (await apiFor(rawEnv)).app.fetch(env.RF_DEV_AUTH === '1' ? cookieAssertion(request) : request, env, ctx);
         return env.RF_DEV_AUTH === '1' && path === '/api/v1/session/logout' && result.status === 303 ? devResponse(result, true) : result;
       }
+      if (path.startsWith('/assets/') && (request.method === 'GET' || request.method === 'HEAD')) {
+        // A hashed file from an older build is gone after a deploy. The single-page-application fallback would answer
+        // with index.html (text/html), which a module or worker load rejects with a confusing MIME error. Answer 404.
+        const asset = await env.ASSETS.fetch(request);
+        if (asset.status === 404 || (asset.headers.get('content-type') ?? '').toLowerCase().startsWith('text/html')) {
+          return new Response('Not found', { status: 404, headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' } });
+        }
+        return asset;
+      }
       return env.ASSETS.fetch(request);
     },
     scheduled(controller, rawEnv, ctx) {

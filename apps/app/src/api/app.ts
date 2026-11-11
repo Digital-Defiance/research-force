@@ -64,6 +64,7 @@ import { releaseRoutes } from './routes/releases';
 import { exportsRoutes } from './routes/exports';
 import { backupsRoutes } from './routes/backups';
 import { restoresRoutes } from './routes/restores';
+import { publisherRoutes } from './routes/publisher';
 import { moderationRoutes } from './routes/moderation';
 import { consentRequestsRoutes } from './routes/consent';
 import { policyRoutes } from './routes/policy';
@@ -225,6 +226,7 @@ export function createApi(config: ApiConfig): Hono<ApiEnv> {
   v1.route('/exports', exportsRoutes);
   v1.route('/backups', backupsRoutes);
   v1.route('/restores', restoresRoutes);
+  v1.route('/publisher', publisherRoutes);
   v1.route('/moderation', moderationRoutes);
   v1.route('/consent-requests', consentRequestsRoutes);
   v1.route('/policy', policyRoutes);
