@@ -326,7 +326,10 @@ describe('Property 104: Dual_Approvals need two different active Administrators'
       if (model.consentWritten && model.ownerRevoked && !model.widened) {
         const result = await preview({ units: [{ key, level: 'public' }] });
         expect(result.failures.some((f) => f.reason === 'owner_consent'), 'dual consent clears the owner_consent gate').toBe(false);
-        expect(result.token, 'the Revoked Owner\u2019s widening now issues a token').toBeTruthy();
+        // No access_widen was approved, so the finding is still Restricted: that gate, not the Owner's consent, is what
+        // still withholds the token (R47.7).
+        expect(result.failures.map((f) => f.reason), 'the Restriction still blocks the widening').toContain('restricted');
+        expect(result.token, 'a Restricted finding issues no token').toBeNull();
       }
     }), { numRuns: Math.min(FC_RUNS, 40) });
   }, 1000 * Math.min(FC_RUNS, 40));

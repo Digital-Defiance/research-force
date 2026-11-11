@@ -8,9 +8,10 @@ import { rehearseRelease } from '../src/release-rehearsal';
 import { migrateLocalFields } from '../migrate-fields';
 import { ROOT } from './release-fixtures';
 it('runs the exact canonical-field backfill on disposable current/prior-schema copies, resumes checkpoints and preserves source/history', async () => {
-  const { directory } = await rehearseRelease(ROOT, developmentManifest(ROOT), tmpdir());
+  const manifest = developmentManifest(ROOT); const oldest = manifest.schemas.expanded.core - 2; // the oldest rehearsed core checkpoint
+  const { directory } = await rehearseRelease(ROOT, manifest, tmpdir());
   try {
-    const path = resolve(directory, 'core-38.sqlite');
+    const path = resolve(directory, `core-${oldest}.sqlite`);
     const before = new DatabaseSync(path); const text = before.prepare('SELECT unit_id,text,text_spans FROM entry_sections ORDER BY unit_id').all();
     const history = before.prepare('SELECT id,prev FROM revisions ORDER BY id').all(); before.close();
     const first = await migrateLocalFields(path, 2); expect(first.progress?.done).toBe(false);
@@ -23,6 +24,6 @@ it('runs the exact canonical-field backfill on disposable current/prior-schema c
       const generation = final.progress!.generation;
       expect((await migrateLocalFields(path)).progress?.generation).toBe(generation);
     } finally { after.close(); }
-    await expect(migrateLocalFields(resolve(directory, 'core-38-recovery.sqlite'))).rejects.toThrow(/working core/);
+    await expect(migrateLocalFields(resolve(directory, `core-${oldest}-recovery.sqlite`))).rejects.toThrow(/working core/);
   } finally { rmSync(directory, { recursive: true, force: true }); }
 }, 30_000);

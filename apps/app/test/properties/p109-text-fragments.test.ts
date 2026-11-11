@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { DEFAULT_RESOURCE_PROFILE } from '@researchforce/domain/resource-profile';
 import type { RichText, Span } from '@researchforce/domain/richtext';
 import { validateSpans } from '@researchforce/domain/richtext';
-import { isCodePointBoundary } from '@researchforce/domain/text';
+import { isBlank, isCodePointBoundary } from '@researchforce/domain/text';
 import { fieldFragments, fieldManifest, fragmentDigest, fragmentText, readField, streamField, validateFieldManifest } from '@researchforce/domain/text-fragments';
 import type { FieldFragment, FieldManifest, FieldReference, FieldVersionReader } from '@researchforce/domain/text-fragments';
 import { fc, FC_RUNS } from '@researchforce/testing/fc';
@@ -186,6 +186,8 @@ const largestRow = async (): Promise<number> => Math.max(...await Promise.all([
   'SELECT max(length(CAST(prev AS BLOB))) AS n FROM revisions', 'SELECT max(length(CAST(manifest_json AS BLOB))) AS n FROM field_versions', 'SELECT max(length(CAST(payload_json AS BLOB))) AS n FROM text_fragments',
 ].map(async (query) => (await world.core().prepare(query).first<number>('n')) ?? 0)));
 
+/** A section must hold at least one non-whitespace character, so an empty or blank generated value is not an allowed field. */
+const blank = (value: RichText): boolean => isBlank(value.text);
 describe('Property 109 through staged saves, history, search and access', () => {
   const sizes = [3, 400, 22_000, 43_000, 64_000];
   const sectionArb = fc.record({ field: fieldArb(sizes), replay: fc.boolean(), holdBack: fc.boolean() });
@@ -193,7 +195,7 @@ describe('Property 109 through staged saves, history, search and access', () => 
 
   it('keeps text, spans, identities and order exact through staged saves with replayed pieces, refused commits and a later edit, and keeps the old value in history', async () => {
     await fc.assert(fc.asyncProperty(plan, async (scenario) => {
-      const sections = scenario.sections.map(({ field, replay }, i) => ({ content: field.text.length === 0 ? rich(`Section ${i}`) : field, replay, holdBack: i === scenario.sections.length - 1 && scenario.sections[i]!.holdBack }));
+      const sections = scenario.sections.map(({ field, replay }, i) => ({ content: blank(field) ? rich(`Section ${i}`) : field, replay, holdBack: i === scenario.sections.length - 1 && scenario.sections[i]!.holdBack }));
       const token = await open('author');
       const before = await counts();
       const held = await stage(token, sections);
@@ -215,7 +217,7 @@ describe('Property 109 through staged saves, history, search and access', () => 
       expect(sectionsOf(await world.view('author', item.id))).toEqual(stored);
       // Edit one section with a new logical value: the others keep identity and content, and history still reconstructs the old state exactly.
       const target = scenario.target % stored.length;
-      const replacement = scenario.replacement.text.length === 0 ? rich('Replaced.') : scenario.replacement;
+      const replacement = blank(scenario.replacement) ? rich('Replaced.') : scenario.replacement;
       const edit = await open('author', { itemId: item.id });
       await stage(edit, stored.map((section, i) => ({ id: section.id, content: i === target ? replacement : section.content })));
       const edited = await commit(edit, { rev: item.rev, mark: { mark: 'correction', reason: 'Synthetic correction.' } });

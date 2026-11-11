@@ -183,8 +183,9 @@ describe('the External_Party page', () => {
     });
     renderScreen(<PartyPage id={PARTY_ID} />, { client: api.client, administrator: true, route: `/parties/${PARTY_ID}`, path: '/parties/:id' });
     await screen.findByRole('heading', { name: 'County Archive' });
+    const requests = await screen.findByRole('region', { name: 'Consent requests' });
     expect(screen.getByText('archive@example.test')).toBeTruthy();
-    expect(screen.getByRole('region', { name: 'Consent requests' }).textContent).toContain('Answered');
+    expect(requests.textContent).toContain('Answered');
     expect(screen.getByRole('button', { name: 'Send a Consent Request' })).toBeTruthy();
   });
 
