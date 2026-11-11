@@ -148,7 +148,10 @@ describe('R24.11 urgent-before-addition deploy timing', () => {
     const urgentOps = fakeOps({ probe: () => 'absent' });
     await tickWith(urgentOps);
     expect(urgentOps.calls).toContain('deploySite'); // urgent deploys promptly, no quiet wait
-    expect(await runPhase()).toBe('verify'); // an urgent deploy proceeds to the removal-verify phase
+    // An urgent deploy proceeds to the removal-verify phase. The deploy schedules an immediate follow-up alarm on the
+    // live DO, so under load that alarm can already have verified (nothing removed) and finished the run (row gone).
+    // Either way the run has left the deploy phase.
+    expect(await runPhase()).not.toBe('deploy');
   });
 });
 

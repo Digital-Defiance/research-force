@@ -192,7 +192,7 @@ beforeEach(async () => {
     instance.setRenderForTest(undefined);
     await state.storage.deleteAlarm();
   });
-});
+}, 60_000); // emptying the buckets after the sized deploy test lists and deletes thousands of objects
 
 // ---------------------------------------------------------------------------
 // (1) The empty site, urgent: deploy, then verify.

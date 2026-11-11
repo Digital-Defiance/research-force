@@ -142,7 +142,7 @@ const manifestArb = fc.record({
 function renderRow(row: ModelRow): string[] {
   const values: Partial<Record<(typeof HEADER)[number], string>> = { row_key: row.rowKey, kind: row.kind, title: row.title };
   if (row.kind === 'finding') { values.claim = 'The claim holds.'; values.scope_caveat = 'Within the sampled range.'; }
-  else if (row.kind === 'hypothesis') { values.statement = 'The signal persists.'; values.scope = 'All known samples.'; }
+  else if (row.kind === 'hypothesis') { values.statement = 'The signal persists.'; }
   else {
     values.source_kind = 'primary';
     values.reliability = 'High';

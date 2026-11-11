@@ -85,6 +85,16 @@ describe('index page (R35.1)', () => {
   });
 });
 
+describe('open source note in the export footer', () => {
+  it('keeps the external GitHub link on every page', () => {
+    for (const [, file] of build()) {
+      if (!file.path.endsWith('.html')) continue;
+      const view = readPage(file.content);
+      expect(view.text, file.path).toContain('ResearchForce is itself an open source project.');
+      expect(view.links.some((link) => link.href === 'https://github.com/Digital-Defiance/research-force' && link.text === 'ResearchForce source code on GitHub'), file.path).toBe(true);
+    }
+  });
+});
 describe('relative links resolve inside the package (R35.3)', () => {
   const files = build();
 
@@ -93,7 +103,7 @@ describe('relative links resolve inside the package (R35.3)', () => {
       if (!file.path.endsWith('.html')) continue;
       const view = readPage(file.content);
       for (const link of view.links) {
-        if (link.href.startsWith('#') || link.href.startsWith('https://licence.example.test')) continue;
+        if (link.href.startsWith('#') || link.href.startsWith('https://licence.example.test') || link.href === 'https://github.com/Digital-Defiance/research-force') continue;
         expect(link.href.startsWith('/'), `${file.path} → ${link.href}`).toBe(false);
         expect(files.has(resolve(file.path, link.href)), `${file.path} → ${link.href}`).toBe(true);
       }

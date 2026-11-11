@@ -99,10 +99,13 @@ describe('Property 115: Work transitions retain explicit assignments and outcome
         let apply = (): void => undefined;
         let request: () => Promise<Response>;
         let repeat: (() => Promise<Response>) | undefined;
+        // A stale save that would change nothing is a no-op: the server may answer it, but it must never write.
+        let noop = false;
         if (op.t === 'assign') {
           const rev = (await world.view('author', ids[op.w]!))['rev'] as number;
           request = () => send(op.who, 'POST', `/work/${ids[op.w]}/assignments`, { rev: op.stale ? rev - 1 : rev, assigneeIds: op.set.map(member) });
           allowed = !op.stale && (op.who === 'author' || op.who === 'admin') && canRead(op.who, op.w) && op.set.every((name) => canRead(name, op.w));
+          noop = op.stale && JSON.stringify(op.set) === JSON.stringify(model.assignees.map(([name]) => name));
           apply = () => { model.assignees = op.set.map((name) => [name, model.assignees.find(([existing]) => existing === name)?.[1] ?? 'pending']); };
         } else if (op.t === 'respond') {
           const mine = model.assignees.find(([name]) => name === op.who);
@@ -137,6 +140,11 @@ describe('Property 115: Work transitions retain explicit assignments and outcome
           repeat = request;
         }
         const response = await request();
+        if (noop) {
+          expect(await snapshot(), `${label} stale no-op changed something`).toBe(before);
+          await verify(label);
+          continue;
+        }
         expect(response.status === 200, `${label} -> ${response.status}`).toBe(allowed);
         if (allowed) {
           apply();

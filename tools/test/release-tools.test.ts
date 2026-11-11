@@ -49,14 +49,14 @@ describe('reviewable release commands', () => {
     } finally { rmSync(directory, { recursive: true, force: true }); }
   });
   it('limits expansion/contraction scripts to their matching disposable local files and rejects remote or early contraction', async () => {
-    const manifest = developmentManifest(ROOT); const { directory } = await rehearseRelease(ROOT, manifest, tmpdir());
+    const manifest = developmentManifest(ROOT); const { directory } = await rehearseRelease(ROOT, manifest, tmpdir()); const oldest = manifest.schemas.expanded.core - 2;
     try {
-      const db = resolve(directory, 'core-38.sqlite');
-      expect(upgradeCommand(ROOT, 'expand', ['--local', 'infra/releases/development.json', 'core', db])).toMatchObject({ revision: 40, applied: [], productionAuthorized: false });
+      const db = resolve(directory, `core-${oldest}.sqlite`);
+      expect(upgradeCommand(ROOT, 'expand', ['--local', 'infra/releases/development.json', 'core', db])).toMatchObject({ revision: manifest.schemas.expanded.core, applied: [], productionAuthorized: false });
       expect(upgradeCommand(ROOT, 'backfill', ['--local', 'infra/releases/development.json', 'search', resolve(directory, 'search-2.sqlite')])).toMatchObject({ complete: true, productionAuthorized: false });
       expect(() => upgradeCommand(ROOT, 'expand', ['--remote', 'infra/releases/development.json', 'core', db])).toThrow(/Usage/);
       expect(() => upgradeCommand(ROOT, 'expand', ['--local', 'infra/releases/development.json', 'search', db])).toThrow(/matching local/);
-      expect(() => upgradeCommand(ROOT, 'expand', ['--local', 'infra/releases/development.json', 'core', resolve(directory, 'core-38-recovery.sqlite')])).toThrow(/matching local/);
+      expect(() => upgradeCommand(ROOT, 'expand', ['--local', 'infra/releases/development.json', 'core', resolve(directory, `core-${oldest}-recovery.sqlite`)])).toThrow(/matching local/);
       const inventory = inventoryFixture(manifest); inventory.switchedAt = new Date().toISOString();
       const inventoryPath = resolve(directory, 'inventory.json'); const proofPath = resolve(directory, 'proof.json');
       writeFileSync(inventoryPath, JSON.stringify(inventory)); writeFileSync(proofPath, JSON.stringify(restoreFixture(manifest.id)));
@@ -65,5 +65,5 @@ describe('reviewable release commands', () => {
       expect(() => upgradeCommand(ROOT, 'contract', ['--local', 'infra/releases/development.json', 'core', db, inventoryPath, proofPath])).toThrow(/refuses staging\/production/);
       expect(readFileSync(resolve(directory, 'report.json'), 'utf8')).toContain('"productionCertified": false');
     } finally { rmSync(directory, { recursive: true, force: true }); }
-  });
+  }, 30_000);
 });

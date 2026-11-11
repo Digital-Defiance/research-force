@@ -52,7 +52,8 @@
 
   /* The footer's Group_Statement and short copyright statement stay; only its navigation is hidden above (R45.9, R46.2). */
   .rf-footer__statement,
-  .rf-footer__copyright {
+  .rf-footer__copyright,
+  .rf-footer__source {
     display: block;
   }
 

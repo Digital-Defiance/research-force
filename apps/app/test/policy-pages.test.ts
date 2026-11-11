@@ -183,6 +183,8 @@ beforeEach(async () => {
 
 describe('the Publisher build', () => {
   it('records the People page generated hash and advances its last-updated date when a Public_Profile appears', async () => {
+    // The seed stamps the section date with the real clock, so pin it to keep the test independent of today's date.
+    await core().prepare('UPDATE policy_pages SET sections_changed_at = ?1').bind(world.at).run();
     // First build with no public profiles: it records a hash and a date for the People page.
     await renderSiteBuild(renderDeps(), world.at);
     const first = await peopleRow();

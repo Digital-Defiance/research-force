@@ -366,7 +366,7 @@ describe('Property 3 (R37.5, R33.2): a Bulk_Import creates every unit Not_Publis
             ...(shape.supplyRights ? { rights_status: 'Public domain', rights_holder: 'Estate of A', rights_terms: 'CC-BY' } : {}),
           })];
           if (shape.finding) rows.push(bulkRow({ row_key: 'r-finding', kind: 'finding', title: 'A finding', claim: 'The claim holds.', scope_caveat: 'Within the sampled range.' }));
-          if (shape.hypothesis) rows.push(bulkRow({ row_key: 'r-hyp', kind: 'hypothesis', title: 'A hypothesis', statement: 'The signal persists.', scope: 'All known samples.' }));
+          if (shape.hypothesis) rows.push(bulkRow({ row_key: 'r-hyp', kind: 'hypothesis', title: 'A hypothesis', statement: 'The signal persists.' }));
           const files = [await manifestFile('a.pdf', 'version one'), ...(shape.versioned ? [await manifestFile('a-v2.pdf', 'version two')] : [])];
 
           const response = await world3.request('admin', 'POST', '/imports/bulk', {

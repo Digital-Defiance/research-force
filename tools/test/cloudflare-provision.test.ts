@@ -29,7 +29,7 @@ describe('cloudflare resources plan', () => {
     const cors = priv.cors![0]!;
     expect(cors.allowedMethods).toEqual(['PUT']);
     expect(cors.allowedOrigins).toEqual(['https://app.researchforce.org', 'https://researchforce.org']);
-    expect(cors.allowedHeaders).toEqual(['content-length', 'x-amz-checksum-sha256', 'if-none-match']);
+    expect(cors.allowedHeaders).toEqual(['content-length', 'content-md5', 'x-amz-checksum-sha256', 'if-none-match']);
     expect(cors.exposeHeaders).toEqual(['ETag']);
     expect(priv.lifecycleRules![0]).toMatchObject({ abortIncompleteMultipartUploadDays: 1 });
   });

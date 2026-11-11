@@ -120,6 +120,8 @@ describe('item page', () => {
       expect(linkTo(current, '/').join(' ')).toContain('Synthetic Collective');
       expect(current.text).toContain(GROUP_STATEMENT.paragraphs[0]!);
       expect(linkTo(current, 'https://licence.example.test/1.0')).toContain('Synthetic Licence 1.0');
+      expect(current.text).toContain('ResearchForce is itself an open source project.');
+      expect(linkTo(current, 'https://github.com/Digital-Defiance/research-force')).toContain('ResearchForce source code on GitHub');
       for (const path of ['/about', '/people', '/methods', '/licence', '/privacy', '/corrections', '/submit']) expect(current.links.some((link) => link.href === path)).toBe(true);
       expect(find(current.nodes, byTag('html'))!.attributes.get('lang')).toBe('en');
     }

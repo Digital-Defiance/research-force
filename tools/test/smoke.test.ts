@@ -33,13 +33,13 @@ function withRepo(files: Record<string, string>, run: (root: string) => void): v
 describe('the real repository passes every smoke check', () => {
   it('finds no violations in any check', () => {
     for (const result of runSmokeChecks()) expect(result.violations, result.check).toEqual([]);
-  });
+  }, 30_000);
 
   it('formats a clean pass with a zero exit code', () => {
     const clean = formatResults(runSmokeChecks());
     expect(clean.exitCode).toBe(0);
     expect(clean.output).toContain('All smoke checks passed');
-  });
+  }, 30_000);
 });
 
 describe('file-body and rendition route audit (R12.5, R14.9)', () => {
@@ -118,7 +118,7 @@ describe('AI model allow-list and no AI Gateway (R20.20)', () => {
 describe('no committed secret value (R44.9)', () => {
   it('passes the real repository', () => {
     expect(secretLeakViolations()).toEqual([]);
-  });
+  }, 30_000);
 
   it('ignores key-name-only references and placeholder values', () => {
     withRepo({

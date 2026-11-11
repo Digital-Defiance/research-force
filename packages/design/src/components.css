@@ -264,7 +264,8 @@ img {
 }
 
 .rf-footer__statement,
-.rf-footer__copyright {
+.rf-footer__copyright,
+.rf-footer__source {
   max-inline-size: var(--rf-width-reading);
 }
 
