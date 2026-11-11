@@ -1,5 +1,5 @@
 import { element, fragment, text, type ElementNode, type FragmentNode, type ViewNode } from '@researchforce/domain/tree';
-import { COPYRIGHT_STATEMENT, GROUP_STATEMENT, POLICY_PAGES, SITE_PATHS, fillTemplate, licenceLink, type ContentLicence } from '../fixed-texts';
+import { COPYRIGHT_STATEMENT, GROUP_STATEMENT, OPEN_SOURCE_STATEMENT, POLICY_PAGES, SITE_PATHS, fillTemplate, licenceLink, sourceCodeLink, type ContentLicence } from '../fixed-texts';
 
 import { brandMark } from './brand';
 export interface NavItem { readonly label: string; readonly href: string; readonly current?: boolean }
@@ -53,6 +53,7 @@ export function siteFooter(licence: ContentLicence, name?: string): ElementNode 
       ...(name === undefined ? [] : [element('p', { class: 'rf-footer__brand' }, [brandMark('rf-mark--footer'), element('span', { class: 'rf-footer__name' }, [text(name)])])]),
       element('p', { class: 'rf-footer__statement' }, GROUP_STATEMENT.paragraphs.map(text)),
       element('p', { class: 'rf-footer__copyright' }, fillTemplate(copyright!, { licence: licenceLink(licence) })),
+      element('p', { class: 'rf-footer__source' }, fillTemplate(OPEN_SOURCE_STATEMENT.paragraphs[0]!, { source: sourceCodeLink() })),
       navigation('Site information', [...POLICY_PAGES.map((page) => ({ label: page.title, href: page.path })), { label: FORM_FOOTER_LINK, href: SITE_PATHS.submit }], 'rf-footer-nav'),
     ]),
   ]);

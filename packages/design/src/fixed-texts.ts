@@ -63,6 +63,17 @@ export const COPYRIGHT_STATEMENT: FixedText = {
   paragraphs: ['Copyright in published work stays with its credited authors. Each author licenses their own work here under the {licence}. Third-party material keeps its own rights.'],
 };
 
+/** Where the site’s own source code lives; the software licence (MIT) is separate from the Content_Licence for published work. */
+export const SOURCE_CODE_URL = 'https://github.com/Digital-Defiance/research-force';
+export const SOURCE_CODE_LINK_TEXT = 'ResearchForce source code on GitHub';
+
+/** `{source}` is the link to the source code repository. States the software licence apart from the Content_Licence. */
+export const OPEN_SOURCE_STATEMENT: FixedText = {
+  id: 'open-source-statement',
+  version: '2026-11-11',
+  paragraphs: ['ResearchForce is itself an open source project. The software that runs this site is under the MIT licence, which is separate from the licence for published work, and its code is in the {source}.'],
+};
+
 export const PEOPLE_AFFILIATION_STATEMENT: FixedText = {
   id: 'people-affiliation',
   version: '2026-10-27',
@@ -100,7 +111,7 @@ export const PRIVACY_RESPONSIBLE_PERSON: FixedText = {
 };
 
 export const FIXED_TEXTS: readonly FixedText[] = [
-  GROUP_STATEMENT, ABOUT_STATUS, COPYRIGHT_STATEMENT, PEOPLE_AFFILIATION_STATEMENT, PEOPLE_NO_PROFILE_STATEMENT, LICENCE_STATEMENT,
+  GROUP_STATEMENT, ABOUT_STATUS, COPYRIGHT_STATEMENT, OPEN_SOURCE_STATEMENT, PEOPLE_AFFILIATION_STATEMENT, PEOPLE_NO_PROFILE_STATEMENT, LICENCE_STATEMENT,
   CORRECTIONS_STATEMENT, PRIVACY_RESPONSIBLE_PERSON,
 ];
 
@@ -131,6 +142,7 @@ export function fillTemplate(paragraph: string, values: Readonly<Record<string, 
 
 export interface ContentLicence { readonly name: string; readonly url: string }
 export const licenceLink = (licence: ContentLicence): ViewNode => element('a', { href: licence.url, rel: 'license' }, [text(licence.name)]);
+export const sourceCodeLink = (): ViewNode => element('a', { href: SOURCE_CODE_URL, rel: 'noopener noreferrer' }, [text(SOURCE_CODE_LINK_TEXT)]);
 export const formLink = (): ViewNode => element('a', { href: SITE_PATHS.submitRemovalGeneral }, [text(FORM_LINK_TEXT)]);
 
 /** The latest version date among the given fixed texts, for a Policy_Page’s last-updated date (R46.29). */

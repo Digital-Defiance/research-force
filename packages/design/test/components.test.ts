@@ -28,6 +28,13 @@ describe('page frame', () => {
     expect(renderToString(mainContent([], 'rf-main--bleed'))).toBe('<main id="main" class="rf-main rf-main--bleed" tabindex="-1"></main>');
   });
 
+  it('notes that the site is open source and links its source code on GitHub, apart from the content licence', () => {
+    const html = renderToString(siteFooter(LICENCE));
+    expect(html).toContain('<p class="rf-footer__source">ResearchForce is itself an open source project.');
+    expect(html).toContain('<a href="https://github.com/Digital-Defiance/research-force" rel="noopener noreferrer">ResearchForce source code on GitHub</a>');
+    expect(html).toContain('MIT licence, which is separate from the licence for published work');
+    expect(html).not.toMatch(/[{}]/u);
+  });
   it('puts the Group_Statement, the copyright statement with the licence link, and the six Policy_Pages and the form in the footer', () => {
     const footer = siteFooter(LICENCE);
     const html = renderToString(footer);
