@@ -22,3 +22,7 @@ infra/m365/rf-mail.crt
 # Research source material and import working files: never committed (R26, 48.12).
 emails/
 .import-work/
+
+# Backup recovery keys must never be committed
+recovery-key*.txt
+*.recovery-key
