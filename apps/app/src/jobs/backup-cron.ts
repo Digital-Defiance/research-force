@@ -26,6 +26,12 @@ import { deleteIndependentCopy, independentDestination, transferPackage, verifyI
  *      requested-staging expiry stays with the 38.4 `finish` path, unchanged.
  */
 
+/** A failed scheduled slot is retried at most this many times in all, at least this long after the previous attempt began. */
+const MAX_SLOT_ATTEMPTS = 3;
+const SLOT_RETRY_MS = 60 * 60 * 1000;
+/** A backup still `running` this long after its request is incomplete (R36.6). */
+const STUCK_BACKUP_MS = 24 * 60 * 60 * 1000;
+
 /** The 12-hour schedule slot `now` falls in: a `YYYY-MM-DDTHH` key floored to a 12-hour boundary (00 or 12). */
 export function slotKey(now: Timestamp): string {
   const date = new Date(now);
@@ -42,11 +48,20 @@ export function slotKey(now: Timestamp): string {
  */
 export async function startScheduledBackup(env: Env, now: Timestamp): Promise<number> {
   const slot = slotKey(now);
-  // Idempotent per slot: a snapshot already started for this slot stops a second start.
-  const existing = await env.RF_CORE.prepare('SELECT 1 AS present FROM backup_points WHERE slot_key = ?1 LIMIT 1').bind(slot).first<{ present: number }>();
-  if (existing !== null) return 0;
-  // Time-gated: do not start within `intervalMs` of the most recent scheduled snapshot (≥12h gating, R36.3).
-  const latest = await env.RF_CORE.prepare('SELECT started_at AS startedAt FROM backup_points ORDER BY started_at DESC LIMIT 1').first<{ startedAt: string }>();
+  // Idempotent per slot: a snapshot already started for this slot stops a second start, unless every attempt so far
+  // ended incomplete. Then the slot retries as `{slot}~2`, `{slot}~3` (at most MAX_SLOT_ATTEMPTS, at least an hour apart).
+  const attempts = (await env.RF_CORE.prepare('SELECT slot_key AS slotKey, state, started_at AS startedAt FROM backup_points WHERE slot_key = ?1 OR slot_key LIKE ?2')
+    .bind(slot, `${slot}~%`).all<{ slotKey: string; state: string; startedAt: string }>()).results;
+  let attemptSlot = slot;
+  if (attempts.length > 0) {
+    if (attempts.some((attempt) => attempt.state !== 'incomplete')) return 0; // pending or complete: nothing to retry
+    if (attempts.length >= MAX_SLOT_ATTEMPTS) return 0;
+    const lastStarted = Math.max(...attempts.map((attempt) => Date.parse(attempt.startedAt)));
+    if (Date.parse(now) - lastStarted < SLOT_RETRY_MS) return 0;
+    attemptSlot = `${slot}~${attempts.length + 1}`;
+  }
+  // Time-gated: do not start within `intervalMs` of the most recent scheduled snapshot that did not fail (≥12h gating, R36.3).
+  const latest = await env.RF_CORE.prepare("SELECT started_at AS startedAt FROM backup_points WHERE state <> 'incomplete' ORDER BY started_at DESC LIMIT 1").first<{ startedAt: string }>();
   if (latest !== null && Date.parse(now) - Date.parse(latest.startedAt) < BACKUP_SCHEDULE.intervalMs) return 0;
 
   const id = newULID(now) as ULID;
@@ -54,8 +69,28 @@ export async function startScheduledBackup(env: Env, now: Timestamp): Promise<nu
   await startBackup(env.RF_CORE, { id, requestedBy: null, now });
   await env.RF_CORE.prepare(
     "INSERT INTO backup_points (export_id, slot_key, started_at, state, copy_state, created_at) VALUES (?1, ?2, ?3, 'pending', 'none', ?3)",
-  ).bind(id, slot, now).run();
+  ).bind(id, attemptSlot, now).run();
   return 1;
+}
+
+/**
+ * Finish every requested or scheduled backup that has been `running` for more than 24 hours as `incomplete` (R36.6:
+ * a package not produced within 24 hours of the request is incomplete), and close its job row. The 7-day expiry runs
+ * from the request, as `finish` sets it. Returns how many backups it closed.
+ */
+export async function sweepStuckBackups(env: Env, now: Timestamp): Promise<number> {
+  const cutoff = new Date(Date.parse(now) - STUCK_BACKUP_MS).toISOString();
+  const stuck = (await env.RF_CORE.prepare("SELECT id, started_at AS startedAt FROM exports WHERE type = 'backup' AND state = 'running' AND started_at < ?1")
+    .bind(cutoff).all<{ id: string; startedAt: string }>()).results;
+  const report = JSON.stringify({ reason: 'not finished within 24 hours', misses: [] });
+  for (const row of stuck) {
+    const expiresAt = new Date(Date.parse(row.startedAt) + 7 * 24 * 60 * 60 * 1000).toISOString();
+    await env.RF_CORE.batch([
+      env.RF_CORE.prepare("UPDATE exports SET state = 'incomplete', incomplete = ?2, finished_at = ?3, expires_at = ?4 WHERE id = ?1 AND state = 'running'").bind(row.id, report, now, expiresAt),
+      env.RF_CORE.prepare("UPDATE jobs SET state = 'incomplete', updated_at = ?2, finished_at = coalesce(finished_at, ?2) WHERE id = ?1 AND state IN ('queued', 'running')").bind(row.id, now),
+    ]);
+  }
+  return stuck.length;
 }
 
 /** One scheduled snapshot the copy/verification sweep reconciles, joined to its `exports` outcome. */

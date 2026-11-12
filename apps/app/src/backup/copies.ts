@@ -108,11 +108,26 @@ export async function transferPackage(env: Env, exportId: string, destination: I
   for (const key of keys) {
     const object = await env.RF_PRIVATE_BUCKET.get(key);
     if (object === null) continue; // listed-then-gone; the verification will catch a missing part
-    const bytes = await object.arrayBuffer();
-    // Copy the ENCRYPTED bytes unchanged; preserve the content type so the copy is byte-identical.
-    await destination.bucket!.put(key, bytes, object.httpMetadata ? { httpMetadata: object.httpMetadata } : undefined);
+    // Copy the ENCRYPTED bytes unchanged; preserve the content type so the copy is byte-identical. A large object is
+    // streamed, so it is never held whole in the isolate.
+    const options = object.httpMetadata ? { httpMetadata: object.httpMetadata } : undefined;
+    if (object.size > STREAM_ABOVE_BYTES) await destination.bucket!.put(key, object.body.pipeThrough(new FixedLengthStream(object.size)), options);
+    else await destination.bucket!.put(key, await object.arrayBuffer(), options);
   }
   return { copyState: 'transferred', destination: destination.label };
+}
+
+/** Objects larger than this are streamed rather than buffered (the Workers isolate holds 128 MB). */
+const STREAM_ABOVE_BYTES = 8 * 1024 * 1024;
+
+/** The lowercase-hex SHA-256 of a stored object, streamed when it is large, matching the package's hash convention. */
+async function objectSha256(object: R2ObjectBody): Promise<string> {
+  if (object.size > STREAM_ABOVE_BYTES) {
+    const stream = new crypto.DigestStream('SHA-256');
+    await object.body.pipeTo(stream);
+    return Array.from(new Uint8Array(await stream.digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
+  }
+  return sha256Hex(await object.arrayBuffer());
 }
 
 /** The lowercase-hex SHA-256 of bytes, matching the package's hash convention. */
@@ -235,8 +250,8 @@ export async function verifyIndependentCopy(env: Env, exportId: string, bucket: 
   for (const file of manifest.files) {
     const object = await bucket.get(`${prefix}/files/${file.id}`);
     if (object === null) return { verified: false, fault: 'missing-part' };
-    const bytes = new Uint8Array(await object.arrayBuffer());
-    if (bytes.byteLength !== file.bytes || (await sha256Hex(bytes)) !== file.sha256) return { verified: false, fault: 'hash-mismatch' };
+    if (object.size !== file.bytes) { await object.body.cancel().catch(() => undefined); return { verified: false, fault: 'hash-mismatch' }; }
+    if ((await objectSha256(object)) !== file.sha256) return { verified: false, fault: 'hash-mismatch' };
   }
   for (const table of manifest.tables) {
     const object = await bucket.get(`${prefix}/body/${table.table}.jsonl`);

@@ -16,7 +16,7 @@ import { isFrozen } from '../../src/publisher/projection';
 import { itemWorld } from '../items';
 import type { Who } from '../items';
 import { addMember, resetPeople } from '../api';
-import { addElement, addProject, resetRecords, submitItems } from '../units';
+import { addElement, addProject, putAttachmentBytes, resetRecords, submitItems } from '../units';
 
 /**
  * Validates R36.1, R36.4, R36.5, R36.8, R36.10, R36.11.
@@ -219,7 +219,7 @@ async function seedWorkspace(shape: Shape): Promise<ReadonlyMap<string, Uint8Arr
     // Write real bytes at the Attachment's r2Key (`synthetic/{unitId}`, see test/units.ts) and record the backup's
     // file-copy expectations against the Attachment's Item_Identifier (the in-package file id).
     const bytes = new TextEncoder().encode(`synthetic attachment bytes for ${attachment.id} \u{1F9EA}`);
-    await priv().put(`synthetic/${attachment.id}`, bytes);
+    await putAttachmentBytes(core(), priv(), attachment.id, bytes);
     const identifier = (await core().prepare('SELECT item_identifier AS id FROM attachments WHERE unit_id = ?1').bind(attachment.id).first<{ id: string }>())!.id;
     files.set(identifier, bytes);
   }

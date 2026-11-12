@@ -13,7 +13,7 @@ import { sweepUploads } from './files/uploads';
 import { sweepStages } from './records/stages';
 import { sweepDrafts } from './records/drafts';
 import { startScheduledExport, sweepExportRetention } from './jobs/export-cron';
-import { startScheduledBackup, sweepBackupCopies, sweepBackupRetention } from './jobs/backup-cron';
+import { startScheduledBackup, sweepBackupCopies, sweepBackupRetention, sweepStuckBackups } from './jobs/backup-cron';
 import { checkRpoAge } from './backup/rpo';
 import { checkResponsiblePersonRevoked } from './policy/responsible';
 import { checkUsageAlerts } from './usage/alerts';
@@ -56,6 +56,8 @@ export const HOURLY_SWEEPS: readonly Sweep[] = [
   // weekly/12 monthly verified points (successor-verified-before-expiry), and raise the 18h warning / 24h breach on
   // the independent channel (R36.3, R36.7, R36.12, R36.13, R36.16).
   { name: 'scheduled_backup', run: startScheduledBackup },
+  // A backup still running 24 hours after its request becomes incomplete with a reason (R36.6).
+  { name: 'stuck_backups', run: sweepStuckBackups },
   { name: 'backup_copies', run: sweepBackupCopies },
   { name: 'backup_retention', run: sweepBackupRetention },
   { name: 'backup_rpo_alert', run: (env, now) => checkRpoAge(env, now) },

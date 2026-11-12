@@ -106,6 +106,16 @@ export async function addElement(core: D1Database, place: Place, type: ElementTy
   return { id, identifier };
 }
 
+/**
+ * Store real bytes at an Attachment's synthetic R2 key and record their true size and SHA-256 on its row, as an upload
+ * does, so a backup copies the file under R2's checksum check (R36.1, R36.6).
+ */
+export async function putAttachmentBytes(core: D1Database, bucket: R2Bucket, unitId: ULID, bytes: Uint8Array): Promise<string> {
+  const sha256 = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', bytes as BufferSource)), (byte) => byte.toString(16).padStart(2, '0')).join('');
+  await bucket.put(`synthetic/${unitId}`, bytes);
+  await core.prepare('UPDATE attachments SET size_bytes = ?2, sha256 = ?3 WHERE unit_id = ?1').bind(unitId, bytes.byteLength, sha256).run();
+  return sha256;
+}
 /** Permanently delete a unit the way the deletion job leaves it: the row gone and a Deletion record kept. */
 export async function deleteUnit(core: D1Database, id: ULID, by: ULID, now: Timestamp): Promise<void> {
   const row = await core.prepare(`SELECT u.unit_type AS unitType, u.root_id AS rootId, u.project_id AS projectId, ri.kind, coalesce(ri.item_identifier, a.item_identifier) AS identifier
