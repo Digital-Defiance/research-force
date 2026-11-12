@@ -15,6 +15,7 @@ import { sweepDrafts } from './records/drafts';
 import { startScheduledExport, sweepExportRetention } from './jobs/export-cron';
 import { startScheduledBackup, sweepBackupCopies, sweepBackupRetention, sweepStuckBackups } from './jobs/backup-cron';
 import { checkRpoAge } from './backup/rpo';
+import { checkBackupProduction } from './backup/health';
 import { checkResponsiblePersonRevoked } from './policy/responsible';
 import { checkUsageAlerts } from './usage/alerts';
 import { sweepConsentExpiry, sweepConsentReminders, sweepConsentTokens } from './consent/sweep';
@@ -61,6 +62,9 @@ export const HOURLY_SWEEPS: readonly Sweep[] = [
   { name: 'backup_copies', run: sweepBackupCopies },
   { name: 'backup_retention', run: sweepBackupRetention },
   { name: 'backup_rpo_alert', run: (env, now) => checkRpoAge(env, now) },
+  // Backup PRODUCTION health: alert when backups keep failing or none is complete within the spec's 18h/24h, whatever
+  // the lengthened independent-copy thresholds say (R36.6, R36.7).
+  { name: 'backup_production_alert', run: (env, now) => checkBackupProduction(env, now) },
   // Emailed Consent_Requests: send the one 14-day reminder with the same Consent_Link, expire a request 30 days
   // after sending without changing any status, and delete the Consent_Link and Change_Link token hashes 30 days
   // after the links expire (R51.11, R51.13).

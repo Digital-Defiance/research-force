@@ -149,15 +149,61 @@ describe('the backups and restores screen', () => {
     });
     renderScreen(<BackupsScreen />, { client: api.client, administrator: true });
 
-    const card = await screen.findByRole('listitem', { name: `Backup ${BACKUP_ID}` });
+    const card = await screen.findByRole('region', { name: `Backup ${BACKUP_ID}` });
     expect(card.textContent).toContain('Incomplete');
-    expect(screen.getByText('This backup could not include every element.')).toBeTruthy();
+    expect(card.textContent).toContain('This backup did not finish');
+    expect(card.textContent).toContain('This backup could not include every element.');
     const links = screen.getByRole('region', { name: `Download links for backup ${complete.id}` });
     expect(links.querySelector('a')?.getAttribute('href')).toBe('https://dl.example/x/backup-1');
 
     fireEvent.click(screen.getByRole('button', { name: 'Request the backup' }));
-    await screen.findByText('The backup was requested. It appears below once it starts.');
+    await screen.findByText('The backup was requested. It is listed below as In progress; this page refreshes until it finishes.');
     expect(api.calls.some((call) => call.method === 'POST' && call.path === '/backups')).toBe(true);
+  });
+
+  it('shows a failed backup in the open list with its reason, missing elements and trigger, plus a top warning (R36.6)', async () => {
+    const failed = {
+      id: BACKUP_ID, state: 'incomplete', trigger: 'scheduled', startedAt: '2026-10-01T00:00:00.000Z', finishedAt: '2026-10-01T00:30:00.000Z',
+      expiresAt: '2026-10-08T00:00:00.000Z', download: [],
+      incomplete: { reason: 'unexpected error in the files step (Error)', misses: [{ element: 'file:abc', reason: 'checksum' }] },
+    };
+    const api = fakeApi({ 'GET /backups': json({ backups: [failed] }), 'GET /restores': json({ restores: [] }) });
+    const view = renderScreen(<BackupsScreen />, { client: api.client, administrator: true });
+
+    const card = await screen.findByRole('region', { name: `Backup ${BACKUP_ID}` });
+    expect(card.closest('details')).toBeNull();
+    expect(view.container.querySelector('details')).toBeNull();
+    expect(card.textContent).toContain('This backup did not finish');
+    expect(card.textContent).toContain('The backup stopped on an unexpected error in the files step.');
+    expect(card.textContent).toContain('file:abc: checksum does not match');
+    expect(card.textContent).toContain('Scheduled');
+    expect(card.textContent).toContain('kept until');
+    const top = screen.getByText('The most recent backup did not finish');
+    expect(top.closest('[role="alert"]')?.textContent).toContain('The backup stopped on an unexpected error in the files step.');
+  });
+
+  it('shows a running backup as In progress and reloads every 10 seconds until it ends', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      let polls = 0;
+      const running = { id: BACKUP_ID, state: 'running', trigger: 'requested', startedAt: new Date().toISOString(), finishedAt: null, expiresAt: null, incomplete: null, download: [] };
+      const done = { ...running, state: 'complete', finishedAt: new Date().toISOString() };
+      const api = fakeApi({
+        'GET /backups': () => json({ backups: [++polls < 3 ? running : done] }),
+        'GET /restores': json({ restores: [] }),
+      });
+      renderScreen(<BackupsScreen />, { client: api.client, administrator: true });
+
+      const card = await screen.findByRole('region', { name: `Backup ${BACKUP_ID}` });
+      expect(card.textContent).toContain('In progress');
+      expect(card.closest('details')).toBeNull();
+      await vi.advanceTimersByTimeAsync(10_000);
+      await vi.advanceTimersByTimeAsync(10_000);
+      await vi.waitFor(() => expect(screen.getByRole('region', { name: `Backup ${BACKUP_ID}` }).textContent).toContain('Complete'));
+      const settled = polls;
+      await vi.advanceTimersByTimeAsync(30_000);
+      expect(polls).toBe(settled); // the timer stops once nothing is in progress
+    } finally { vi.useRealTimers(); }
   });
 
   it('requests a restore naming a backup and the browser-side package hash (R36.8)', async () => {

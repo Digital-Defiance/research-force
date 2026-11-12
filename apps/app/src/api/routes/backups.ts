@@ -66,6 +66,7 @@ backupsRoutes.get('/', async (c) => {
   const backups = await Promise.all(rows.map(async (row) => ({
     id: row.id,
     state: row.state,
+    trigger: row.requestedBy === null ? 'scheduled' : 'requested',
     startedAt: row.startedAt,
     finishedAt: row.finishedAt,
     expiresAt: row.expiresAt,
@@ -87,7 +88,7 @@ backupsRoutes.get('/:id', async (c) => {
   ).bind(id).first<BackupRow>();
   if (row === null) throw new ApiError('not_found');
   return c.json({
-    id: row.id, state: row.state, startedAt: row.startedAt, finishedAt: row.finishedAt, expiresAt: row.expiresAt,
+    id: row.id, state: row.state, trigger: row.requestedBy === null ? 'scheduled' : 'requested', startedAt: row.startedAt, finishedAt: row.finishedAt, expiresAt: row.expiresAt,
     incomplete: row.incomplete === null ? null : (JSON.parse(row.incomplete) as unknown),
     download: await downloadLinks(c, row),
   });

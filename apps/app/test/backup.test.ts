@@ -547,6 +547,10 @@ describe('POST /backups (R36.1, R36.2, R36.3)', () => {
     const detail = await (await world.request('admin', 'GET', `/backups/${id}`)).json<{ state: string; download: { url: string }[] }>();
     expect(detail.state).toBe('complete');
     expect(detail.download.length).toBeGreaterThan(0);
+    // The payload says whether the backup was requested by an Administrator or scheduled.
+    expect((detail as unknown as { trigger: string }).trigger).toBe('requested');
+    const listed = await (await world.request('admin', 'GET', '/backups')).json<{ backups: { id: string; trigger: string }[] }>();
+    expect(listed.backups.find((backup) => backup.id === id)?.trigger).toBe('requested');
     const { verifyDownload } = await import('@researchforce/db/downloads');
     const token = new URL(detail.download[0]!.url).pathname.replace('/x/', '');
     const claim = await verifyDownload(token, 'test-download-secret', Date.parse(world.at));

@@ -582,7 +582,7 @@
     },
     {
       "path": "apps/app/src/api/routes/backups.ts",
-      "sha256": "41aaded85b0e3b70f6897506dfcc298956e71055a40fea313e0ddf7f92694783"
+      "sha256": "16dfe0e1255cd7b6658c1670f3e8854315fb36a1ed945f7ab95de6469b608dd5"
     },
     {
       "path": "apps/app/src/api/routes/citations.ts",
@@ -805,6 +805,10 @@
       "sha256": "c22baafcec867c180668b681cb33c34a6fb337b5b7da8e826555fa4da3fa71e6"
     },
     {
+      "path": "apps/app/src/backup/health.ts",
+      "sha256": "811c937da4d57b180e43c718b1019f64b9bd18945ffef89b58c9a7df3d015829"
+    },
+    {
       "path": "apps/app/src/backup/preflight.ts",
       "sha256": "d0b943e4b477d5963b24e41922b11162b16fcf003b15c9e13819fd03b34128ba"
     },
@@ -838,7 +842,7 @@
     },
     {
       "path": "apps/app/src/cron.ts",
-      "sha256": "8e0152f261d13cb81a69d0c710e422c1d738b5f28d008c171b85479bae89401d"
+      "sha256": "af3f6a842eaf6e94daa526525e0c682a13fcaa73d2b14b20b628e30bba2fc521"
     },
     {
       "path": "apps/app/src/disclosure/apply.ts",
@@ -1582,7 +1586,7 @@
     },
     {
       "path": "apps/app/web/src/exports/backups.tsx",
-      "sha256": "b9f6b64e238a35a01a47b495d78dbd7b0686391ec438dc1d7e28ec39db493630"
+      "sha256": "dafa96c55ef88c9e4ca635aee211b8558b392801a78b5aca2bbe79d5dfa86d7f"
     },
     {
       "path": "apps/app/web/src/exports/exports.tsx",
