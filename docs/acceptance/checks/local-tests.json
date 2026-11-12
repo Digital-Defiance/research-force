@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "command": "npm test -- --reporter=json --outputFile=<temporary report>",
-  "recordedAt": "2026-11-12T00:18:01.587Z",
+  "recordedAt": "2026-11-12T00:44:43.304Z",
   "scope": "local-synthetic",
   "success": true,
   "suites": [
@@ -1531,7 +1531,7 @@
     },
     {
       "path": "apps/app/web/test/shell.test.tsx",
-      "passed": 4,
+      "passed": 5,
       "failed": 0,
       "skipped": 0
     },
@@ -3019,7 +3019,7 @@
     "infra/recovery/deployment.example.json": "f50e284de933da91b761d0b6293f62caef82e8aa0c8db7c83e31e7eca5398bec",
     "infra/recovery/restore-proof.example.json": "2c02a645aaa612d1dd4f0bc537433a5e58764b4244a02562523aabc6d6a31554",
     "infra/releases/README.md": "73919ce7f8cc7b532d520dbc250f4f16ccd28f84e70e32d21d556190afe50ade",
-    "infra/releases/development.json": "615070890da0c78126a4be5c36b0eb673670731409d89355fcd7759ed7d59eac",
+    "infra/releases/development.json": "46ca6cc2f6ed2c510494fbbe0e05f9f96f0e04581af65ebbbdc9baf9549d0b12",
     "infra/secrets.ts": "ba2a3092c6fb3eca9ced657c2537f4947bc51e4379d4e93e1b987cc67a7fe324",
     "lighthouserc.json": "3b50af939dd1958cb5a4da086a126bb8c3e30181ed5aa5d608680e53e1148dcf",
     "package-lock.json": "0ce11c2bb60290ba470e60d77d36554dbcf0b0aa05415640ad87629000305f9b",
