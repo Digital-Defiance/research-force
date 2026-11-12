@@ -16,7 +16,7 @@ import { FREEZE } from '@researchforce/domain/settings';
 import { asTimestamp } from '@researchforce/domain/types';
 import type { Timestamp, ULID } from '@researchforce/domain/types';
 import { BACKUP_TABLES, EXCLUDED_BACKUP_TABLES } from '@researchforce/db/schema/core';
-import { acquireFreeze, invalidateLiveSnapshot, readLease } from '../src/backup/freeze';
+import { acquireFreeze, invalidateLiveSnapshot, invalidateSnapshotForDeletion, readLease } from '../src/backup/freeze';
 import { JOB_HANDLERS } from '../src/do/jobs';
 import type { JsonValue } from '../src/do/jobs';
 import { backupPrefix, parseSegments } from '../src/jobs/backup';
@@ -24,7 +24,7 @@ import '../src/api/routes/backups';
 import { fc, FC_RUNS } from '@researchforce/testing/fc';
 import { bucketKeyOf } from '../src/jobs/export';
 import { itemWorld } from './items';
-import { addElement, addProject, addSubmissionRow, resetRecords } from './units';
+import { addElement, addProject, addSubmissionRow, putAttachmentBytes, resetRecords, submitItems } from './units';
 
 // A fixed 32-byte recovery key for the single test custodian, base64-encoded; held "outside production" in the harness.
 const RECOVERY_KEY = new Uint8Array(32).map((_byte, index) => (index * 7 + 3) & 0xff);
@@ -54,16 +54,20 @@ async function jobRecord(id: ULID) {
  * lease stays live within its window. `clockStep` lets a test jump the clock (to simulate a lost lease). Returns the
  * outcome and the number of slices.
  */
-async function runBackup(id: ULID, options: { readonly clockStart?: number; readonly clockStep?: number; readonly onSlice?: (slice: number, now: Timestamp) => Promise<void> } = {}): Promise<{ outcome: 'complete' | 'incomplete'; slices: number }> {
+async function runBackup(id: ULID, options: { readonly clockStart?: number; readonly clockStep?: number; readonly jumpAfterLeaseCompleteMs?: number; readonly onSlice?: (slice: number, now: Timestamp) => Promise<void> } = {}): Promise<{ outcome: 'complete' | 'incomplete'; slices: number }> {
   const start = options.clockStart ?? Date.parse(world.at);
   const stepMs = options.clockStep ?? 1_000;
+  // `jumpAfterLeaseCompleteMs` moves the clock forward once, as soon as the lease is 'complete': the files are then
+  // copied long after the 30-second lease would have lapsed (the production failure, R36.14).
+  let offset = 0;
   let cursor: JsonValue = null;
   for (let slice = 0; slice < 5_000; slice++) {
-    const now = asTimestamp(new Date(start + slice * stepMs).toISOString());
+    const now = asTimestamp(new Date(start + slice * stepMs + offset).toISOString());
     await options.onSlice?.(slice, now);
     const result = await JOB_HANDLERS.internal_backup!.slice({ env: world.bindings, job: await jobRecord(id), now }, cursor);
     if (result.done) return { outcome: result.outcome ?? 'complete', slices: slice + 1 };
     cursor = result.cursor;
+    if (offset === 0 && options.jumpAfterLeaseCompleteMs !== undefined && (await readLease(core()))?.state === 'complete') offset = options.jumpAfterLeaseCompleteMs;
   }
   throw new Error('backup job did not finish');
 }
@@ -130,7 +134,7 @@ describe('the Internal_Backup job (R36.1, R36.13, R36.14)', () => {
     // The lease is acquired on the first slice and still held while paging: a read of the lease mid-run is `held`.
     let leaseSeenHeld = false;
     const { outcome } = await runBackup(id, {
-      onSlice: async (slice) => { if (slice === 2) { const lease = await readLease(core()); if (lease?.state === 'held') leaseSeenHeld = true; } },
+      onSlice: async (slice) => { if (slice === 1) { const lease = await readLease(core()); if (lease?.state === 'held') leaseSeenHeld = true; } },
     });
     expect(outcome).toBe('complete');
     expect(leaseSeenHeld, 'the write-freeze lease is held across the snapshot pages').toBe(true);
@@ -273,6 +277,146 @@ describe('the Internal_Backup job (R36.1, R36.13, R36.14)', () => {
   });
 });
 
+/** Seed one Attachment with real bytes (and its true size and SHA-256), returning its package file id and source key. */
+async function seedAttachment(bytes: Uint8Array): Promise<{ readonly unitId: ULID; readonly identifier: string; readonly key: string; readonly sha256: string }> {
+  const sub = await submitItems(core(), { projectId: world.projectId, ownerId: world.ids.author, now: world.at }, 1);
+  const attachment = await addElement(core(), { projectId: world.projectId, ownerId: world.ids.author, submissionId: sub.submissionId, now: world.at }, 'attachment', sub.ids[0]!);
+  const sha256 = await putAttachmentBytes(core(), priv(), attachment.id, bytes);
+  return { unitId: attachment.id, identifier: attachment.identifier!, key: `synthetic/${attachment.id}`, sha256 };
+}
+const pinStates = async (): Promise<string[]> =>
+  (await core().prepare('SELECT state FROM backup_file_pins ORDER BY r2_key').all<{ state: string }>()).results.map((row) => row.state);
+
+/** Wrap the private bucket so `get` of a seeded attachment source throws `times` times (an injected transient fault). */
+function failingBucket(times: number): { restore: () => void; thrown: () => number } {
+  const original = world.bindings.RF_PRIVATE_BUCKET;
+  let thrown = 0;
+  (world.bindings as { RF_PRIVATE_BUCKET: R2Bucket }).RF_PRIVATE_BUCKET = new Proxy(original, {
+    get(target, property) {
+      if (property === 'get') {
+        return async (key: string, ...rest: unknown[]) => {
+          if (key.startsWith('synthetic/') && thrown < times) { thrown++; throw new Error('injected R2 fault'); }
+          return (target.get as (key: string, ...rest: unknown[]) => Promise<R2ObjectBody | null>).call(target, key, ...rest);
+        };
+      }
+      const value = Reflect.get(target, property) as unknown;
+      return typeof value === 'function' ? value.bind(target) : value;
+    },
+  });
+  return { restore: () => { (world.bindings as { RF_PRIVATE_BUCKET: R2Bucket }).RF_PRIVATE_BUCKET = original; }, thrown: () => thrown };
+}
+
+describe('the files are copied AFTER the write-freeze lease completes (R36.14, design "Internal_Backup and independent recovery")', () => {
+  it('completes with every file even when the clock runs 10 minutes past the lease before the first file is copied, and releases writers first', async () => {
+    const small = [await seedAttachment(new TextEncoder().encode('first small file')), await seedAttachment(new TextEncoder().encode('second small file')), await seedAttachment(new TextEncoder().encode('third small file'))];
+    const big = await seedAttachment(new Uint8Array(6 * 1024 * 1024).map((_byte, index) => index % 251));
+    const { id } = await (await startBackup()).json<{ id: ULID }>();
+
+    // Before any pin is 'copied', the lease may be held; once one is copied the lease must already be 'complete'.
+    const writersHeldDuringCopy: number[] = [];
+    const { outcome } = await runBackup(id, {
+      jumpAfterLeaseCompleteMs: 10 * 60 * 1000,
+      onSlice: async (slice) => {
+        const copied = (await pinStates()).filter((state) => state === 'copied').length;
+        if (copied > 0 && (await readLease(core()))?.state !== 'complete') writersHeldDuringCopy.push(slice);
+      },
+    });
+    expect(outcome).toBe('complete');
+    expect(writersHeldDuringCopy, 'no file was copied while the lease was still held').toEqual([]);
+
+    const manifest = await openManifest(id);
+    expect(manifest.files.map((file) => file.id).sort()).toEqual([...small, big].map((file) => file.identifier).sort());
+    const bigEntry = manifest.files.find((file) => file.id === big.identifier)!;
+    expect(bigEntry).toMatchObject({ bytes: 6 * 1024 * 1024, sha256: big.sha256 });
+    expect(await pinStates()).toEqual(Array(4).fill('copied'));
+
+    // The freeze window: acquire -> complete within the certified window, and no renewal after completion.
+    const audit = (await core().prepare('SELECT action, at FROM freeze_audit WHERE actor = ?1 ORDER BY at, rowid').bind(id).all<{ action: string; at: string }>()).results;
+    const acquired = audit.find((row) => row.action === 'acquire')!;
+    const completed = audit.find((row) => row.action === 'complete')!;
+    expect(Date.parse(completed.at) - Date.parse(acquired.at)).toBeLessThan(FREEZE.windowMs);
+    expect(audit.slice(audit.indexOf(completed)).map((row) => row.action)).not.toContain('renew');
+  }, 120_000);
+
+  it('ends incomplete naming the privacy deletion when a pinned source is deleted after the lease completed', async () => {
+    await seedAttachment(new TextEncoder().encode('kept file'));
+    const doomed = await seedAttachment(new TextEncoder().encode('deleted file'));
+    const { id } = await (await startBackup()).json<{ id: ULID }>();
+    let deleted = false;
+    const { outcome } = await runBackup(id, {
+      onSlice: async (_slice, now) => {
+        if (deleted || (await readLease(core()))?.state !== 'complete') return;
+        // The deletion job wins over the pin: it invalidates the snapshot's pin and destroys the source.
+        expect(await invalidateSnapshotForDeletion(core(), [doomed.key], 'privacy deletion of a pinned source', now)).toHaveLength(1);
+        await priv().delete(doomed.key);
+        deleted = true;
+      },
+    });
+    expect(deleted, 'the deletion raced the file copy').toBe(true);
+    expect(outcome).toBe('incomplete');
+    const report = JSON.parse((await backupRow(id)).incomplete!) as { reason: string };
+    expect(report.reason).toMatch(/privacy deletion/i);
+    expect(await priv().get(`${bucketKeyOf(backupPrefix(id))}/body.enc`), 'nothing is sealed').toBeNull();
+  });
+
+  it('seals the package incomplete with a checksum miss for exactly the corrupted file (R36.6)', async () => {
+    const good = await seedAttachment(new TextEncoder().encode('good file bytes'));
+    const bad = await seedAttachment(new TextEncoder().encode('original bytes'));
+    await priv().put(bad.key, new TextEncoder().encode('tampered bytes'.padEnd(14, '.'))); // same length, different content
+    const { id } = await (await startBackup()).json<{ id: ULID }>();
+    const { outcome } = await runBackup(id);
+    expect(outcome).toBe('incomplete');
+    const report = JSON.parse((await backupRow(id)).incomplete!) as { misses: { element: string; reason: string }[] };
+    expect(report.misses).toEqual([{ element: `file:${bad.identifier}`, reason: 'checksum' }]);
+    expect(await priv().get(`${bucketKeyOf(backupPrefix(id))}/files/${bad.identifier}`), 'a refused copy is not stored').toBeNull();
+    expect(await priv().get(`${bucketKeyOf(backupPrefix(id))}/files/${good.identifier}`)).not.toBeNull();
+    expect(await priv().get(`${bucketKeyOf(backupPrefix(id))}/body.enc`), 'the package is still sealed so the report is complete').not.toBeNull();
+  });
+});
+
+describe('an unexpected slice error never leaves the backup running forever (R36.6)', () => {
+  it('retries a transient fault in the files phase and still completes', async () => {
+    await seedAttachment(new TextEncoder().encode('retried file'));
+    const { id } = await (await startBackup()).json<{ id: ULID }>();
+    const fault = failingBucket(2);
+    try {
+      expect((await runBackup(id)).outcome).toBe('complete');
+    } finally { fault.restore(); }
+    expect(fault.thrown()).toBe(2);
+    expect((await backupRow(id)).state).toBe('complete');
+  });
+
+  it('ends incomplete with a content-free reason on the exports row when the fault is permanent', async () => {
+    await seedAttachment(new TextEncoder().encode('never copied'));
+    const { id } = await (await startBackup()).json<{ id: ULID }>();
+    const fault = failingBucket(Number.POSITIVE_INFINITY);
+    try {
+      expect((await runBackup(id)).outcome).toBe('incomplete');
+    } finally { fault.restore(); }
+    const row = await backupRow(id);
+    expect(row.state).toBe('incomplete');
+    expect((JSON.parse(row.incomplete!) as { reason: string }).reason).toBe('unexpected error in the files step (Error)');
+  });
+
+  it('releases the write-freeze lease when the snapshot phase fails', async () => {
+    await world.created('author', 'finding');
+    const { id } = await (await startBackup()).json<{ id: ULID }>();
+    const original = world.bindings.RF_PRIVATE_BUCKET;
+    (world.bindings as { RF_PRIVATE_BUCKET: R2Bucket }).RF_PRIVATE_BUCKET = new Proxy(original, {
+      get(target, property) {
+        if (property === 'put') return async () => { throw new Error('injected R2 fault'); };
+        const value = Reflect.get(target, property) as unknown;
+        return typeof value === 'function' ? value.bind(target) : value;
+      },
+    });
+    try {
+      expect((await runBackup(id)).outcome).toBe('incomplete');
+    } finally { (world.bindings as { RF_PRIVATE_BUCKET: R2Bucket }).RF_PRIVATE_BUCKET = original; }
+    expect((await readLease(core()))!.state).toBe('incomplete');
+    expect((JSON.parse((await backupRow(id)).incomplete!) as { reason: string }).reason).toMatch(/unexpected error in the (snapshot|start) step/);
+  });
+});
+
 describe('the sealed manifest counts and digests match the seeded rows across shapes (R36.1, R36.13)', () => {
   it('drives the real job to completion over randomized seeded rows; every manifest count/digest matches, and a maximum-rows page is captured', async () => {
     await fc.assert(
@@ -403,6 +547,10 @@ describe('POST /backups (R36.1, R36.2, R36.3)', () => {
     const detail = await (await world.request('admin', 'GET', `/backups/${id}`)).json<{ state: string; download: { url: string }[] }>();
     expect(detail.state).toBe('complete');
     expect(detail.download.length).toBeGreaterThan(0);
+    // The payload says whether the backup was requested by an Administrator or scheduled.
+    expect((detail as unknown as { trigger: string }).trigger).toBe('requested');
+    const listed = await (await world.request('admin', 'GET', '/backups')).json<{ backups: { id: string; trigger: string }[] }>();
+    expect(listed.backups.find((backup) => backup.id === id)?.trigger).toBe('requested');
     const { verifyDownload } = await import('@researchforce/db/downloads');
     const token = new URL(detail.download[0]!.url).pathname.replace('/x/', '');
     const claim = await verifyDownload(token, 'test-download-secret', Date.parse(world.at));

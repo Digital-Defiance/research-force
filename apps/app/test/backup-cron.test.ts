@@ -16,7 +16,7 @@ import type { Timestamp, ULID } from '@researchforce/domain/types';
 import { JOB_HANDLERS } from '../src/do/jobs';
 import type { JsonValue } from '../src/do/jobs';
 import { backupPrefix, startBackup } from '../src/jobs/backup';
-import { confirmOfflineCopy, slotKey, startScheduledBackup, sweepBackupCopies, sweepBackupRetention } from '../src/jobs/backup-cron';
+import { confirmOfflineCopy, slotKey, startScheduledBackup, sweepBackupCopies, sweepBackupRetention, sweepStuckBackups } from '../src/jobs/backup-cron';
 import { checkRpoAge, classifyRpo, rpoThresholds } from '../src/backup/rpo';
 import { soleCopyCustodyGate } from '../src/backup/custody';
 import { independentDestination } from '../src/backup/copies';
@@ -131,6 +131,64 @@ describe('startScheduledBackup — idempotent, ≥12h gated (R36.3, R36.7)', () 
     const later = asTimestamp('2026-12-01T13:30:00.000Z');
     expect(await startScheduledBackup(world.bindings, later)).toBe(1);
     expect((await core().prepare('SELECT count(*) AS n FROM backup_points').first<{ n: number }>())!.n).toBe(2);
+  });
+});
+
+describe('a failed scheduled slot is retried (R36.3)', () => {
+  const slotKeys = async (): Promise<string[]> =>
+    (await core().prepare('SELECT slot_key AS slot FROM backup_points ORDER BY started_at, slot_key').all<{ slot: string }>()).results.map((row) => row.slot);
+  const failLatest = () => core().prepare("UPDATE backup_points SET state = 'incomplete' WHERE state = 'pending'").run();
+
+  it('starts `~2` and `~3` attempts at least an hour apart after incomplete ones, and stops at three', async () => {
+    expect(await startScheduledBackup(world.bindings, asTimestamp('2026-12-01T00:10:00.000Z'))).toBe(1);
+    // Still pending: no second attempt, however late in the slot.
+    expect(await startScheduledBackup(world.bindings, asTimestamp('2026-12-01T05:00:00.000Z'))).toBe(0);
+    await failLatest();
+    // Failed less than an hour ago: wait.
+    expect(await startScheduledBackup(world.bindings, asTimestamp('2026-12-01T00:40:00.000Z'))).toBe(0);
+    expect(await startScheduledBackup(world.bindings, asTimestamp('2026-12-01T01:15:00.000Z'))).toBe(1);
+    await failLatest();
+    expect(await startScheduledBackup(world.bindings, asTimestamp('2026-12-01T02:20:00.000Z'))).toBe(1);
+    await failLatest();
+    // Three attempts are the most for one slot.
+    expect(await startScheduledBackup(world.bindings, asTimestamp('2026-12-01T03:30:00.000Z'))).toBe(0);
+    expect(await slotKeys()).toEqual(['2026-12-01T00', '2026-12-01T00~2', '2026-12-01T00~3']);
+  });
+
+  it('measures the 12-hour interval from the latest attempt that did not fail', async () => {
+    expect(await startScheduledBackup(world.bindings, asTimestamp('2026-12-01T00:10:00.000Z'))).toBe(1);
+    await failLatest();
+    // The next slot starts although the failed attempt is only 12 hours old... and a failed point never gates it.
+    expect(await startScheduledBackup(world.bindings, asTimestamp('2026-12-01T12:05:00.000Z'))).toBe(1);
+    expect(await slotKeys()).toEqual(['2026-12-01T00', '2026-12-01T12']);
+  });
+
+  it('does not retry a slot that already has a complete attempt', async () => {
+    expect(await startScheduledBackup(world.bindings, asTimestamp('2026-12-01T00:10:00.000Z'))).toBe(1);
+    await core().prepare("UPDATE backup_points SET state = 'complete'").run();
+    expect(await startScheduledBackup(world.bindings, asTimestamp('2026-12-01T03:00:00.000Z'))).toBe(0);
+  });
+});
+
+describe('sweepStuckBackups — a backup running for 24 hours is incomplete (R36.6)', () => {
+  it('closes only a running backup older than 24 hours, with a reason, a 7-day expiry, and its job row', async () => {
+    const old = asTimestamp('2026-12-01T00:00:00.000Z');
+    const recent = asTimestamp('2026-12-01T20:00:00.000Z');
+    const oldId = newId(old);
+    const recentId = newId(recent);
+    await startBackup(core(), { id: oldId, requestedBy: null, now: old });
+    await startBackup(core(), { id: recentId, requestedBy: null, now: recent });
+    const now = asTimestamp('2026-12-02T01:00:00.000Z');
+    expect(await sweepStuckBackups(world.bindings, now)).toBe(1);
+    const closed = (await core().prepare('SELECT state, incomplete, finished_at AS finishedAt, expires_at AS expiresAt FROM exports WHERE id = ?1').bind(oldId).first<{ state: string; incomplete: string; finishedAt: string; expiresAt: string }>())!;
+    expect(closed.state).toBe('incomplete');
+    expect(JSON.parse(closed.incomplete)).toEqual({ reason: 'not finished within 24 hours', misses: [] });
+    expect(closed.finishedAt).toBe(now);
+    expect(closed.expiresAt).toBe(new Date(Date.parse(old) + 7 * 24 * 60 * 60 * 1000).toISOString());
+    expect((await core().prepare('SELECT state FROM jobs WHERE id = ?1').bind(oldId).first<{ state: string }>())!.state).toBe('incomplete');
+    expect((await core().prepare('SELECT state FROM exports WHERE id = ?1').bind(recentId).first<{ state: string }>())!.state).toBe('running');
+    // Idempotent.
+    expect(await sweepStuckBackups(world.bindings, now)).toBe(0);
   });
 });
 

@@ -13,8 +13,9 @@ import { sweepUploads } from './files/uploads';
 import { sweepStages } from './records/stages';
 import { sweepDrafts } from './records/drafts';
 import { startScheduledExport, sweepExportRetention } from './jobs/export-cron';
-import { startScheduledBackup, sweepBackupCopies, sweepBackupRetention } from './jobs/backup-cron';
+import { startScheduledBackup, sweepBackupCopies, sweepBackupRetention, sweepStuckBackups } from './jobs/backup-cron';
 import { checkRpoAge } from './backup/rpo';
+import { checkBackupProduction } from './backup/health';
 import { checkResponsiblePersonRevoked } from './policy/responsible';
 import { checkUsageAlerts } from './usage/alerts';
 import { sweepConsentExpiry, sweepConsentReminders, sweepConsentTokens } from './consent/sweep';
@@ -56,9 +57,14 @@ export const HOURLY_SWEEPS: readonly Sweep[] = [
   // weekly/12 monthly verified points (successor-verified-before-expiry), and raise the 18h warning / 24h breach on
   // the independent channel (R36.3, R36.7, R36.12, R36.13, R36.16).
   { name: 'scheduled_backup', run: startScheduledBackup },
+  // A backup still running 24 hours after its request becomes incomplete with a reason (R36.6).
+  { name: 'stuck_backups', run: sweepStuckBackups },
   { name: 'backup_copies', run: sweepBackupCopies },
   { name: 'backup_retention', run: sweepBackupRetention },
   { name: 'backup_rpo_alert', run: (env, now) => checkRpoAge(env, now) },
+  // Backup PRODUCTION health: alert when backups keep failing or none is complete within the spec's 18h/24h, whatever
+  // the lengthened independent-copy thresholds say (R36.6, R36.7).
+  { name: 'backup_production_alert', run: (env, now) => checkBackupProduction(env, now) },
   // Emailed Consent_Requests: send the one 14-day reminder with the same Consent_Link, expire a request 30 days
   // after sending without changing any status, and delete the Consent_Link and Change_Link token hashes 30 days
   // after the links expire (R51.11, R51.13).

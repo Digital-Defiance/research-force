@@ -24,7 +24,7 @@ import { suppressionDigest } from '../../src/backup/quarantine';
 import { itemWorld } from '../items';
 import type { Who } from '../items';
 import { addMember, resetPeople } from '../api';
-import { addElement, addItem, addProject, resetRecords, submitItems } from '../units';
+import { addElement, addItem, addProject, putAttachmentBytes, resetRecords, submitItems } from '../units';
 
 /**
  * Property 112: Freeze and restore recovery never accepts mixed state (R36.8, R36.14, R36.15, R36.16, R60.5; design
@@ -401,7 +401,7 @@ async function seedWorkspace(shape: RestoreShape): Promise<void> {
   if (shape.withAttachment) {
     const sub = await submitItems(core(), { projectId: world.projectId, ownerId: world.ids.author, now }, 1);
     const attachment = await addElement(core(), { projectId: world.projectId, ownerId: world.ids.author, submissionId: sub.submissionId, now }, 'attachment', sub.ids[0]!);
-    await priv().put(`synthetic/${attachment.id}`, new TextEncoder().encode(`synthetic attachment bytes for ${attachment.id} \u{1F9EA}`));
+    await putAttachmentBytes(core(), priv(), attachment.id, new TextEncoder().encode(`synthetic attachment bytes for ${attachment.id} \u{1F9EA}`));
   }
 }
 

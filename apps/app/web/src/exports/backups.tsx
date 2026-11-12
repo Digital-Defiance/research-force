@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useApi } from '../api';
 import { useSession } from '../session';
 import { hashFile } from '../files/upload';
@@ -23,6 +23,8 @@ interface DownloadLink { readonly url: string; readonly expiresAt: string }
 interface BackupView {
   readonly id: string;
   readonly state: string;
+  /** Whether an Administrator requested it or the schedule started it. */
+  readonly trigger?: 'requested' | 'scheduled';
   readonly startedAt: string;
   readonly finishedAt: string | null;
   readonly expiresAt: string | null;
@@ -58,6 +60,9 @@ interface RestoreView {
 const BACKUP_STATE_NAMES: Readonly<Record<string, string>> = {
   queued: 'Queued', running: 'Running', complete: 'Complete', incomplete: 'Incomplete', failed: 'Failed', deleted: 'Deleted',
 };
+/** How often the list reloads while a backup is queued or running. */
+const BACKUP_REFRESH_MS = 10_000;
+const isInProgress = (backup: BackupView): boolean => backup.state === 'queued' || backup.state === 'running';
 const backupStateName = (state: string): string => BACKUP_STATE_NAMES[state] ?? state;
 
 const RESTORE_STATE_NAMES: Readonly<Record<string, string>> = {
@@ -94,6 +99,7 @@ function BackupCard({ record, onConfirm, busy }: { readonly record: BackupView; 
       <h3>{`Backup from ${whenLabel(record.startedAt)}`}</h3>
       <p className="rf-meta">
         <span className="rf-status">{backupStateName(record.state)}</span>
+        {triggerName(record) === undefined ? '' : ` · ${triggerName(record)}`}
         {record.expiresAt === null ? '' : ` · kept until ${whenLabel(record.expiresAt)}`}
       </p>
       {record.download.length > 0 && (
@@ -124,14 +130,68 @@ function BackupCard({ record, onConfirm, busy }: { readonly record: BackupView; 
   );
 }
 
-/** One backup that could not include everything or did not finish: a single quiet line, never a download. */
-function FailedBackupRow({ record }: { readonly record: BackupView }) {
+/** The operational report an incomplete backup carries: why it stopped and which elements are missing or mismatched (R36.6). */
+interface IncompleteReport { readonly reason?: string | null; readonly misses?: readonly { readonly element: string; readonly reason: string }[] }
+const incompleteReport = (record: BackupView): IncompleteReport =>
+  record.incomplete !== null && typeof record.incomplete === 'object' && !Array.isArray(record.incomplete) ? (record.incomplete as IncompleteReport) : {};
+
+/** A plain sentence for a known operational reason; an unknown reason is shown as recorded. */
+function reasonSentence(reason: string): string {
+  if (/already holds the write-freeze lease/u.test(reason)) return 'Another backup was already running, so this one did not start.';
+  if (/not finished within 24 hours/u.test(reason)) return 'The backup did not finish within 24 hours of starting.';
+  if (/privacy deletion removed a pinned file/u.test(reason)) return 'A file was removed for privacy while the backup was copying it.';
+  if (/write-freeze lease lost/u.test(reason)) return 'The backup took too long to freeze changes and was stopped.';
+  const unexpected = /^unexpected error in the (\w+) step/u.exec(reason);
+  if (unexpected !== null) return `The backup stopped on an unexpected error in the ${unexpected[1]} step.`;
+  return reason;
+}
+const MISS_REASONS: Readonly<Record<string, string>> = { missing: 'missing', size: 'size does not match', checksum: 'checksum does not match' };
+
+/** The reason a backup did not finish, or a generic sentence when none was recorded. */
+const failureSentence = (record: BackupView): string => {
+  const reason = incompleteReport(record).reason;
+  return typeof reason === 'string' && reason !== '' ? reasonSentence(reason) : 'This backup could not include every element.';
+};
+
+/** Who or what started a backup. */
+const triggerName = (record: BackupView): string | undefined => record.trigger === undefined ? undefined : record.trigger === 'scheduled' ? 'Scheduled' : 'Requested';
+
+/** One backup still queued or running: shown as in progress with its start time. */
+function InProgressBackupCard({ record }: { readonly record: BackupView }) {
+  const trigger = triggerName(record);
   return (
-    <li aria-label={`Backup ${record.id}`}>
-      <span className="rf-status">{backupStateName(record.state)}</span>
-      {` ${whenLabel(record.startedAt)}`}
-      {record.incomplete !== null && <> · <span className="rf-meta">This backup could not include every element.</span></>}
-    </li>
+    <section className="rf-section" aria-label={`Backup ${record.id}`}>
+      <h3>{`Backup started ${whenLabel(record.startedAt)}`}</h3>
+      <p className="rf-meta">
+        <span className="rf-status">In progress</span>
+        {trigger === undefined ? '' : ` · ${trigger}`}
+      </p>
+      <p className="rf-meta">This page refreshes every 10 seconds until the backup finishes.</p>
+    </section>
+  );
+}
+
+/** One backup that did not finish: a visible warning with the reason, the missing elements, and how long it is kept. */
+function FailedBackupCard({ record }: { readonly record: BackupView }) {
+  const trigger = triggerName(record);
+  const misses = incompleteReport(record).misses ?? [];
+  return (
+    <section className="rf-section" aria-label={`Backup ${record.id}`}>
+      <h3>{`Backup from ${whenLabel(record.startedAt)}`}</h3>
+      <Notice tone="warning" title="This backup did not finish">
+        <p>{failureSentence(record)}</p>
+        {misses.length > 0 && (
+          <ul className="rf-list" aria-label={`Elements not included in backup ${record.id}`}>
+            {misses.map((miss, index) => <li key={index}>{`${miss.element}: ${MISS_REASONS[miss.reason] ?? miss.reason}`}</li>)}
+          </ul>
+        )}
+        <p className="rf-meta">
+          <span className="rf-status">{backupStateName(record.state)}</span>
+          {trigger === undefined ? '' : ` · ${trigger}`}
+          {record.expiresAt === null ? '' : ` · kept until ${whenLabel(record.expiresAt)}`}
+        </p>
+      </Notice>
+    </section>
   );
 }
 
@@ -202,12 +262,25 @@ export function BackupsScreen() {
   const [backupRequested, setBackupRequested] = useState(false);
   const [restoreRequested, setRestoreRequested] = useState(false);
 
+  // While any backup is queued or running, reload the list every 10 seconds; the timer is cleared when none is.
+  const anyInProgress = backups.data?.backups.some(isInProgress) ?? false;
+  const reloadBackups = backups.reload;
+  useEffect(() => {
+    if (!anyInProgress) return undefined;
+    const timer = setInterval(reloadBackups, BACKUP_REFRESH_MS);
+    return () => clearInterval(timer);
+  }, [anyInProgress, reloadBackups]);
+
   // Backups and restores are for Administrators only; the gate matches every backup and restore route (R36.2, R36.8).
   if (!session.can('backup.manage')) return <Notice tone="warning" title="This page does not exist, or you cannot see it." />;
   if (backups.data === undefined || restores.data === undefined) return <LoadState error={backups.error ?? restores.error} />;
 
   const completeBackups = backups.data.backups.filter((backup) => backup.state === 'complete');
-  const otherBackups = backups.data.backups.filter((backup) => backup.state !== 'complete');
+  // Every backup, newest first, so a failed or running one is as visible as a complete one.
+  const orderedBackups = [...backups.data.backups].sort((a, b) => Date.parse(b.startedAt) - Date.parse(a.startedAt));
+  const newestBackup = orderedBackups[0];
+  const recentComplete = completeBackups.some((backup) => Date.now() - Date.parse(backup.finishedAt ?? backup.startedAt) < 24 * 60 * 60 * 1000);
+  const newestFailed = newestBackup !== undefined && newestBackup.state !== 'complete' && !isInProgress(newestBackup);
   const backupLabels = new Map(backups.data.backups.map((backup) => [backup.id, whenLabel(backup.startedAt)] as const));
 
   const requestBackup = async () => {
@@ -256,24 +329,23 @@ export function BackupsScreen() {
       <h1>Backups and restores</h1>
       <p className="rf-meta">A backup is a full, encrypted copy of everything. Take one, download it, and keep the file somewhere safe outside this service.</p>
       <SaveFailure error={failure} />
+      {newestFailed
+        ? <Notice tone="warning" title="The most recent backup did not finish"><p>{failureSentence(newestBackup)}</p></Notice>
+        : !recentComplete && <Notice tone="warning" title="No backup has finished in the last 24 hours"><p>{newestBackup !== undefined && isInProgress(newestBackup) ? 'A backup is in progress.' : 'Request a backup below, or check that scheduled backups are running.'}</p></Notice>}
 
       <section className="rf-section" aria-label="Request a backup">
         <h2>Request a backup</h2>
         <p className="rf-meta">Backups are also taken automatically. A backup you request here is kept for seven days.</p>
         <div className="rf-actions"><Button variant="primary" disabled={busy} onClick={() => void requestBackup()}>Request the backup</Button></div>
-        {backupRequested && <Notice tone="success" title="The backup was requested. It appears below once it starts." />}
+        {backupRequested && <Notice tone="success" title="The backup was requested. It is listed below as In progress; this page refreshes until it finishes." />}
       </section>
 
       <section className="rf-section" aria-label="Backups">
         <h2>Backups</h2>
         {backups.data.backups.length === 0 && <p className="rf-meta">There are no backups yet.</p>}
-        {completeBackups.map((record) => <BackupCard key={record.id} record={record} onConfirm={confirmOffsite} busy={busy} />)}
-        {otherBackups.length > 0 && (
-          <details>
-            <summary>{`Backups that did not finish (${otherBackups.length})`}</summary>
-            <ul className="rf-list">{otherBackups.map((record) => <FailedBackupRow key={record.id} record={record} />)}</ul>
-          </details>
-        )}
+        {orderedBackups.map((record) => record.state === 'complete'
+          ? <BackupCard key={record.id} record={record} onConfirm={confirmOffsite} busy={busy} />
+          : isInProgress(record) ? <InProgressBackupCard key={record.id} record={record} /> : <FailedBackupCard key={record.id} record={record} />)}
       </section>
 
       <section className="rf-section" aria-label="Restore a backup">

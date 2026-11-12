@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm';
 import type { SQL } from 'drizzle-orm';
-import { GuardViolation, GuardedBatch } from '@researchforce/db/batch';
+import { GuardViolation, GuardedBatch, chunks } from '@researchforce/db/batch';
 import type { FreezeOwner } from '@researchforce/db/batch';
 import { FREEZE } from '@researchforce/domain/settings';
 import { newULID } from '@researchforce/domain/identifiers';
@@ -237,6 +237,35 @@ export async function pinFile(core: D1Database, lease: FreezeLease, r2Key: strin
     INSERT INTO backup_file_pins (generation, r2_key, state, pinned_at)
       SELECT ${lease.generation}, ${r2Key}, 'pinned', ${now}
       WHERE NOT EXISTS (SELECT 1 FROM backup_file_pins WHERE generation = ${lease.generation} AND r2_key = ${r2Key})`);
+}
+
+/**
+ * PIN many immutable files in as few owner writes as possible (R36.14): one INSERT per JSON chunk, each key pinned once
+ * per generation. The job pins every pending file in the final snapshot slice, while the lease is still live, then
+ * completes the lease and copies the files under their pins (design "Internal_Backup and independent recovery").
+ */
+export async function pinFiles(core: D1Database, lease: FreezeLease, r2Keys: readonly string[], now: Timestamp): Promise<void> {
+  for (const chunk of chunks([...new Set(r2Keys)])) {
+    await ownerWrite(core, lease, now, 'expired', sql`
+      INSERT INTO backup_file_pins (generation, r2_key, state, pinned_at)
+        SELECT ${lease.generation}, j.value, 'pinned', ${now} FROM json_each(${JSON.stringify(chunk)}) AS j
+        WHERE NOT EXISTS (SELECT 1 FROM backup_file_pins p WHERE p.generation = ${lease.generation} AND p.r2_key = j.value)`);
+  }
+}
+
+/**
+ * Release a pin after the lease is complete (R36.14). The lease is no longer live, so owner writes are refused; this is
+ * a plain bookkeeping update on the pin row, and only moves a still-`pinned` row (an `invalidated` pin stays so).
+ */
+export async function markFileCopiedUnleased(core: D1Database, generation: number, r2Key: string, now: Timestamp): Promise<void> {
+  await core.prepare("UPDATE backup_file_pins SET state = 'copied', released_at = ?3 WHERE generation = ?1 AND r2_key = ?2 AND state = 'pinned'")
+    .bind(generation, r2Key, now).run();
+}
+
+/** How many of this generation's pins a privacy deletion invalidated (R36.14); any makes the snapshot incomplete. */
+export async function invalidatedPinCount(core: D1Database, generation: number): Promise<number> {
+  const row = await core.prepare("SELECT count(*) AS n FROM backup_file_pins WHERE generation = ?1 AND state = 'invalidated'").bind(generation).first<{ n: number }>();
+  return row?.n ?? 0;
 }
 
 /** Release a pin once the file is copied; its source is then free to be deleted. An owner write. */
