@@ -1846,7 +1846,7 @@
     },
     {
       "path": "apps/app/web/src/shell/app-shell.tsx",
-      "sha256": "2e2bf6e18494248799b8cbe4b04e871c6017c16e6f03cb9c5cbf4fac6965df93"
+      "sha256": "657a0d1e73ada3f4f0c4ca1dbc32dbf116b8daea634e60e968367d70b7e4fe8e"
     },
     {
       "path": "apps/app/web/src/shell/nav-config.ts",

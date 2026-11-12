@@ -26,6 +26,16 @@ export function AppShell() {
   const gated = session !== null && (session.me.missing.length > 0 || status.profileMissing !== null);
   const menuConfigs = useMemo(() => (session === null ? [] : navMenuConfigs(session)), [session]);
 
+  if (session === null && me.data !== undefined && (me.data.missing.length > 0 || status.profileMissing !== null)) {
+    // The Worker answers every route but `/me` with `profile_incomplete` until the Profile is complete, so `/roles` cannot
+    // load yet; the Profile form still replaces the page (R3.6), and the Roles load again once it is saved.
+    return (
+      <main className="rf-main" id="main">
+        <StatusNotices />
+        <ProfileForm me={me.data} onSaved={() => { me.reload(); roles.reload(); }} />
+      </main>
+    );
+  }
   if (session === null) {
     return (
       <main className="rf-main" id="main">

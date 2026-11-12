@@ -4,7 +4,7 @@ import { MemoryRouter } from 'react-router';
 import { ApiContext } from '../src/api';
 import type { ApiClient } from '../src/api';
 import { AppShell } from '../src/shell/app-shell';
-import { BUILT_IN, fakeApi, makeMe } from './helpers';
+import { BUILT_IN, failure, fakeApi, makeMe } from './helpers';
 
 const renderWorkspace = (client: ApiClient, route = '/') => render(
   <ApiContext.Provider value={client}>
@@ -40,6 +40,13 @@ describe('the Workspace shell', () => {
     expect(screen.queryByRole('heading', { name: 'Projects' })).toBeNull();
   });
 
+  it('shows the Profile form to a first-visit Member whose Profile is empty even though every route but /me answers profile_incomplete (R3.6)', async () => {
+    const incomplete = failure(428, 'profile_incomplete', { details: { missing: ['displayName', 'specialtyIds', 'timeZone'] } });
+    const api = fakeApi({ 'GET /me': makeMe({ profile: null, missing: ['displayName', 'specialtyIds', 'timeZone'] }), 'GET /roles': incomplete });
+    renderWorkspace(api.client, '/');
+    expect(await screen.findByRole('heading', { name: 'Your Profile' })).toBeTruthy();
+    expect(screen.queryByText('This page could not be loaded. Reload the page to try again.')).toBeNull();
+  });
   it('shows the Profile form after a profile_incomplete answer, and the saving notices on every page (R28.9, R28.13)', async () => {
     const api = fakeApi({ 'GET /me': makeMe(), 'GET /roles': { roles: BUILT_IN }, 'GET /projects': { projects: [] } });
     renderWorkspace(api.client, '/projects');
