@@ -204,5 +204,6 @@ describe('Property 73: Exports contain exactly the snapshot and are self-contain
         }
       }
     }), { numRuns: FC_RUNS });
-  }, 50 * FC_RUNS);
+    // 200 ms per run: 100 runs took ~6.7 s on a CI runner, past the old 50 ms-per-run budget.
+  }, 200 * FC_RUNS);
 });

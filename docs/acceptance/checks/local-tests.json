@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "command": "npm test -- --reporter=json --outputFile=<temporary report>",
-  "recordedAt": "2026-11-11T04:39:55.072Z",
+  "recordedAt": "2026-11-12T00:18:01.587Z",
   "scope": "local-synthetic",
   "success": true,
   "suites": [
@@ -3210,7 +3210,7 @@
     "packages/testing/test/properties/p05-public-output-confinement.test.ts": "cd826cf113d718dff7b3b9c850d28a5c8baaf6593626fdcfca954220fe3478c9",
     "packages/testing/test/properties/p07-not-found-indistinguishable.test.ts": "7712030800624e18544791d04721bb03825ae4a4263046aad2ef3d06f14a2dff",
     "packages/testing/test/properties/p19-public-addresses.test.ts": "39d724d6eec4a9c5175d5b66248b02e19e7ed9da2a0341eb03f9f4f167b103a3",
-    "packages/testing/test/properties/p73-export-snapshots.test.ts": "48b995b2b54df897ebd7348921202a8f5bbf47aa9dda54cd1a437dff3fe05234",
+    "packages/testing/test/properties/p73-export-snapshots.test.ts": "62013f82c683afabf236033dc86c36dba00da5a1292cd705f4a845fc6341fd02",
     "packages/testing/test/properties/p92-character-preservation.test.ts": "44c1cb191fd10112aca51b8ccaedf1b07ad1cfbd0cba187722bf33899e3cad82",
     "packages/testing/test/properties/p95-people-and-responsible-person.test.ts": "f0ae251455ae8bc0d191387be2e3433c29c4c364314cff2b64de2277dc5e7649",
     "scripts/backfill.ts": "c8388bb5a9442bf0bf81cc876e95cf06f7eb457275ef2e2b815aeddb9e8e8c61",
@@ -3302,7 +3302,7 @@
     "tools/test/release-tools.test.ts": "fa8e11e2ff6f823eb1f085d64576092a9ecdbb0bf8589456aff7bc6b5ae9dea4",
     "tools/test/smoke.test.ts": "8ea69fcaada1c4a682af6b95c88b65b62272fe8bd352650cac6185b8710dfe20",
     "tools/test/staging-results.test.ts": "1d89b6fa1113c47da7befe91e507ed95d61fdee1afdec0133dcfdf0787b0bc45",
-    "tools/test/upgrade-store.test.ts": "6dc15161ef7b9c3b3bf1722e8bfc426890ef09d211b0d899efad1e4366d5333b",
+    "tools/test/upgrade-store.test.ts": "03f05cafa7161d3d6f40317118a1cc8824426cb91ef59b4c430ad27b7ffebc0d",
     "tsconfig.tooling.json": "b9e4c3dbb3146b4aba357de95cb4b345f0f55d625e4ef9b2b23b3151ad1feee6",
     "vitest.config.ts": "0dc554a01b5a1fdf2fbe81e592d82a529ea73891495a8636d52bec2ba34b66d7"
   }
