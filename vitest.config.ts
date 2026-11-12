@@ -25,7 +25,10 @@ const d1Migrations = {
 
 const fcRuns = Number(process.env['FC_RUNS'] ?? '100');
 // Property tests take time in proportion to their run count; 100 runs keeps Vitest's 5-second default.
-const testTimeout = 50 * fcRuns;
+// Shared CI runners are several times slower and time out a different handful of tests each run, so CI
+// (GitHub sets CI=true) gets four times the budget; local runs keep the stricter limit.
+const ciFactor = process.env['CI'] === 'true' ? 4 : 1;
+const testTimeout = 50 * fcRuns * ciFactor;
 
 export default defineConfig({
   test: {

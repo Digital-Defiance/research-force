@@ -23427,7 +23427,7 @@
         {
           "path": "vitest.config.ts",
           "kind": "file",
-          "sha256": "0dc554a01b5a1fdf2fbe81e592d82a529ea73891495a8636d52bec2ba34b66d7"
+          "sha256": "b190bd2ad0ceee9b488f592af9de49485e3e9182e32deef39142c87136735392"
         },
         {
           "path": "apps/app/test/local-services.test.ts",
@@ -25937,7 +25937,7 @@
         {
           "path": "docs/acceptance/checks/local-tests.json",
           "kind": "file",
-          "sha256": "5c1539fb3352015321b061b27be45f56668437bad1cdb5e5f88c9c17d84d1e69"
+          "sha256": "eeae9d6711d48d59ea67016ddfb96ac5324e21576c29a84fa8cefd01536708e4"
         },
         {
           "path": "tools/src/specs.ts",

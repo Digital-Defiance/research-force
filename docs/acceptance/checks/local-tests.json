@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "command": "npm test -- --reporter=json --outputFile=<temporary report>",
-  "recordedAt": "2026-11-12T00:44:43.304Z",
+  "recordedAt": "2026-11-12T20:51:28.959Z",
   "scope": "local-synthetic",
   "success": true,
   "suites": [
@@ -3304,6 +3304,6 @@
     "tools/test/staging-results.test.ts": "1d89b6fa1113c47da7befe91e507ed95d61fdee1afdec0133dcfdf0787b0bc45",
     "tools/test/upgrade-store.test.ts": "03f05cafa7161d3d6f40317118a1cc8824426cb91ef59b4c430ad27b7ffebc0d",
     "tsconfig.tooling.json": "b9e4c3dbb3146b4aba357de95cb4b345f0f55d625e4ef9b2b23b3151ad1feee6",
-    "vitest.config.ts": "0dc554a01b5a1fdf2fbe81e592d82a529ea73891495a8636d52bec2ba34b66d7"
+    "vitest.config.ts": "b190bd2ad0ceee9b488f592af9de49485e3e9182e32deef39142c87136735392"
   }
 }
