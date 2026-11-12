@@ -51,7 +51,8 @@ describe('real migration and recovery rehearsals', () => {
       expect(output.report.results.every((r) => r.restoreReopened && r.seedVerified)).toBe(true);
       expect(output.report.results.every((r) => /^[a-f0-9]{64}$/.test(r.recoveryCopySha256))).toBe(true);
     } finally { rmSync(output.directory, { recursive: true, force: true }); }
-  });
+    // A full rehearsal of every checkpoint exceeds the 5 s default on CI runners; matches release-tools.
+  }, 30_000);
   it('repairs pre-existing FTS documents in bounded slices and rolls back index reset/effects/checkpoint after a crash', () => {
     const manifest = releaseFixture(); manifest.backfills[0]!.maxRows = 2;
     const db = new DatabaseSync(':memory:');

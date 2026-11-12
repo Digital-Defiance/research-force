@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
   "command": "npm test -- --reporter=json --outputFile=<temporary report>",
-  "recordedAt": "2026-10-30T21:33:46.599Z",
+  "recordedAt": "2026-11-12T20:51:28.959Z",
   "scope": "local-synthetic",
   "success": true,
   "suites": [
     {
       "path": "apps/app/test/access.test.ts",
-      "passed": 13,
+      "passed": 14,
       "failed": 0,
       "skipped": 0
     },
@@ -18,14 +18,74 @@
       "skipped": 0
     },
     {
+      "path": "apps/app/test/ai-drafts.test.ts",
+      "passed": 15,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
       "path": "apps/app/test/api-foundation.test.ts",
       "passed": 8,
       "failed": 0,
       "skipped": 0
     },
     {
+      "path": "apps/app/test/asset-fallback.test.ts",
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
       "path": "apps/app/test/auth.test.ts",
       "passed": 10,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/backup-codec-workerd.test.ts",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/backup-cron.test.ts",
+      "passed": 16,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/backup-freeze.test.ts",
+      "passed": 14,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/backup-retention.test.ts",
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/backup.test.ts",
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/budget.test.ts",
+      "passed": 15,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/bulk-import.test.ts",
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/bulk-validate.test.ts",
+      "passed": 28,
       "failed": 0,
       "skipped": 0
     },
@@ -54,8 +114,32 @@
       "skipped": 0
     },
     {
+      "path": "apps/app/test/consent-emailed-coverage.test.ts",
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/consent-requests.test.ts",
+      "passed": 16,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/consent-sweep.test.ts",
+      "passed": 12,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
       "path": "apps/app/test/coverage.test.ts",
       "passed": 17,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/dashboard.test.ts",
+      "passed": 7,
       "failed": 0,
       "skipped": 0
     },
@@ -96,8 +180,38 @@
       "skipped": 0
     },
     {
+      "path": "apps/app/test/disclosure-apply.test.ts",
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/disclosure-lists.test.ts",
+      "passed": 13,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/disclosure-preview.test.ts",
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
       "path": "apps/app/test/discussion.test.ts",
       "passed": 16,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/dissent-display.test.ts",
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/dissent.test.ts",
+      "passed": 12,
       "failed": 0,
       "skipped": 0
     },
@@ -120,14 +234,44 @@
       "skipped": 0
     },
     {
+      "path": "apps/app/test/drafts.test.ts",
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/dual-approvals.test.ts",
+      "passed": 15,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/export-manifest.test.ts",
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/export.test.ts",
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
       "path": "apps/app/test/field-versions.test.ts",
       "passed": 6,
       "failed": 0,
       "skipped": 0
     },
     {
+      "path": "apps/app/test/files-move.test.ts",
+      "passed": 12,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
       "path": "apps/app/test/files.test.ts",
-      "passed": 13,
+      "passed": 16,
       "failed": 0,
       "skipped": 0
     },
@@ -139,7 +283,13 @@
     },
     {
       "path": "apps/app/test/history.test.ts",
-      "passed": 21,
+      "passed": 26,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/holds.test.ts",
+      "passed": 11,
       "failed": 0,
       "skipped": 0
     },
@@ -156,8 +306,20 @@
       "skipped": 0
     },
     {
+      "path": "apps/app/test/journal-import.test.ts",
+      "passed": 17,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
       "path": "apps/app/test/links.test.ts",
       "passed": 10,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/lists.test.ts",
+      "passed": 25,
       "failed": 0,
       "skipped": 0
     },
@@ -175,7 +337,7 @@
     },
     {
       "path": "apps/app/test/mailer.test.ts",
-      "passed": 15,
+      "passed": 20,
       "failed": 0,
       "skipped": 0
     },
@@ -186,8 +348,26 @@
       "skipped": 0
     },
     {
+      "path": "apps/app/test/metrics.test.ts",
+      "passed": 12,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/migration-consent-requests.test.ts",
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
       "path": "apps/app/test/migration-decision-records.test.ts",
       "passed": 6,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/migration-durable-drafts.test.ts",
+      "passed": 3,
       "failed": 0,
       "skipped": 0
     },
@@ -206,6 +386,18 @@
     {
       "path": "apps/app/test/migration-not-published.test.ts",
       "passed": 5,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/migration-permission-evidence.test.ts",
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/migration-publication-consent.test.ts",
+      "passed": 6,
       "failed": 0,
       "skipped": 0
     },
@@ -234,8 +426,62 @@
       "skipped": 0
     },
     {
+      "path": "apps/app/test/moderation-contact-review.test.ts",
+      "passed": 15,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/moderation-decide.test.ts",
+      "passed": 14,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/moderation-flows.test.ts",
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/moderation-queue.test.ts",
+      "passed": 13,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/moderation-reminders.test.ts",
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/moderation-retention.test.ts",
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/move.test.ts",
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
       "path": "apps/app/test/notifications.test.ts",
       "passed": 21,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/operational-cron.test.ts",
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/operational-retention.test.ts",
+      "passed": 10,
       "failed": 0,
       "skipped": 0
     },
@@ -253,12 +499,36 @@
     },
     {
       "path": "apps/app/test/parties.test.ts",
-      "passed": 5,
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/permission-evidence.test.ts",
+      "passed": 12,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/personal.test.ts",
+      "passed": 13,
       "failed": 0,
       "skipped": 0
     },
     {
       "path": "apps/app/test/pipeline.test.ts",
+      "passed": 16,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/policy-pages.test.ts",
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/policy.test.ts",
       "passed": 14,
       "failed": 0,
       "skipped": 0
@@ -270,8 +540,20 @@
       "skipped": 0
     },
     {
+      "path": "apps/app/test/project-log.test.ts",
+      "passed": 18,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
       "path": "apps/app/test/projects.test.ts",
-      "passed": 13,
+      "passed": 16,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p03-new-units-not-published.test.ts",
+      "passed": 3,
       "failed": 0,
       "skipped": 0
     },
@@ -288,6 +570,36 @@
       "skipped": 0
     },
     {
+      "path": "apps/app/test/properties/p102-publication-consent.test.ts",
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p103-confidentiality-holds.test.ts",
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p104-dual-approvals.test.ts",
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p105-attachment-moves.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p106-research-questions.test.ts",
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
       "path": "apps/app/test/properties/p109-text-fragments.test.ts",
       "passed": 5,
       "failed": 0,
@@ -296,6 +608,30 @@
     {
       "path": "apps/app/test/properties/p110-idempotent-mutations.test.ts",
       "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p111-independent-recovery.test.ts",
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p112-freeze-restore.test.ts",
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p113-publication-epochs.test.ts",
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p114-certified-admission.test.ts",
+      "passed": 14,
       "failed": 0,
       "skipped": 0
     },
@@ -331,6 +667,48 @@
     },
     {
       "path": "apps/app/test/properties/p120-compute-packages.test.ts",
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p121-durable-drafts.test.ts",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p122-edit-proposals.test.ts",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p123-personal-navigation.test.ts",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p124-research-releases.test.ts",
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p126-permission-evidence.test.ts",
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p128-backup-freeze-lease.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p15-publisher-convergence.test.ts",
       "passed": 3,
       "failed": 0,
       "skipped": 0
@@ -372,6 +750,18 @@
       "skipped": 0
     },
     {
+      "path": "apps/app/test/properties/p28-atomic-saves.test.ts",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p29-concurrent-saves.test.ts",
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
       "path": "apps/app/test/properties/p30-status-rules.test.ts",
       "passed": 1,
       "failed": 0,
@@ -396,8 +786,20 @@
       "skipped": 0
     },
     {
+      "path": "apps/app/test/properties/p36-permanent-deletion-tombstone.test.ts",
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
       "path": "apps/app/test/properties/p40-mentions.test.ts",
       "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p41-item-identifiers.test.ts",
+      "passed": 3,
       "failed": 0,
       "skipped": 0
     },
@@ -410,6 +812,12 @@
     {
       "path": "apps/app/test/properties/p43-version-chains.test.ts",
       "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p48-review-state-machine.test.ts",
+      "passed": 2,
       "failed": 0,
       "skipped": 0
     },
@@ -439,6 +847,12 @@
     },
     {
       "path": "apps/app/test/properties/p53-mark-all-seen.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p54-event-recipients.test.ts",
       "passed": 1,
       "failed": 0,
       "skipped": 0
@@ -480,7 +894,109 @@
       "skipped": 0
     },
     {
+      "path": "apps/app/test/properties/p64-query-date-validation.test.ts",
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p65-workspace-lists.test.ts",
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p70-import-idempotency.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p71-import-reports.test.ts",
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p72-export-json-round-trip.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p74-backup-restore-round-trip.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p75-package-retention-staleness.test.ts",
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
       "path": "apps/app/test/properties/p76-project-order.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p78-project-choice.test.ts",
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p80-dissent-wording.test.ts",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p81-budget-gates.test.ts",
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p82-usage-alerts.test.ts",
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p83-ai-allocation.test.ts",
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p84-ai-input-and-output.test.ts",
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p85-ai-provenance.test.ts",
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p86-retention-sweeps.test.ts",
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p87-reminder-alert-schedules.test.ts",
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/properties/p90-moderation-decisions.test.ts",
       "passed": 1,
       "failed": 0,
       "skipped": 0
@@ -492,8 +1008,86 @@
       "skipped": 0
     },
     {
+      "path": "apps/app/test/properties/p98-last-updated-dates.test.ts",
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
       "path": "apps/app/test/properties/p99-party-duplicates.test.ts",
       "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/proposals.test.ts",
+      "passed": 16,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/publication-epochs.test.ts",
+      "passed": 19,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/publication-proposals.test.ts",
+      "passed": 15,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/publication-requests.test.ts",
+      "passed": 15,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/publisher-deploy.test.ts",
+      "passed": 35,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/publisher-files.test.ts",
+      "passed": 16,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/publisher-free-plan.test.ts",
+      "passed": 14,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/publisher-now.test.ts",
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/publisher-projection.test.ts",
+      "passed": 13,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/publisher-render.test.ts",
+      "passed": 23,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/publisher-slicing.test.ts",
+      "passed": 13,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/publisher-timing.test.ts",
+      "passed": 9,
       "failed": 0,
       "skipped": 0
     },
@@ -506,6 +1100,18 @@
     {
       "path": "apps/app/test/question-entries.test.ts",
       "passed": 8,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/releases-publication.test.ts",
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/releases-publisher.test.ts",
+      "passed": 1,
       "failed": 0,
       "skipped": 0
     },
@@ -528,8 +1134,32 @@
       "skipped": 0
     },
     {
+      "path": "apps/app/test/responsible-person.test.ts",
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/restore-preflight.test.ts",
+      "passed": 27,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/restore.test.ts",
+      "passed": 20,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
       "path": "apps/app/test/reviews.test.ts",
       "passed": 16,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/rights.test.ts",
+      "passed": 8,
       "failed": 0,
       "skipped": 0
     },
@@ -552,8 +1182,20 @@
       "skipped": 0
     },
     {
+      "path": "apps/app/test/security-headers.test.ts",
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
       "path": "apps/app/test/settings.test.ts",
       "passed": 6,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/slice-meter-rpc.test.ts",
+      "passed": 2,
       "failed": 0,
       "skipped": 0
     },
@@ -572,6 +1214,12 @@
     {
       "path": "apps/app/test/submissions.test.ts",
       "passed": 8,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/test/usage-alerts.test.ts",
+      "passed": 10,
       "failed": 0,
       "skipped": 0
     },
@@ -618,6 +1266,18 @@
       "skipped": 0
     },
     {
+      "path": "apps/app/web/test/admin.test.tsx",
+      "passed": 21,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/web/test/ai-draft.test.tsx",
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
       "path": "apps/app/web/test/api.test.ts",
       "passed": 25,
       "failed": 0,
@@ -626,6 +1286,12 @@
     {
       "path": "apps/app/web/test/attachments.test.tsx",
       "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/web/test/bulk-import.test.tsx",
+      "passed": 7,
       "failed": 0,
       "skipped": 0
     },
@@ -642,8 +1308,32 @@
       "skipped": 0
     },
     {
+      "path": "apps/app/web/test/consent-requests.test.tsx",
+      "passed": 13,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/web/test/consent.test.tsx",
+      "passed": 19,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/web/test/dashboard.test.tsx",
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
       "path": "apps/app/web/test/decisions.test.tsx",
       "passed": 9,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/web/test/disclosure.test.tsx",
+      "passed": 23,
       "failed": 0,
       "skipped": 0
     },
@@ -654,32 +1344,92 @@
       "skipped": 0
     },
     {
+      "path": "apps/app/web/test/dissent.test.tsx",
+      "passed": 17,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/web/test/drafts.test.tsx",
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
       "path": "apps/app/web/test/editor.test.tsx",
       "passed": 9,
       "failed": 0,
       "skipped": 0
     },
     {
+      "path": "apps/app/web/test/evidence.test.tsx",
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/web/test/exports.test.tsx",
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/web/test/files-move.test.tsx",
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
       "path": "apps/app/web/test/files.test.tsx",
-      "passed": 9,
+      "passed": 11,
       "failed": 0,
       "skipped": 0
     },
     {
       "path": "apps/app/web/test/forms.test.tsx",
-      "passed": 17,
+      "passed": 19,
       "failed": 0,
       "skipped": 0
     },
     {
       "path": "apps/app/web/test/history.test.tsx",
-      "passed": 14,
+      "passed": 15,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/web/test/journal-import.test.tsx",
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/web/test/layout.test.tsx",
+      "passed": 13,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/web/test/lists.test.tsx",
+      "passed": 10,
       "failed": 0,
       "skipped": 0
     },
     {
       "path": "apps/app/web/test/local-development.test.tsx",
       "passed": 2,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/web/test/me-dashboard.test.tsx",
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/web/test/moderation.test.tsx",
+      "passed": 31,
       "failed": 0,
       "skipped": 0
     },
@@ -691,7 +1441,7 @@
     },
     {
       "path": "apps/app/web/test/page.test.tsx",
-      "passed": 10,
+      "passed": 11,
       "failed": 0,
       "skipped": 0
     },
@@ -714,14 +1464,32 @@
       "skipped": 0
     },
     {
+      "path": "apps/app/web/test/project-log.test.tsx",
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
       "path": "apps/app/web/test/projects.test.tsx",
-      "passed": 9,
+      "passed": 14,
       "failed": 0,
       "skipped": 0
     },
     {
       "path": "apps/app/web/test/properties/p46-preview-truncation.test.ts",
       "passed": 5,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/web/test/properties/p79-log-summary-rules.test.ts",
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/web/test/proposals.test.tsx",
+      "passed": 7,
       "failed": 0,
       "skipped": 0
     },
@@ -738,6 +1506,12 @@
       "skipped": 0
     },
     {
+      "path": "apps/app/web/test/releases.test.tsx",
+      "passed": 13,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
       "path": "apps/app/web/test/resource-profile.test.ts",
       "passed": 1,
       "failed": 0,
@@ -745,25 +1519,31 @@
     },
     {
       "path": "apps/app/web/test/reviews.test.tsx",
-      "passed": 15,
+      "passed": 16,
       "failed": 0,
       "skipped": 0
     },
     {
       "path": "apps/app/web/test/search.test.tsx",
-      "passed": 5,
+      "passed": 6,
       "failed": 0,
       "skipped": 0
     },
     {
       "path": "apps/app/web/test/shell.test.tsx",
-      "passed": 4,
+      "passed": 5,
       "failed": 0,
       "skipped": 0
     },
     {
       "path": "apps/app/web/test/spans.test.ts",
       "passed": 7,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/app/web/test/stale-build.test.tsx",
+      "passed": 6,
       "failed": 0,
       "skipped": 0
     },
@@ -798,14 +1578,146 @@
       "skipped": 0
     },
     {
+      "path": "apps/dl/test/tar-volume.test.ts",
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/dl/test/tar.test.ts",
+      "passed": 13,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
       "path": "apps/ops/test/access.test.ts",
       "passed": 5,
       "failed": 0,
       "skipped": 0
     },
     {
-      "path": "apps/submit/test/scaffold.test.ts",
-      "passed": 1,
+      "path": "apps/ops/test/alerts.test.ts",
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/ops/test/analytics.test.ts",
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/ops/test/containment.test.ts",
+      "passed": 22,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/ops/test/deploy-slices.test.ts",
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/ops/test/deploy.test.ts",
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/ops/test/waf.test.ts",
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/site-shell/test/consent-dom.test.ts",
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/site-shell/test/consent.test.ts",
+      "passed": 18,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/site-shell/test/form-dom.test.ts",
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/site-shell/test/form.test.ts",
+      "passed": 27,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/site-shell/test/respond.test.ts",
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/site-shell/test/turnstile-dom.test.ts",
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/submit/test/consent-integration.test.ts",
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/submit/test/consent.test.ts",
+      "passed": 17,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/submit/test/cors.test.ts",
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/submit/test/properties/p107-consent-links.test.ts",
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/submit/test/properties/p88-outside-submission-limits.test.ts",
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/submit/test/properties/p89-response-links.test.ts",
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/submit/test/respond.test.ts",
+      "passed": 15,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/submit/test/sessions.test.ts",
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "apps/submit/test/submit.test.ts",
+      "passed": 12,
       "failed": 0,
       "skipped": 0
     },
@@ -817,7 +1729,7 @@
     },
     {
       "path": "packages/design/test/components.test.ts",
-      "passed": 14,
+      "passed": 25,
       "failed": 0,
       "skipped": 0
     },
@@ -834,6 +1746,12 @@
       "skipped": 0
     },
     {
+      "path": "packages/design/test/installation.test.ts",
+      "passed": 14,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
       "path": "packages/design/test/render.test.ts",
       "passed": 9,
       "failed": 0,
@@ -841,7 +1759,25 @@
     },
     {
       "path": "packages/design/test/tokens.test.ts",
-      "passed": 24,
+      "passed": 27,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/domain/test/admission.test.ts",
+      "passed": 14,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/domain/test/ai-output.test.ts",
+      "passed": 22,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/domain/test/ai.test.ts",
+      "passed": 20,
       "failed": 0,
       "skipped": 0
     },
@@ -882,6 +1818,12 @@
       "skipped": 0
     },
     {
+      "path": "packages/domain/test/evidence.test.ts",
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
       "path": "packages/domain/test/history.test.ts",
       "passed": 26,
       "failed": 0,
@@ -902,6 +1844,12 @@
     {
       "path": "packages/domain/test/permissions.test.ts",
       "passed": 10,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/domain/test/personal.test.ts",
+      "passed": 6,
       "failed": 0,
       "skipped": 0
     },
@@ -948,6 +1896,18 @@
       "skipped": 0
     },
     {
+      "path": "packages/domain/test/properties/p78-project-choice.test.ts",
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/domain/test/properties/p79-log-summary-rules.test.ts",
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
       "path": "packages/domain/test/properties/p91-dates-and-times.test.ts",
       "passed": 1,
       "failed": 0,
@@ -956,6 +1916,12 @@
     {
       "path": "packages/domain/test/properties/p97-retention-table.test.ts",
       "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/domain/test/release-export.test.ts",
+      "passed": 12,
       "failed": 0,
       "skipped": 0
     },
@@ -1008,6 +1974,12 @@
       "skipped": 0
     },
     {
+      "path": "packages/domain/test/site-view-ceiling.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
       "path": "packages/domain/test/text-fragments.test.ts",
       "passed": 4,
       "failed": 0,
@@ -1038,6 +2010,18 @@
       "skipped": 0
     },
     {
+      "path": "packages/kernel/test/consent.test.ts",
+      "passed": 14,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/kernel/test/emailed-consent.test.ts",
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
       "path": "packages/kernel/test/field-reader.test.ts",
       "passed": 1,
       "failed": 0,
@@ -1045,13 +2029,13 @@
     },
     {
       "path": "packages/kernel/test/preview.test.ts",
-      "passed": 11,
+      "passed": 16,
       "failed": 0,
       "skipped": 0
     },
     {
       "path": "packages/kernel/test/project.test.ts",
-      "passed": 15,
+      "passed": 17,
       "failed": 0,
       "skipped": 0
     },
@@ -1062,14 +2046,98 @@
       "skipped": 0
     },
     {
+      "path": "packages/kernel/test/properties/p02-independent-disclosure.test.ts",
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/kernel/test/properties/p04-unclassified-selective-classification.test.ts",
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/kernel/test/properties/p108-emailed-consent.test.ts",
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/kernel/test/properties/p12-publication-gates.test.ts",
+      "passed": 12,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/kernel/test/properties/p13-rights-consent-invariants.test.ts",
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
       "path": "packages/kernel/test/properties/p14-preview-diffs.test.ts",
       "passed": 5,
       "failed": 0,
       "skipped": 0
     },
     {
+      "path": "packages/kernel/test/properties/p77-item-moves.test.ts",
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
       "path": "packages/kernel/test/substitute.test.ts",
       "passed": 6,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/manifest/test/backup-codec.test.ts",
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/manifest/test/backup-inventory.test.ts",
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/manifest/test/backup-keys.test.ts",
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/manifest/test/backup-manifest.test.ts",
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/manifest/test/parse.test.ts",
+      "passed": 23,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/manifest/test/print.test.ts",
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/manifest/test/properties/p68-manifest-round-trip.test.ts",
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/manifest/test/properties/p69-manifest-parsing.test.ts",
+      "passed": 3,
       "failed": 0,
       "skipped": 0
     },
@@ -1110,20 +2178,56 @@
       "skipped": 0
     },
     {
+      "path": "packages/public-render/test/consent-email.test.ts",
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
       "path": "packages/public-render/test/continuations.test.ts",
       "passed": 2,
       "failed": 0,
       "skipped": 0
     },
     {
+      "path": "packages/public-render/test/export.test.ts",
+      "passed": 18,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/public-render/test/headers.test.ts",
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/public-render/test/installation.test.ts",
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
       "path": "packages/public-render/test/pages.test.ts",
-      "passed": 29,
+      "passed": 40,
       "failed": 0,
       "skipped": 0
     },
     {
       "path": "packages/public-render/test/paths.test.ts",
       "passed": 5,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/public-render/test/shell-bundle.test.ts",
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/public-render/test/shell-contract.test.ts",
+      "passed": 4,
       "failed": 0,
       "skipped": 0
     },
@@ -1153,6 +2257,12 @@
     },
     {
       "path": "packages/testing/test/properties/p06-withheld-disclosure-line.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/testing/test/properties/p07-not-found-indistinguishable.test.ts",
       "passed": 1,
       "failed": 0,
       "skipped": 0
@@ -1200,6 +2310,12 @@
       "skipped": 0
     },
     {
+      "path": "packages/testing/test/properties/p19-public-addresses.test.ts",
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
       "path": "packages/testing/test/properties/p20-page-metadata.test.ts",
       "passed": 1,
       "failed": 0,
@@ -1230,8 +2346,26 @@
       "skipped": 0
     },
     {
+      "path": "packages/testing/test/properties/p73-export-snapshots.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/testing/test/properties/p92-character-preservation.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
       "path": "packages/testing/test/properties/p94-project-accents.test.ts",
       "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/testing/test/properties/p95-people-and-responsible-person.test.ts",
+      "passed": 3,
       "failed": 0,
       "skipped": 0
     },
@@ -1248,14 +2382,56 @@
       "skipped": 0
     },
     {
+      "path": "packages/testing/test/subrequests.test.ts",
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "tools/test/bootstrap.test.ts",
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
       "path": "tools/test/boundaries.test.mjs",
       "passed": 8,
       "failed": 0,
       "skipped": 0
     },
     {
+      "path": "tools/test/check-email-dns.test.ts",
+      "passed": 14,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "tools/test/check-launch.test.ts",
+      "passed": 15,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
       "path": "tools/test/check-specs.test.ts",
       "passed": 23,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "tools/test/cloudflare-provision.test.ts",
+      "passed": 21,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "tools/test/default-fetch.test.ts",
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "tools/test/deploy.test.ts",
+      "passed": 12,
       "failed": 0,
       "skipped": 0
     },
@@ -1272,6 +2448,12 @@
       "skipped": 0
     },
     {
+      "path": "tools/test/evidence-recorder.test.ts",
+      "passed": 18,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
       "path": "tools/test/field-migration.test.ts",
       "passed": 1,
       "failed": 0,
@@ -1279,7 +2461,7 @@
     },
     {
       "path": "tools/test/lint-copy.test.ts",
-      "passed": 7,
+      "passed": 9,
       "failed": 0,
       "skipped": 0
     },
@@ -1297,7 +2479,19 @@
     },
     {
       "path": "tools/test/profile-certification.test.ts",
-      "passed": 3,
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "tools/test/properties/p125-release-assurance.test.ts",
+      "passed": 22,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "tools/test/recovery-rehearse.test.ts",
+      "passed": 24,
       "failed": 0,
       "skipped": 0
     },
@@ -1314,6 +2508,18 @@
       "skipped": 0
     },
     {
+      "path": "tools/test/smoke.test.ts",
+      "passed": 18,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "tools/test/staging-results.test.ts",
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
       "path": "tools/test/upgrade-store.test.ts",
       "passed": 9,
       "failed": 0,
@@ -1321,125 +2527,327 @@
     }
   ],
   "files": {
-    ".kiro/specs/research-collab-cms/design.md": "adc795f679153a41ea670012e93dfc256f13f8be2d12327b3520c0780e9a4539",
+    ".github/workflows/ci.yml": "02691c9c9bf1aa5dec4cba2bed8470d37be62631805e8ecf60e91bffa19b0437",
+    ".kiro/specs/research-collab-cms/design.md": "737e9d53a79551e8138761b259a4eb044872e32ac4902e2f753d8ed239d57f43",
     "README.md": "5586119f3717b609a4ec434dc2df22976d2d199f22f3b899111a94b2fe734884",
     "apps/app/src/activity/feed.ts": "9b74f0a76f927852265149a64fc2931155214083cc9d4a2294dfa0371c9bc5c0",
-    "apps/app/src/api/app.ts": "d840b06dc9bd13f3e3814e4516ffd97af5d123977a0e00e5a85413dcdb0719d7",
+    "apps/app/src/ai/drafts.ts": "a13520a3a71db82ae70b444092c5583825ff79fffb3fa83aa3cb73282bd23308",
+    "apps/app/src/ai/input.ts": "90fe5be93234336f48bc9ace5393eb29e61f53fd24de73ee15b34406b7748a43",
+    "apps/app/src/api/app.ts": "b5b28338cecd6f2c6037dfcb824ba44c94ca2e91c052f8ac90b6f734a9d9e396",
     "apps/app/src/api/csrf.ts": "15e77070ae956446846623fadb946e8d763749b039f1342d0df65b90ad660516",
-    "apps/app/src/api/idempotency.ts": "5b80f5da9bb36815b5d222f26a779dbd8471f075419f6e71724ef00755a4e059",
+    "apps/app/src/api/errors.ts": "5c7dc370384259e71412260fc6e5628a476fd20796b72feaf80d607795e8ed88",
+    "apps/app/src/api/idempotency.ts": "fbdab99ae70c5994bf4395a7387cc8031db245c2751574026f4e405ff666ce6c",
+    "apps/app/src/api/input.ts": "4259fddb715991642afe742767a58d6ca44f020a303a29a4b44ca633d027cd87",
+    "apps/app/src/api/routes/ai.ts": "14c5fcc1bdd1923a5f80a9412ecdd83766984a6de4c4d97330868fc58112b89e",
+    "apps/app/src/api/routes/backups.ts": "41aaded85b0e3b70f6897506dfcc298956e71055a40fea313e0ddf7f92694783",
     "apps/app/src/api/routes/citations.ts": "bbc31959823629d54825d9f7b1e4f2692edc58935e83f1c650c5cd1c337fa860",
     "apps/app/src/api/routes/compute.ts": "67306ad936da87a0606a2453ff5d63d03f9c7f92dc654a726b53478cbfb463e9",
     "apps/app/src/api/routes/coverage.ts": "9ed4a6469f4d48238ce1671085d349e8b31bdae5098f85f661b72302271f1422",
     "apps/app/src/api/routes/decisions.ts": "2ebccc140ade1adab9ad6094d5a5f72e67c61263459f438717bea424db3aa7b9",
     "apps/app/src/api/routes/derivations.ts": "a320791bd7416c26a08d7eb690903460885d68c2b5266fa27042b3495fcdd692",
-    "apps/app/src/api/routes/items.ts": "4ea6b42052f132ecdfba7f31af3d47f6637a47a83f8a54d3f0556747de1baf28",
+    "apps/app/src/api/routes/disclosure.ts": "00ef67d19b13b80ae471aa160e718d3f9fdcd3dfa1ed7d775408c02d10f7955b",
+    "apps/app/src/api/routes/dissent.ts": "86781a82d7540298701e3e1b8f0015ca1b08a78384a6507d33e5e8ecd7be5971",
+    "apps/app/src/api/routes/drafts.ts": "44a246e22b3ec85b1c4cec8a5ea16db9de392cdfaa971aad35294700b99981da",
+    "apps/app/src/api/routes/dual.ts": "8aeda729d44a376e6860715fc5259d8c5e05ae262549e8643a3a029773dd257f",
+    "apps/app/src/api/routes/imports.ts": "cf46f826344407d1029185f6ca227c60f2387486846b3da2069585d966f5e001",
+    "apps/app/src/api/routes/items.ts": "6c6ba2ca2c02585b492c0255c17155c55229d39aba21f541b77f06e407f7de0b",
+    "apps/app/src/api/routes/lists.ts": "ad6d4688d7c5e53db659d8d76c67dc02b6b2158b40105412683043929bb1203d",
+    "apps/app/src/api/routes/moderation.ts": "52e75d399eb4ebf716fae66d2b6adebce9682075e0e351a6ab3202b87f547da4",
+    "apps/app/src/api/routes/personal.ts": "e1692d44c160084b82e9e681d7909147af945a0c5d19aeddd89c29bf35b6dd89",
+    "apps/app/src/api/routes/policy.ts": "4301f78e6ebe3bf6bbf15aff646adfae4a3861180252a3d8945db22930b18b98",
+    "apps/app/src/api/routes/proposals.ts": "43102c4b969ec084d37264b61bbec8e2c92a4a187bee66fb9803efc699e329c8",
     "apps/app/src/api/routes/questions.ts": "0bfae944448d46097c187a466085e0385b23d39d2e490013ddb657acc97c735c",
+    "apps/app/src/api/routes/releases.ts": "3f7fc5a390c94e04d0010cac43ccf0b2299498c3dbf08bbefb888154d21a4f8e",
     "apps/app/src/api/routes/stages.ts": "8c6db44989b5a0e6fb000feed44a8de5aa2ad49f562dba320d4d019208d353b2",
-    "apps/app/src/api/routes/work-lists.ts": "c9ca62594e0f446cea9f1a8cffe822f8b5424cb189b78cba5c8e86012a3a3b38",
+    "apps/app/src/api/routes/work-lists.ts": "00251bb1245385298f2d116a208c235b4444a5812bf5c1f2afbd772c604afd4c",
     "apps/app/src/api/routes/work.ts": "303d828c735553d182be04080dce3ae28ac3628213dc501892315b211418a839",
+    "apps/app/src/api/security-headers.ts": "5923df29c57f7af083f30fa7e06aec61c3369c9a0f0bb253903b2960285a5c9f",
     "apps/app/src/auth/dev.ts": "0aeb7704f14d35e4a5553c272a5793dcf184e6c848cf39776be0ce93a0bba166",
+    "apps/app/src/backup/checkpoints.ts": "ebb8beb007f81c0980b758455b72d950e60afd82bdca85dbb0dad48314127114",
+    "apps/app/src/backup/copies.ts": "f1201a6b7547a54eab5935a60a4ac958daef377034573ff1678ddebac8e9b316",
+    "apps/app/src/backup/custodians.ts": "b64146ca3fc297ce7c9324df29e4cd43b272f37cd76ed3b2835e514a778852d0",
+    "apps/app/src/backup/custody.ts": "ae60a3988ce806c3433378cbfbc575e434cee7b9cfcb89957a90ce8e3500530a",
+    "apps/app/src/backup/freeze.ts": "4105442ba11900f7ae426d8489e38ce33da8c6c2f641d33892f7924c21a0680f",
+    "apps/app/src/backup/preflight.ts": "d0b943e4b477d5963b24e41922b11162b16fcf003b15c9e13819fd03b34128ba",
+    "apps/app/src/backup/quarantine.ts": "bd8c4a561484b013859c8fc144ab778013179f1f871806fc5234345fb84c29ea",
+    "apps/app/src/backup/reconcile.ts": "1ce04e0320b39eeb18353dfdecf29f3bb5dd2067d7ba6a28a9d242d838b4f820",
+    "apps/app/src/backup/rpo.ts": "9f6a331890644325223a9d1f3a0c235426ad07eb7e515f2aa6bf7599d6362492",
+    "apps/app/src/budget/status.ts": "122e9b2c4646e26e6c881704d44c4f1825374440fefb5930be0641eccb8498ce",
+    "apps/app/src/consent/requests.ts": "4e2f6e59a3fb2528c89862947e61b219f9a4b5d21491fdec3c667f63788b8e07",
+    "apps/app/src/consent/sweep.ts": "6217e1bd033fc50b5ae42af074e4f2b39922f5ed996ef59a806cadc583fc9c84",
+    "apps/app/src/disclosure/apply.ts": "9db9d3f23fca4c154fe3d6161c549523b6a80387c8401d4df5f7bedf81a81e9e",
+    "apps/app/src/disclosure/holds.ts": "118a36376870d863188db2734486574b26b0b42d78ccf84cadfd2ba27a194c4d",
+    "apps/app/src/disclosure/preview.ts": "a29949d545dd4a395aad9d3b29a2ffcde92020261a19a17ab18964a9f55834f8",
+    "apps/app/src/disclosure/records.ts": "7824f7ef7dd0a36716ee6e878ef7c9e5a20d0d8e8b3528270ee88e89eeb61ddf",
+    "apps/app/src/disclosure/rights.ts": "20588ac84cb17eaa55ae7af4746d90c67612c5870059b272e1635b74cc83b066",
     "apps/app/src/discussion/mentions.ts": "15878df17398bac63c6c18314e25f69e657e87d24effbf5b6d81931f5ac3d460",
     "apps/app/src/discussion/replies.ts": "5a35f42c80d4f6bccb3a558a3eb496ee7787bbbeb636c261a39a32ed5d5d7100",
+    "apps/app/src/dissent/display.ts": "eb01a351c7d29975861e96081e8eef36776883807273805452c8135322db4813",
+    "apps/app/src/dissent/dissent.ts": "01f5b7fb91e5c76e50f8c2839be1cd810b71918c15aecea7cc10fff1cb69cf18",
+    "apps/app/src/do/budget.ts": "853b80cc0af290014ec195be38855d68b088d4740fd5285ae00b0d93f92e554c",
+    "apps/app/src/do/jobs.ts": "019395e3bcf6ccfd965e4cd1009dd6a50b053797f4f06c7a1cba4046723732b8",
     "apps/app/src/do/mailer.ts": "2dad36be3355dccc245b9c7c1a4cdbd963fce38d22e5305ecfbb2f229cae2cee",
-    "apps/app/src/env.ts": "8a2694fa3b3fcee04dbb3b8b91285284c20d7adcad59b5dc859ead9883a1cc9d",
-    "apps/app/src/files/attachments.ts": "8d80d0ea45aea04341a0de12e29d6a6d31fddffda922da1825be6ad244fdb15f",
-    "apps/app/src/index.ts": "74ba6f2607ae7e6d22162767623eacdd6974be7ee2800b501f863b4401bb0451",
-    "apps/app/src/jobs/deletion.ts": "922f3ace9df6db23115566605713f263d34eac0ec45d57bd6cd6fc320a2da250",
+    "apps/app/src/do/publisher.ts": "24ddcb589b9c65b430c1b3f451fce634cfd175bf29f943e899823317bb288efb",
+    "apps/app/src/env.ts": "fd6fa1bc407ce1d74f66f3cad3603a99317c8226caaf3c9bbdb532d725a98cdb",
+    "apps/app/src/files/attachments.ts": "82c16b98181904aab69453079a96fdecf6fcb299ae5c89938dfdde894697a9a9",
+    "apps/app/src/files/move.ts": "8f70c5eb1392da6ca3cc10e81ed9df629d929c8c28082d876336b192c15f5f1b",
+    "apps/app/src/files/uploads.ts": "6bbc9d55286ed562bacaa71505b95fd4e4aa33c6debb003b8be5431cb208c66a",
+    "apps/app/src/index.ts": "0c50eec566354e142daf3693aa6743ba1bbaf1c5fa73bb610dd7484a92277d7c",
+    "apps/app/src/jobs/backup-cron.ts": "564ece36eef7eb08a9e15b0663596aaae9ce2a43ac704ee4dad23e3e5841c440",
+    "apps/app/src/jobs/backup-retention.ts": "fded0d0f36f9f1cf1ebec5d03d6a60e5c2dd17e98c0656581257d690106f2de9",
+    "apps/app/src/jobs/backup.ts": "9507a229f8c2f2fa247e45a835913bc31d244b9d63ff0754fb4eec19b7e0f2cc",
+    "apps/app/src/jobs/bulk-import.ts": "e59e08fc32effae3b59b47ef85ee931e896cd3e17fc34f5359305e1f4a07beda",
+    "apps/app/src/jobs/bulk-validate.ts": "31cf622ca774e9a818c8472540d6635bbdef1476ca0a66a95498370310a9510e",
+    "apps/app/src/jobs/deletion.ts": "73ab06c632388326d21794bb9967290ac1072ac51917f3e0426106b3792f3856",
+    "apps/app/src/jobs/export-cron.ts": "2884f058407bbc6473fc50462680fc68a894591d14278cf5ea770cd9719e3fdc",
+    "apps/app/src/jobs/export-manifest.ts": "8bcb662b97430c622f0e82ab02a506933952f05b3fb1f21e20a8188afaafa9bc",
+    "apps/app/src/jobs/export.ts": "3d70e7ffc3825179bfbfc100e03f729fbc27847402de1e22fed932b61bc5859d",
+    "apps/app/src/jobs/journal-import.ts": "d392f6c5cd6764c3599adf24b6e6b00562604a56d2a7c06ea5eedc3bf81df200",
+    "apps/app/src/jobs/operational-cron.ts": "b47270aeab266cac550eb3dff1c034db1c45b433bd80f70233019dafdbc776ff",
+    "apps/app/src/jobs/operational-retention.ts": "fcc07e3d537f5bab276b19380e60d2d5bc7904726896873e221013700ff2877e",
+    "apps/app/src/jobs/restore.ts": "917dd935670ce72f6a3fe5818a97eea0efbf352a99b2a9ba60b3b5b27649a0ff",
+    "apps/app/src/kernel-input.ts": "9cc26730a313df15bb250742ae8b49cac29a9154ef83966e2d66bc6a6610b699",
+    "apps/app/src/lists/archival.ts": "1e733a67507e73beae0854c3c454ed5d29eb47532482518c87966c9c8ad5d3c7",
+    "apps/app/src/lists/correspondences.ts": "dcb8af855694c16537dfc23d209eb82b7a02395f36eda6cdc63eab8328905ae4",
+    "apps/app/src/lists/findings.ts": "ca1e82708738abaf49f72f8783ad28ee02f338d6760b440b764212bf09c7558a",
+    "apps/app/src/lists/hypotheses.ts": "a4c89e0c85deae6793e2c3d21129f581f23bc8cd45ee5fefc4f39d11a6605471",
+    "apps/app/src/lists/runs.ts": "b63677f59cb7f6df1b904d49724ae8f4afae732ae2e0a8d7feaecc218cf2fa41",
+    "apps/app/src/lists/shared.ts": "e55085ab4df78380a8e184e1931d5d6343452ce5f1106026826446941a7cd3d5",
     "apps/app/src/local.ts": "7f2726c7ad7069da6d06b84cdb624adb75b96a02dbb40c3e6a8a49eb9eded406",
     "apps/app/src/local/mailer.ts": "8407f4dbe617580d2222e9f0ff5f929e1789828a5b27d4563f08b388120abd35",
-    "apps/app/src/local/runtime.ts": "4be8c5ece99dd676d3224c54f34779be717a6b081b70bf91808dfb816165b0d6",
+    "apps/app/src/local/runtime.ts": "e60e6830e42b4aca2c72a4394ce5fdf78ffb5439d02dfd9c0a7a513b84962450",
     "apps/app/src/local/services.ts": "4125d2d6da2b79304f2edefd1ef7699dd951533b0218b38be542e6b65a7458c7",
-    "apps/app/src/mail/mailer.ts": "5d83090a1776f91fd364e3185b2ab1f5ec7f24988600de2f933ee5a0ee2a5f08",
-    "apps/app/src/mail/provider.ts": "9351db12b874fa5277a9db551975e951acf30835461aede8f5edf7542b24f76c",
-    "apps/app/src/mail/providers/graph.ts": "d5347a26087ede6730c2c76912c19ac1c7ef4be7e478b684246f63a792f2a476",
+    "apps/app/src/mail/mailer.ts": "cfbcd2554f7c5141d35d13aa3970443de22d4145f496881dc8133ee73ed8f7aa",
+    "apps/app/src/mail/provider.ts": "9346d9bed0a8d65614a518e96badcc6aa32ad1c242fa1db840c4bdb8adc4f63a",
+    "apps/app/src/mail/providers/graph.ts": "30751632ee29bd309cb9601704c522387c06368f7d3555e7bad4385adc015bf1",
+    "apps/app/src/metrics.ts": "f9f7cc84f7c63cfeadd89f550881b1c2ed62ecb909f592d3baa41165488aad60",
+    "apps/app/src/moderation/contact-review.ts": "86035c84c2edb79effcc65556e1f14ecb87bfea2d487df328a7acdefcf0a9954",
+    "apps/app/src/moderation/decide.ts": "34e654868676af8f755dc4d6f54c8affca508ddc12a684a9a451cc012e5a5de7",
+    "apps/app/src/moderation/queue.ts": "2dc98e6b50d453b944838ad2934db9e9f7e45e86586167a6e20ab761225e198b",
+    "apps/app/src/moderation/reminders.ts": "c2ce55e1af9f42b561aab9894f7f96c4ba198bbcf1392ac062dbd6efd582a59d",
+    "apps/app/src/moderation/retention.ts": "32985db23149c8dd6bc076840557d96062b0185728fa661c0f050f75b9c37c30",
     "apps/app/src/notifications/centre.ts": "1eff10ea330c6a4f8c54311569038d852a51a4cd4ae1a35b4d9ce2ddda375771",
-    "apps/app/src/notifications/fanout.ts": "007342e2e44953a5356acc34dcb6c366d438c999e31cc96269fc692e56683301",
-    "apps/app/src/records/access.ts": "2f1cc0e95a2e9d2acc436ece5f74323f62b82f41521bbf0d627f7011b40b0110",
+    "apps/app/src/notifications/fanout.ts": "043bf1eafc2eab545b7da18dc4fa1399bec2714967294a8f85f128d4aea9270a",
+    "apps/app/src/notifications/reminders.ts": "99a41733ec74cbecfd504475c670bea9455f6ceb2dc718137057cb044af45194",
+    "apps/app/src/policy/policy.ts": "3c48cb644d2be65e225ec01650b5409fcc51d7d685de3a8ed2a1ef1f693ee883",
+    "apps/app/src/policy/responsible.ts": "05ece09623c952f99af124e8633330c1504da9a68e11bea91ac6eb5bb885db16",
+    "apps/app/src/projects/log.ts": "10c5ccb4e0c96f5bf055f49288fc3ff96670337473e2e17ffcfd55e1943d7940",
+    "apps/app/src/publisher/deploy.ts": "65236ed23498672974459a71584b419f47ef7222976265cebfcc9eb7f772b54a",
+    "apps/app/src/publisher/files.ts": "03a2164cf18f04e5844db0fd1f1c2f7626bf22098c3f96ac244a0a83fb830e1e",
+    "apps/app/src/publisher/plan.ts": "abea24af853a1b2d80f7c67d50285d3d1622e80e423748f0423419e8c6d51697",
+    "apps/app/src/publisher/policy-pages.ts": "735c8641fadbf5c397974fdfd24e1b0178d284cb059182af93311f071792345a",
+    "apps/app/src/publisher/projection.ts": "191161911d2b7a7083ae0cf5381fb21bedce859b527ac191bf348aac861ce175",
+    "apps/app/src/publisher/render.ts": "138a0bd0647882c67c94b37c40d4428e5ea4eda61e4af500fa47367a62491461",
+    "apps/app/src/records/access.ts": "f833445fea54b49d3ad64d3d6bc24d20d18fa57afb788f1bd7d460f5512cc046",
     "apps/app/src/records/assessments.ts": "1df8c50ae78f5f8213928b8a89f7fe579252085a32206ff84e0ab09effe1ebd5",
     "apps/app/src/records/citation-navigation.ts": "17423dce670669eb073036cb13ea83771fc33411344789cb557eed7fd2fe871e",
     "apps/app/src/records/citations.ts": "cca17d7f85c59f48d7b324fde2118e456ed1009759eabb6b94e26b7ddacddcb8",
     "apps/app/src/records/compute-packages.ts": "57275e2a4d242aa0a1d9fde4eff263815f8bd27f4e70bf4dad410116a7d6b7c9",
     "apps/app/src/records/coverage.ts": "301c08ecb5856c56b88ca227610ad997251a3c5d60951a796549ca9d12875d4a",
+    "apps/app/src/records/dashboard.ts": "36063bf19f4748fcc6536a18394a7643ccecc228db4c25d58413eb5d66fbd3b0",
     "apps/app/src/records/decision-operations.ts": "9ef2e6d23853f2ee8b34d6b90c2122e6ab58ceebac90258b985c489cb038f20c",
     "apps/app/src/records/decisions.ts": "443d872865231e98885e561a2d0abacc692009317e9f55b21fe6cdb9af10331c",
     "apps/app/src/records/derivation-export.ts": "11e3496b199489b2bce7c25019f5c7d052e629ef810008b12bc925d94c4b82ec",
     "apps/app/src/records/derivations.ts": "a959df00ecb929c52f20c8c75f80980e1ba377f0cd13356890cf6fd9c34ed32d",
+    "apps/app/src/records/drafts.ts": "7f8c2f61aabafc11d9286c3fff270b5c29c81af088d8a04af1feba7027ebeeb9",
+    "apps/app/src/records/evidence.ts": "73ac90151969e692e43a07fb331f20ae321e10431b758d99b2ce02226376a163",
     "apps/app/src/records/field-values.ts": "62544c7633894faf051160160a5bc53bfaef6fa539e39a8c232383887f75c993",
-    "apps/app/src/records/history.ts": "7c4bd027ecc4fab1e571c5cef115baf81f42beb208f5c719566743bc38cfc764",
-    "apps/app/src/records/items.ts": "ee447c796720b2bdb1c47704b5b13d2f2cd061a65c29ed3ff53109241062a723",
+    "apps/app/src/records/history.ts": "030fe0aa95e990df3fa266d26046f8fc6f9e1e99e3fe5b57801550d2541453f2",
+    "apps/app/src/records/items.ts": "473ae119881fc6ef3cc2f9b3d812b64c8e18b9db754714b4552ba7dd107731fd",
     "apps/app/src/records/kinds/bibliography.ts": "f8d67186918af9cfbfa7fcfe5670a44d4680765ce8f6a026e5fb4259819ec389",
     "apps/app/src/records/kinds/decision.ts": "4e1e16b423ede55b515560fd9740acab9bd5739499fdee1ffe250677a4a4f3df",
     "apps/app/src/records/kinds/journal.ts": "933c45dbd304eb1b6193cd2455d398e201116e16e622589b3498f892db457306",
+    "apps/app/src/records/kinds/kind.ts": "c96692d2945127648299235577ded07315c862df9783bc4d110a21cd647369e8",
     "apps/app/src/records/kinds/question.ts": "b40b3ad130b40168bf74d4c99af53bfb21e99d432d1eaf87aece9d6af360408d",
     "apps/app/src/records/kinds/source.ts": "310bc69cf19db2989e35500ce512d09840fa29cd213373ea4874e5ff0704660a",
     "apps/app/src/records/kinds/work.ts": "8048a3420445b90dc1f3f132f027e1a0324e80390033c8a58c4b608408785656",
-    "apps/app/src/records/links.ts": "42b18e04780e17640e10ac8dd12e42351f3a913fbd860d24c15bd1f7467572d7",
-    "apps/app/src/records/releases.ts": "ffb3f84da2f0bc2c5a824d177d4bb3068056f9b7575c3e230fc2466eef69c586",
+    "apps/app/src/records/links.ts": "61c27208020370f659a363635204ae3fb9cdb487b2675996ac86652483f43fdb",
+    "apps/app/src/records/move.ts": "36f52c41f156c729af809a639756e4aedf087f39f23b492d0dabfcbe8d0dd435",
+    "apps/app/src/records/personal.ts": "802a24e30c8f193c7e02c5c90dd5f3d1732297cb43c17a6c7f72682199c96b17",
+    "apps/app/src/records/pipeline.ts": "665a5f666c39e2f0c2131efb224ec1c3ab143b8799ff889c463693d86a016b9f",
+    "apps/app/src/records/projects.ts": "857019ee76a41c3a8ee01afad3312038b7ae29be7cd56412aa60eed8688276b6",
+    "apps/app/src/records/proposals.ts": "0a5835c4532a029a18b4af8f826d86f574a1fb55d8169900e4abf5530bf6ee63",
+    "apps/app/src/records/releases.ts": "0ca11a4f1004748146b1da26d7b7daafe19c201936eabe06eab781167eceaa4f",
     "apps/app/src/records/reproductions.ts": "1b06184fbdba2dab62cd51a3caaf7c82fc7f8feef51c49c07485d2664f3852ab",
-    "apps/app/src/records/stages.ts": "da676138512638f05c562a22603e64af299e1209d16bb902bc13b11bfcd43d4a",
+    "apps/app/src/records/stages.ts": "da599da6237f117898d3f62c313a06862e41ac758bf66ae285879c3b6f73d07d",
     "apps/app/src/records/submissions.ts": "9cf103427ff4be5d6cec10958db8f0f641c6ee06390a6c23d7513d9519ba7ef9",
     "apps/app/src/records/work-history.ts": "503ede3a5b9e8ee72ec38763ce0dbedf358f2e4e8b6265007d25c8244c283f2f",
-    "apps/app/src/records/work-list.ts": "655c2dea3caefd29a4a05aa4159ee69712ab4629f0e1cd239edb058342a4d023",
+    "apps/app/src/records/work-list.ts": "fa3dd791afa2debf6beadbce71c978eef6fa8a73004c10a3b6e108691755f810",
     "apps/app/src/records/work.ts": "09e5ca3d6f9f9010bb0de0c472db1e49d410346a967c864d28fe5fb880903c95",
-    "apps/app/src/reviews/reviews.ts": "8bbf2e3427f609b7ad0521d5f07772424390e18bf3cab6c06393f3e366e918f0",
+    "apps/app/src/reviews/dual.ts": "9673fcb34cc521f433e29656d9d9ff827c69445224199fba9ae18c9fbfc9d22d",
+    "apps/app/src/reviews/proposals.ts": "1048ec6768c78621bdf431e16401f43a5a5e46d6b5bf5d46e35207fd8e4973ba",
+    "apps/app/src/reviews/publication.ts": "4ac33b9777e5311c13112b9467e56fb912a11dabeda5f64721dac206de85e9b5",
+    "apps/app/src/reviews/reviews.ts": "e74e3920844488f5f233bf1deb94fb55a476f734b67c2317037ea17c38e27780",
     "apps/app/src/search/indexer.ts": "6fa7974f5952f74b0b0416da0100e80c54784cffc71ea351e7d3272d17bfa86f",
     "apps/app/src/search/logical.ts": "05b326fd59b2d06c122b190e80825458542920bf513179e622772c7519fa1985",
     "apps/app/src/search/query.ts": "d193022ee87505627878cc95be6755b66fb0574258f0f23091f90f0075f99ae7",
     "apps/app/src/search/read.ts": "45d83b428b60bf72b8185947bb430f7f8a042d7a4316999ed816a18b42fd1411",
-    "apps/app/test/access.test.ts": "66c2d6c46e44668dc03a60a7adbffd133625cd5af3cc001d913e7f1b285d3904",
+    "apps/app/src/usage/alerts.ts": "fafd1663d0b73c9ed32736f5c31f12ae3eb2b0a357a25dc350601299453cb739",
+    "apps/app/test/access.test.ts": "31d6a7438bd22d985666ac5da59aa8388674b2debb4221e5df66b4de5a58214d",
     "apps/app/test/activity.test.ts": "c377c6fed6f35e8fd4eb2c13b0ae5411a740231f28fc3ada6313e4b0798737f9",
-    "apps/app/test/api-foundation.test.ts": "84bc0dbd53d1e47615b6dd5f46fe7646380061b83bdcb7a0c2cf3a502f14ec8a",
+    "apps/app/test/ai-drafts.test.ts": "525f225c8a423399a5531217032cd80279560236a070507f168d08f69f34f84a",
+    "apps/app/test/api-foundation.test.ts": "e27dfcee5ca1c57011b57c44fd77762b1cc773cef46630c4abeac6c51c0ba0fa",
+    "apps/app/test/backup-codec-workerd.test.ts": "aa636b4f6e03212875c451f368b3ee70c2131e54c35a592c859526c3ad050e42",
+    "apps/app/test/backup-cron.test.ts": "862dcacc3fded86be4e41b44edefcfde4c17692c3705d02351c369cdd9fa6311",
+    "apps/app/test/backup-freeze.test.ts": "a27fcf99aeafb0d6bde611641b0a331594f39d842fa95add4855253a6772eec4",
+    "apps/app/test/backup-retention.test.ts": "d870f4d578a26ad9c32d7a5b35370f73599b03dcc16ddbae334b3ce66aaf6aa8",
+    "apps/app/test/backup.test.ts": "9449ac129165cb3e5e0a61b2c747cab83c37a6df04fd6097ea634cba612afd21",
+    "apps/app/test/budget.test.ts": "9ec5fc576e5127eebd2d03cf9fa633607e8be48c47dfa07889705c1553a6c311",
+    "apps/app/test/bulk-import.test.ts": "86d1c7ca6678d6197792249b47ae7a1136d4969201f928117a09ffbb4e4700be",
+    "apps/app/test/bulk-validate.test.ts": "f8da061fa665749cf392961fbb44c0bf91ddbf0e9d269ea7e2026356c172c3a4",
     "apps/app/test/citation-navigation.test.ts": "70ce81262ee7bebf997945d51c48e41f003c861a8e3e92c17705601fa5c4261a",
     "apps/app/test/citations.test.ts": "e9fe4442491cd9dcee8457b57455d618a1d7ca9c1b932aeaa1d33fdd55524ccd",
     "apps/app/test/compute-packages.test.ts": "f499772f07fd3bb3a3ed40923e599d3754c53da3d3493427d6bbf1e6db6841cf",
     "apps/app/test/compute-walkthrough.test.ts": "48255e491fef4d86ff51557861ba5e5dce9d68556fc437129f67577a56d1fe30",
+    "apps/app/test/consent-emailed-coverage.test.ts": "4f3b1238984fc541729b370aeb22de0a56fd8ce1127b6b234e6aec24d12a4e6d",
+    "apps/app/test/consent-requests.test.ts": "73ac106f33a119e707ad0df8156e67a2aaecedac91f0965f175e2fa4ada1b5ac",
+    "apps/app/test/consent-sweep.test.ts": "52944b762a239c42e071a322f97461b6dc978a4d537d25be89a4431f26bce7ac",
     "apps/app/test/coverage.test.ts": "8a9443a1900d535dc97874a5e318830165b99f10680c89f321bfa7fbdffeaa5b",
+    "apps/app/test/dashboard.test.ts": "534621a83abd24b0c42470e0d209c11c8954aeb3488e64696c7badc5262d0177",
     "apps/app/test/decision-operations.test.ts": "a141cf5dcff5728df2d79f43c66d5e389421d3697bfa98b832e2dc9180f3c5b5",
     "apps/app/test/decision-records.test.ts": "cc85264564417bf5f2eff2189ad4f6121b95e6ea9b8410d981be961daeac6def",
     "apps/app/test/derivation-interchange.test.ts": "c256c5239e340763bf0dc39715dd99dfb58d48e9e68f26c1b122af588ac48676",
     "apps/app/test/derivations.test.ts": "8a35080424ec063209890133609ce38517c680ed2ae90396c117bf8a678cf59d",
     "apps/app/test/dev-auth.test.ts": "fa9b8f0adc243c50dd6170cb738751ece480a48c514b7b3580c2059757882f9f",
-    "apps/app/test/field-versions.test.ts": "46a5e22ebb2e8bc9b04275d0f3b50629db3889ab763d31b2c0b94b7864acd2a9",
-    "apps/app/test/files.test.ts": "216e8f6d88d185863dbc1d585ada1deb94574e7cbdcf5355094b0fa72117f46d",
+    "apps/app/test/disclosure-apply.test.ts": "6f00684a0e23bc866c14784f40cf1b05eae5a187ef084a640b9023353016a935",
+    "apps/app/test/disclosure-lists.test.ts": "5fefbae5d1433cce2ed10fc615b14d903f3e754d14f40bb7d4a98f320d72f769",
+    "apps/app/test/disclosure-preview.test.ts": "c5b0636d3ba9169ce06d4980a7ccaa2ebb0d643ce7aeb3a982063ff0690a793f",
+    "apps/app/test/dissent-display.test.ts": "f5ed0fc65fe75fb1044d2d3039dcfc0eeb4d491c3e60bdc1d3a7b8ac14fd6969",
+    "apps/app/test/dissent.test.ts": "e3fe4055ebd1fa1eb76b9fb7900771b99eb8568476e2fdb6ccf1351b1e90f14b",
+    "apps/app/test/drafts.test.ts": "359f604ae4f2c01d396bf72889e8d40e1272880a2f45a813212db4679f21a3f2",
+    "apps/app/test/dual-approvals.test.ts": "0ae6bc1640620fdb98b162c9526e4f61f02a64dd9beabd5085c000a8b53400d1",
+    "apps/app/test/export.test.ts": "b5481584832410864ef38db083ba1d5140ed29a9778d9f797238b9e8b93576b5",
+    "apps/app/test/field-versions.test.ts": "1d642a8c035401b35ab281e0c38f409d6ce628ac064449a82b3195b841590be6",
+    "apps/app/test/files-move.test.ts": "37db824ef7e516226dd247ce2d62b416049210eb4d67edcdba8cf1dd0466d031",
+    "apps/app/test/files.test.ts": "5e9f87856dc99ade0e30b6fd6328c2836797d15fd906ac83a3ccb0e8f8af1cc7",
     "apps/app/test/graph.test.ts": "6e116ec4a7d15f440f779f43cd38bea5eb21f31cc4f9b954aeb25c59e176a851",
-    "apps/app/test/history.test.ts": "90bbe70b076e873ab7877d685030bc30b56c4e738f0278f44f690d79aa7bdf7c",
+    "apps/app/test/history.test.ts": "a3f1baa9a02a740dca2604aa60a6ba605c6b19752d3a285bcf0a7cec234b0bbc",
+    "apps/app/test/holds.test.ts": "066535185173f8c579d75402589fdccfe7f6aa3fc8007d4f8f3f38bae7778c9b",
+    "apps/app/test/journal-import.test.ts": "99e35d0fd87dad78339fe76fdf97baa9cba1f80b195fb0a768bbb4fbfc7ea07a",
     "apps/app/test/links.test.ts": "587c36836333c5dadbd7e39415358c0b670ae6a12d60a6b4ae2b6730a4a5e339",
+    "apps/app/test/lists.test.ts": "a7eb24ab0d169ee4b7c2110806bcd61b0ca7237cc517738998e0c688ef6c1ce7",
     "apps/app/test/local-services.test.ts": "fbf4f3b8994650410d05367db43bf8b009c4b7d65915ddc4da9d320b218f68c8",
     "apps/app/test/logical-search.test.ts": "81c0d0ff6d66889814f0cc4622bd5dff6f31dbdf236448b43617bbc120ec4b8c",
-    "apps/app/test/mailer.test.ts": "fc7fa871f8fbacfeae943092e52bf88fec7ab5a53eb6255ff283c609f91ca23c",
+    "apps/app/test/mailer.test.ts": "09517508ce56cd2bacfb6309884f840821d78e34728c60da6b5f28bbd839f466",
+    "apps/app/test/metrics.test.ts": "9e23d0e3ec327fe18e52c00c66e7ea79495744d729b3bf41cbdb69993a055488",
+    "apps/app/test/migration-consent-requests.test.ts": "a744ced18beb4de2ecaeba24f9f9d2792a82f4ab797fa1b6ab20e97042a28c70",
     "apps/app/test/migration-decision-records.test.ts": "0980d836671aeca5a8dbca73375e483ea79f78eb40a34fafa6dd8c016d22b0c2",
+    "apps/app/test/migration-durable-drafts.test.ts": "e44a95d9acb8d294f140d6b968c7545520d0a91a03ab6c5857a9e5b46338a54e",
     "apps/app/test/migration-evidence-citations.test.ts": "0d85462b7cfa6cc9cfbd33f65a827fce013a2ed270d76ae2d94b324c87e4ae30",
+    "apps/app/test/migration-permission-evidence.test.ts": "cb9d1df03bc54462b6ffc27562ae06238f35f866571babff3a6c36b314fadfe7",
+    "apps/app/test/migration-publication-consent.test.ts": "5bc55a19445c55144a271a200fc611f91aaa2ffce20579b63473ee2eed37525a",
     "apps/app/test/migration-research-questions.test.ts": "a74e8c04d35919ad25b933f757785ebe6db697951c2bada58eff96dc89c28100",
     "apps/app/test/migration-research-releases.test.ts": "769b473ee4b34e9d87c4dfd2c76c05236d2c422fed90fc434fad1d04448386b5",
     "apps/app/test/migration-restricted-access.test.ts": "a7282523c9baad92c284c4a880b8408911d53314731dd24d750376bde161a75a",
     "apps/app/test/migration-work-items.test.ts": "a3669cbcd4c7a1efc7893cdd321c6ee129163d05afa76e34d46c87d17cc8b8b5",
+    "apps/app/test/moderation-contact-review.test.ts": "9acae090553ef6dfe90fface2a77a36673f9c9b7b6477dc77ccf0ba66727470b",
+    "apps/app/test/moderation-decide.test.ts": "7c551c0c21991b2209819987ff377bb83adcc5c13ace2de46ffe865baa7cfc8d",
+    "apps/app/test/moderation-flows.test.ts": "68bcfd05d179c3dd1ecf3a4fdb8c8aaecd6b604b3b76f1f3b2590cea78dd5f2d",
+    "apps/app/test/moderation-queue.test.ts": "eafa13430564b35ed5a9fdce38a32c4288560d16b853258e3b81783538864318",
+    "apps/app/test/moderation-reminders.test.ts": "fec068d456aa04b2ad8ec3ca6fc0a895d791efb822c5c3fb2a38ef01f27ff601",
+    "apps/app/test/moderation-retention.test.ts": "6bfb6343e177ab82e0fc312c5d3a5a86b0888ca42150d01327663a86e66e1bb6",
+    "apps/app/test/move.test.ts": "81234cc8612dea2c7a790fc91897a1e7dcbe033edb5c36f89974d78a1993a01a",
     "apps/app/test/notifications.test.ts": "e2216924c9fb9c34379dca53d89c831305201de160862d97273886ab9e92be04",
+    "apps/app/test/operational-cron.test.ts": "94ff6a41f708f4ead3811d332987c8dffbd48b56437a8ee02177c57206e6904b",
+    "apps/app/test/operational-retention.test.ts": "c9aa35a3528a01e9e8f9459ba41011c5dca340cc6c4ce1aec113c26d7616ecaf",
     "apps/app/test/operations.test.ts": "ce1b10cd65543a580adc510525b5be1efdf749f8ef6ac51a141c90a461ebf9bd",
+    "apps/app/test/permission-evidence.test.ts": "c52f08715b21c248cf9d0fcae25a8ac93ddde5dea70447186f1e80376892dc7f",
+    "apps/app/test/personal.test.ts": "11f7a9b613443841f46317104d6955be1d0261c155c278ff97b60d7c4c3224d1",
+    "apps/app/test/pipeline.test.ts": "3433464d5f1ef089d828aa9779a48d00f9f078df4b345e65fe871290ee3d5dde",
+    "apps/app/test/policy-pages.test.ts": "2884393c00258743f084fe6ce61334aae07fd6049e62d0a6e39a501f9bd07714",
+    "apps/app/test/policy.test.ts": "421c9482959e651c759ec7df2082ea0682c85c882a09314dbf3d2c5d53ecae62",
+    "apps/app/test/project-log.test.ts": "3605f5e9a3862bb28c82c2f63aa0f213bd8cb2b45a3eca996ce4486586f1ee54",
+    "apps/app/test/projects.test.ts": "0026b4fed948d15e285872746e4b1458ec3b3c3a052ad758121fef82551b08f9",
+    "apps/app/test/properties/p03-new-units-not-published.test.ts": "3c56224a59e4faf0af0af918132ff78df05ef379db4df6a9aa92ccfb0b294f48",
     "apps/app/test/properties/p100-restricted-reads.test.ts": "0eff8c88390c91899b0c3eb0f5e85a9dabcd85e0be6dbfca837cc588209526da",
-    "apps/app/test/properties/p101-access-changes.test.ts": "6bc83a71a3e15b534caa1fd13605fc30ebffb3ded920a08351933634db823066",
-    "apps/app/test/properties/p109-text-fragments.test.ts": "1b50e33dd4182f583bdc5d5bdb714099c68073a8ce671ccf2468373191cdaf72",
+    "apps/app/test/properties/p101-access-changes.test.ts": "4799f99d56b630245d9dceffb51ba30c832bb4e197bd8422a3cc5dce0275997c",
+    "apps/app/test/properties/p102-publication-consent.test.ts": "df0eddec1a6e858cc005a8b680e6ac5ea35a89ea5ff5ce736008daa9c0c20b0a",
+    "apps/app/test/properties/p103-confidentiality-holds.test.ts": "91b105faf80741fde1d392b36072df69e5fe0bcc919b9e710f9eb7c3b39815a7",
+    "apps/app/test/properties/p104-dual-approvals.test.ts": "46bc24e345160d6106ff2fccaec840ce4c105029a3a59d6588c50084d46a9657",
+    "apps/app/test/properties/p105-attachment-moves.test.ts": "b2c9b01c327ab992ddbdf96b85d82935a49cbaf24ab67ea5f2594c012624f483",
+    "apps/app/test/properties/p106-research-questions.test.ts": "6f755f9d5058b1517315a290981c5475ecb740c98c44b8e751a385d23f0be7ae",
+    "apps/app/test/properties/p109-text-fragments.test.ts": "14b851f5571fa58ef159c3b5f486c566018fff55c5f7d5d8aa7588c19d002c1a",
     "apps/app/test/properties/p110-idempotent-mutations.test.ts": "870ba98db23a944fee8488b263ad9985ab4a0a1037ab7bc8ff2e073d3b1ae539",
-    "apps/app/test/properties/p115-work-coordination.test.ts": "151a93c3fbfb0020b5f7d7594155a8d1058e4852e1028a5a512da2ac77d2abff",
+    "apps/app/test/properties/p111-independent-recovery.test.ts": "a2751ec79f84af422716a4f3545ca7695d01a6741a04fef33d30e4f22ffbe84f",
+    "apps/app/test/properties/p112-freeze-restore.test.ts": "2c371f6e3ed15df062b344b4f25843e280fb23f0116d5dca9326e5e3f16ddad1",
+    "apps/app/test/properties/p113-publication-epochs.test.ts": "bb3e0f6161677028625542256bec829024ba503941403b3a0ff59171719a76ef",
+    "apps/app/test/properties/p114-certified-admission.test.ts": "7c0165b4b6768c339005e60ad90748575ffaa316faceaae20dfa86c816b4303c",
+    "apps/app/test/properties/p115-work-coordination.test.ts": "cf81d54af5ddfda978a9185d55cc32f1d17e98bfb720906dc6d19ca00e3b3834",
     "apps/app/test/properties/p116-question-lifecycle.test.ts": "52e2ef3d6ccef465241d086c3a0af87527c361aa67639b8ca3a848fe349035b8",
     "apps/app/test/properties/p117-decision-records.test.ts": "b61ccb1aa6d3379d2477fddc0fae73a4956a5bb704d37535225d429084b2d420",
     "apps/app/test/properties/p118-evidence-citations.test.ts": "5e639cd79486ddd12b38bfb2085ae530c2407293d5d2729c623b8498a4b7fc70",
-    "apps/app/test/properties/p119-artifact-derivations.test.ts": "679cf142ca9ee4c2fdd9d3d711e8f718c1057582100057379012af627d1d8078",
+    "apps/app/test/properties/p119-artifact-derivations.test.ts": "8f25525f15ad477bf3cb4fc13ad55c61abdcd7d3f6d35f7df1755bb71a6d722a",
     "apps/app/test/properties/p120-compute-packages.test.ts": "dc285a36e52cf2559eb1b3529aa252ee161aa1bc92b5b1734d59c6192b8c5f60",
-    "apps/app/test/properties/p23-permission-decisions.test.ts": "9e36301d1a8c79d20156d698207be8de30884abd016414f36551348286ffd27f",
+    "apps/app/test/properties/p121-durable-drafts.test.ts": "eaa134f76ef12bea39a661e7c23b20219829fa352347fe6b6f8965827a295e55",
+    "apps/app/test/properties/p122-edit-proposals.test.ts": "de288a4ba6b93d9634fdbde4bb039fae03529b267e4a40eecd6e96831de0d4a0",
+    "apps/app/test/properties/p123-personal-navigation.test.ts": "ef8fca98ca00cd5ba466d216515b96a0010d29fe1870531828c54d5e3639fe25",
+    "apps/app/test/properties/p124-research-releases.test.ts": "76560aec7ab3c1c5047a4bcedc767535ac7dde624ec678138ce9ee7b8a086924",
+    "apps/app/test/properties/p126-permission-evidence.test.ts": "f73ae836c5dd94a200ed95797659a0f2c23222b73fa2793c0fe32485498adf20",
+    "apps/app/test/properties/p128-backup-freeze-lease.test.ts": "156bbb322928e1114fe8e7b1a117b7fa2c9b508af250500f1ea25024fe9f094a",
+    "apps/app/test/properties/p15-publisher-convergence.test.ts": "158ffa9d3b2f64d939f34e70b493dd6e5e507ecbe6e308848c10be8733e2324e",
+    "apps/app/test/properties/p23-permission-decisions.test.ts": "a160e7357cd697bc33fa3bbe66229089a213dd7b33d91b26e9063a73d7261053",
+    "apps/app/test/properties/p28-atomic-saves.test.ts": "dcd13e44ebef4e73ce8e41f78cfb369619695579e90193c59107c314a72926f6",
+    "apps/app/test/properties/p29-concurrent-saves.test.ts": "5635d95204ecbc1e9fd81b2b3e0484f3bdf1e60a4e547a7fe220160339f5eb54",
+    "apps/app/test/properties/p36-permanent-deletion-tombstone.test.ts": "2815444239d854d8c37afa4cf73e189a771e3f63fc8cccfe7548a3ce022d80c6",
+    "apps/app/test/properties/p41-item-identifiers.test.ts": "d2226084e144c96d1d6f54eb99dfd912c40cfc96ca67d30527a431b7bd3a2fbd",
+    "apps/app/test/properties/p48-review-state-machine.test.ts": "862f635200dce4d443c1b36b9bd0d249f7a883bf896863de4785f5e4351add52",
+    "apps/app/test/properties/p54-event-recipients.test.ts": "29e0f89d2dcfb4909d60009ea630d26d3c7b832e7b79b9a6351fef4f88ebf14d",
+    "apps/app/test/properties/p64-query-date-validation.test.ts": "c28e3f27f5404cc3497d618e75b7a4d5b9156f37820cbce1a1605bc99885bc5b",
+    "apps/app/test/properties/p65-workspace-lists.test.ts": "10e8eba55afcccf52c9ba2e7e8a5861a36c9f520daaec8592c9738a7f825e272",
+    "apps/app/test/properties/p70-import-idempotency.test.ts": "7edc5070badb05d78681c98e4e2c278b21c1d1460c068dabb0838e67b8d8fdbe",
+    "apps/app/test/properties/p71-import-reports.test.ts": "b5a8f44ba64123eca6a279fc8f090a7ddb4936f6997b31470d819648bfdb1a90",
+    "apps/app/test/properties/p72-export-json-round-trip.test.ts": "df844c8717660b0025ff3d3d95533e0dce8a0048a4962fbbb06c93f9a76bce58",
+    "apps/app/test/properties/p74-backup-restore-round-trip.test.ts": "f6ea4b32527e72645d1ffe7fd02d75d941a37b0f1ce9a9fbe57e4c5906118d60",
+    "apps/app/test/properties/p75-package-retention-staleness.test.ts": "de6488cd7d83086c4f7d9c20e5c81655a10328847a335e74af15a7e7363795f8",
+    "apps/app/test/properties/p78-project-choice.test.ts": "f9eabac1a36f5cc39f91997d798903b767fd2b49c09706782b4c1bda57589cb4",
+    "apps/app/test/properties/p80-dissent-wording.test.ts": "bdc42699ae018f916fc994d6a0397cfa5a1517c57d1d0a07ae387e905fd14346",
+    "apps/app/test/properties/p81-budget-gates.test.ts": "8b7f786ff03e22c8e389b0c1067a9efeaef8809a0641d49b748b06f821f302e1",
+    "apps/app/test/properties/p82-usage-alerts.test.ts": "483ec9b136f4074110b7da54dae36f4f12698436b8e7418b125a6034f1bbe0cc",
+    "apps/app/test/properties/p83-ai-allocation.test.ts": "52f2a503308a95cc58fb6307425cc1c8822aa71b2272c96590da74e4808a3551",
+    "apps/app/test/properties/p84-ai-input-and-output.test.ts": "4d69c5880c2f9f0c4dfc189260ff76e9ccf47099b4b052982b293fc56a71c3bf",
+    "apps/app/test/properties/p85-ai-provenance.test.ts": "ceaef262d8a64304c418bbe27b832075e4737e8c0d3e51ed638a1ad8dc437e48",
+    "apps/app/test/properties/p86-retention-sweeps.test.ts": "32809c09a365ec23335c80f04e55669cd8fc0908f5ffa3ed10805576c8eaa27c",
+    "apps/app/test/properties/p87-reminder-alert-schedules.test.ts": "d94d4cb3858d3ecee4836e8a87bc3697253305c8bb292ed0121abf55672f1d65",
+    "apps/app/test/properties/p90-moderation-decisions.test.ts": "91db39e03ee4b9567d04ab854b3aac05c639b92fe2dafcc364cac08cc9f8408f",
+    "apps/app/test/properties/p98-last-updated-dates.test.ts": "7401f629d0d32332fcff36e5dcec7e119ae922658bcd236d7999bd74370e4750",
+    "apps/app/test/proposals.test.ts": "7a2ad8b0ee8f5a6b4c92b405ed35f2130ec812baf5b833194c077d186938fde7",
+    "apps/app/test/publication-epochs.test.ts": "de747e74dd54a31c5d71b6feb842868fb451a9f9e8670395997506b5fb075049",
+    "apps/app/test/publication-proposals.test.ts": "3cdbbc81df4a06a9c462097d3a40a35d1f69fa827f5e0e83f76cf857c9de3d09",
+    "apps/app/test/publication-requests.test.ts": "0f05375451c09430616de740d3a19f54b94fee1592e4666a7559822b51b88851",
+    "apps/app/test/publisher-deploy.test.ts": "eb73f93e3077bd60a9657eb84653a4d6be978f1ec2d960e44bf9c3953a9aad52",
+    "apps/app/test/publisher-files.test.ts": "baebbf2a210af0ebfe1e6463f6d60e484635556d670584f3284408e571452f57",
+    "apps/app/test/publisher-projection.test.ts": "27f365b7058a4b94d934cfd7c3710c27811666de32d7d266e9a097d09d0d882c",
+    "apps/app/test/publisher-render.test.ts": "ae50b564743341b4e36e9460f712d8c1dd5159dcc9be2760e0762fc8393d4c46",
+    "apps/app/test/publisher-slicing.test.ts": "b43396444364be11eb7fc95e23f790be63a6a00e480cf5da11ef9ac2f8ee7415",
+    "apps/app/test/publisher-timing.test.ts": "8e895ae60270075ac8c1f3cad4872908f4a7ddf18b32d12d9b76362c61d5f597",
     "apps/app/test/question-assessments.test.ts": "3b91777a6addf32187ab37921e14ef4c14eaa0b39e1d58380ed21174543768fa",
     "apps/app/test/question-entries.test.ts": "fd3b8419ca2f9eccc72ada76104c666c1fcefd4a164df3e06b75128db19b5501",
+    "apps/app/test/releases-publication.test.ts": "2dd2b47f9f322e9fc6582d370db38b6722c92d5b3fc4df0608a03b944746fd25",
+    "apps/app/test/releases-publisher.test.ts": "3e5b70e4d5e8bfadd9cfd0ee8dc8792c306aa9773d3caf7fdf45bcfaaa5e8df8",
     "apps/app/test/releases.test.ts": "9e8a84846e61ebdbcc903075aea26a93f2258cdc9411713df27a8fd7fa97c6d3",
     "apps/app/test/research-questions.test.ts": "71b0bfa4b0703a42298eebebe53124f36c32b63f528bd0ea57ee0992061309d7",
     "apps/app/test/resource-profile.test.ts": "800884eb7c85819a7c94f78044f52cc91caf7f94dcd43d7ca848e0349beb51f6",
+    "apps/app/test/responsible-person.test.ts": "c13b546aa935df40ad8ad788a76399631f98656bed66f405a4070d15f7866ebb",
+    "apps/app/test/restore-preflight.test.ts": "413abf1da5124bf2fca1309af60d9ed7cfe5113cb3aa06e860dddc28eaf9d30d",
+    "apps/app/test/restore.test.ts": "b0008381421b397181aeea2ea92745afcb475a012aae3a21ac539a26203e5fbc",
+    "apps/app/test/rights.test.ts": "a682f4aae14f91d830acc8da4a603c1ed7f1a40c35efab892bce6ebdccb0c162",
     "apps/app/test/search-indexer.test.ts": "5bbef95727bfa6b5e4e32e7f9a70ae38911372ca35f4848930a05890acfa7ab7",
     "apps/app/test/search.test.ts": "c29f3a3bb3503f8b47505097b32166042d2bc6dc7055da55bb34eabb19ce42e4",
+    "apps/app/test/security-headers.test.ts": "53b2e1eab108b2d207fcab42345a25fa9b749a02114544cfa9abc5f40dad9068",
     "apps/app/test/stages-logical.test.ts": "765d41420d2d7ef577b3cc3e2baa3c5100749789357b55f28f86e4aed4a888bc",
     "apps/app/test/stages.test.ts": "958ac57418ddd19da9064e76d2f1a4ae0891ccde186c4ed35728a1df4dab471a",
+    "apps/app/test/usage-alerts.test.ts": "647fc725dd2502efcf70eaadd2a1d1d39fb4517ea0b0fb3b91a88f974937d572",
     "apps/app/test/work-coordination.test.ts": "9652edba34532cefac2e007c8aff6ac969ced21954db8c50c13abaf2a8c21978",
     "apps/app/test/work-integration.test.ts": "3dba2d7228e3258fbfa3685faa6de540cef01d3d2608a1009cc7cca7407bad2b",
     "apps/app/test/work-items.test.ts": "dff8c5a8919d54f876dcf01592be271165f189b2e223159852f25685d06227ad",
     "apps/app/test/work-lists.test.ts": "66c788d60e8d9ddc595a2ed8c3823b4d7ad4cb1445fec247cbbdc33a8de2b5ac",
-    "apps/app/web/src/access/access.tsx": "78f5366bab76cc3fb59253a40e8c2380cca29c4e45aaad3eab05cfde597f88b5",
+    "apps/app/web/src/access/access.tsx": "8a3324bdb832c71d2a1f02280685f154959b08343895f55e5f299594386cf041",
+    "apps/app/web/src/activity/activity.tsx": "3c8e72ee51f978b10c845df5fa864e112f5f23b4903dcc20bca02af079fafe56",
+    "apps/app/web/src/admin/labels.ts": "2112583731dd3900500a9bb627c0057d148c6097d25e1d6339cfaaf581523a2b",
+    "apps/app/web/src/admin/policy.tsx": "5e0f12332222c8b13d563c9578b4a1ec8bc3de6ee19d8507c552775921c318ed",
+    "apps/app/web/src/admin/publishing.tsx": "e29f12d2460dba669e69d7db2adc8013b61aee62a2efb384d55867db8162964a",
+    "apps/app/web/src/admin/settings.tsx": "c320b352183a57493e9e6f4df913d4202a832f7c3c64ba9cb43910472c10289a",
+    "apps/app/web/src/admin/value-sets.tsx": "185beb31ee6ef91f8960120e775c670ee57b1fd31af1af01c658eab8fd4167a3",
     "apps/app/web/src/api.ts": "1b66d25b88888c8c1a30e83dc4c1492996e5e245a3aab41da40e4c1ab126f2ce",
     "apps/app/web/src/citations/panel.tsx": "13c3779e5072ca30f18728a17f48bf69245bc2e193a983272418132b0b901138",
     "apps/app/web/src/compute/coverage.tsx": "dffe2c2ffea606fd0d8c3836a881c358387c5194491416a07c505ce8de6c2295",
@@ -1448,9 +2856,33 @@
     "apps/app/web/src/compute/panel.tsx": "f1ef8ac897188b95be393e1fc18f19abfa47fb0df08ff89e3d417eb9973244a4",
     "apps/app/web/src/compute/reproductions.tsx": "68436e1ada1bee453c52ada37bd6e3704c7897464080dde29cf222e269a715dc",
     "apps/app/web/src/compute/scope.tsx": "2f21780caa3617d361e26abbf90d282bf2434b09318e4f54f8cdc4ee29e47ce1",
+    "apps/app/web/src/consent/dialog.tsx": "98939cbb5e45094c008afb5eaf5230fd058279584c434e0cbc1db43544eece7a",
+    "apps/app/web/src/consent/launch.tsx": "71378ab640c5af511ce7267ffd31b2efa0343d1dc0a52fff3b3fefada45cf2d5",
+    "apps/app/web/src/consent/model.ts": "b12db512f9d92a549cabc379cf4c306c73a853f92edc843ad566095f055f92ad",
+    "apps/app/web/src/consent/party.tsx": "1c96285224e0963ed8a53b9ee8f6e599ee9a7e4ed347823a522e84474ee13718",
+    "apps/app/web/src/consent/requests.tsx": "47359f1793402eab48458aa9e5f59907192d1c49b835e91b4e25df359b2c7bcd",
+    "apps/app/web/src/consent/snapshot.tsx": "943390b3d09af23be926b5e0a5f2c4976266b12da6c3a00cd94d74dbcd293553",
+    "apps/app/web/src/dashboard/dashboard.tsx": "1b0f01dd39f844cb26611a9770824c3b50750ebc8c0fa8b644a145d0cd9f478d",
     "apps/app/web/src/decisions/panel.tsx": "b12d243b28dee5ab013aeabf2df2f3ddfefc672137897176152437a792bc3922",
+    "apps/app/web/src/disclosure/correspondence.tsx": "2b08e34555f687a5561054c42d220574d28dcb9926a0f812b2bb8f56a748680b",
+    "apps/app/web/src/disclosure/disclosure.tsx": "c3876c88cdf358de1f9d6b39a4ade1eabc51112da7cb0058c5eafab4c4332185",
+    "apps/app/web/src/disclosure/holds.tsx": "791adee9ade4103458f3cbe4137ca33216487c0000f18b494d65a07769656702",
+    "apps/app/web/src/disclosure/line.tsx": "c20ea1019c04b6a0d69745a26cec7519fb7e68f8ad844d1a0359ce9e31e4d3e2",
+    "apps/app/web/src/disclosure/move.tsx": "37bd7286d56fc11b1490bc362017ee0142e70d6ed761da478e93a19a220100ee",
+    "apps/app/web/src/disclosure/public-summary.tsx": "fb909b53769926ef7f6385c15e6f872ccd84bd560089511af852b91125005289",
+    "apps/app/web/src/disclosure/publication-request.tsx": "f8db49a06c16860a743ea474c88427bdeecad75b96c0dee1337a625d2d6c15da",
+    "apps/app/web/src/disclosure/records.tsx": "1345fa0a7d2af12c4660bdb278d42420eacfe9d9ab38d55c211284a60fe90d86",
     "apps/app/web/src/discussion/thread.tsx": "bb739eb7d0e7c5228a1da7d769af9d53711503f97983570e787ea18226b05500",
-    "apps/app/web/src/files/attachment-page.tsx": "c041b01438cf517aae55d043158c9796268e31d7e219ee0dd9ff9ec07bf26486",
+    "apps/app/web/src/dissent/dissent.tsx": "ef66eb6af7409a19ba0e9f62c5d07b1af47461d22e82e41ad03d9a644755c803",
+    "apps/app/web/src/drafts/drafts.tsx": "26f47f39e0a1333b068a20eb7f8761fd58eff73ef42ec1725172b174350a3059",
+    "apps/app/web/src/editor/ai-draft.tsx": "bc22e48e71e45a197421538fb3ca45609fa77205193a4220d7abce6670596d5c",
+    "apps/app/web/src/evidence/editor.tsx": "af1e475910a40ce9a2b92044da1940640e6f30f6dffde1c2d78b69becf82c47b",
+    "apps/app/web/src/evidence/queue.tsx": "27d4230881d77fa9c6de38ce3078444880158795278668c4e34856adb3db4506",
+    "apps/app/web/src/evidence/snapshot.tsx": "585d718030c34bf42cc5f47120d663c4fe881410296e1c32d36a1e70058c85a7",
+    "apps/app/web/src/exports/backups.tsx": "b9f6b64e238a35a01a47b495d78dbd7b0686391ec438dc1d7e28ec39db493630",
+    "apps/app/web/src/exports/exports.tsx": "db58c112862e4c7ef41e0a239c1192bcecbdf80153d775df184b3bf4788dd861",
+    "apps/app/web/src/files/attachment-page.tsx": "998500f3ee0afb43a042d1a03e97cd910968ba2b3df172336a7b5297eba2554a",
+    "apps/app/web/src/files/move.tsx": "f2a50b490180131a7b7cc3ca18ac8dc92ad9a45bc9f181638fdbc6464400c21b",
     "apps/app/web/src/files/preview/csv-stream.ts": "3852d5fca2e60c9687efd21f11093c8d0c7048a181c2326401d26cf652f70e44",
     "apps/app/web/src/files/preview/image.tsx": "82a0afeb23c4dd823974995b4b67f2cb293e0f7ac60f00c1b60ce4ddcd5ba626",
     "apps/app/web/src/files/preview/index.tsx": "3d9e9f62c86203b24e8ece02971aae5ad87f7a7adede90c74a2e207ac984b123",
@@ -1459,55 +2891,139 @@
     "apps/app/web/src/files/preview/ranges.ts": "3cd03d2178749d5edf1e8d20a4045e8fe81641fbea8177713e7c3f23dec271f0",
     "apps/app/web/src/files/preview/transport.ts": "9d6a7a172960b2bb87fad20cf19f5abd2f3d095578955b51426132315fa289a1",
     "apps/app/web/src/files/preview/truncate.ts": "151765638fb6dfd94f53480bfaa12861aed62d3083e4a31a31e5e7e780cf1017",
-    "apps/app/web/src/files/upload.tsx": "e94daf2f1558a1a6466510f28f4c9d0317d7342b23e848e8319e4946234997de",
-    "apps/app/web/src/items/forms/ItemForm.tsx": "1eae715286639e5d9854daa863dafcbcb097b4cf7bced2215e883066b58363f1",
+    "apps/app/web/src/files/upload.tsx": "3ff99fb9d30c33bbafdc38b3822903b47b8e0a01e516ffd4f327c555872c686d",
+    "apps/app/web/src/imports/bulk.tsx": "50f8da721d1b0fe70c31d1d6d896c4af27ed7d687dd101ab3e764f809d968095",
+    "apps/app/web/src/imports/journal.tsx": "f678a19cc34f94b5834ddc2bada542260faf2d0e244d628ad53f90bc67157bb1",
+    "apps/app/web/src/items/forms/ItemForm.tsx": "2e539d0cd69c6496353fb9dcd2e6759fc332c4978b371f9c168804b4bc74d6ff",
     "apps/app/web/src/items/forms/model.ts": "2222d69b293faea7aa35aadc87bbff8ea9a9f4295ff29cbd0c38ab59e4755564",
-    "apps/app/web/src/items/page.tsx": "b23be8fca147923391d5224b29c881bb13a002164dd6be68c700c5c26df43848",
+    "apps/app/web/src/items/page.tsx": "828019a56a5f42552e23798e4a238e9a46dc61765cc0869b3307a0d02de1dbf4",
     "apps/app/web/src/items/question/assessment.tsx": "2ff2dfb738f3fdc5e177804a1ecd62f14f04ddb699d6027b601f54660b215859",
     "apps/app/web/src/items/question/entry-picker.tsx": "ec0a59a5bc38bc17071d5af37c17c8fa7111a683fb81afe97e999284b630634a",
     "apps/app/web/src/items/question/groups-input.tsx": "bbb2a45576ca456c39e89c189c129e04a65bcf0b4e22b4764b54cfc4a0b72b3a",
     "apps/app/web/src/items/question/model.ts": "977f64940ea6121527308bfd14ed375dec6f6659d58b84af2f642d9517af2ae7",
     "apps/app/web/src/items/question/question-body.tsx": "1fa09541830b42d4e09dee166a2a6295bf37e64360a789defd3d6c32343a8a32",
+    "apps/app/web/src/lists/lists.tsx": "f2afde63b50746eafa3237eac18d546cf3acd2056fbfd3807c0fb888f53d45bc",
     "apps/app/web/src/local-development.tsx": "009a5fff4446a4263c434b75957eb618a17fb62bba4b396eacced5749fd8f367",
-    "apps/app/web/src/main.tsx": "821678c0a320c0dd40ae7a35f68aa8fcc69561f05fb5d59641cc5d3e923bfa70",
-    "apps/app/web/src/projects/list.tsx": "8e5f5df6ab3594cdc698ad22fe73f77536bd0904670e2966b87254a5eab220ad",
+    "apps/app/web/src/main.tsx": "f71065303221651aa21bee3ba244c1752f7fbe9f2a15cca5ca3ec1cbd1650d59",
+    "apps/app/web/src/me/dashboard.tsx": "c1dda55b7326c47e3cb984a35617fbb645a9e88fe24fe820747862d58cf37b06",
+    "apps/app/web/src/me/saved.tsx": "9a5a8f0a8befedf3cd018cddde019760002620e0c2aecf78d5d13359c097d8dd",
+    "apps/app/web/src/me/team.tsx": "0e25744de4c15f91c76a7fcc25c85a61e4d58409ea7f85ead8ce714cad451c62",
+    "apps/app/web/src/moderation/acceptance.tsx": "9ebd32c76af9575f08d28aecd94a13f08fa64378c6abd282267daf4c3f7f8ae8",
+    "apps/app/web/src/moderation/contact-review.tsx": "2b274dd238ab4dda74eafbd018be854ea39a387c1a18b6e65d7ced90dbfa1fb8",
+    "apps/app/web/src/moderation/decide.tsx": "38bfaf7a3f3640f29abd3d4b165a66f3a9ef2bbe45aa7971ae1c2596f06776fc",
+    "apps/app/web/src/moderation/model.ts": "d26461ccc5bf381a1b2a94550d65ec8fe0bfd4c16da3d6aaabe524fb4038d9de",
+    "apps/app/web/src/moderation/queue.tsx": "49de101f06d2e15fe06864a155941b891082139d79da89b78a03c6bc1c4d781f",
+    "apps/app/web/src/moderation/submission.tsx": "4f4fe36fa31ef8836b9f1d3b739e24e37f3835aa9842cd9bf813d659e5954411",
+    "apps/app/web/src/projects/list.tsx": "e080872e4b843943b4e97f30afcc50a3156d8c50dfa8979a8d1d6a4e37fb5212",
+    "apps/app/web/src/projects/log.tsx": "ffda1a7e929a16c3e0b2710abe37266ded6ec53daaa8e763dbd7d005770f8cb4",
+    "apps/app/web/src/proposals/proposals.tsx": "5b028ba0f2a1c21e083e2b1859efd07e4c5c3d0a77abef57d8131d7a01927ce8",
     "apps/app/web/src/provenance/model.ts": "e0760b3af324078f69ad9144d4066d5f00e37715d1dfffabaa4aba5a65efd152",
     "apps/app/web/src/provenance/panel.tsx": "44ed7f8ded8dbb9ad8ebd201d3526fe8f6c0a076a4f2e7ce85298c7b466bcbf2",
-    "apps/app/web/src/routes.tsx": "1a628cba5b504563927b74fb929080d8d8ef8d8b8ab56e81c40360bed610be45",
+    "apps/app/web/src/releases/releases.tsx": "8da166b71c0ebeff61b2efebfd9cfc6bfe05ebc8f565b7da262848bc98aa0ad2",
+    "apps/app/web/src/routes.tsx": "083ab01598676aea815ecae4c441c7555673cd18fe92d80453f84b844ce7bd5a",
+    "apps/app/web/src/styles.css": "3ff1e2d031a1ffa2cc68657e8444877ec32e40c7da4b5ce085244503e6224925",
     "apps/app/web/src/work/model.ts": "7ee955ffb842c9fbfaa827a1e459cd8489ac3c5dd52888879ed53eb6485aecb9",
     "apps/app/web/src/work/work-body.tsx": "23c9dd6af2be3c5bf9e1f86d16ccc3bdb496f75dbaae99f0af8bd1125ddf4b8c",
-    "apps/app/web/src/work/work-list.tsx": "cc7c5e1b7f5ebf7be0e6c52603f6014773df46f733ac819a68f7a6538699405d",
-    "apps/app/web/test/access.test.tsx": "72aedefe06b32fbe484d783851af616311c3ca14346506a6af7ff23157132d13",
+    "apps/app/web/src/work/work-list.tsx": "09eff7f994ba3263a3e98fbac8d2c402f4cda2c3acf7224ffe3e89c1b7243131",
+    "apps/app/web/test/access.test.tsx": "6dcb9e7fdfe2386c2399027337855a995ca3178ed1bfa427f93d16e4b0895e4e",
+    "apps/app/web/test/admin.test.tsx": "7c3de954dc0fb8fc663ee58e3178dfb8b7984f62e6119cd39369d300a9bfc972",
+    "apps/app/web/test/ai-draft.test.tsx": "08208bfdd0a11ee13d1cd3d142a538e9a024433f97f00e5aaca700fe235e3ee4",
     "apps/app/web/test/api.test.ts": "348dc97bf1889f1183882cdabf035a3989b4394cfdf3103c40566b19fea853b7",
     "apps/app/web/test/attachments.test.tsx": "58e2e8c558cf7f635274f1be06dd2ed66e44154643649869e68d91653290cdb9",
+    "apps/app/web/test/bulk-import.test.tsx": "ec1fee4d678f85704ff12ace9936e79e1491d8f9368149d1301736026b68fbe8",
     "apps/app/web/test/citations.test.tsx": "80c730f479263a29f914e30cc7b90a70972127cef0edc684e0990ea2c254237a",
     "apps/app/web/test/compute.test.tsx": "b56ac89cbd0ceb15562892833fd0fd807c0603fcd2a7c585de3470bfef814b8b",
+    "apps/app/web/test/consent-requests.test.tsx": "a69f07d4645f9aa4f53e047566fb5612577dc65266c48a6c667b95e3648d2573",
+    "apps/app/web/test/consent.test.tsx": "715b8a9af38bdd210cd171595e80d3cc678a78d44abc0e607612a4da7bf943f7",
+    "apps/app/web/test/dashboard.test.tsx": "7c628090c2273073877fdfb92405eec66a7135cfd05d7723de6a8abe54ba81c7",
     "apps/app/web/test/decisions.test.tsx": "3b6481df3a571e8f9439ee9aaef2b1b15eac4dbeb1118f9bc5175c85e95ac066",
-    "apps/app/web/test/files.test.tsx": "c9dfcbbb311fcb4e2d906cbf4542a62ddc9f492c468231d58120fbf7d1e3efe2",
+    "apps/app/web/test/disclosure.test.tsx": "330e41f8546ff2103195ef2afdacc0f7404caf3cb1d5e6c515e5d21b6b8f85e6",
+    "apps/app/web/test/dissent.test.tsx": "7ab48ddf3423da923347f56b0782e1a4a8c4f603dae5ca6630461e4ad4b4cb37",
+    "apps/app/web/test/drafts.test.tsx": "face605dba10dec1dbbb2ef9d660e03127830033bb428453833bc72cf6b95339",
+    "apps/app/web/test/evidence.test.tsx": "0168a9f7e8f8cb70907f085ea492d484caba0e557554b8ac28ec652cb34117b4",
+    "apps/app/web/test/exports.test.tsx": "0c5083e2ea6610e83ac59f02dfb86c2b2de432307a632b5e52f5f19589d63a9c",
+    "apps/app/web/test/files-move.test.tsx": "aae66d29524c69ec2fd77c86ab6f82fd241b46cfcea4ce7a71274ad3d4b591d6",
+    "apps/app/web/test/files.test.tsx": "5a343a03ed40aefa161e35431da891ac79457de5f3097da8cbe44bae08d5e7bd",
+    "apps/app/web/test/journal-import.test.tsx": "954a954073732115913f2594911d0f7ab209076fc039ce0f792ff7ec7b59fc3e",
+    "apps/app/web/test/layout.test.tsx": "4d02b227e8fed853ebfb3d6919800375b713fa37c53ea831d1f68965fb53b829",
+    "apps/app/web/test/lists.test.tsx": "b1c3a4025a77631bb0cd739378002a1b73cfbd40a7762cf2db0bf96f2c6d5b4d",
     "apps/app/web/test/local-development.test.tsx": "5491ae081bcc8638596d3775549102d6b8f9cebc3cb6516eefaa1690ca329580",
+    "apps/app/web/test/me-dashboard.test.tsx": "610c126477562f92ecfed47350a6f7b2143864d381afc5fdf6fa38409921b256",
+    "apps/app/web/test/moderation.test.tsx": "db90e61a8158dacb78a367953064adb5d83d65c50d56d3f7612dfe10484230da",
     "apps/app/web/test/preview.test.tsx": "35e7bdfbd5696f64a75d749e8a4bbdba3a6a8ce6de5734ea01114630fe0ebbbb",
-    "apps/app/web/test/projects.test.tsx": "b94aefe72701050689c0c3b58b32b65d04b16394bca265ef133c5c56329149f9",
+    "apps/app/web/test/project-log.test.tsx": "a1916c253ab0b59df2a87c426dbbfa74d0f50bee7bbbc66fa4a6eb4fcc01977c",
+    "apps/app/web/test/projects.test.tsx": "4711b5348a0760d99bf6f376ab9b6a9eb9bf65aa4dba5995ca7055556d47fc10",
     "apps/app/web/test/properties/p46-preview-truncation.test.ts": "59d39b925d99eca4483052b8c3b559ec43d693258570303a9afee1eb1ac9c7e5",
+    "apps/app/web/test/properties/p79-log-summary-rules.test.ts": "5089a6ab27ad8145876bec89907d1986a1a9a6e0afadeec29cd0aba83fcea329",
+    "apps/app/web/test/proposals.test.tsx": "42a94627b7fe769f002020d907809a837ecafdd3bd61ae2b365e0753ec659cee",
     "apps/app/web/test/provenance.test.tsx": "2cceb23ba43bcb5ad4486f983529bb63ccad37cb7ff8e76a0ca126434f04998a",
     "apps/app/web/test/question.test.tsx": "906563df3df0f7fdd166930d1d4e718fba1487ad54fe24587358d34136e37d84",
+    "apps/app/web/test/releases.test.tsx": "4dada04a75f29f5abd800a381003e5dccd65f9b056c2850e3a5b9ae530a7321e",
     "apps/app/web/test/resource-profile.test.ts": "81cde34191c258fb1d0effd526b32c747bb65597854774d63c3ecd9aa6341877",
+    "apps/app/web/test/reviews.test.tsx": "c023fbdd8db0ea4b42f875040d214e8a9b457e8313a0c80ccb884ba768a3d779",
     "apps/app/web/test/work.test.tsx": "50b56176f80cfaaf268dcc38f6200636fee0d38403ad7f8f1c0e4e0d6eb2f64b",
-    "apps/app/web/test/workflows.test.tsx": "0ce095f6aef44a1397e20b6221cffd0d4e1cbf3f2414c7827ebec96390d555ff",
-    "apps/dl/src/index.ts": "8b2d47afd2d41e8a6837a78a4f6dfd2b182f211e113b3949e5fa87d6e25f1a4f",
-    "apps/dl/test/properties/p05-live-download-channel.test.ts": "8721adb272579599672be30a5c9071f7dca297ef9bf1a30d1376b1d4671e8262",
+    "apps/app/web/test/workflows.test.tsx": "25b637024072091c135eeb1de832e1d7cf2511b0ac9775dc1581e515a7442649",
+    "apps/dl/src/index.ts": "1d98d0e841aba9f6c0756604a6c77f09ff2678f0097f5f0a1b48a98ea3ac5851",
+    "apps/dl/src/tar.ts": "8c79a44812a5b2299439d570b5f13b3385f84d5e36e93859dcea4fd91b9471ed",
+    "apps/dl/test/properties/p05-live-download-channel.test.ts": "a9376b2f306b7739100e3a028c04e192c12ad918095819b62a6e1723593582d9",
+    "apps/dl/test/tar-volume.test.ts": "f1edd06fca7e381f1882bf9b92356d3bfa2fbbeaf51d4dcdbd740fc1786f649b",
+    "apps/dl/test/tar.test.ts": "aef2673a838bd3bdf9529e097e810c38cd5fa91653b77a60836b9115a1b7549a",
+    "apps/ops/src/alerts.ts": "b863ec664685cfa880eb15c2e82ef2af70538918caf7c384e34ea970ad0707b2",
+    "apps/ops/src/analytics.ts": "bfc056b30c53988ab8ba5a830459bdbe88dbaf3379dda3f3e742e8871f4f7687",
+    "apps/ops/src/containment.ts": "1668174d625988425319b015cb9df30174910f4168daaed3af32ef31e4c38918",
+    "apps/ops/src/deploy.ts": "5d7ab47546858bde745fd4503f629489579ec48a1da9dc8ed591493c590901f0",
+    "apps/ops/src/independent-channel.ts": "f4a5e04c21291853f88172b30aa917b3c0a9b1b2f6a65595e9fe19518cc023b7",
+    "apps/ops/src/waf.ts": "1d2ebd61a128bed1c0df3f875cf44753c5e6104545f918266d731293b9d2f44d",
+    "apps/ops/test/alerts.test.ts": "fd290ffaa9c788830f97d6d58e5dc2d8386761e3eddf14c392c5388715041d06",
+    "apps/ops/test/analytics.test.ts": "133d853e8e8ff91ae83e08c744d5c9236d7b160d86aab76e3e6b7147238d7f6f",
+    "apps/ops/test/containment.test.ts": "04cf80e92e423ee629cb77192c1670758db3caad81dcb9e4b2c8cb4530f3b287",
+    "apps/ops/test/deploy-slices.test.ts": "7f9b937305839626cf4529e0f76d474de1581ebb018ba9331c2f1ce9f4181fb1",
+    "apps/ops/test/deploy.test.ts": "fd59d6ead747312d9e6cdd6b4096aa2a4993ff60828ad060af4c46f9a0501b80",
+    "apps/ops/test/waf.test.ts": "672da2e19c0a3e7dfdb6f8e3589858d669fa6887f9e52646a9927fb8c3e184b1",
+    "apps/site-shell/src/consent.ts": "4e6cb40809a9428761bb807360ff021b72ceaea403284e53bb19fc9d1b7493c8",
+    "apps/site-shell/src/form.ts": "341fbf8ccdf2cf01cb90979dac7b7391ea74a120a31809d86e37d1b763c182cb",
+    "apps/site-shell/src/respond.ts": "ab482837e112b7258bee20b97b5884cbfb46b5cc8b454172b2fed3cc6c9d4fa2",
+    "apps/site-shell/test/consent-dom.test.ts": "cac2096f9763f75744f41a7b7f97cfb972def881fc463fe252ac48993d7ed24b",
+    "apps/site-shell/test/consent.test.ts": "b104b851ad4a8de7141396f29be12097bfa47fa4b589d28d46e725175f3020c0",
+    "apps/site-shell/test/form-dom.test.ts": "30ad0225d789d6f576adce70f5308d42ebb1b15bc21bb77e117f2ff7bd734c65",
+    "apps/site-shell/test/form.test.ts": "6fda9792798588931c428ae17e0d296df71c928df3ddd95928ad6bbb417717a1",
+    "apps/site-shell/test/respond.test.ts": "f88883f6c19d953cce15a744c0feab6b93680a2a286e9404959aa95d43dcf846",
+    "apps/submit/src/consent.ts": "d090a7f147a2c26b87ea75e5d3d6aa939a8c613515d8a518d15c52e269bc2712",
+    "apps/submit/src/index.ts": "ec3cfd05ec9e7bcba4aa03e4dd1bbc4f957e07b2ba99dffa265f31bcc36a809a",
+    "apps/submit/src/respond.ts": "7acd8a99d384345d258a7f88aea225163fbf6ef9737241ff4763e6b751929a44",
+    "apps/submit/src/sessions.ts": "d92d21fa3b967014c55ce887ff912f72f3a2be142700f8c02e8dc0cfb63174c8",
+    "apps/submit/src/submit.ts": "2245a8fbbf362d4997c3e1dac1084d3e6f45da364ffaa97aa139e4526572701c",
+    "apps/submit/test/consent-integration.test.ts": "f854f673fea09dcce7eddf659e202b8b9952d81ea92dba3d5e841e03030f0cf7",
+    "apps/submit/test/consent.test.ts": "2cb08ce3d0a8991d84075e97c1fc8e552ed5817aa92a904c2709f534d86a227d",
+    "apps/submit/test/cors.test.ts": "4beeaf5e2ec7bda6eeee6458b8cfa9bdea60d7b36430a982848bad2a442076f9",
+    "apps/submit/test/properties/p107-consent-links.test.ts": "c8f29ed517944ae9c49c6b587767a56caa71a57ced11fcbb218737932fcf63b4",
+    "apps/submit/test/properties/p88-outside-submission-limits.test.ts": "17e0fa99ce2df5522deba8ea03f778a84cd40580abea5f63cabacbdb7b5c554e",
+    "apps/submit/test/properties/p89-response-links.test.ts": "867cccef8c18e277c76411d99eb12f28f4de500862d6acd65afccbb483a22cf1",
+    "apps/submit/test/respond.test.ts": "94706ee29ca0e7fd5ad4e10a8ad378dfede24296e55b5252bf4af4978a4d698b",
+    "apps/submit/test/sessions.test.ts": "fc7224b5ad2f1faf5b1654fa03cf3d406da3a73c3a060f86ab6e2eee7ca0da65",
+    "apps/submit/test/submit.test.ts": "06805c3a9f25607dd364c44763d5165608aebefae90a45cc9d2846ab201a11cd",
     "docs/api/compute-packages.md": "17b8b2c1461a2e102649dd444a35f5a9c1cd5264c04525d66688dc5e030b4e4d",
     "docs/api/coverage.md": "9d0658a16968993e0fcda6f00a16344e2613fa7bb3b4510487a91f9f463ddf0e",
     "docs/api/operations.md": "6ee19d1bff78393de2535afc1fab17e5ff0c1a88f425bd09c6b3bf8a6af255fe",
+    "docs/instance/installation.md": "4e32b24a061aeac811d62049bbdf37c095908353991b79b6143636a98571b4d2",
+    "docs/instance/researchforce-org-content.md": "76931130e1fdc5973683168b082b46e7925a9a3e45080e4c5c72fcecf8fbff56",
     "docs/storage/logical-fields.md": "849c9d75569c73b91e77128ac672c5e59778c69ab9820af68c9aa2cb8cb33a3a",
+    "infra/cloudflare/provision.ts": "5cffe7a72ce4c01888652201b39b2f9cdc1fa783c6826fefedc941d2b5556d65",
+    "infra/cloudflare/resources.ts": "43ec8bd702453d2d9075288ede3d1c42a371f7ca01e922207d442a3593b8b61d",
+    "infra/dns/records.ts": "a2b5e6ba9d724e373225f3aeb0d952c7029dc1009fab9a264dd74f53c68a557a",
+    "infra/m365/Setup-ResearchForceMail.ps1": "e270a68b65bbd8ffbe3c707db23eee13b15fe36ef5ad8a7593e935dd1a071ea8",
+    "infra/m365/Verify-ResearchForceMail.ps1": "28770c96fab2ce3a17a565de7bc19487021379d50cd4e788a5a3cb9ef8d8ab15",
     "infra/profiles/Free_Qualified.example.json": "aa95a018197ffa0c2c3d0749170546dc4ce3e95bb5d082f8de9c87c6061b4f28",
     "infra/profiles/Paid_Standard.example.json": "b547a22a1d1b6ff2fe47a8279858014c6c482c8f3f33a677edbffee2c4500abb",
     "infra/profiles/README.md": "de10349af58fbba685b14fe527d183545b6fc6b11a81800fcf185776d6de3fee",
     "infra/recovery/deployment.example.json": "f50e284de933da91b761d0b6293f62caef82e8aa0c8db7c83e31e7eca5398bec",
     "infra/recovery/restore-proof.example.json": "2c02a645aaa612d1dd4f0bc537433a5e58764b4244a02562523aabc6d6a31554",
     "infra/releases/README.md": "73919ce7f8cc7b532d520dbc250f4f16ccd28f84e70e32d21d556190afe50ade",
-    "infra/releases/development.json": "11ff68d0afafdaf373eff93b93eb241068f764dad40de475b8e174550b1837e3",
-    "package-lock.json": "46bb71e749eeb2b853d3113a54c6b75e0a3a610f1178687a73334d4114e099d5",
-    "package.json": "a57669ad85b1bb5873507b1ef7021825127f5e1aaa49ab3f7101b42ef8857e36",
+    "infra/releases/development.json": "46ca6cc2f6ed2c510494fbbe0e05f9f96f0e04581af65ebbbdc9baf9549d0b12",
+    "infra/secrets.ts": "ba2a3092c6fb3eca9ced657c2537f4947bc51e4379d4e93e1b987cc67a7fe324",
+    "lighthouserc.json": "3b50af939dd1958cb5a4da086a126bb8c3e30181ed5aa5d608680e53e1148dcf",
+    "package-lock.json": "0ce11c2bb60290ba470e60d77d36554dbcf0b0aa05415640ad87629000305f9b",
+    "package.json": "215784061e1132e8aef28232a72bd452b6d3161de722b4f5820cd25d54c27c98",
     "packages/db/migrations/core/0007_restricted_access.sql": "68d6acff93c939939932102ad9a767541a9181815f983c24ebdcfc18ce3518a1",
     "packages/db/migrations/core/0010_logical_fields.sql": "38c563873f47345ae40b8729ace938fb68237efe83e7660203ef40aa5e5e8f63",
     "packages/db/migrations/core/0011_operation_keys.sql": "bd24721ce8e6fa8a57c30051925aed43fa8c6e40920cfe393251874436c84895",
@@ -1519,62 +3035,107 @@
     "packages/db/migrations/core/0017_work_assignment_history.sql": "b57c04caf8614e7315cb7f814d695475000ccd318c2b4b45c2a494920db449b5",
     "packages/db/migrations/core/0018_artifact_derivations.sql": "54590d599583ed976a36fd721e38eefe08f99bf7918ae4e122bdd92cae8e803d",
     "packages/db/migrations/core/0021_coverage_and_reproduction.sql": "799d3716364fb5a43f36581c8e3c4d42292f7a886468a18ee9a63030fd703e2c",
+    "packages/db/migrations/core/0025_publication_consent.sql": "76b5e7606db3c7e02b4d0b198ae7c5f8adf6439a6e58837bfa7dfc72d01d4e27",
+    "packages/db/migrations/core/0027_dual_withdraw.sql": "3dd62c93041aceea7dd9ce0037a116ad4a33485ffc5829fd8f7fd1f8923ff8a9",
+    "packages/db/migrations/core/0029_warm_pepper_potts.sql": "e58cd38bc43f40d296cc9d81404418a042b700d436549ee0c6f860353c3d57d7",
     "packages/db/migrations/core/meta/0010_snapshot.json": "cfcb5ae3332aca25c9591b3f5721a042b4671a1922d271da6eb37a34e407efdc",
     "packages/db/migrations/core/meta/0011_snapshot.json": "0b9b9389bb369a8101af72f38a11d1361abedb4a3dfc943fef8f9aa1f85d26b7",
-    "packages/db/migrations/core/meta/_journal.json": "c0f1d8da358c6ab25b255a9d43a6a06826ddba13b1f423ff179789fe768916ee",
+    "packages/db/migrations/core/meta/_journal.json": "fe10c454d17a058be7e3748dcc514863816c26ae4b050ebe180fe70c1a2f76f1",
     "packages/db/migrations/search/0003_logical_search.sql": "54217825ac2bf02efa2a5cbfad558ec57f62f03b88a8398a6909d2615938b16b",
     "packages/db/migrations/search/meta/0003_snapshot.json": "9660b0ac8ff7cb06fb450a3b6ffcd1ce3e7ed919af3cd46e63cab6e91345d434",
     "packages/db/migrations/search/meta/_journal.json": "3ddae4a6d53af9ffb459f579988f2c3e98da7ddf51ad027ed3866211c410a4fb",
     "packages/db/src/access.ts": "07089247e1b925b3b8326e07512bc8aec574bb669ed923e8b1dcce39800b0e40",
     "packages/db/src/accountant.ts": "b10cd6c3abe2c570d8cabf914cd689b334f54d6e8d35124ffba993dd6cdaec77",
-    "packages/db/src/batch.ts": "3269c4bcbe3b15e07dc12b9d438d12d308c0f707bdd26dff66bf89a283388587",
+    "packages/db/src/batch.ts": "36812a7a9467656bfac2cf6b2981223f9d98adb95e01b2034cc0453199a8823f",
+    "packages/db/src/consent/answer.ts": "fcedad166d5f2e43cdffa0176c3328ca0c5b43a169267e81755dd3b9ec5c3fdc",
+    "packages/db/src/containment.ts": "7145001fe965b1da9ff7c64b2e26eef37f9c3c3b24aa6d6d536cdb7d93ace9cd",
+    "packages/db/src/events/outside.ts": "3b794ae45eb079c877c50dc9aae216c1f72ea9021e07dc386d2c9e20f16a44a3",
     "packages/db/src/field-backfill.ts": "80b12b528f4b011e541fa17ac702e934b1922a0b85fedc1e211204248c5c3ee0",
     "packages/db/src/field-snapshots.ts": "0539cfb9c1aad0621f8a2831d16dce1922d1d38af3ff047de0b78bb1f414d36d",
-    "packages/db/src/field-versions.ts": "de69c96656b7f0b91b6ee246a7353a654a35664cc11838b93a8fdb89aa00fed4",
-    "packages/db/src/schema/core.ts": "34ee4639c08095b16ecaf692fb2cde21a2988377b0fc95428a1dfddb545b33f8",
+    "packages/db/src/field-versions.ts": "4e5d0bbdfd6b291bbd3e55db94495d48c3d2d8aa921b1abe1dcb13e0431e9e0a",
+    "packages/db/src/publication-epoch.ts": "df89ec7d7fbf18be605dd25a57f71bb05162f472028c0b6fbc15e04562807add",
+    "packages/db/src/schema/core.ts": "f2daf0cbb955aa3bf7073210789080e1f371c9359ccae20abec7497cd1756f5f",
     "packages/db/src/schema/core/compute.ts": "bb28bb03cf13c1163b58a58064985010f5395fff0bf5e7786cb3410d9b14b90b",
+    "packages/db/src/schema/core/consent.ts": "42135537a726b7b6f9691e933bd44d1ff63a80827cc93572d01aa995ed463e8a",
     "packages/db/src/schema/core/decisions.ts": "0edb7f32bf1d112cc1e0d24af3b0215c4352ff8d1dcb8510b04482da18416ddf",
     "packages/db/src/schema/core/derivations.ts": "f364ad3a79811c01ff8fe304e3dfbcd8fa5b956f5ceabc4d74b2df3f19c9c318",
+    "packages/db/src/schema/core/drafts.ts": "42651518731123ab4dd7ff182685e6b282059aaf17eb92bfb3f9f24d1db9d45b",
     "packages/db/src/schema/core/evidence.ts": "2eefd30cba0e26da5995a0afe9f55db690006dd429bbefaebd47c1566f66e172",
     "packages/db/src/schema/core/fields.ts": "f479bb9fc2921c62e68d751173ca28a8dab528a1f867438ea712007d327748e8",
-    "packages/db/src/schema/core/operations.ts": "8189f318b138b95dff4b158af87a558c2fc9466bad5bfcebfb3aaea30ba96885",
+    "packages/db/src/schema/core/operations.ts": "d3e04895a10a1f6f5b6871cd464fa4b1d9974fc82a4603cfe6fd682107c44a93",
+    "packages/db/src/schema/core/permission-evidence.ts": "989a738819c8be2882cfa3ba9640a9c397eff24d1818da0b20cfa383b52d8f71",
+    "packages/db/src/schema/core/personal.ts": "079a6b4c750000ac9f395e3c233f45ff5c8f55e4b2d6279aaf1a427128c5a13d",
+    "packages/db/src/schema/core/proposals.ts": "4b60e645903f5386b7813029b3d69bc6c741b6c88d31dc2f5bfe924ccd259d91",
     "packages/db/src/schema/core/releases.ts": "0fa97778e2ad294847caa2209537f79d97c0c536bdc2b9133feaed3b13e9dab9",
-    "packages/db/src/schema/core/units.ts": "791d65ea7d09107d802d8bddda8a1930a2d21713a77ceecde23f1690cf2f9a20",
+    "packages/db/src/schema/core/units.ts": "a3dc985ca71b7f11d994f968788ec431f0d3a037c46602d740e4d8b105a339b8",
     "packages/db/src/schema/core/work-items.ts": "7d76a7915f93de3b26f11beb60783f05481a860d11dd0dd1be23fe575b75804b",
     "packages/db/src/schema/search.ts": "c315953c01578341e9522caaf9fced8660ce937dd4297e6e4ea0e5137df13e29",
-    "packages/db/test/seed.test.ts": "6e80665fe028202d8f3488beaf74492ad689a4f58b380ef582f83c8aa4c9367c",
+    "packages/db/src/seed/policy-sections.ts": "51d1e17d7e377583dc2b423e707ca216ba0ac5c1940c8e51690505f7d72574cf",
+    "packages/db/test/seed.test.ts": "56e54d695bea8c88be08726bf1bbf33e83b2f9b2636b906f327b6b0202ccc992",
+    "packages/design/src/components.css": "12172dcdedeaf08fe4f647a47ff974b6478d2bbf1a9023377e553ecf6064597b",
+    "packages/design/src/components/controls.ts": "6f918fcc5aa16b62ef232efe3df194d1712d6be7924d07c7612834d9d996a26c",
+    "packages/design/src/components/layout.ts": "fc0a77c806c00e9fce626a46dd981ff0d765d9300fecc1c5523776e76401f855",
+    "packages/design/src/fixed-texts.ts": "23bf5dbb9920bb55feb8b7aeafebf23cdfd1fa0749fa1d88cc6daedae287c6a4",
+    "packages/design/src/installation.ts": "6e37d651e821938dbe7a7ade11a39bad59fd4952e785e8ffdb5cbe28e98a3c3a",
+    "packages/design/src/print.css": "0ad2c273e3c324f7cffc4b21e184dfb554f34bdadd44088e1ec9556e6fd50952",
+    "packages/design/test/components.test.ts": "3d4985ed10250378d01c7a230ce74b2a70e7304d27bd71b749f8d4884b749116",
+    "packages/design/test/installation.test.ts": "040d4d5cf819a6c9b896b8cb581730008fc4548578345a7adb7d53757ed0f1d6",
+    "packages/design/test/tokens.test.ts": "3f444d4472d182ce800452e964a60cc1c375f64dc6b3f9da4f9660820a321e75",
     "packages/domain/package.json": "da942d944bc9f5f896e294e152aa0ab57745f4bcc8f42ee6856656c3784e7e7c",
+    "packages/domain/src/admission.ts": "e452a9d6a394e6a33c5cb2dd8ad24cd085839fbbecd98c94451ea14560903f65",
+    "packages/domain/src/ai-output.ts": "16002eb50a12d401326fe938afeae69b75635f5adfa61c9a36eaa921a775b9d8",
+    "packages/domain/src/ai.ts": "6105a677849c92d2d2e0b33ae0ec47b33e889340fc694b87e5145219d55bca52",
     "packages/domain/src/bibliography.ts": "5d6178c0451a43e7c43fe88e9e676479bf85c935a1804a8a1b9269344141f169",
     "packages/domain/src/bounded-json.ts": "36aaecee5500df4b6caa606a9cc2f921e1a19bb90c1877efc3e9f30e1caf2139",
     "packages/domain/src/citation-export.ts": "d2f371de82c2d921a584c770f42db977300130b9b2a5998228cbb028c98c9c31",
     "packages/domain/src/citations.ts": "f1f1e7cc3c14395998043ed862472c5a5d0cc30c931af86c01d6dbc985d4bbdf",
     "packages/domain/src/compatibility.ts": "f669247a5a5cf3c4c95255c14ff5e2c4a679dd7af9896298700158b18d74cd38",
     "packages/domain/src/compute.ts": "eb85ac007dcf659a0f551ba10ecea05fb51129a3c977ff780b2dd12783f51ba6",
+    "packages/domain/src/consent.ts": "a651cd145ea66207976300677429771a4716500bea19bd0d8c0f1b48e9e3a260",
     "packages/domain/src/coverage.ts": "a3bc89b46d1435466417fe5106e67c8f4018717db9e628711b6e12606e6d8f6e",
+    "packages/domain/src/dates.ts": "88054b08eef25b010dd1b79bbfe4ddacb2db6a0834b9220269583c44eb84aa0b",
     "packages/domain/src/decisions.ts": "21720370fefd2a383ee3d5076f3d10f66bb1bbf329d9015dbaab4998565816cf",
     "packages/domain/src/derivation-export.ts": "7869c29958f8966386254795b408e8de631a70822ca8b13eab3f11ce2c7c1a79",
     "packages/domain/src/derivations.ts": "953d3abc8b0a9baaf3fdd372a32962c10ec1b9c0d40ac0801cfe193585eca8a3",
+    "packages/domain/src/drafts.ts": "5a42ce37b923ab4f91754b92c24636b64780c809b236e37948fcd06c2af911c4",
+    "packages/domain/src/evidence.ts": "1c54b50cd6c04d255bbe08e05eb0f6b1e0911e77c313b06867c1adf831bbabe1",
     "packages/domain/src/files.ts": "d9372bf27b305f6a4e6499ad2c1baaada0e4cfcce920c9c01716281620755658",
     "packages/domain/src/history.ts": "225cb01bea5bfb438a35b9126c9f487306f567eebd2723ae50473725f2862247",
     "packages/domain/src/identifiers.ts": "0fc13ea14a8dc774d5ddf00de0af10359894c36acad83006499938ef96fc71a7",
     "packages/domain/src/logical-search.ts": "d8f1226d611fa3423e401f274ea84852f6e66f633fdf14cae2d7f350649511cd",
-    "packages/domain/src/permissions.ts": "928c013b308d9e23ea0703535ed568f1fd56baa46085d06ea41b8afa93b21638",
+    "packages/domain/src/ops.ts": "7ae04e7052015b9d6587896198985172377d1a3f2b3d02948b9f5903a1b1e8d8",
+    "packages/domain/src/permissions.ts": "d4670b7721051592fcd745e393906213519fc09cb32155fce47fc85be3793ee7",
+    "packages/domain/src/personal.ts": "e41deec4c75331ca10113ddea49e2de6ccb40b63fe281592ff78bb6e8e6fc2f7",
+    "packages/domain/src/proposals.ts": "5bc77b148835b2fccf1dfd4838b262e4ace2461a7dcf7603b4386a8bc0b99669",
+    "packages/domain/src/public-paths.ts": "8dad7cf6d64838627f3b3e5c6b47ca54ef15d686e25b4da28ba78d70e68d5c06",
+    "packages/domain/src/release-export.ts": "2318119078ef4f221f3e4c76802890a487e4b991002ebf152a051f628005868e",
     "packages/domain/src/releases.ts": "e1c7c3c81ad6a090dd092874b8c8dc6a7124c029ee80cf32cda3978aeaf4588b",
     "packages/domain/src/resource-profile.ts": "6e43159a5cd56c5c36cf5122a8adf0de7386b65258b5d67af77cb148a00c2d31",
+    "packages/domain/src/retention.ts": "012a9e1a7d2534a868ed854428c0978e1f77f7f75ea74350d2aab99a3d024044",
     "packages/domain/src/richtext.ts": "790984ffd214b81b93c22ac49d5680e764371d2dd87d808f2516395309a6436b",
     "packages/domain/src/schemas/common.ts": "554dba33d009b0b34f5a6a3db2fb892ea8eb3f6ec7267c2c016c0286368165c7",
     "packages/domain/src/schemas/items.ts": "0b441071abf476e1d86a5f934c40ee6fb19de808a1b75be1dcc58e664d438500",
-    "packages/domain/src/settings.ts": "30b7afd97c348d2953501990a20edd1d7d735c20d9418a7ce62a69d65f72eaad",
-    "packages/domain/src/text-fragments.ts": "03d1b2e514213f58d3b95be6695f600675ab9cd33bee796205b0910ee4e2dd37",
+    "packages/domain/src/schemas/other.ts": "7e94bec4f8f8444e5e94de6361f7957e5bc47699ea19ad5856c2d9275b56c51a",
+    "packages/domain/src/schemas/people.ts": "ed5d12221cd36f2dabf9f239300f2e949e09af9b2231e2fbec4f5f625b3c2327",
+    "packages/domain/src/settings.ts": "41dcddbe5cac2638f399278281beee42f9469029435b895adb0276e072fca467",
+    "packages/domain/src/text-fragments.ts": "13f9aa5188645513ef4a6fbc49e3e9c0853f0f25ef478db70e5ff0fea887756f",
+    "packages/domain/src/text.ts": "d5eaf575958d07de9fdc1b135bd8a372dfc237bdd25c55bb3808a2b4bc238bb2",
+    "packages/domain/src/types.ts": "3a2a2633aaba78d169db87aca0c22b33d4cc3f18bffeebfa3470b57ef0926f05",
     "packages/domain/src/value-sets.ts": "55a670695e02b02462b67eeb9288ee7ebb932e6e8c5640ace697a100fe1ff6f9",
     "packages/domain/src/work.ts": "0b19084e2a9b4663b33649c8bec82c9325be97ed45ef6bab470ee44924a4c5d7",
+    "packages/domain/test/admission.test.ts": "075c43eb4aa85d3a696d9dc9b1bee25fc4f4d180ecf028efd341571d1a3d4b0f",
+    "packages/domain/test/ai-output.test.ts": "0ac92eb247b53fdb20f86dff3947d0c1c54c91aeb5a7ed63b0019c37bf24f258",
     "packages/domain/test/bounded-json.test.ts": "0693f415158d64adb06cedeb79d4bdd17569c3bde8681be03f315d0e386c7a8b",
     "packages/domain/test/citations.test.ts": "14bb344e86d0361c6872f206c03574220b9e7f7532ea3f85a4237430ed9b5848",
     "packages/domain/test/compute.test.ts": "d7becc413c96f852f6e5fa52afa1797d98bc210193a5f887845bb1cbcda1754f",
     "packages/domain/test/coverage.test.ts": "156c9e3b69e0fc31b72a7e54a48f3c5bdc23f029efada7702ea145e751c9942d",
     "packages/domain/test/decisions.test.ts": "9f33ec53aac5464424e1d039a36a84bfaa1573376bbc5bc2e9d1002048cf51bd",
     "packages/domain/test/logical-search.test.ts": "73d419e143066b9882ecdfc0cfe3384e9ed80b4b8ea50b146563e9dc13e86635",
-    "packages/domain/test/permissions.test.ts": "eac90b61da602579ed272cef565a05f57a785111ef03938e5df94c75161a8cd5",
+    "packages/domain/test/permissions.test.ts": "c595a8ee470f37417380f81761b4b692a7fb47b5addf45113be90585bdd36b89",
+    "packages/domain/test/personal.test.ts": "2fdc02952deaabc6b77f5f2560d9dce6444919d76be15bb2fdfd14703b98a988",
+    "packages/domain/test/properties/p78-project-choice.test.ts": "dcc95f636948f578a79d5acbe70cb5f9bc2aeda1a2e8fc9d1ae922cdc4bf017f",
+    "packages/domain/test/properties/p79-log-summary-rules.test.ts": "9ede62762e3ed1c55332389a229d7ed22c5909c87eab9107b375441c06e2251f",
+    "packages/domain/test/release-export.test.ts": "2e3d3442e6a43be1039a1691673c9f1fa8538b0cdaea6fae5e0e28438f6d720a",
     "packages/domain/test/releases.test.ts": "293fe05cd9441384096315503042587cb8e86594cb3f7d2e45caeb7692e589cf",
     "packages/domain/test/resource-profile.test.ts": "7b028413407d42fd06053b585c1d6782a1033d1d13556f1191684cc7b94c5803",
     "packages/domain/test/richtext.test.ts": "9bb6925767cc32d2768f014b66138ea9ae21cd195afb6f48bc5e1f0d7b6a47e3",
@@ -1582,60 +3143,167 @@
     "packages/domain/test/text-fragments.test.ts": "10b4df502952d3b672d72c60a6d5b83307754a3837be58ad1b047bda58e6b600",
     "packages/domain/test/value-sets.test.ts": "d3b385b8953e46e1ad4e02cdacda72eea2e4f18a5783196adc93b108ef7fcc9f",
     "packages/domain/test/work.test.ts": "0e836aaa5abe1c98c1d643c4e0604d46f7221cf9520b060ddc6b4998ac9e9376",
+    "packages/kernel/src/consent.ts": "64d40d66793da17b2d7c3b8bb3dc559b3e4a361fdfcbf22d913492d1bb257c46",
     "packages/kernel/src/effective.ts": "c9843212e8101e5b26a51fca37e37ee82bfb3d1cc3a00cfe38bc77593eaaf0d8",
     "packages/kernel/src/field-reader.ts": "9a9259451109d6c66506d6616cb2ce76c4d9322b7fcae9bd47e4f8644239c41c",
     "packages/kernel/src/input.ts": "5e7fbd10596bc28135cba6edfc1a8092bef860c2509e048f616dc770af1682c9",
-    "packages/kernel/src/preview.ts": "cd63e10c3767146bfb70e2f93f323b2eed9f69aeb43868a9aa2be17e3de177b5",
-    "packages/kernel/src/project.ts": "fbcd9ce06cb14fde05b47e1c64ab195b8daef85141201dd8179edd7ed82ab259",
-    "packages/kernel/src/views.ts": "ef5ea5fe00a2fa25ed9896cbd2e7c3b7f115a82a76514cdc058099a8cac125a3",
+    "packages/kernel/src/preview.ts": "dab839256938643725077ed93695926e91e6845b16cde89b55770d3d7043b197",
+    "packages/kernel/src/project.ts": "729627c043d4c93fed6c04aab345cb699a46ce081f63f81239a340bd8f566b4e",
+    "packages/kernel/src/substitute.ts": "892cfaba312d066030b3331816eaf19313efa585b68d3af3284597d0a870bb4d",
+    "packages/kernel/src/views.ts": "7b25151660e2054c31267d3c997752a7c465cb343790fcaea97865d8e26e7076",
+    "packages/kernel/test/consent.test.ts": "e5a0ff1cf349e13897bb0fd6a9500a1f4419c93067331a22f436b7d4d00ee622",
+    "packages/kernel/test/emailed-consent.test.ts": "a8fbe9d7355f295a0124fc5d7f65af4e651f501965b6799148eac5ad4e572043",
     "packages/kernel/test/field-reader.test.ts": "1023bca850fd642e46de56f54e0ab5d2f2f0beab524f4722b5dc9e24225981e8",
-    "packages/kernel/test/preview.test.ts": "6f3e68591664db7a78f20f0b1f8bea474373f2a2b6645e41b8b28967a59b7633",
-    "packages/kernel/test/project.test.ts": "8900c262140beb1a648a6aed91f8552665ceb0307680a1a58ac8f8940fff8309",
-    "packages/kernel/test/properties/p01-effective-disclosure.test.ts": "a29a0a22e3d073e48d12246ec9b8f411bacd30c78a08fe80cf73ae7c5fea083d",
+    "packages/kernel/test/preview.test.ts": "1452155aef5a20cd3688e43f15a849f2cf476bc11eaaa5cd06802cae79750c0d",
+    "packages/kernel/test/project.test.ts": "2627f7cb21cd4b445ed2eac2e99340b45a0bedeaec06f03fea901dde4f306705",
+    "packages/kernel/test/properties/p02-independent-disclosure.test.ts": "e6240b7b21c4ca3d0236b33c691738d9a8df3147fa78e77e63c41ef30b9f056f",
+    "packages/kernel/test/properties/p04-unclassified-selective-classification.test.ts": "aee6399efb204957aaa29298b3f1a56830a297e22635fc57bc3dc06340577de4",
+    "packages/kernel/test/properties/p108-emailed-consent.test.ts": "1e1cc7159a390ef0fcd3590fc71967259497647c19196344d58535e1ee708772",
+    "packages/kernel/test/properties/p12-publication-gates.test.ts": "266dba5624921c4296dff9f59818f8baf5241da7bb1e56ba56e034805fbeb22d",
+    "packages/kernel/test/properties/p13-rights-consent-invariants.test.ts": "1db9ac596ec2c70a05a613a7145ebe6fb6db98db349700fa8646396dd65b00b9",
+    "packages/kernel/test/properties/p77-item-moves.test.ts": "25df3a6274dc2bd800051afee2c589be62e7aa5b7c6c43178b902e2acbbf6ca5",
+    "packages/manifest/src/backup/codec.ts": "c9ac215c44616cc1f14e1c88f823b72ec70fc2efa1816ffe53f0b5bf606a3ff5",
+    "packages/manifest/src/backup/index.ts": "b5c3c1b96edd2b9a1cf6550228f01dfccb681bb234b958511ef3d0e351fc4679",
+    "packages/manifest/src/backup/inventory.ts": "17728849824345c81764b60035b1d157119a8b877d265b5f3b269c0bfecf9180",
+    "packages/manifest/src/backup/keys.ts": "1d5984466e180df3a5dfb0818d2d03ec3a67468dae4e8ef3f43c01d746e1c79b",
+    "packages/manifest/src/backup/manifest.ts": "1893844faf962c1f72443b71ed02a5c1b4d937a16eb3d0d9a765c1578667abf1",
+    "packages/manifest/src/parse.ts": "78ae239b0cbf7163aac00eea589fdf86a4b7be734a25f6375ee6ba01ab20ffb3",
+    "packages/manifest/src/print.ts": "255471ee6b793b692c41d2c44f959569c45680f0655f5396067bc707305f894d",
+    "packages/manifest/test/backup-codec.test.ts": "a72a5b0bde6c7855b56476169c2e9fbd15f2a7adf7107e9c5ff61b0a40bb1a22",
+    "packages/manifest/test/backup-inventory.test.ts": "2a1d85bac76543f78d9c470e7f006058cf94cb5e301bf3074bf4be4598db085f",
+    "packages/manifest/test/backup-keys.test.ts": "520150df2c6204d8e9e113f88ec36515d7cb903752967658b75999e36ee859d7",
+    "packages/manifest/test/backup-manifest.test.ts": "f022a570a2cf9be2d4a7cf315dcafae028b31424d30859e2f9f6b0712801ea55",
+    "packages/manifest/test/parse.test.ts": "de23e112859d751efc8cb8c043f8f79f35d664c50bfe992cec4cc41b38748c0b",
+    "packages/manifest/test/print.test.ts": "d61c405a4f60b9fbe1c4f2ac3e66be68ab7810bc469167b7b42bd0c12f0d8a33",
+    "packages/manifest/test/properties/p68-manifest-round-trip.test.ts": "d4d1fe7dd7854a78f964dc6e384937ab216dbdfee8ac6c8130a62acf8f3fa98d",
+    "packages/manifest/test/properties/p69-manifest-parsing.test.ts": "7056f75c21d84a1c7b511893a22854e91d1548e1b84ac27ed2f46d1bd1cd0944",
     "packages/markdown/src/journal/print.ts": "bea3b536ba8e40f9c611f1f442c1d6a53897b1bae50974f74f4f1f80d566203b",
     "packages/markdown/test/versioned-print.test.ts": "5badf1b11384495b893af6946671de187aad2f540e5ac825a5be64faea5f1e4d",
+    "packages/public-render/src/blocks.ts": "b0544e8438d2a28d829e38b63ec902271ed04cfcaad4d11ffdaf82cd0727b96c",
     "packages/public-render/src/continuations.ts": "e78dd4dd4bd14c69c8731bcda58d453f8247a2f19110715cbe3a59ea20eed58a",
+    "packages/public-render/src/email/consent.ts": "e9e4aa08efc1deae244cd0254652641c92796f0c05298284da51f37280803df8",
+    "packages/public-render/src/export/assets.ts": "cfc341963a8480e4e74ef922a6fd363178608d8d238e1a2917d080e48278dd4b",
+    "packages/public-render/src/export/data.ts": "0c70f2a1ad1ebe3c6253fcb4dddbe038a4357147bf14264f8b0bda86d39c13e1",
+    "packages/public-render/src/export/frame.ts": "0ca8d52dbb159e675bdfbbeddb6df822e0b7566a5a90baf69c5582dda01945a7",
+    "packages/public-render/src/export/index.ts": "adcd54a0e5a30df6f0d35e8a4db0ce2250e23e8173a0a033cbd7315cb218f348",
+    "packages/public-render/src/export/links.ts": "5983853aaa4759057ff2ad8dfddaaf826f2ad8a8acd3e1a61378c133a39b32ff",
+    "packages/public-render/src/export/manifest.ts": "91150fe41cf5ca757d530e4cca078713b0d14bd9dea9c6cb9a59b0e5a39fca8f",
+    "packages/public-render/src/export/paths.ts": "0b002f0c3d491dcea0bf6c2064a0c052fa4da2ec89fca45f6c8b98505747359a",
+    "packages/public-render/src/export/render-export.ts": "9179546c3c2c37ae7646bfa0824b9dd73b28137a7efa8db9af971bd0caa6caf5",
     "packages/public-render/src/format.ts": "19b27fe706a0a62a589a20eeb3c511a9756ecb5b2474bb7f53b618f3aff10419",
+    "packages/public-render/src/headers.ts": "a6304f8b30ee7af9ab0e50e48201a35f752196670397c58b8e06fe51bd8b832c",
+    "packages/public-render/src/paths.ts": "c79ab9f4fcedea1c0fd57c2b337b2cb548e82a807d34b3e127c04508e2f89dc6",
+    "packages/public-render/src/policy.ts": "6670c0692db3ecf8a04659fa89e09c5d715622329ece0c2c6a3607ca919fce17",
+    "packages/public-render/src/projects.ts": "12ebd76159f91ed1998887514fb9488f69ae0f045f6977182f1ca07beaa3bb4c",
+    "packages/public-render/src/render-site.ts": "7cedc97676db38432ed21bd5650ea33276e83e2b73222fd3b8be886c8e3a4e56",
+    "packages/public-render/src/site.ts": "b0a018809ca510dd6986af2cbb88eddc3bdedd386df25edc790296a4a3a16e86",
+    "packages/public-render/test/consent-email.test.ts": "67c9f97f9a107f30999ac3c19bba375d2029f263630906b85abf98af0568ae81",
     "packages/public-render/test/continuations.test.ts": "f7a029133c70ebeab0cc103f92625e35cb6423b2aec17c711e4cc65a8b65e303",
+    "packages/public-render/test/export.test.ts": "f7bd0c722bbf0cc27ac1738c102e875aabc3ae0f551d0530602ee1e798b52b0f",
+    "packages/public-render/test/headers.test.ts": "978e9df38e9d01c63dd199e25912e61effe39889a8acdb0ef6d59100181f28cf",
+    "packages/public-render/test/installation.test.ts": "99e03beb10ec5ba9efe19e62b519efecb84fd16fa16005d639d074d4f56840b7",
+    "packages/public-render/test/pages.test.ts": "36ab3f6696548c9f745a75dc631d3c0baf7f9a68a5721c2e350c998c2447aa2e",
     "packages/testing/src/dev-members.ts": "a92626f3ae560125b27693e6c7fea3cec32a82fadfdaad62b358cdbbcbc952aa",
-    "packages/testing/src/live-channels.ts": "308a42fd98cb3357166f92d82f8781d6cf87d9b77ea3fb05944e71fb18140938",
-    "packages/testing/src/public-channels.ts": "98ecca7a9cc9d7cf6c257640ccc951a6b336111ead30c2ef43b1e7f3c2ced750",
+    "packages/testing/src/live-channels.ts": "abec11e83bb42843be48b1500e0f2ee11302184d40d748ad329ad5b6772abe3e",
+    "packages/testing/src/public-channels.ts": "d81301a540c2c7bce6123352c1082e8a3f6303d4c74f06754400849ff220f6bd",
     "packages/testing/src/resource-fixtures.ts": "e4a50f21e863d14113c086f2db4e1ef02e3a472ddd466f48f6cf1c341bedfd75",
-    "packages/testing/test/properties/p05-public-output-confinement.test.ts": "5725961554a1e573105d7b963b8a4dcd270bff6a8285c91f24d5ebb0ee2bab22",
+    "packages/testing/test/properties/p05-public-output-confinement.test.ts": "cd826cf113d718dff7b3b9c850d28a5c8baaf6593626fdcfca954220fe3478c9",
+    "packages/testing/test/properties/p07-not-found-indistinguishable.test.ts": "7712030800624e18544791d04721bb03825ae4a4263046aad2ef3d06f14a2dff",
+    "packages/testing/test/properties/p19-public-addresses.test.ts": "39d724d6eec4a9c5175d5b66248b02e19e7ed9da2a0341eb03f9f4f167b103a3",
+    "packages/testing/test/properties/p73-export-snapshots.test.ts": "62013f82c683afabf236033dc86c36dba00da5a1292cd705f4a845fc6341fd02",
+    "packages/testing/test/properties/p92-character-preservation.test.ts": "44c1cb191fd10112aca51b8ccaedf1b07ad1cfbd0cba187722bf33899e3cad82",
+    "packages/testing/test/properties/p95-people-and-responsible-person.test.ts": "f0ae251455ae8bc0d191387be2e3433c29c4c364314cff2b64de2277dc5e7649",
     "scripts/backfill.ts": "c8388bb5a9442bf0bf81cc876e95cf06f7eb457275ef2e2b815aeddb9e8e8c61",
     "scripts/check-workers.mjs": "de6414495c80dd141f24cf52c7d4d5320841ec9681433896c84e753ce1a7caf8",
     "scripts/contract.ts": "54f3cb42829ae1c274d29478ca61bc74c83aa943934e45af7f1a0aa55cfcaf40",
-    "scripts/deploy.ts": "79eff2a586c1d0cb8c6777d821d7920521a573561f3097af59b8e29a5a9db9c4",
+    "scripts/deploy.ts": "18e4198d643d4324a924af4f74db802de7eb4549a547d6f7533cd94535bd18e2",
     "scripts/dev.ts": "cf757732a5b86ca51a2ec53879942df91385f607166a75e998f0d2ca7bc2272f",
     "scripts/expand.ts": "1f2d917c9bf4ca38ee8ad944180a9b115908ade58c9f8b37003b47de5b204cb4",
+    "scripts/lighthouse.mjs": "3d1dfccaa1e1b49431f268449cc538c618fb5c15bd23ef1f1fb5fc6e8b63f42e",
+    "tests/perf/run.ts": "9e413ca2c1667b147fa4a0ac266f12de311072ea30113e78823fec961c67267a",
+    "tests/perf/support/abuse.ts": "3aa553ee57e40f51301ee36f598e2fc5c7f8583dfd9d8da133d960ff1f1b689b",
+    "tests/perf/support/growth.ts": "3ed013824951a91cb1b78cfd33db33d9b9665be823264f0333a6fecf7381a7cf",
+    "tests/perf/support/measurement.ts": "9a2151008b6699cb5faf72d407f37bf9dad1809ed03b03a1f5f688195e01fc28",
+    "tests/perf/support/provider-margins.ts": "313d15c777a6ae171c89c59814ec918e6cb06555781dc9681542f532ed5414ad",
+    "tests/perf/support/worst-case.ts": "f11a334a54b2355871dc793005f30992294e46b8ae1718b35e9da74c25af10bf",
+    "tests/presentation/accessibility.spec.ts": "5c83f5645506a746583e5bb2515a0695d7d19089bd39784fd49a158301a3efb9",
+    "tests/presentation/colour-scheme.spec.ts": "46db19d6eda8c3ca205a40d42a9049a7526c0e0aed1607bab6a708ecf69c4c1b",
+    "tests/presentation/print-pdf.spec.ts": "8a12f5b757e64ea3dc3c1cbc8a65bbfc9c71f25677d62dc5c8d6eed6f7e3ec2b",
+    "tests/presentation/privacy-crawl.spec.ts": "cf47d0781a452ba6a3a5fed9fa3e465dddbd74395152092d0b1483c73fa6ef22",
+    "tests/presentation/support/helpers.ts": "26f1d115d8119dc527faed5c60a5731bb378eee5a5ba5d50860a9dfc2cd1bc17",
+    "tests/presentation/support/pages.ts": "d5abe793a7f93a0b20a6ba168412fe99c1ed9a26936f98276e171251d4075d82",
+    "tests/presentation/viewport-sweep.spec.ts": "e3fcc04166c9ca12a0fade491c1173f043d774859717ff5345df79f33558051b",
+    "tests/presentation/visual-regression.spec.ts": "7d1434ae9e3ee3bacd91f9fbf7f7824d74ffc53c18e6bd3408f1806dd68f6c02",
+    "tests/security/channel-adapter-canaries.spec.ts": "28958370e157a5eaf60fee5e22966940ae3a9e0416ec1f07d3e45dd39f8c7067",
+    "tests/security/download-link-security.spec.ts": "e7df4ef52055012c134f0522f7122f0ae43d2df42384e67ba768d57139f67699",
+    "tests/security/file-delivery-isolation.spec.ts": "a8501df53a5f80759d8f001c883a94ad699b11e8b20c7129b3fd4d22938128bc",
+    "tests/security/preview-isolation.spec.ts": "a602ad44724c3ccba14555dd6316033797f4cbaade2863f882f3f47eacbd0574",
+    "tests/security/support/canaries.ts": "42df0be0355717f7e1165a54ba26b204317e8d520293e23e9847b256a6ca9655",
+    "tests/security/support/env.ts": "0b1f37e86238da70fce687904af8c5010f31b5e9554328fa28874e24e35c9e3c",
+    "tests/security/support/probe.ts": "6d952bfada93ad8b1e7a381dd240c8cc3508ccdce5d647770138d6313bcc295d",
+    "tests/security/support/tokens.ts": "3e6533aba6d047d505c58a5dab71bc439364af291cccd5066aad176259cb33bb",
+    "tests/staging/abuse-reserve.spec.ts": "f8351aef3b625355ab0884dbbf584660ff76c47dadaadc2b3db0616c9d570031",
+    "tests/staging/access-and-bearer.spec.ts": "1c9d0be36bb61b2ad4a7d2b79b1a5f1f3e4667bd50da5cda97cae4ef8f4145be",
+    "tests/staging/backup-restore.spec.ts": "f34d204bc0e11babdd9513a7aa9cd7160a6e102be6269fe7108f68aee6c9bd66",
+    "tests/staging/distributed-abuse.spec.ts": "bf8b65c24f2fe20db1f7dcda41fe262b63388af84517fcf83242f54b7351b066",
+    "tests/staging/gate-contract.spec.ts": "731e366a3fee4fed7c597300acfe1c119e7a85ecdb720b5015054722f5b25c8a",
+    "tests/staging/graph-mail.spec.ts": "af1725ef870f1822e08fe6449db21899255e91aa9c5888ccd8a122b851d7e9b5",
+    "tests/staging/public-change-containment.spec.ts": "b0e8e2bf7529538fd193ce150f3149faef437a0ff749e8d687d3903846d268ab",
+    "tests/staging/r2-upload-checksums.spec.ts": "7de98589b9a138c4e22c39cff886ad97da0b7ebf0198fc78f8e26208499fe3fd",
+    "tests/staging/support/env.ts": "4d77ab962658bacc5dbb51c69f405b9289810d407b470f7b5bff0ecbbb124292",
+    "tests/staging/support/gate.ts": "4c88a06d582d286f680eccba391abea70f62f1d69b9d46d720df233526699366",
+    "tests/staging/support/operator.ts": "2a278716272629eb23d4ff73804b6ba29a420788bd67a7b69fe5c89a3b2b641a",
+    "tests/staging/support/r2.ts": "4f6142cabaa85929c1bbf09722e05318252160173cc16eaaf8a63b796b1a2920",
+    "tests/staging/team-walkthroughs.spec.ts": "8648dc6022494c18e1e268812e6cf867b5230cac3b7735cff0ca4b629a0e8995",
+    "tools/bootstrap.ts": "2c884570cdc99cf7b3efed77fec400be958158099c0f47c8e46862dcb467ac5e",
     "tools/certify-profile.ts": "2a34d62abe80cbd9b94184a1127179abc657158ec32f3f924bb1f3152d775167",
+    "tools/check-email-dns.ts": "86d35a5e5df766f77969732fb6973041a1abd21db72fb5e088206937d63f29d7",
+    "tools/check-launch.ts": "9ef5a9dcb7b8e57fa335394eda1991824b96d51f1790d21988dac9eaab9cde8b",
+    "tools/check-secrets.ts": "9b089510b984a6a49b6a05b86d67be87b75b1a9b768effe366d6862002f312ff",
     "tools/check-specs.ts": "87465b962c8b6af27c6a53df903733f040b4222289532d67cbcb0cd09f8cfd10",
     "tools/dev-seed.ts": "eb81c9a62672e6288884ebf69543e7d91863797a2b9e03d8353d769ed5a92ca2",
     "tools/migrate-fields.ts": "656305b10e31318824a5663f29d32e788db783a2aa9dade5d201a374fa605274",
+    "tools/recovery/rehearse.ts": "2cab1a848f00ffb73d4ddcf3f9cec5a3420f42dfb1533d2492ec4581a3521feb",
     "tools/release.ts": "6dd8551127659df9a4daa789e3d1acb4edc0c728637f875687e5d2a991910ccc",
+    "tools/smoke/index.ts": "f7e45971fd8ddc8697dc5c6bf55bcb8a70ddede25d763eb2f533a84a9adb76da",
+    "tools/src/bootstrap-plan.ts": "10710fd5df0454445e8282167f147a7b92e93af282e9b50451f5c330f084a10c",
     "tools/src/deploy-guard.ts": "5d6d8ea6234700e131ebe651a96cf61e1742a6bc79ffd4df70d552e875480b75",
+    "tools/src/deployment-plan.ts": "78bb183f6fdbb407364f971c9c4e7196b81877a94629dbccd64062f9b5d8f20c",
     "tools/src/dev-config.ts": "df8357bdc7b78549828bb2e2c3a6cc301e175fa1f2a2cf76e4c0a8f183bcc204",
     "tools/src/dev-seed-data.ts": "2e9c98fb6308e1f65b0b0aa2243b14c05c908c2fb9073ea99542516053fcdbba",
+    "tools/src/evidence-recorder.ts": "13b3ef199e11a316dd40eabdf9af84916df755a67c79b12e8e552f28ad69aca3",
+    "tools/src/launch-gates.ts": "e07d81e0cd9e5552d4318fc9f8ad5a9f2d4f2567014bb1f404ec731e9c964824",
     "tools/src/local-dev.ts": "baea3f959b9061d91c6e2ffc2e5c6a38d94da3337f91910bd3d41ed668b870ab",
-    "tools/src/profile-certification.ts": "e480b754b8e14423e5fa1c79a645ea209b31203e60e987b18076794e7eecbeed",
+    "tools/src/profile-certification.ts": "98c80f4c08587291e439d1e8c00ecfe30b14e315fa3e1d56f245a25a6f47a173",
     "tools/src/release-manifest.ts": "67d382af252714fc55132e042e4e4825d532d7261d7aa9c98dea690d47d5b5fd",
     "tools/src/release-rehearsal.ts": "c886ff5e6ea1e6035e6696094bc5347e8d47c6af94ab4f198f72d838a49842a8",
     "tools/src/spec-test-report.ts": "750aa0c6a33d0f4733c53741e8d8b433135f7cf16837dc1555ea8dc72151bf61",
     "tools/src/specs.ts": "678ae50550a77c35658a6754e54d9d30e46df7f65b69d2fb98d8575a979c327f",
     "tools/src/sqlite-field-adapter.ts": "89b8f3793c6990eb605fecbd86a03eaa5c5e16f6a6a0fa35aaf9fc264d154c1b",
+    "tools/src/staging-results.ts": "59cf0c75ba33ea390855554f93ea5f7f26b3fd1c1717e8142c5b4d160902dd5b",
     "tools/src/upgrade-backfills.ts": "500062939dfb4608e9a10aa35e8c6eedca20bac8c061e806167ebf987a791c62",
     "tools/src/upgrade-cli.ts": "cb086ac1f82197dc79de873cf18b07818c0e33e7ca9a7ea2bd8d333f7f39fd07",
     "tools/src/upgrade-store.ts": "b3ef2bb76403c81c7e93086be6e72a2179bca06c5aa15c51943ffc8efc7db855",
+    "tools/test/bootstrap.test.ts": "64e207a394cc10832823bb332a9846b588e99cee2f5f7836025b525c2390363a",
+    "tools/test/check-email-dns.test.ts": "6340a4b91654fd07e09747ccac9aec640ef066036e38684cc0eb4e851f5a73b8",
+    "tools/test/check-launch.test.ts": "604e0f9dbdf38baa2a038bc63af7847c554ebcc057f8f38f5b2b1686345a69bc",
     "tools/test/check-specs.test.ts": "b0b0a9c4e9b6afe7e0471d681ff979b0ab84690b966d3769907da121fcb41bc7",
+    "tools/test/cloudflare-provision.test.ts": "e0ed7f40144586fc53bcc77118c22351b4d270772ec4b38c66a34b91c578b0f3",
+    "tools/test/deploy.test.ts": "d90decc9207e3341ecfe5537b679131144096f850e27813d6f3b07cf2621efbb",
     "tools/test/dev-config.test.ts": "eaa105ae1bd43d0b6082bfb7dcf5ba6925cd9a8b5f5891ea7b7ad210ae362dcf",
-    "tools/test/field-migration.test.ts": "9804db2beeafdb8a8615c8f1955b535ea671e2939d715ee9ce34120315fede57",
+    "tools/test/evidence-recorder.test.ts": "b4090823cc18f83d0a014d1f43fc40c11a69b34ff225c0f8c0e6d65147982d8e",
+    "tools/test/field-migration.test.ts": "9fd1211fd4fce7243bbaf5a355564e7af24a38bca8c795a296b56314d74fe93f",
     "tools/test/local-dev.test.ts": "7d1ab7c47ed14c6431a7965091c7d99516a30f8a0a61191f8747f0c320b84fd1",
-    "tools/test/profile-certification.test.ts": "2c656d247375979d847975865a073277f19e9a1bf36f3249308206a672e5a22f",
+    "tools/test/profile-certification.test.ts": "00e3ee1dc5ce292ed85a29ca1b7b62d5eade5201334ecf24d500eafd2c7f158e",
+    "tools/test/properties/p125-release-assurance.test.ts": "3fde00c8f2d87e3f9bae5baf9152e8577d6bdcc86dc01858d344b02c10d98095",
+    "tools/test/recovery-rehearse.test.ts": "0e6ca093ef095f2fbd2dd11e76344ddf63a4b2b8bf75ca12ae36ce72a20ea177",
     "tools/test/release-compatibility.test.ts": "c0190302da8efc74cd2fd681fd978cadeb1346df7925ae85de20f7977c3e77ee",
     "tools/test/release-fixtures.ts": "b577cd9f043e527ae56a3a12e1dd35c73941e8e2167bf92858c33118aebc310c",
-    "tools/test/release-tools.test.ts": "773e92f8c671ef4d8623bc8fb61d49ef446759e27eb715383495877e8b6efd82",
-    "tools/test/upgrade-store.test.ts": "876a60bb44d9781aa7e84fc672d33a18528e8d0b1176883302ba30c07a2de284",
-    "tsconfig.tooling.json": "4b45be249bedb7fa23a041f2e71ad7849caeaab2485b9811e68c4273e34e9ecb",
-    "vitest.config.ts": "b8633df9139ed21f4e9342f24deb5bd7c4e25e797734fbb3bb5e213a47375384"
+    "tools/test/release-tools.test.ts": "fa8e11e2ff6f823eb1f085d64576092a9ecdbb0bf8589456aff7bc6b5ae9dea4",
+    "tools/test/smoke.test.ts": "8ea69fcaada1c4a682af6b95c88b65b62272fe8bd352650cac6185b8710dfe20",
+    "tools/test/staging-results.test.ts": "1d89b6fa1113c47da7befe91e507ed95d61fdee1afdec0133dcfdf0787b0bc45",
+    "tools/test/upgrade-store.test.ts": "03f05cafa7161d3d6f40317118a1cc8824426cb91ef59b4c430ad27b7ffebc0d",
+    "tsconfig.tooling.json": "b9e4c3dbb3146b4aba357de95cb4b345f0f55d625e4ef9b2b23b3151ad1feee6",
+    "vitest.config.ts": "b190bd2ad0ceee9b488f592af9de49485e3e9182e32deef39142c87136735392"
   }
 }

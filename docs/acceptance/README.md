@@ -19,7 +19,7 @@ The generated inventory names the next task and remaining build order directly f
 
 An `accepted` record needs source files, test files, a reason, and a passing executed-check report with matching current source/test SHA-256 fingerprints. An accepted record must agree with the checkbox. Newly checked work outside the historical baseline needs such a record. A fingerprint mismatch requires rerunning and reviewing the affected evidence; it must not be resolved by copying hashes into a report by hand.
 
-`reopened` records retain the known failure and correction task IDs. `partial` records distinguish working implementation from unfulfilled acceptance or missing integration. Both remain unchecked. Task 52 is reviewed subtask by subtask. Tasks 52.1–52.3 and 52.7–52.8 have fresh local acceptance; 52.4/52.5 are scheduled after their privacy helpers, and 52.6 after the Workspace lists, so the earlier repair phase cannot deadlock on future integration. Migration `0007_restricted_access.sql` is tested on disposable local D1 databases and is neither recreated nor rerun against production.
+`reopened` records retain the known failure and correction task IDs. `partial` records distinguish working implementation from unfulfilled acceptance or missing integration. Both remain unchecked. Task 52 is reviewed subtask by subtask. Tasks 52.1–52.3 and 52.7–52.8 had fresh local acceptance first; 52.4/52.5 waited for their privacy helpers and 52.6 for the Workspace lists, and all three were accepted on 11 November 2026 once those landed. Migration `0007_restricted_access.sql` is tested on disposable local D1 databases and is neither recreated nor rerun against production.
 
 To record fresh local evidence, run all tests using synthetic fixtures and import the resulting Vitest JSON:
 
@@ -36,14 +36,15 @@ This checker validates release-gate structure and scheduling. Task 68.4 owns run
 
 ## Acceptance gaps retained by this audit
 
+The earlier gaps for 19.1, 30.6–30.8, 30.11 and 52.4–52.6 were closed by their correction tasks and are now accepted. The 11 November 2026 reconciliation reopened these leaves:
+
 | Tasks | Remaining acceptance | Owning correction |
 |---|---|---|
-| 19.1 | Accepted logical text can exceed a staged request or D1 row; history/spans also need bounded physical storage | 57.3, then 19.1 and 57.6–57.8 |
-| 30.6 | Upload metadata and acknowledged identity must survive reload without claiming to reconstruct local File objects | 30.6, 57.8 and durable drafts in 64.1 |
-| 30.7, 30.11 | CSV currently buffers the file; enforce bounded streaming, cancellation and accurate truncation reporting | 30.7, 30.11, 57.8 |
-| 30.8 | Listing attachments must not clear all their flags | 30.8, 57.8 |
-| 52.4, 52.5 | Access preview lists reset units, but full removed Public_Views and database projection loading remain unfinished | 31.1; revoked-owner approval remains 54.5 |
-| 52.6 | Reusable access controls exist; full Workspace list integration and rendered removed views remain unfinished | 40.3, 31.1 |
+| 54.9 | The Property 104 model expects a Revoked proposer to withdraw; the server correctly refuses, so the property fails for some generated sequences | 54.9 |
+| 68.4 | Gate manifests and checks are accepted locally; the R60.9 local synthetic team walkthroughs are not yet run and recorded | 68.4 |
+| 43.5–43.8, 45.3 | Print, accessibility/layout, presentation, Lighthouse and browser security suites have no recorded passing run outside the Vitest receipt | 43.5–43.8, 45.3 |
+| 48.2, 48.5 | Microsoft 365 and staging suites need operator infrastructure and a recorded run | 48.7, 48.11, 48.12 |
+| 46.2, 59.4 | Measured capacity and distributed-abuse scenarios need the staging installation | 48.11, 48.12 |
 
 ## Existing tests that new features must extend
 
