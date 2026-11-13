@@ -61,7 +61,8 @@ export const HOURLY_SWEEPS: readonly Sweep[] = [
   { name: 'stuck_backups', run: sweepStuckBackups },
   // Pre-build each complete backup's downloadable tar (the backfill for earlier backups and the retry for a failed pack, R36.2).
   { name: 'backup_packages', run: sweepBackupPackages },
-  { name: 'backup_copies', run: sweepBackupCopies },
+  // Verification is a sliced job started here, never hashed in the cron invocation (R36.12).
+  { name: 'backup_copies', run: (env, now) => sweepBackupCopies(env, now, 'job') },
   { name: 'backup_retention', run: sweepBackupRetention },
   { name: 'backup_rpo_alert', run: (env, now) => checkRpoAge(env, now) },
   // Backup PRODUCTION health: alert when backups keep failing or none is complete within the spec's 18h/24h, whatever

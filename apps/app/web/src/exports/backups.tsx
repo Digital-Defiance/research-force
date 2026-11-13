@@ -33,6 +33,8 @@ interface BackupView {
   readonly download: readonly DownloadLink[];
   /** Whether a complete backup's download is built (`ready`), still being built (`preparing`), or gave up (`failed`) (R36.2). */
   readonly package?: 'ready' | 'preparing' | 'failed' | null;
+  /** Whether the stored copy is being checked against its fingerprint (`verifying`), matched (`verified`), or stopped on a fault (`failed`) (R36.12). */
+  readonly verification?: 'none' | 'verifying' | 'verified' | 'failed';
 }
 
 /** One preflight problem that blocked a restore before any insertion (R36.8). */
@@ -67,6 +69,8 @@ const BACKUP_REFRESH_MS = 10_000;
 const isInProgress = (backup: BackupView): boolean => backup.state === 'queued' || backup.state === 'running';
 /** A complete backup whose download is still being built; the list reloads until it is ready. */
 const isPreparing = (backup: BackupView): boolean => backup.state === 'complete' && backup.package === 'preparing';
+/** A complete backup whose stored copy is still being checked after the fingerprint was submitted; the list reloads until it settles. */
+const isVerifying = (backup: BackupView): boolean => backup.state === 'complete' && backup.verification === 'verifying';
 const backupStateName = (state: string): string => BACKUP_STATE_NAMES[state] ?? state;
 
 const RESTORE_STATE_NAMES: Readonly<Record<string, string>> = {
@@ -123,8 +127,11 @@ function BackupCard({ record, onConfirm, busy }: { readonly record: BackupView; 
           <h4>Offsite copy</h4>
           {record.offsiteConfirmedAt != null
             ? <p className="rf-meta">{`Confirmed ${whenLabel(record.offsiteConfirmedAt)}. This backup counts as a safe recovery point.`}</p>
+            : isVerifying(record)
+            ? <p className="rf-meta" role="status">Checking the stored copy. This can take a few minutes for a large backup.</p>
             : (
               <>
+                {record.verification === 'failed' && <p className="rf-meta" role="alert">The stored copy could not be checked against this backup, so it does not count as a recovery point yet. Check the fingerprint and confirm again.</p>}
                 <p className="rf-meta">After you save the download somewhere safe, run the verify tool on it and paste the fingerprint it prints. Until then this backup is not counted as a recovery point.</p>
                 <TextField label="Fingerprint from the verify tool" value={fingerprint} onChange={setFingerprint} />
                 <div className="rf-actions"><Button variant="primary" disabled={busy || fingerprint.trim() === ''} onClick={() => void onConfirm(record.id, fingerprint)}>Confirm the offsite copy</Button></div>
@@ -268,8 +275,8 @@ export function BackupsScreen() {
   const [backupRequested, setBackupRequested] = useState(false);
   const [restoreRequested, setRestoreRequested] = useState(false);
 
-  // While any backup is queued or running, or a complete one is still preparing its download, reload the list every 10 seconds; the timer is cleared when none is.
-  const anyInProgress = backups.data?.backups.some((backup) => isInProgress(backup) || isPreparing(backup)) ?? false;
+  // While any backup is queued or running, a complete one is still preparing its download, or its stored copy is being checked, reload the list every 10 seconds; the timer is cleared when none is.
+  const anyInProgress = backups.data?.backups.some((backup) => isInProgress(backup) || isPreparing(backup) || isVerifying(backup)) ?? false;
   const reloadBackups = backups.reload;
   useEffect(() => {
     if (!anyInProgress) return undefined;

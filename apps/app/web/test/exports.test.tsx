@@ -1,4 +1,4 @@
-import { fireEvent, screen } from '@testing-library/react';
+import { fireEvent, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 // The restore screen hashes an uploaded package through the uploads Worker; stub it for a stable digest with no real Worker.
@@ -185,6 +185,43 @@ describe('the backups and restores screen', () => {
       expect(polls).toBe(settled); // nothing is preparing any more
     } finally { vi.useRealTimers(); }
   });
+
+  it('confirming the offsite copy shows that the stored copy is being checked, reloads until it is confirmed, and no longer polls (R36.12)', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      let verifying = false;
+      let polls = 0;
+      const none = { id: BACKUP_ID, state: 'complete', trigger: 'requested', startedAt: '2026-10-02T00:00:00.000Z', finishedAt: '2026-10-02T00:20:00.000Z', expiresAt: null, incomplete: null, download: [], package: 'ready', verification: 'none', offsiteConfirmedAt: null };
+      const checking = { ...none, verification: 'verifying' };
+      const verified = { ...none, verification: 'verified', offsiteConfirmedAt: '2026-10-02T01:00:00.000Z' };
+      const api = fakeApi({
+        'GET /backups': () => { polls++; return json({ backups: [!verifying ? none : polls < 4 ? checking : verified] }); },
+        'GET /restores': json({ restores: [] }),
+        [`POST /backups/${BACKUP_ID}/confirm-offline`]: () => { verifying = true; polls = 2; return json({ confirmed: false, verifying: true }, 202); },
+      });
+      renderScreen(<BackupsScreen />, { client: api.client, administrator: true });
+      const card = await screen.findByRole('region', { name: `Backup ${BACKUP_ID}` });
+      fireEvent.change(within(card).getByLabelText('Fingerprint from the verify tool'), { target: { value: 'a'.repeat(64) } });
+      fireEvent.click(within(card).getByRole('button', { name: 'Confirm the offsite copy' }));
+      await vi.waitFor(() => expect(screen.getByRole('region', { name: `Backup ${BACKUP_ID}` }).textContent).toContain('Checking the stored copy. This can take a few minutes for a large backup.'));
+      expect(screen.queryByRole('button', { name: 'Confirm the offsite copy' })).toBeNull();
+      await vi.advanceTimersByTimeAsync(20_000);
+      await vi.waitFor(() => expect(screen.getByRole('region', { name: `Backup ${BACKUP_ID}` }).textContent).toContain('This backup counts as a safe recovery point.'));
+      const settled = polls;
+      await vi.advanceTimersByTimeAsync(30_000);
+      expect(polls).toBe(settled); // nothing is being checked any more
+    } finally { vi.useRealTimers(); }
+  });
+
+  it('explains a failed check of the stored copy and lets the Administrator confirm again (R36.12)', async () => {
+    const failed = { id: BACKUP_ID, state: 'complete', trigger: 'requested', startedAt: '2026-10-02T00:00:00.000Z', finishedAt: '2026-10-02T00:20:00.000Z', expiresAt: null, incomplete: null, download: [], package: 'ready', verification: 'failed', offsiteConfirmedAt: null };
+    const api = fakeApi({ 'GET /backups': json({ backups: [failed] }), 'GET /restores': json({ restores: [] }) });
+    renderScreen(<BackupsScreen />, { client: api.client, administrator: true });
+    const card = await screen.findByRole('region', { name: `Backup ${BACKUP_ID}` });
+    expect(card.textContent).toContain('could not be checked against this backup');
+    expect(within(card).getByRole('button', { name: 'Confirm the offsite copy' })).toBeTruthy();
+  });
+
   it('shows a failed backup in the open list with its reason, missing elements and trigger, plus a top warning (R36.6)', async () => {
     const failed = {
       id: BACKUP_ID, state: 'incomplete', trigger: 'scheduled', startedAt: '2026-10-01T00:00:00.000Z', finishedAt: '2026-10-01T00:30:00.000Z',

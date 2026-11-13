@@ -26,9 +26,11 @@ import {
 } from '../backup/freeze';
 import type { FreezeLease } from '../backup/freeze';
 import { recoveryCustodians } from '../backup/custodians';
+import { independentDestination, verifyCopyStep } from '../backup/copies';
 import { bucketKeyOf } from './export';
 import { volumeManifests } from './export-manifest';
 import type { VolumeManifest } from './export-manifest';
+import { dropPackedTar, persistSuppressionLedger } from './backup-cron';
 
 /**
  * The Internal_Backup JOB (task 38.4; R28.8, R36.1, R36.2, R36.3, R36.6, R36.11, R36.12, R36.13, R36.14, R47.15,
@@ -53,10 +55,11 @@ import type { VolumeManifest } from './export-manifest';
 
 /**
  * What the request records for the backup job: the `exports` row id (type `backup`), so the slice reads it for its
- * sequence. `mode: 'pack'` marks the follow-up job that pre-builds each volume's tar as one R2 object (R36.2); the job
- * type stays `internal_backup` because the `jobs.type` check admits no new type without a migration.
+ * sequence. `mode: 'pack'` marks the follow-up job that pre-builds each volume's tar as one R2 object (R36.2);
+ * `mode: 'verify'` marks the job that re-hashes a backup's stored package against its authenticated manifest (R36.12).
+ * The job type stays `internal_backup` because the `jobs.type` check admits no new type without a migration.
  */
-export interface BackupParams { readonly exportId: ULID; readonly mode?: 'pack' }
+export interface BackupParams { readonly exportId: ULID; readonly mode?: 'pack' | 'verify' }
 
 /** The backup package's private R2 prefix; every body part, the accumulator, the manifest, the key envelopes, and the volumes live under it. */
 export const backupPrefix = (id: string): string => `rf-private/backups/${id}`;
@@ -286,8 +289,10 @@ async function heartbeatLease(env: ApiEnv['Bindings'], cursor: Cursor, now: Time
  */
 export const backupJob: JobHandler = {
   async slice(context, cursorValue): Promise<SliceResult> {
-    // The pack job is a separate, unfrozen job over a COMPLETE backup: dispatch before any freeze/snapshot code, outside recoverSlice.
-    if ((context.job.params as unknown as BackupParams).mode === 'pack') return packSlice(context, cursorValue);
+    // The pack and verify jobs are separate, unfrozen jobs over a COMPLETE backup: dispatch before any freeze/snapshot code, outside recoverSlice.
+    const mode = (context.job.params as unknown as BackupParams).mode;
+    if (mode === 'pack') return packSlice(context, cursorValue);
+    if (mode === 'verify') return verifySlice(context, cursorValue);
     try {
       return await runSlice(context, cursorValue);
     } catch (error) {
@@ -707,7 +712,7 @@ async function finish(env: ApiEnv['Bindings'], id: string, result: FinishResult,
   if (!result.incomplete) {
     try {
       const packId = await startPack(env.RF_CORE, id as ULID, now);
-      if (packAutoStart) await env.JOBS.getByName(packId).start(packId);
+      await kickJob(env, packId);
     } catch (error) { log('warn', 'backup_pack_start_failed', { backup: id, error }); }
   }
   return { cursor: { done: true } as unknown as JsonValue, progress: { rows: cursor?.rowsRead ?? 0, files: cursor?.filesCopied ?? 0 }, done: true, outcome: result.incomplete ? 'incomplete' : 'complete' };
@@ -733,6 +738,10 @@ let packPartBytes: number = OPERATIONS.multipartPartBytes;
 let packAutoStart = true;
 /** Test-only: stop `finish` from starting the pack job's Durable Object, so tests drive the pack slices themselves (its jobs and outbox rows are still written). */
 export function setPackAutoStartForTest(enabled: boolean): void { packAutoStart = enabled; }
+/** Wake the Jobs Durable Object for a job just queued from a request or a job, where nothing kicks the outbox (staging has no cron); a no-op in tests that drive slices themselves. */
+export async function kickJob(env: ApiEnv['Bindings'], id: string): Promise<void> {
+  if (packAutoStart) await env.JOBS.getByName(id).start(id);
+}
 /** Test-only: change the tar part size (at least the 5 MiB R2 multipart minimum), or pass null to restore the default. */
 export function setPackPartBytesForTest(bytes: number | null): void {
   if (bytes !== null && bytes < MULTIPART_MIN_BYTES) throw new RangeError('A tar part must be at least 5 MiB.');
@@ -920,6 +929,69 @@ async function uploadTarPart(
     throw error;
   }
   return { etag: (await uploading).etag, reads };
+}
+
+// ── verify: re-hash a backup's stored package against its authenticated manifest in bounded slices (R36.12, R36.13) ──
+// The full re-hash (every file and table part) cannot fit one Workers Free request, so it runs here, resumable, and only
+// a job that matched every hash records the verified recovery point.
+
+/** The most bytes one verify slice hashes before yielding (a slice always finishes the object it is on). */
+export const VERIFY_SLICE_MAX_BYTES = 32 * 1024 * 1024;
+
+/** Where the verify job is: how many of the manifest's files, then tables, are already confirmed. */
+interface VerifyJobCursor { readonly kind: 'verify'; readonly index: number; readonly attempts: number }
+
+/**
+ * Queue a verify job for a backup: a fresh `jobs` row (type `internal_backup`, `mode: 'verify'`) plus its outbox row,
+ * like {@link startPack}, and return the job id. Bookkeeping only, so exempt from the research freeze (R36.14).
+ */
+export async function startVerify(core: D1Database, exportId: ULID, now: Timestamp): Promise<ULID> {
+  const id = newULID(now);
+  const params: BackupParams = { exportId, mode: 'verify' };
+  await new GuardedBatch(core, { id: null, now }, { ignoreFreeze: true })
+    .insert(jobs, { id, type: 'internal_backup', state: 'queued', requestedBy: null, params: params as unknown as Record<string, unknown>, createdAt: now, updatedAt: now })
+    .outbox('jobs', `job:${id}`)
+    .commit();
+  return id;
+}
+
+const verifyStep = (cursor: VerifyJobCursor, change: Partial<VerifyJobCursor>, done = false, outcome?: 'complete' | 'incomplete'): SliceResult => {
+  const next = { ...cursor, attempts: 0, ...change };
+  return { cursor: next as unknown as JsonValue, progress: { verified: next.index }, done, ...(outcome ? { outcome } : {}) };
+};
+
+/**
+ * One slice of the verify job. The copy is read from the independent `r2` bucket when one is configured, else from the
+ * production package the operator carried (the operator attested the bytes are identical). A fully matching package
+ * records `verified_at`, persists the suppression ledger and drops the packed tar; a fault records its content-free code
+ * and leaves `verified_at` null. An unexpected error retries the same cursor up to {@link MAX_SLICE_ATTEMPTS}, then
+ * records `verify-error`; either way the backup itself is untouched.
+ */
+async function verifySlice({ env, job, now }: SliceContext, cursorValue: JsonValue): Promise<SliceResult> {
+  const id = (job.params as unknown as BackupParams).exportId;
+  const cursor: VerifyJobCursor = cursorValue === null ? { kind: 'verify', index: 0, attempts: 0 } : cursorValue as unknown as VerifyJobCursor;
+  try {
+    const destination = independentDestination(env);
+    const bucket = destination?.kind === 'r2' && destination.bucket ? destination.bucket : env.RF_PRIVATE_BUCKET;
+    const result = await verifyCopyStep(env, id, bucket, { index: cursor.index }, { maxBytes: VERIFY_SLICE_MAX_BYTES, maxMs: FILE_SLICE_MAX_MS });
+    if (!result.done) return verifyStep(cursor, { index: result.cursor.index });
+    if (!result.result.verified) {
+      await env.RF_CORE.prepare('UPDATE backup_points SET verify_fault = ?2 WHERE export_id = ?1').bind(id, result.result.fault).run();
+      return verifyStep(cursor, { index: result.cursor.index }, true, 'incomplete');
+    }
+    await env.RF_CORE.prepare('UPDATE backup_points SET verified_at = ?2, verify_fault = NULL WHERE export_id = ?1').bind(id, now).run();
+    await persistSuppressionLedger(env, id, now);
+    await dropPackedTar(env, id);
+    return verifyStep(cursor, { index: result.cursor.index }, true, 'complete');
+  } catch (error) {
+    if (isDailyLimitError(error)) throw error;
+    log('warn', 'backup_verify_retry', { job: job.id, index: cursor.index, attempts: cursor.attempts, error });
+    if (cursor.attempts < MAX_SLICE_ATTEMPTS) {
+      return { cursor: { ...cursor, attempts: cursor.attempts + 1 } as unknown as JsonValue, progress: { verified: cursor.index }, done: false };
+    }
+    await env.RF_CORE.prepare('UPDATE backup_points SET verify_fault = ?2 WHERE export_id = ?1').bind(id, 'verify-error').run().catch(() => undefined);
+    return verifyStep(cursor, {}, true, 'incomplete');
+  }
 }
 
 JOB_HANDLERS.internal_backup = backupJob;

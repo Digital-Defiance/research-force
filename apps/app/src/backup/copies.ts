@@ -120,9 +120,12 @@ export async function transferPackage(env: Env, exportId: string, destination: I
 /** Objects larger than this are streamed rather than buffered (the Workers isolate holds 128 MB). */
 const STREAM_ABOVE_BYTES = 8 * 1024 * 1024;
 
+/** Objects larger than this are hashed by streaming through a digest, never buffered whole (R36.12). */
+const HASH_STREAM_ABOVE_BYTES = 1024 * 1024;
+
 /** The lowercase-hex SHA-256 of a stored object, streamed when it is large, matching the package's hash convention. */
 async function objectSha256(object: R2ObjectBody): Promise<string> {
-  if (object.size > STREAM_ABOVE_BYTES) {
+  if (object.size > HASH_STREAM_ABOVE_BYTES) {
     const stream = new crypto.DigestStream('SHA-256');
     await object.body.pipeTo(stream);
     return Array.from(new Uint8Array(await stream.digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
@@ -174,22 +177,31 @@ async function readText(bucket: R2Bucket, key: string): Promise<string | null> {
   return object === null ? null : object.text();
 }
 
+/** Where a sliced verification is: how many of the manifest's files, then tables, are already confirmed. Holds no key material or plaintext. */
+export interface VerifyCursor { readonly index: number }
+
+/** What one verification slice may spend: stop once this many bytes were hashed or this many milliseconds passed, but always finish one object. */
+export interface VerifyBudget { readonly maxBytes: number; readonly maxMs: number }
+
+/** One slice's outcome: more to do (with the cursor to resume from), or the final verdict. */
+export type VerifyStep =
+  | { readonly cursor: VerifyCursor; readonly done: false }
+  | { readonly cursor: VerifyCursor; readonly done: true; readonly result: VerifyResult };
+
+const failed = (code: VerifyFault): VerifyResult => ({ verified: false, fault: code });
+
 /**
- * VERIFY an independent copy and decide whether the snapshot is a verified RPO point (R36.7, R36.13). Reads the copy's
- * inventory (the stored header, ciphertext body, and the clear manifest fingerprint), unwraps the per-backup data key
- * with the configured recovery key material, decrypts the manifest body through the 58.1 streaming AEAD, re-validates
- * the manifest structure, confirms the out-of-band fingerprint equals the decrypted manifest digest, and confirms
- * every recorded per-file and per-table hash against the bytes stored in the copy. Returns `verified: true` only when
- * all of that passes; any fault (a missing part, a wrong recovery key, a tampered body, a bad hash) returns the fault
- * and the snapshot stays NOT a recovery point. The copy bucket defaults to the independent destination's bucket; a
- * caller may pass the production bucket for an in-place self-check only in tests.
+ * Read the copy's inventory and return its decrypted, validated manifest, or the fault that stopped it (R36.7, R36.13):
+ * the stored header, the ciphertext body and the clear fingerprint are read, the per-backup data key is unwrapped with
+ * the configured recovery key material, the body is decrypted through the 58.1 streaming AEAD, the manifest structure is
+ * re-validated, and the out-of-band fingerprint must equal the decrypted manifest digest. The plaintext manifest lives
+ * only in the caller's locals; it is never persisted.
  */
-export async function verifyIndependentCopy(env: Env, exportId: string, bucket: R2Bucket): Promise<VerifyResult> {
-  const prefix = bucketKeyOf(backupPrefix(exportId));
+async function openCopyManifest(env: Env, prefix: string, bucket: R2Bucket): Promise<{ readonly manifest: RootManifest } | { readonly fault: VerifyFault }> {
   const headerText = await readText(bucket, `${prefix}/header.json`);
   const fingerprint = await readText(bucket, `${prefix}/manifest-fingerprint.txt`);
   const bodyObject = await bucket.get(`${prefix}/body.enc`);
-  if (headerText === null || fingerprint === null || bodyObject === null) return { verified: false, fault: 'missing-part' };
+  if (headerText === null || fingerprint === null || bodyObject === null) return { fault: 'missing-part' };
 
   const headerObj = JSON.parse(headerText) as PackageHeader;
   const envelopes: WrappedDataKey[] = headerObj.custodians.map((c) => ({
@@ -201,9 +213,9 @@ export async function verifyIndependentCopy(env: Env, exportId: string, bucket: 
   try {
     custodians = recoveryCustodians(env);
   } catch {
-    return { verified: false, fault: 'no-recovery-key' };
+    return { fault: 'no-recovery-key' };
   }
-  if (custodians.length === 0) return { verified: false, fault: 'no-recovery-key' };
+  if (custodians.length === 0) return { fault: 'no-recovery-key' };
   let dataKeyRaw: Uint8Array | null = null;
   let anyMatched = false;
   for (const custodian of custodians) {
@@ -216,7 +228,7 @@ export async function verifyIndependentCopy(env: Env, exportId: string, bucket: 
       // Try the next custodian; a wrong/tampered envelope for this generation is a fault only if none unwraps.
     }
   }
-  if (dataKeyRaw === null) return { verified: false, fault: anyMatched ? 'unwrap-failed' : 'no-recovery-key' };
+  if (dataKeyRaw === null) return { fault: anyMatched ? 'unwrap-failed' : 'no-recovery-key' };
 
   const header: StreamHeader = {
     segmentBytes: headerObj.segmentBytes, salt: fromHex(headerObj.salt), noncePrefix: fromHex(headerObj.noncePrefix), manifestDigest: headerObj.manifestDigest,
@@ -238,29 +250,72 @@ export async function verifyIndependentCopy(env: Env, exportId: string, bucket: 
     for (const chunk of chunks) { body.set(chunk, at); at += chunk.length; }
     manifest = JSON.parse(new TextDecoder().decode(body)) as RootManifest;
   } catch {
-    return { verified: false, fault: 'decode-failed' };
+    return { fault: 'decode-failed' };
   } finally {
     dataKeyRaw.fill(0);
   }
 
-  if (validateManifest(manifest).length > 0) return { verified: false, fault: 'manifest-invalid' };
-  if (fingerprint !== rootDigest(manifest)) return { verified: false, fault: 'fingerprint-mismatch' };
+  if (validateManifest(manifest).length > 0) return { fault: 'manifest-invalid' };
+  if (fingerprint !== rootDigest(manifest)) return { fault: 'fingerprint-mismatch' };
+  return { manifest };
+}
 
-  // Confirm every recorded per-file and per-table hash against the bytes actually stored in the independent copy.
-  for (const file of manifest.files) {
-    const object = await bucket.get(`${prefix}/files/${file.id}`);
-    if (object === null) return { verified: false, fault: 'missing-part' };
-    if (object.size !== file.bytes) { await object.body.cancel().catch(() => undefined); return { verified: false, fault: 'hash-mismatch' }; }
-    if ((await objectSha256(object)) !== file.sha256) return { verified: false, fault: 'hash-mismatch' };
-  }
-  for (const table of manifest.tables) {
-    const object = await bucket.get(`${prefix}/body/${table.table}.jsonl`);
-    const bytes = object === null ? new Uint8Array(0) : new Uint8Array(await object.arrayBuffer());
-    if (object === null && table.rows > 0) return { verified: false, fault: 'missing-part' };
-    if ((await sha256Hex(bytes)) !== table.sha256) return { verified: false, fault: 'hash-mismatch' };
-  }
+/**
+ * One resumable SLICE of verifying an independent copy (R36.7, R36.12, R36.13). Every slice re-opens the authenticated
+ * manifest (so no plaintext is ever persisted between slices), then walks `manifest.files` and then `manifest.tables`
+ * from `cursor.index`, streaming each stored object through a SHA-256 digest and comparing it to the recorded hash. A
+ * slice stops once `budget` is spent but always finishes at least one object, so progress is guaranteed. The first
+ * fault ends verification with that fault; `done` with `verified: true` means every file and table part matched.
+ */
+export async function verifyCopyStep(env: Env, exportId: string, bucket: R2Bucket, cursor: VerifyCursor | null, budget: VerifyBudget): Promise<VerifyStep> {
+  const prefix = bucketKeyOf(backupPrefix(exportId));
+  const start = cursor?.index ?? 0;
+  const opened = await openCopyManifest(env, prefix, bucket);
+  if ('fault' in opened) return { cursor: { index: start }, done: true, result: failed(opened.fault) };
+  const { manifest } = opened;
 
-  return { verified: true };
+  const total = manifest.files.length + manifest.tables.length;
+  const started = Date.now();
+  let hashed = 0;
+  let index = start;
+  while (index < total) {
+    // Always finish at least one object per slice; after that stop when the byte or time budget is spent.
+    if (index > start && (hashed >= budget.maxBytes || Date.now() - started >= budget.maxMs)) break;
+    if (index < manifest.files.length) {
+      const file = manifest.files[index]!;
+      const object = await bucket.get(`${prefix}/files/${file.id}`);
+      if (object === null) return { cursor: { index }, done: true, result: failed('missing-part') };
+      if (object.size !== file.bytes) { await object.body.cancel().catch(() => undefined); return { cursor: { index }, done: true, result: failed('hash-mismatch') }; }
+      if ((await objectSha256(object)) !== file.sha256) return { cursor: { index }, done: true, result: failed('hash-mismatch') };
+      hashed += object.size;
+    } else {
+      const table = manifest.tables[index - manifest.files.length]!;
+      const object = await bucket.get(`${prefix}/body/${table.table}.jsonl`);
+      if (object === null && table.rows > 0) return { cursor: { index }, done: true, result: failed('missing-part') };
+      const digest = object === null ? await sha256Hex(new Uint8Array(0)) : await objectSha256(object);
+      if (digest !== table.sha256) return { cursor: { index }, done: true, result: failed('hash-mismatch') };
+      hashed += object?.size ?? 0;
+    }
+    index++;
+  }
+  return index < total ? { cursor: { index }, done: false } : { cursor: { index }, done: true, result: { verified: true } };
+}
+
+/**
+ * VERIFY an independent copy and decide whether the snapshot is a verified RPO point (R36.7, R36.13), as one unbounded
+ * loop over {@link verifyCopyStep}. Returns `verified: true` only when the manifest authenticates, the fingerprint
+ * matches and every recorded per-file and per-table hash matches the stored bytes; any fault (a missing part, a wrong
+ * recovery key, a tampered body, a bad hash) returns the fault and the snapshot stays NOT a recovery point. This is for
+ * tests and offline checks: a Worker request or cron entry must use the sliced job instead, as the full hash does not
+ * fit one invocation on Workers Free.
+ */
+export async function verifyIndependentCopy(env: Env, exportId: string, bucket: R2Bucket): Promise<VerifyResult> {
+  let cursor: VerifyCursor | null = null;
+  for (;;) {
+    const step: VerifyStep = await verifyCopyStep(env, exportId, bucket, cursor, { maxBytes: Number.POSITIVE_INFINITY, maxMs: Number.POSITIVE_INFINITY });
+    if (step.done) return step.result;
+    cursor = step.cursor;
+  }
 }
 
 /** Delete an independent copy's objects from its destination bucket (retention). Idempotent; an offline copy has no bucket. */

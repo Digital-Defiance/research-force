@@ -15,13 +15,14 @@ import { asTimestamp } from '@researchforce/domain/types';
 import type { Timestamp, ULID } from '@researchforce/domain/types';
 import { JOB_HANDLERS } from '../src/do/jobs';
 import type { JsonValue } from '../src/do/jobs';
-import { backupPrefix, startBackup } from '../src/jobs/backup';
+import { backupPrefix, readVolumeManifestObject, startBackup, tarKeyOf, writeVolumeManifestObject } from '../src/jobs/backup';
 import { confirmOfflineCopy, slotKey, startScheduledBackup, sweepBackupCopies, sweepBackupRetention, sweepStuckBackups } from '../src/jobs/backup-cron';
 import { checkRpoAge, classifyRpo, rpoThresholds } from '../src/backup/rpo';
 import { soleCopyCustodyGate } from '../src/backup/custody';
-import { independentDestination } from '../src/backup/copies';
+import { independentDestination, verifyCopyStep } from '../src/backup/copies';
 import { bucketKeyOf } from '../src/jobs/export';
 import { itemWorld } from './items';
+import { addElement, putAttachmentBytes, submitItems } from './units';
 import '../src/api/routes/backups';
 
 const RECOVERY_KEY = new Uint8Array(32).map((_byte, index) => (index * 7 + 3) & 0xff);
@@ -393,21 +394,66 @@ describe('confirmOfflineCopy — an Administrator attests the offline copy by it
     return { id, fingerprint };
   }
 
-  it('a matching fingerprint verifies the package and records a recovery point, even for a requested (unscheduled) backup', async () => {
+  /** The verify jobs queued for a backup, oldest first. */
+  const verifyJobs = async (exportId: string) =>
+    (await core().prepare("SELECT id, state FROM jobs WHERE json_extract(params, '$.exportId') = ?1 AND json_extract(params, '$.mode') = 'verify' ORDER BY id").bind(exportId)
+      .all<{ id: ULID; state: string }>()).results;
+
+  /** Drive a verify job slice by slice like the Jobs Durable Object does, recording its end state on the jobs row. */
+  async function runVerify(jobId: ULID, start: number, options: { onSlice?: (slice: number) => Promise<void> } = {}): Promise<{ outcome: 'complete' | 'incomplete'; slices: number }> {
+    let cursor: JsonValue = null;
+    for (let slice = 0; slice < 5_000; slice++) {
+      await options.onSlice?.(slice);
+      const now = asTimestamp(new Date(start + slice * 1_000).toISOString());
+      const result = await JOB_HANDLERS.internal_backup!.slice({ env: world.bindings, job: await jobRecord(jobId), now }, cursor);
+      if (result.done) {
+        const outcome = result.outcome ?? 'complete';
+        await core().prepare('UPDATE jobs SET state = ?2 WHERE id = ?1').bind(jobId, outcome).run();
+        return { outcome, slices: slice + 1 };
+      }
+      cursor = result.cursor;
+    }
+    throw new Error('verify job did not finish');
+  }
+
+  /** Seed one attachment with real bytes so the package carries a file the verification must re-hash. */
+  async function seedFile(bytes: Uint8Array): Promise<{ identifier: string }> {
+    const sub = await submitItems(core(), { projectId: world.projectId, ownerId: world.ids.author, now: world.at }, 1);
+    const attachment = await addElement(core(), { projectId: world.projectId, ownerId: world.ids.author, submissionId: sub.submissionId, now: world.at }, 'attachment', sub.ids[0]!);
+    await putAttachmentBytes(core(), priv(), attachment.id, bytes);
+    return { identifier: attachment.identifier! };
+  }
+
+  it('a matching fingerprint is accepted at once, and the verify job then records the recovery point, even for a requested (unscheduled) backup', async () => {
     offline();
     const now = asTimestamp('2026-12-02T01:00:00.000Z');
     const { id, fingerprint } = await requestedCompleteBackup(now);
-    expect(await confirmOfflineCopy(world.bindings, id, fingerprint.toUpperCase(), asTimestamp('2026-12-02T02:00:00.000Z'))).toEqual({ ok: true });
+    expect(await confirmOfflineCopy(world.bindings, id, fingerprint.toUpperCase(), asTimestamp('2026-12-02T02:00:00.000Z'))).toEqual({ ok: true, verifying: true });
+
+    // Nothing was hashed in the request: the point exists but is not verified until the job has run.
+    expect(await pointRow(id)).toMatchObject({ state: 'complete', copyState: 'offline_confirmed', destination: 'operator-local-drive', verifiedAt: null, fault: null });
+    const queued = await verifyJobs(id);
+    expect(queued.map((job) => job.state)).toEqual(['queued']);
+    // Confirming again while the job is queued does not queue a second one.
+    expect(await confirmOfflineCopy(world.bindings, id, fingerprint, asTimestamp('2026-12-02T02:00:30.000Z'))).toEqual({ ok: true, verifying: true });
+    expect(await verifyJobs(id)).toHaveLength(1);
+
+    const verifiedAt = Date.parse('2026-12-02T02:01:00.000Z');
+    expect((await runVerify(queued[0]!.id, verifiedAt)).outcome).toBe('complete');
     const point = await pointRow(id);
-    expect(point).toMatchObject({ state: 'complete', copyState: 'offline_confirmed', destination: 'operator-local-drive', fault: null });
+    expect(point).toMatchObject({ copyState: 'offline_confirmed', fault: null });
     expect(point.verifiedAt).not.toBeNull();
+    // Once verified, confirming again is a no-op that reports the point.
+    expect(await confirmOfflineCopy(world.bindings, id, fingerprint, asTimestamp('2026-12-02T03:00:00.000Z'))).toEqual({ ok: true, verifying: false });
+    expect(await verifyJobs(id)).toHaveLength(1);
   });
 
-  it('a wrong fingerprint is refused and records nothing', async () => {
+  it('a wrong fingerprint is refused with no job and no recovery point', async () => {
     offline();
     const { id } = await requestedCompleteBackup(asTimestamp('2026-12-02T01:00:00.000Z'));
     expect(await confirmOfflineCopy(world.bindings, id, 'a'.repeat(64), asTimestamp('2026-12-02T02:00:00.000Z'))).toEqual({ ok: false, fault: 'fingerprint-mismatch' });
     expect(await core().prepare('SELECT 1 AS n FROM backup_points WHERE export_id = ?1').bind(id).first()).toBeNull();
+    expect(await verifyJobs(id)).toEqual([]);
   });
 
   it('is refused when the destination is not an offline one, and for a backup that is not complete', async () => {
@@ -416,6 +462,189 @@ describe('confirmOfflineCopy — an Administrator attests the offline copy by it
     expect(await confirmOfflineCopy(world.bindings, id, fingerprint, asTimestamp('2026-12-02T02:00:00.000Z'))).toEqual({ ok: false, fault: 'no-offline-destination' });
     offline();
     expect(await confirmOfflineCopy(world.bindings, newId(asTimestamp('2026-12-02T03:00:00.000Z')), fingerprint, asTimestamp('2026-12-02T03:00:00.000Z'))).toEqual({ ok: false, fault: 'not-complete' });
+    expect(await verifyJobs(id)).toEqual([]);
+  });
+
+  it('a corrupted file never becomes a verified point and records a content-free hash-mismatch', async () => {
+    offline();
+    const file = await seedFile(new TextEncoder().encode('file bytes that will be damaged'));
+    const { id, fingerprint } = await requestedCompleteBackup(asTimestamp('2026-12-02T01:00:00.000Z'));
+    // Same length, different content: the size check passes, so only the re-hash can catch it.
+    await priv().put(`${bucketKeyOf(backupPrefix(id))}/files/${file.identifier}`, new TextEncoder().encode('FILE BYTES THAT WILL BE DAMAGED'));
+    expect(await confirmOfflineCopy(world.bindings, id, fingerprint, asTimestamp('2026-12-02T02:00:00.000Z'))).toEqual({ ok: true, verifying: true });
+    expect((await runVerify((await verifyJobs(id))[0]!.id, Date.parse('2026-12-02T02:01:00.000Z'))).outcome).toBe('incomplete');
+    expect(await pointRow(id)).toMatchObject({ verifiedAt: null, fault: 'hash-mismatch' });
+  });
+
+  it('a corrupted table part never becomes a verified point and records a hash-mismatch', async () => {
+    offline();
+    await world.created('author', 'finding');
+    const { id, fingerprint } = await requestedCompleteBackup(asTimestamp('2026-12-02T01:00:00.000Z'));
+    const parts = (await priv().list({ prefix: `${bucketKeyOf(backupPrefix(id))}/body/` })).objects.filter((object) => object.size > 0);
+    expect(parts.length).toBeGreaterThan(0);
+    await priv().put(parts[0]!.key, new Uint8Array(parts[0]!.size).fill(0x41));
+    expect(await confirmOfflineCopy(world.bindings, id, fingerprint, asTimestamp('2026-12-02T02:00:00.000Z'))).toEqual({ ok: true, verifying: true });
+    expect((await runVerify((await verifyJobs(id))[0]!.id, Date.parse('2026-12-02T02:01:00.000Z'))).outcome).toBe('incomplete');
+    expect(await pointRow(id)).toMatchObject({ verifiedAt: null, fault: 'hash-mismatch' });
+  });
+
+  it('hashes an ~11 MiB file across slices without ever buffering an object above 1 MiB', async () => {
+    offline();
+    const big = new Uint8Array(11 * 1024 * 1024).map((_byte, index) => (index * 31 + 7) & 0xff);
+    await seedFile(big);
+    await seedFile(new TextEncoder().encode('a small file'));
+    const { id, fingerprint } = await requestedCompleteBackup(asTimestamp('2026-12-02T01:00:00.000Z'));
+
+    // Spy on the bucket: record every whole-body read of an object above 1 MiB.
+    const original = world.bindings.RF_PRIVATE_BUCKET;
+    const buffered: string[] = [];
+    (world.bindings as { RF_PRIVATE_BUCKET: R2Bucket }).RF_PRIVATE_BUCKET = new Proxy(original, {
+      get(target, property) {
+        if (property === 'get') {
+          return async (key: string, ...rest: unknown[]) => {
+            const object = await (target.get as (key: string, ...rest: unknown[]) => Promise<R2ObjectBody | null>).call(target, key, ...rest);
+            if (object === null) return object;
+            return new Proxy(object, {
+              get(inner, name) {
+                if ((name === 'arrayBuffer' || name === 'text' || name === 'blob' || name === 'bytes' || name === 'json') && inner.size > 1024 * 1024) buffered.push(`${key}:${String(name)}`);
+                const value = Reflect.get(inner, name) as unknown;
+                return typeof value === 'function' ? value.bind(inner) : value;
+              },
+            });
+          };
+        }
+        const value = Reflect.get(target, property) as unknown;
+        return typeof value === 'function' ? value.bind(target) : value;
+      },
+    });
+    try {
+      // A one-byte budget makes every slice finish exactly one object, so the file walk is split across many slices.
+      let cursor: { index: number } | null = null;
+      let slices = 0;
+      for (;;) {
+        const step = await verifyCopyStep(world.bindings, id, world.bindings.RF_PRIVATE_BUCKET, cursor, { maxBytes: 1, maxMs: Number.POSITIVE_INFINITY });
+        slices++;
+        if (step.done) { expect(step.result).toEqual({ verified: true }); break; }
+        cursor = step.cursor;
+      }
+      expect(slices).toBeGreaterThan(3);
+
+      // The real job (32 MiB slices) also finishes and records the point with the same spy in place.
+      expect(await confirmOfflineCopy(world.bindings, id, fingerprint, asTimestamp('2026-12-02T02:00:00.000Z'))).toEqual({ ok: true, verifying: true });
+      expect((await runVerify((await verifyJobs(id))[0]!.id, Date.parse('2026-12-02T02:01:00.000Z'))).outcome).toBe('complete');
+    } finally { (world.bindings as { RF_PRIVATE_BUCKET: R2Bucket }).RF_PRIVATE_BUCKET = original; }
+    expect(buffered, 'no object above 1 MiB is read into memory').toEqual([]);
+    expect((await pointRow(id)).verifiedAt).not.toBeNull();
+  }, 60_000);
+
+  it('resumes after an injected failure and still records the recovery point', async () => {
+    offline();
+    const file = await seedFile(new TextEncoder().encode('a file read through a flaky bucket'));
+    const { id, fingerprint } = await requestedCompleteBackup(asTimestamp('2026-12-02T01:00:00.000Z'));
+    expect(await confirmOfflineCopy(world.bindings, id, fingerprint, asTimestamp('2026-12-02T02:00:00.000Z'))).toEqual({ ok: true, verifying: true });
+
+    const original = world.bindings.RF_PRIVATE_BUCKET;
+    let thrown = 0;
+    (world.bindings as { RF_PRIVATE_BUCKET: R2Bucket }).RF_PRIVATE_BUCKET = new Proxy(original, {
+      get(target, property) {
+        if (property === 'get') {
+          return async (key: string, ...rest: unknown[]) => {
+            if (key.endsWith(`/files/${file.identifier}`) && thrown < 2) { thrown++; throw new Error('injected R2 fault'); }
+            return (target.get as (key: string, ...rest: unknown[]) => Promise<R2ObjectBody | null>).call(target, key, ...rest);
+          };
+        }
+        const value = Reflect.get(target, property) as unknown;
+        return typeof value === 'function' ? value.bind(target) : value;
+      },
+    });
+    try {
+      expect((await runVerify((await verifyJobs(id))[0]!.id, Date.parse('2026-12-02T02:01:00.000Z'))).outcome).toBe('complete');
+    } finally { (world.bindings as { RF_PRIVATE_BUCKET: R2Bucket }).RF_PRIVATE_BUCKET = original; }
+    expect(thrown).toBe(2);
+    expect(await pointRow(id)).toMatchObject({ fault: null });
+    expect((await pointRow(id)).verifiedAt).not.toBeNull();
+  });
+
+  it('gives up on a persistent error with a content-free verify-error and leaves the point unverified', async () => {
+    offline();
+    const { id, fingerprint } = await requestedCompleteBackup(asTimestamp('2026-12-02T01:00:00.000Z'));
+    expect(await confirmOfflineCopy(world.bindings, id, fingerprint, asTimestamp('2026-12-02T02:00:00.000Z'))).toEqual({ ok: true, verifying: true });
+    const original = world.bindings.RF_PRIVATE_BUCKET;
+    (world.bindings as { RF_PRIVATE_BUCKET: R2Bucket }).RF_PRIVATE_BUCKET = new Proxy(original, {
+      get(target, property) {
+        if (property === 'get') return async (key: string) => { if (key.endsWith('/header.json')) throw new Error('injected R2 fault'); return target.get(key); };
+        const value = Reflect.get(target, property) as unknown;
+        return typeof value === 'function' ? value.bind(target) : value;
+      },
+    });
+    try {
+      expect((await runVerify((await verifyJobs(id))[0]!.id, Date.parse('2026-12-02T02:01:00.000Z'))).outcome).toBe('incomplete');
+    } finally { (world.bindings as { RF_PRIVATE_BUCKET: R2Bucket }).RF_PRIVATE_BUCKET = original; }
+    expect(await pointRow(id)).toMatchObject({ verifiedAt: null, fault: 'verify-error' });
+  });
+
+  it('a verified point drops the packed tar', async () => {
+    offline();
+    const { id, fingerprint } = await requestedCompleteBackup(asTimestamp('2026-12-02T01:00:00.000Z'));
+    const [manifestKey] = JSON.parse((await core().prepare('SELECT volumes FROM exports WHERE id = ?1').bind(id).first<{ volumes: string }>())!.volumes) as string[];
+    const tarKey = tarKeyOf(manifestKey!);
+    await priv().put(tarKey, new Uint8Array([1, 2, 3]));
+    await writeVolumeManifestObject(world.bindings, manifestKey!, { members: (await readVolumeManifestObject(world.bindings, manifestKey!)).members, tar: { key: tarKey, bytes: 3 } }, true);
+
+    expect(await confirmOfflineCopy(world.bindings, id, fingerprint, asTimestamp('2026-12-02T02:00:00.000Z'))).toEqual({ ok: true, verifying: true });
+    expect(await priv().head(tarKey), 'the tar stays until the point is verified').not.toBeNull();
+    expect((await runVerify((await verifyJobs(id))[0]!.id, Date.parse('2026-12-02T02:01:00.000Z'))).outcome).toBe('complete');
+    expect(await priv().head(tarKey)).toBeNull();
+    expect((await readVolumeManifestObject(world.bindings, manifestKey!)).tar).toBeUndefined();
+  });
+
+  it('the copy sweep in job mode only queues a verify job (idempotently, at most three failed ones) and never hashes', async () => {
+    await world.created('author', 'finding');
+    const id = await completeScheduledSnapshot(asTimestamp('2026-12-01T00:30:00.000Z'));
+    const sweep = (minute: number) => sweepBackupCopies(world.bindings, asTimestamp(`2026-12-01T01:${String(minute).padStart(2, '0')}:00.000Z`), 'job');
+
+    expect(await sweep(0)).toBeGreaterThan(0); // transfers the copy and queues the job
+    expect(await pointRow(id)).toMatchObject({ copyState: 'transferred', verifiedAt: null });
+    expect(await verifyJobs(id)).toHaveLength(1);
+    await sweep(1);
+    expect(await verifyJobs(id), 'a queued job is not queued twice').toHaveLength(1);
+
+    // The job verifies the independent bucket's copy.
+    expect((await runVerify((await verifyJobs(id))[0]!.id, Date.parse('2026-12-01T01:10:00.000Z'))).outcome).toBe('complete');
+    expect((await pointRow(id)).verifiedAt).not.toBeNull();
+
+    // After three failed verify jobs the sweep stops retrying.
+    await core().prepare('UPDATE backup_points SET verified_at = NULL WHERE export_id = ?1').bind(id).run();
+    await copyBucket().put(`${bucketKeyOf(backupPrefix(id))}/body.enc`, new Uint8Array([0, 1, 2, 3]));
+    for (let attempt = 0; attempt < 5; attempt++) {
+      await sweep(20 + attempt);
+      const jobs = await verifyJobs(id);
+      const last = jobs[jobs.length - 1]!;
+      if (last.state === 'queued') await runVerify(last.id, Date.parse('2026-12-01T02:00:00.000Z') + attempt * 60_000);
+    }
+    expect((await verifyJobs(id)).filter((job) => job.state === 'incomplete')).toHaveLength(3);
+    expect(await pointRow(id)).toMatchObject({ verifiedAt: null, fault: 'decode-failed' });
+  }, 30_000);
+
+  it('POST /backups/:id/confirm-offline answers 202 without verifying, refuses a wrong fingerprint with 422, and GET /backups reports the verification state', async () => {
+    offline();
+    const { id, fingerprint } = await requestedCompleteBackup(asTimestamp('2026-12-02T01:00:00.000Z'));
+    const listed = async () => (await (await world.request('admin', 'GET', '/backups')).json<{ backups: { id: string; verification: string; offsiteConfirmedAt: string | null }[] }>()).backups.find((backup) => backup.id === id)!;
+    expect((await listed()).verification).toBe('none');
+
+    expect((await world.request('admin', 'POST', `/backups/${id}/confirm-offline`, { fingerprint: 'b'.repeat(64) })).status).toBe(422);
+    expect(await verifyJobs(id)).toEqual([]);
+
+    const accepted = await world.request('admin', 'POST', `/backups/${id}/confirm-offline`, { fingerprint });
+    expect(accepted.status).toBe(202);
+    expect(await accepted.json()).toEqual({ confirmed: false, verifying: true });
+    expect(await listed()).toMatchObject({ verification: 'verifying', offsiteConfirmedAt: null });
+    const detail = await (await world.request('admin', 'GET', `/backups/${id}`)).json<{ verification: string }>();
+    expect(detail.verification).toBe('verifying');
+
+    await runVerify((await verifyJobs(id))[0]!.id, Date.parse('2026-12-02T02:01:00.000Z'));
+    expect(await listed()).toMatchObject({ verification: 'verified' });
+    expect((await listed()).offsiteConfirmedAt).not.toBeNull();
   });
 });
 

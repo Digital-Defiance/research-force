@@ -4,7 +4,7 @@ import type { Timestamp, ULID } from '@researchforce/domain/types';
 import { sha256 } from '@noble/hashes/sha2.js';
 import { bytesToHex, utf8ToBytes } from '@noble/hashes/utils.js';
 import type { Env } from '../env';
-import { backupPrefix, readVolumeManifestObject, startBackup, startPack, tarKeyOf, writeVolumeManifestObject } from './backup';
+import { backupPrefix, kickJob, readVolumeManifestObject, startBackup, startPack, startVerify, tarKeyOf, writeVolumeManifestObject } from './backup';
 import { bucketKeyOf } from './export';
 import { pointsToExpire } from './backup-retention';
 import type { RetentionPoint } from './backup-retention';
@@ -31,6 +31,8 @@ const MAX_SLOT_ATTEMPTS = 3;
 const SLOT_RETRY_MS = 60 * 60 * 1000;
 /** A backup's tar is no longer retried once this many pack jobs have ended incomplete; the backup page then says the download failed. */
 export const MAX_PACK_FAILURES = 3;
+/** A backup's verification is no longer retried by the sweep once this many verify jobs have ended incomplete; an Administrator can still confirm again. */
+const MAX_VERIFY_FAILURES = 3;
 /** A backup still `running` this long after its request is incomplete (R36.6). */
 const STUCK_BACKUP_MS = 24 * 60 * 60 * 1000;
 
@@ -122,6 +124,25 @@ export async function sweepBackupPackages(env: Env, now: Timestamp): Promise<num
 }
 
 /**
+ * Queue a verify job for a backup unless one is already queued or running, and wake it (R36.12). The full re-hash runs in
+ * the Jobs Durable Object in bounded slices, never in a request or cron entry. With `maxFailures`, a backup whose last
+ * verify jobs all ended incomplete that many times is left alone (the sweep's retry cap). Returns whether it queued one.
+ */
+export async function requestVerify(env: Env, exportId: string, now: Timestamp, maxFailures?: number): Promise<boolean> {
+  const verifyJobs = "json_extract(params, '$.exportId') = ?1 AND json_extract(params, '$.mode') = 'verify'";
+  const active = await env.RF_CORE.prepare(`SELECT 1 AS n FROM jobs WHERE ${verifyJobs} AND state IN ('queued', 'running') LIMIT 1`).bind(exportId).first();
+  if (active !== null) return false;
+  if (maxFailures !== undefined) {
+    const failed = await env.RF_CORE.prepare(`SELECT count(*) AS n FROM jobs WHERE ${verifyJobs} AND state IN ('incomplete', 'failed')`).bind(exportId).first<{ n: number }>();
+    if ((failed?.n ?? 0) >= maxFailures) return false;
+  }
+  const id = await startVerify(env.RF_CORE, exportId as ULID, now);
+  // Nothing else kicks the outbox on a request path (staging has no cron); the outbox row stays as the cron net.
+  await kickJob(env, id).catch(() => undefined);
+  return true;
+}
+
+/**
  * Return a backup to the unpacked state by deleting its per-volume tar objects (R36.2), once a verified recovery point
  * exists and the tar is no longer the way to fetch it. Each volume manifest is rewritten FIRST without `tar`/`rfPacked`
  * so no link is offered for a tar that is about to go, then the tar is deleted. Idempotent.
@@ -158,9 +179,13 @@ interface PointRow {
  *   • for a transferred (or offline-confirmed) copy, VERIFIES it against the independent destination; a verified copy
  *     becomes an RPO point (sets `verified_at`) and persists the minimal suppression ledger independently; a failed
  *     copy records the fault and is NOT a recovery point.
- * Returns how many points advanced (transferred or verified) this run.
+ * Returns how many points advanced (transferred, verified, or handed to a verify job) this run.
+ *
+ * `verification` says how step 3 verifies. The cron entry uses `'job'`: it only queues a verify job (at most
+ * {@link MAX_VERIFY_FAILURES} failed ones per backup), because the full re-hash does not fit one invocation on Workers
+ * Free. `'inline'` (the default, kept for tests that drive a whole verification in one call) hashes in this call.
  */
-export async function sweepBackupCopies(env: Env, now: Timestamp): Promise<number> {
+export async function sweepBackupCopies(env: Env, now: Timestamp, verification: 'job' | 'inline' = 'inline'): Promise<number> {
   const rows = (await env.RF_CORE.prepare(
     `SELECT bp.export_id AS exportId, bp.state, bp.copy_state AS copyState, bp.verified_at AS verifiedAt,
        e.state AS exportState
@@ -199,6 +224,10 @@ export async function sweepBackupCopies(env: Env, now: Timestamp): Promise<numbe
     if (row.copyState === 'transferred' || row.copyState === 'offline_confirmed') {
       // An `r2` destination verifies against the independent bucket; an offline-confirmed copy is verified against the
       // production package the operator carried (the operator attested the bytes are identical).
+      if (verification === 'job') {
+        if (await requestVerify(env, row.exportId, now, MAX_VERIFY_FAILURES)) advanced++;
+        continue;
+      }
       const bucket = destination?.kind === 'r2' && destination.bucket ? destination.bucket : env.RF_PRIVATE_BUCKET;
       const result = await verifyIndependentCopy(env, row.exportId, bucket);
       if (result.verified) {
@@ -214,17 +243,20 @@ export async function sweepBackupCopies(env: Env, now: Timestamp): Promise<numbe
 }
 
 /** Why an Administrator's offline-copy confirmation was refused, so the screen can say exactly what to fix. */
-export type OfflineConfirmFault = 'no-offline-destination' | 'not-complete' | 'fingerprint-mismatch' | 'not-verified';
+export type OfflineConfirmFault = 'no-offline-destination' | 'not-complete' | 'fingerprint-mismatch';
 
-/** The outcome of confirming an offline copy: a verified recovery point, or the one reason it was refused. */
-export type OfflineConfirmResult = { readonly ok: true } | { readonly ok: false; readonly fault: OfflineConfirmFault };
+/** The outcome of confirming an offline copy: accepted (verifying, or already a verified point), or the one reason it was refused. */
+export type OfflineConfirmResult =
+  | { readonly ok: true; readonly verifying: boolean }
+  | { readonly ok: false; readonly fault: OfflineConfirmFault };
 
 /**
  * The Administrator attests that a COMPLETE backup's downloaded package is safe on the offline destination (R36.12). The
  * attestation must quote the backup's manifest fingerprint, which the operator reads from the local verify tool run on
  * the downloaded copy, so a wrong or stale copy cannot be confirmed by mistake. A requested backup has no scheduled
- * `backup_points` row, so one is created for it. The package is then verified in place (decrypt, re-validate, every hash)
- * through the same sweep a scheduled point uses, and only a verified point counts as a recovery point (R36.7).
+ * `backup_points` row, so one is created for it. The synchronous checks are small (one stored fingerprint); the package
+ * is then verified in place (decrypt, re-validate, every hash) by a sliced verify job, and only that job's verified
+ * point counts as a recovery point (R36.7). The caller gets `verifying: true` at once and polls for the point.
  */
 export async function confirmOfflineCopy(env: Env, exportId: string, fingerprint: string, now: Timestamp): Promise<OfflineConfirmResult> {
   const destination = independentDestination(env);
@@ -236,14 +268,16 @@ export async function confirmOfflineCopy(env: Env, exportId: string, fingerprint
   const expected = stored === null ? null : (await stored.text()).trim();
   if (expected === null || expected !== fingerprint.trim().toLowerCase()) return { ok: false, fault: 'fingerprint-mismatch' };
 
+  const existing = await env.RF_CORE.prepare('SELECT verified_at AS verifiedAt FROM backup_points WHERE export_id = ?1').bind(exportId).first<{ verifiedAt: string | null }>();
+  if (existing?.verifiedAt) return { ok: true, verifying: false }; // already a verified recovery point
+
   await env.RF_CORE.prepare(
     `INSERT INTO backup_points (export_id, slot_key, started_at, state, copy_state, copy_destination, copied_at, created_at)
      VALUES (?1, ?2, ?3, 'complete', 'offline_confirmed', ?4, ?5, ?5)
      ON CONFLICT (export_id) DO UPDATE SET state = 'complete', copy_state = 'offline_confirmed', copy_destination = excluded.copy_destination, copied_at = excluded.copied_at`,
   ).bind(exportId, `manual-${exportId}`, exportRow.startedAt, destination.label, now).run();
-  await sweepBackupCopies(env, now);
-  const point = await env.RF_CORE.prepare('SELECT verified_at AS verifiedAt FROM backup_points WHERE export_id = ?1').bind(exportId).first<{ verifiedAt: string | null }>();
-  return point?.verifiedAt ? { ok: true } : { ok: false, fault: 'not-verified' };
+  await requestVerify(env, exportId, now);
+  return { ok: true, verifying: true };
 }
 
 /**
@@ -253,7 +287,7 @@ export async function confirmOfflineCopy(env: Env, exportId: string, fingerprint
  * among all suppressions by time, so a restore reapplies suppressions up to the snapshot. Each record carries a
  * lowercase-hex SHA-256 over its minimal fields so a tampered ledger is detected. Idempotent per (point, id).
  */
-async function persistSuppressionLedger(env: Env, exportId: string, now: Timestamp): Promise<void> {
+export async function persistSuppressionLedger(env: Env, exportId: string, now: Timestamp): Promise<void> {
   const deletions = (await env.RF_CORE.prepare(
     'SELECT coalesce(item_identifier, unit_id) AS suppressedId, deleted_at AS suppressedAt FROM deletions ORDER BY deleted_at, unit_id',
   ).all<{ suppressedId: string; suppressedAt: string }>()).results;
