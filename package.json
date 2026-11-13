@@ -85,7 +85,7 @@
     "fast-check": "^4.3.0",
     "fontkit": "2.0.4",
     "happy-dom": "21.0.4",
-    "hono": "^4.10.3",
+    "hono": "^4.13.16",
     "oxlint": "^1.26.0",
     "papaparse": "5.7.0",
     "pdfjs-dist": "6.4.299",
