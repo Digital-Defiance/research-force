@@ -161,6 +161,30 @@ describe('the backups and restores screen', () => {
     expect(api.calls.some((call) => call.method === 'POST' && call.path === '/backups')).toBe(true);
   });
 
+  it('says the download is being prepared and reloads until the link appears, and explains a failed pack (R36.2)', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      let polls = 0;
+      const preparing = { id: BACKUP_ID, state: 'complete', trigger: 'requested', startedAt: '2026-10-02T00:00:00.000Z', finishedAt: '2026-10-02T00:20:00.000Z', expiresAt: null, incomplete: null, download: [], package: 'preparing' };
+      const ready = { ...preparing, package: 'ready', download: [{ url: 'https://dl.example/x/backup-2', expiresAt: '2026-10-02T01:00:00.000Z' }] };
+      const failed = { ...preparing, id: '01J0000000000000000000BK09', package: 'failed' };
+      const api = fakeApi({
+        'GET /backups': () => json({ backups: [++polls < 2 ? preparing : ready, failed] }),
+        'GET /restores': json({ restores: [] }),
+      });
+      renderScreen(<BackupsScreen />, { client: api.client, administrator: true });
+      const card = await screen.findByRole('region', { name: `Backup ${BACKUP_ID}` });
+      expect(card.textContent).toContain('Your download is being prepared. This page checks again every few seconds.');
+      expect(card.querySelector('a')).toBeNull();
+      expect(screen.getByRole('region', { name: `Backup ${failed.id}` }).textContent).toContain('could not be prepared');
+      await vi.advanceTimersByTimeAsync(10_000);
+      await vi.waitFor(() => expect(screen.getByRole('region', { name: `Download links for backup ${BACKUP_ID}` }).querySelector('a')?.getAttribute('href')).toBe('https://dl.example/x/backup-2'));
+      expect(screen.getByRole('region', { name: `Backup ${BACKUP_ID}` }).textContent).not.toContain('being prepared');
+      const settled = polls;
+      await vi.advanceTimersByTimeAsync(30_000);
+      expect(polls).toBe(settled); // nothing is preparing any more
+    } finally { vi.useRealTimers(); }
+  });
   it('shows a failed backup in the open list with its reason, missing elements and trigger, plus a top warning (R36.6)', async () => {
     const failed = {
       id: BACKUP_ID, state: 'incomplete', trigger: 'scheduled', startedAt: '2026-10-01T00:00:00.000Z', finishedAt: '2026-10-01T00:30:00.000Z',

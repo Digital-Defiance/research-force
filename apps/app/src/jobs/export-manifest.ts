@@ -32,9 +32,13 @@ export function manifestMisses(entries: readonly ManifestEntry[], stored: Readon
 }
 
 /** One file registered in a volume manifest: its R2 bucket key (no `rf-private/` prefix) and the POSIX name it takes in the tar. */
-export interface VolumeMember { readonly key: string; readonly name: string }
-/** One volume manifest object rf-dl assembles into a tar: at most `exportObjectsPerVolume` members (R35.9). */
-export interface VolumeManifest { readonly members: readonly VolumeMember[] }
+export interface VolumeMember { readonly key: string; readonly name: string; readonly size?: number }
+/**
+ * One volume manifest object rf-dl assembles into a tar: at most `exportObjectsPerVolume` members (R35.9). An
+ * Internal_Backup volume also records each member's `size` once the pack job has measured it, and `tar` once the pack
+ * job has pre-built the whole volume as one object that rf-dl serves directly (R36.2).
+ */
+export interface VolumeManifest { readonly members: readonly VolumeMember[]; readonly tar?: { readonly key: string; readonly bytes: number } }
 
 /**
  * Group every package file into volume manifests of at most `OPERATIONS.exportObjectsPerVolume` (900) members, so each

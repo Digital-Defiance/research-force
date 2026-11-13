@@ -31,6 +31,8 @@ interface BackupView {
   readonly incomplete: unknown;
   readonly offsiteConfirmedAt?: string | null;
   readonly download: readonly DownloadLink[];
+  /** Whether a complete backup's download is built (`ready`), still being built (`preparing`), or gave up (`failed`) (R36.2). */
+  readonly package?: 'ready' | 'preparing' | 'failed' | null;
 }
 
 /** One preflight problem that blocked a restore before any insertion (R36.8). */
@@ -63,6 +65,8 @@ const BACKUP_STATE_NAMES: Readonly<Record<string, string>> = {
 /** How often the list reloads while a backup is queued or running. */
 const BACKUP_REFRESH_MS = 10_000;
 const isInProgress = (backup: BackupView): boolean => backup.state === 'queued' || backup.state === 'running';
+/** A complete backup whose download is still being built; the list reloads until it is ready. */
+const isPreparing = (backup: BackupView): boolean => backup.state === 'complete' && backup.package === 'preparing';
 const backupStateName = (state: string): string => BACKUP_STATE_NAMES[state] ?? state;
 
 const RESTORE_STATE_NAMES: Readonly<Record<string, string>> = {
@@ -102,6 +106,8 @@ function BackupCard({ record, onConfirm, busy }: { readonly record: BackupView; 
         {triggerName(record) === undefined ? '' : ` · ${triggerName(record)}`}
         {record.expiresAt === null ? '' : ` · kept until ${whenLabel(record.expiresAt)}`}
       </p>
+      {isPreparing(record) && <p className="rf-meta" role="status">Your download is being prepared. This page checks again every few seconds.</p>}
+      {record.state === 'complete' && record.package === 'failed' && <p className="rf-meta" role="alert">The download for this backup could not be prepared. Request a new backup to get a download.</p>}
       {record.download.length > 0 && (
         <section className="rf-section rf-nested" aria-label={`Download links for backup ${record.id}`}>
           <h4>Download</h4>
@@ -262,8 +268,8 @@ export function BackupsScreen() {
   const [backupRequested, setBackupRequested] = useState(false);
   const [restoreRequested, setRestoreRequested] = useState(false);
 
-  // While any backup is queued or running, reload the list every 10 seconds; the timer is cleared when none is.
-  const anyInProgress = backups.data?.backups.some(isInProgress) ?? false;
+  // While any backup is queued or running, or a complete one is still preparing its download, reload the list every 10 seconds; the timer is cleared when none is.
+  const anyInProgress = backups.data?.backups.some((backup) => isInProgress(backup) || isPreparing(backup)) ?? false;
   const reloadBackups = backups.reload;
   useEffect(() => {
     if (!anyInProgress) return undefined;

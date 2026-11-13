@@ -6,7 +6,7 @@ import { isULID } from '@researchforce/domain/types';
 import { authorize } from '../../auth/authorize';
 import { z } from 'zod';
 import { requestBackup } from '../../jobs/backup';
-import { confirmOfflineCopy } from '../../jobs/backup-cron';
+import { MAX_PACK_FAILURES, confirmOfflineCopy } from '../../jobs/backup-cron';
 import type { ApiEnv } from '../app';
 import { ApiError } from '../errors';
 import { parse, readJson } from '../input';
@@ -36,22 +36,40 @@ backupsRoutes.post('/', async (c) => {
   return c.json({ id }, 202);
 });
 
-/** The `rf-dl` download links for one complete backup package: one per registered volume, to an active Administrator (R36.2). */
-async function downloadLinks(c: Context<ApiEnv>, row: BackupRow): Promise<{ readonly url: string; readonly expiresAt: string }[]> {
-  if (row.state !== 'complete' || row.volumes === null) return [];
+/** Whether a complete backup's download is `ready`, still `preparing` (not yet packed), or `failed` (packing gave up). */
+type PackageState = 'ready' | 'preparing' | 'failed';
+
+/**
+ * The download state of one backup (R36.2). A complete backup is downloadable only through the per-volume tar the pack
+ * job pre-builds, so a link is issued only for a volume whose manifest is marked packed (one `head`, no body read). The
+ * token itself is unchanged: purpose `internal_backup`, the requesting Administrator, the usual lifetime. A backup that
+ * is not complete has no package state. `failed` means {@link MAX_PACK_FAILURES} pack jobs ended incomplete.
+ */
+async function downloadPackage(c: Context<ApiEnv>, row: BackupRow): Promise<{ readonly package: PackageState | null; readonly download: { readonly url: string; readonly expiresAt: string }[] }> {
+  if (row.state !== 'complete' || row.volumes === null) return { package: null, download: [] };
   const volumes = JSON.parse(row.volumes) as string[];
-  if (volumes.length === 0 || !c.env.DOWNLOAD_HMAC_KEY || !c.env.DOWNLOAD_ORIGIN) return [];
+  if (volumes.length === 0) return { package: null, download: [] };
+  const heads = await Promise.all(volumes.map((key) => c.env.RF_PRIVATE_BUCKET.head(key)));
+  const packed = volumes.filter((_key, index) => heads[index]?.customMetadata?.['rfPacked'] === '1');
+  let state: PackageState = 'ready';
+  if (packed.length < volumes.length) {
+    const failures = await c.env.RF_CORE.prepare(
+      `SELECT count(*) AS failures FROM jobs WHERE json_extract(params, '$.exportId') = ?1 AND json_extract(params, '$.mode') = 'pack' AND state IN ('incomplete', 'failed')`,
+    ).bind(row.id).first<{ failures: number }>();
+    state = (failures?.failures ?? 0) >= MAX_PACK_FAILURES ? 'failed' : 'preparing';
+  }
+  if (packed.length === 0 || !c.env.DOWNLOAD_HMAC_KEY || !c.env.DOWNLOAD_ORIGIN) return { package: state, download: [] };
   const origin = new URL(c.env.DOWNLOAD_ORIGIN).origin;
   const memberId = c.get('session').member.id;
   const issuedAt = new Date(c.get('now')).getTime();
   const expiresAt = new Date(issuedAt + DOWNLOAD_LIFETIME_MS).toISOString();
   const links: { url: string; expiresAt: string }[] = [];
-  for (const key of volumes) {
+  for (const key of packed) {
     // The Internal_Backup download purpose; rf-dl serves these only to the issuing authenticated active Administrator (R36.2).
     const token = await issueDownload({ objectKey: key, memberId, issuedAt, purpose: 'internal_backup' }, c.env.DOWNLOAD_HMAC_KEY);
     links.push({ url: `${origin}/x/${token}`, expiresAt });
   }
-  return links;
+  return { package: state, download: links };
 }
 
 /** The requested Internal_Backups, newest first, each with its state, the incomplete report (R36.6), the expiry, and the download links (R36.2). */
@@ -64,6 +82,7 @@ backupsRoutes.get('/', async (c) => {
   const points = (await c.env.RF_CORE.prepare('SELECT export_id AS id, verified_at AS verifiedAt FROM backup_points WHERE verified_at IS NOT NULL').all<{ id: string; verifiedAt: string }>()).results;
   const offsite = new Map(points.map((point) => [point.id, point.verifiedAt] as const));
   const backups = await Promise.all(rows.map(async (row) => ({
+    ...await downloadPackage(c, row),
     id: row.id,
     state: row.state,
     trigger: row.requestedBy === null ? 'scheduled' : 'requested',
@@ -72,7 +91,6 @@ backupsRoutes.get('/', async (c) => {
     expiresAt: row.expiresAt,
     incomplete: row.incomplete === null ? null : (JSON.parse(row.incomplete) as unknown),
     offsiteConfirmedAt: offsite.get(row.id) ?? null,
-    download: await downloadLinks(c, row),
   })));
   return c.json({ backups });
 });
@@ -88,9 +106,9 @@ backupsRoutes.get('/:id', async (c) => {
   ).bind(id).first<BackupRow>();
   if (row === null) throw new ApiError('not_found');
   return c.json({
+    ...await downloadPackage(c, row),
     id: row.id, state: row.state, trigger: row.requestedBy === null ? 'scheduled' : 'requested', startedAt: row.startedAt, finishedAt: row.finishedAt, expiresAt: row.expiresAt,
     incomplete: row.incomplete === null ? null : (JSON.parse(row.incomplete) as unknown),
-    download: await downloadLinks(c, row),
   });
 });
 

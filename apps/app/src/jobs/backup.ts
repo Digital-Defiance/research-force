@@ -14,6 +14,7 @@ import type {
 import { stableJson } from '@researchforce/domain/history';
 import { newULID } from '@researchforce/domain/identifiers';
 import { OPERATIONS } from '@researchforce/domain/settings';
+import { tarLayout, tarRangeSegments } from '@researchforce/domain/tar-layout';
 import type { Timestamp, ULID } from '@researchforce/domain/types';
 import type { ApiEnv } from '../api/app';
 import { isDailyLimitError } from '../api/errors';
@@ -27,6 +28,7 @@ import type { FreezeLease } from '../backup/freeze';
 import { recoveryCustodians } from '../backup/custodians';
 import { bucketKeyOf } from './export';
 import { volumeManifests } from './export-manifest';
+import type { VolumeManifest } from './export-manifest';
 
 /**
  * The Internal_Backup JOB (task 38.4; R28.8, R36.1, R36.2, R36.3, R36.6, R36.11, R36.12, R36.13, R36.14, R47.15,
@@ -49,8 +51,12 @@ import { volumeManifests } from './export-manifest';
  * only to bookkeeping tables, through `freezeOwnerOf(lease)`.
  */
 
-/** What the request records for the backup job: the `exports` row id (type `backup`), so the slice reads it for its sequence. */
-export interface BackupParams { readonly exportId: ULID }
+/**
+ * What the request records for the backup job: the `exports` row id (type `backup`), so the slice reads it for its
+ * sequence. `mode: 'pack'` marks the follow-up job that pre-builds each volume's tar as one R2 object (R36.2); the job
+ * type stays `internal_backup` because the `jobs.type` check admits no new type without a migration.
+ */
+export interface BackupParams { readonly exportId: ULID; readonly mode?: 'pack' }
 
 /** The backup package's private R2 prefix; every body part, the accumulator, the manifest, the key envelopes, and the volumes live under it. */
 export const backupPrefix = (id: string): string => `rf-private/backups/${id}`;
@@ -280,6 +286,8 @@ async function heartbeatLease(env: ApiEnv['Bindings'], cursor: Cursor, now: Time
  */
 export const backupJob: JobHandler = {
   async slice(context, cursorValue): Promise<SliceResult> {
+    // The pack job is a separate, unfrozen job over a COMPLETE backup: dispatch before any freeze/snapshot code, outside recoverSlice.
+    if ((context.job.params as unknown as BackupParams).mode === 'pack') return packSlice(context, cursorValue);
     try {
       return await runSlice(context, cursorValue);
     } catch (error) {
@@ -693,10 +701,225 @@ async function finish(env: ApiEnv['Bindings'], id: string, result: FinishResult,
       expiresAt,
     }, exportsIdEq(id))
     .commit();
+  // A complete backup is then packed into one downloadable tar per volume. This runs inside the Jobs Durable Object,
+  // where nothing kicks the outbox (and staging has no cron), so the pack job's object is started directly; its outbox
+  // row stays as the cron net. The sweep retries a pack that never started, so a failure here is only logged.
+  if (!result.incomplete) {
+    try {
+      const packId = await startPack(env.RF_CORE, id as ULID, now);
+      if (packAutoStart) await env.JOBS.getByName(packId).start(packId);
+    } catch (error) { log('warn', 'backup_pack_start_failed', { backup: id, error }); }
+  }
   return { cursor: { done: true } as unknown as JsonValue, progress: { rows: cursor?.rowsRead ?? 0, files: cursor?.filesCopied ?? 0 }, done: true, outcome: result.incomplete ? 'incomplete' : 'complete' };
 }
 
 /** `id = ?` for the single-row backup update, reusing drizzle's `exports` table. */
 const exportsIdEq = (id: string): SQL => sql`id = ${id}`;
+
+// ── pack: pre-build each volume's tar as ONE R2 object so rf-dl serves it by passing the R2 body through (R36.2) ──
+// rf-dl used to assemble the tar on the fly in a single invocation (about 150 head() + get() calls, every byte
+// re-enqueued through JS, no Range), which Workers Free cuts off, so the download ended early and verification reported
+// a truncated archive. The pack job does that work once, in sliced resumable steps, after the backup is complete.
+
+/** At most this many tar parts one pack slice builds, and the member reads and wall-clock after which it yields. */
+const PACK_SLICE_PARTS = 2;
+const PACK_SLICE_READS = 100;
+/** How many unsized members one layout slice measures at most, and how many `head` calls it runs at once (R2 allows 6 connections). */
+const PACK_LAYOUT_HEADS = 250;
+const PACK_HEAD_CONCURRENCY = 6;
+/** R2's multipart minimum for every part but the last. */
+const MULTIPART_MIN_BYTES = 5 * 1024 * 1024;
+let packPartBytes: number = OPERATIONS.multipartPartBytes;
+let packAutoStart = true;
+/** Test-only: stop `finish` from starting the pack job's Durable Object, so tests drive the pack slices themselves (its jobs and outbox rows are still written). */
+export function setPackAutoStartForTest(enabled: boolean): void { packAutoStart = enabled; }
+/** Test-only: change the tar part size (at least the 5 MiB R2 multipart minimum), or pass null to restore the default. */
+export function setPackPartBytesForTest(bytes: number | null): void {
+  if (bytes !== null && bytes < MULTIPART_MIN_BYTES) throw new RangeError('A tar part must be at least 5 MiB.');
+  packPartBytes = bytes ?? OPERATIONS.multipartPartBytes;
+}
+
+/** Where the pack job is: which volume, measuring members or uploading parts, and the multipart upload in flight. */
+interface PackCursor {
+  readonly kind: 'pack';
+  readonly volume: number;
+  readonly phase: 'layout' | 'parts';
+  readonly uploadId: string | null;
+  readonly parts: readonly { readonly partNumber: number; readonly etag: string }[];
+  readonly nextPart: number;
+  /** Consecutive failed attempts of the current slice; reset by any step that returns. */
+  readonly attempts: number;
+}
+/** A failure no retry can fix (a member vanished, the built tar has the wrong size): the pack ends at once. */
+class PackFailure extends Error {}
+
+/** The tar object's key beside its volume manifest: `<prefix>/volumes/<n>.json` packs to `<prefix>/volumes/<n>.tar`. */
+export const tarKeyOf = (manifestKey: string): string => manifestKey.replace(/\.json$/u, '') + '.tar';
+
+/** Read a volume manifest object; throws when it is missing or unreadable, so the slice retries or fails. */
+export async function readVolumeManifestObject(env: ApiEnv['Bindings'], key: string): Promise<VolumeManifest> {
+  const object = await env.RF_PRIVATE_BUCKET.get(key);
+  if (object === null) throw new PackFailure('a volume manifest is missing');
+  return JSON.parse(await object.text()) as VolumeManifest;
+}
+/** Rewrite a volume manifest, always keeping `rfVolume` so rf-dl still reads it as a manifest; `rfPacked` marks a built tar. */
+export async function writeVolumeManifestObject(env: ApiEnv['Bindings'], key: string, manifest: VolumeManifest, packed: boolean): Promise<void> {
+  await env.RF_PRIVATE_BUCKET.put(key, JSON.stringify(manifest), {
+    customMetadata: packed ? { rfVolume: '1', rfPacked: '1' } : { rfVolume: '1' }, httpMetadata: { contentType: 'application/json' },
+  });
+}
+
+/**
+ * Queue a pack job for a complete backup: a fresh `jobs` row (type `internal_backup`, `mode: 'pack'`) plus its outbox
+ * row, like {@link startBackup}, and return the job id. Bookkeeping only, so exempt from the research freeze (R36.14).
+ */
+export async function startPack(core: D1Database, exportId: ULID, now: Timestamp): Promise<ULID> {
+  const id = newULID(now);
+  const params: BackupParams = { exportId, mode: 'pack' };
+  await new GuardedBatch(core, { id: null, now }, { ignoreFreeze: true })
+    .insert(jobs, { id, type: 'internal_backup', state: 'queued', requestedBy: null, params: params as unknown as Record<string, unknown>, createdAt: now, updatedAt: now })
+    .outbox('jobs', `job:${id}`)
+    .commit();
+  return id;
+}
+
+function packStep(cursor: PackCursor, change: Partial<PackCursor>, done = false, outcome?: 'complete' | 'incomplete'): SliceResult {
+  const next = { ...cursor, attempts: 0, ...change };
+  return { cursor: next as unknown as JsonValue, progress: { volume: next.volume, parts: next.parts.length }, done, ...(outcome ? { outcome } : {}) };
+}
+
+/**
+ * One slice of the pack job. Unexpected errors retry the same cursor up to {@link MAX_SLICE_ATTEMPTS}; after that, or on
+ * a {@link PackFailure}, the multipart upload is aborted and the job ends `incomplete` WITHOUT touching the `exports`
+ * row: the backup stays complete, just unpacked, and the backfill sweep may try again (R36.2).
+ */
+async function packSlice({ env, job }: SliceContext, cursorValue: JsonValue): Promise<SliceResult> {
+  const id = (job.params as unknown as BackupParams).exportId;
+  const cursor: PackCursor = cursorValue === null
+    ? { kind: 'pack', volume: 0, phase: 'layout', uploadId: null, parts: [], nextPart: 1, attempts: 0 }
+    : cursorValue as unknown as PackCursor;
+  try {
+    return await packOnce(env, id, cursor);
+  } catch (error) {
+    if (isDailyLimitError(error)) throw error;
+    log('warn', 'backup_pack_retry', { job: job.id, volume: cursor.volume, phase: cursor.phase, attempts: cursor.attempts, error });
+    if (!(error instanceof PackFailure) && cursor.attempts < MAX_SLICE_ATTEMPTS) {
+      return { cursor: { ...cursor, attempts: cursor.attempts + 1 } as unknown as JsonValue, progress: { volume: cursor.volume, parts: cursor.parts.length }, done: false };
+    }
+    return packFail(env, id, cursor);
+  }
+}
+
+/** Abort the multipart upload in flight and remove any partial tar, then end the job `incomplete`. Best effort: cleanup errors are ignored. */
+async function packFail(env: ApiEnv['Bindings'], id: string, cursor: PackCursor): Promise<SliceResult> {
+  try {
+    const row = await env.RF_CORE.prepare("SELECT volumes FROM exports WHERE id = ?1 AND type = 'backup'").bind(id).first<{ volumes: string | null }>();
+    const manifestKey = row?.volumes ? (JSON.parse(row.volumes) as string[])[cursor.volume] : undefined;
+    if (manifestKey !== undefined) {
+      const tarKey = tarKeyOf(manifestKey);
+      if (cursor.uploadId !== null) await env.RF_PRIVATE_BUCKET.resumeMultipartUpload(tarKey, cursor.uploadId).abort().catch(() => undefined);
+      await env.RF_PRIVATE_BUCKET.delete(tarKey).catch(() => undefined);
+    }
+  } catch { /* the backup stays complete and unpacked either way */ }
+  return packStep(cursor, {}, true, 'incomplete');
+}
+
+async function packOnce(env: ApiEnv['Bindings'], id: string, cursor: PackCursor): Promise<SliceResult> {
+  const row = await env.RF_CORE.prepare("SELECT state, volumes FROM exports WHERE id = ?1 AND type = 'backup'").bind(id).first<{ state: string; volumes: string | null }>();
+  // The backup was deleted, expired, or never completed: there is nothing to pack.
+  if (row === null || row.state !== 'complete' || row.volumes === null) throw new PackFailure('the backup is not complete');
+  const volumes = JSON.parse(row.volumes) as string[];
+  const manifestKey = volumes[cursor.volume];
+  if (manifestKey === undefined) return packStep(cursor, {}, true, 'complete');
+  const manifest = await readVolumeManifestObject(env, manifestKey);
+  const next = (change: Partial<PackCursor>): SliceResult => packStep(cursor, change);
+  const nextVolume = (): SliceResult => next({ volume: cursor.volume + 1, phase: 'layout', uploadId: null, parts: [], nextPart: 1 });
+  if (manifest.tar !== undefined) return nextVolume();
+
+  // layout: measure members whose size the manifest lacks (a pre-fix manifest has none), a bounded batch per slice.
+  const unsized = manifest.members.flatMap((member, index) => member.size === undefined ? [index] : []);
+  if (unsized.length > 0) {
+    const members = manifest.members.map((member) => ({ ...member }));
+    const batch = unsized.slice(0, PACK_LAYOUT_HEADS);
+    for (let at = 0; at < batch.length; at += PACK_HEAD_CONCURRENCY) {
+      const indexes = batch.slice(at, at + PACK_HEAD_CONCURRENCY);
+      const heads = await Promise.all(indexes.map((index) => env.RF_PRIVATE_BUCKET.head(members[index]!.key)));
+      for (const [position, head] of heads.entries()) {
+        if (head === null) throw new PackFailure('a package file is missing');
+        members[indexes[position]!] = { ...members[indexes[position]!]!, size: head.size };
+      }
+    }
+    await writeVolumeManifestObject(env, manifestKey, { members }, false);
+    return next({ phase: 'layout' });
+  }
+
+  // parts: stream the tar into a multipart upload, at most PACK_SLICE_PARTS parts per slice.
+  const layout = tarLayout(manifest.members.map((member) => ({ name: member.name, size: member.size! })));
+  const partBytes = packPartBytes;
+  const partCount = Math.ceil(layout.total / partBytes);
+  const tarKey = tarKeyOf(manifestKey);
+  if (cursor.uploadId === null) {
+    const created = await env.RF_PRIVATE_BUCKET.createMultipartUpload(tarKey, { customMetadata: { rfPackage: '1' }, httpMetadata: { contentType: 'application/x-tar' } });
+    return next({ phase: 'parts', uploadId: created.uploadId, parts: [], nextPart: 1 });
+  }
+  const upload = env.RF_PRIVATE_BUCKET.resumeMultipartUpload(tarKey, cursor.uploadId);
+  const parts = [...cursor.parts];
+  let nextPart = cursor.nextPart;
+  let reads = 0;
+  const started = Date.now();
+  while (nextPart <= partCount && nextPart - cursor.nextPart < PACK_SLICE_PARTS) {
+    // Always build at least one part per slice, so progress is guaranteed.
+    if (nextPart > cursor.nextPart && (reads >= PACK_SLICE_READS || Date.now() - started >= FILE_SLICE_MAX_MS)) break;
+    const start = (nextPart - 1) * partBytes;
+    const built = await uploadTarPart(env, upload, nextPart, layout, manifest.members, start, Math.min(start + partBytes, layout.total));
+    reads += built.reads;
+    parts[nextPart - 1] = { partNumber: nextPart, etag: built.etag }; // re-running a part number overwrites it
+    nextPart++;
+  }
+  if (nextPart <= partCount) return next({ phase: 'parts', parts, nextPart });
+
+  // Every part is in: complete the upload, require the exact layout length, then register the tar in the manifest.
+  try { await upload.complete(parts); } catch (error) {
+    // A retry after the upload already completed (the manifest write failed) finds the finished tar instead.
+    const finished = await env.RF_PRIVATE_BUCKET.head(tarKey);
+    if (finished === null || finished.size !== layout.total) throw error;
+  }
+  const built = await env.RF_PRIVATE_BUCKET.head(tarKey);
+  if (built === null || built.size !== layout.total) throw new PackFailure('the built tar has the wrong size');
+  await writeVolumeManifestObject(env, manifestKey, { members: manifest.members, tar: { key: tarKey, bytes: layout.total } }, true);
+  return nextVolume();
+}
+
+/** Build one tar part from `[start, end)` of the layout, streaming header bytes and ranged member reads into the upload; nothing is buffered. */
+async function uploadTarPart(
+  env: ApiEnv['Bindings'], upload: R2MultipartUpload, partNumber: number, layout: ReturnType<typeof tarLayout>,
+  members: VolumeManifest['members'], start: number, end: number,
+): Promise<{ readonly etag: string; readonly reads: number }> {
+  const fixed = new FixedLengthStream(end - start);
+  const uploading = upload.uploadPart(partNumber, fixed.readable);
+  uploading.catch(() => undefined); // observed below; keeps an early upload failure from surfacing as an unhandled rejection
+  const writer = fixed.writable.getWriter();
+  let reads = 0;
+  try {
+    for (const segment of tarRangeSegments(layout, start, end)) {
+      if (segment.kind === 'bytes') { await writer.write(segment.bytes); continue; }
+      const source = await env.RF_PRIVATE_BUCKET.get(members[segment.index]!.key, { range: { offset: segment.offset, length: segment.length } });
+      if (source === null || !('body' in source)) throw new PackFailure('a package file vanished');
+      reads++;
+      const reader = source.body.getReader();
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        await writer.write(value);
+      }
+    }
+    await writer.close();
+  } catch (error) {
+    await writer.abort(error).catch(() => undefined);
+    await uploading.catch(() => undefined);
+    throw error;
+  }
+  return { etag: (await uploading).etag, reads };
+}
 
 JOB_HANDLERS.internal_backup = backupJob;

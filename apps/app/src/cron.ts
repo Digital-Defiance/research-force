@@ -13,7 +13,7 @@ import { sweepUploads } from './files/uploads';
 import { sweepStages } from './records/stages';
 import { sweepDrafts } from './records/drafts';
 import { startScheduledExport, sweepExportRetention } from './jobs/export-cron';
-import { startScheduledBackup, sweepBackupCopies, sweepBackupRetention, sweepStuckBackups } from './jobs/backup-cron';
+import { startScheduledBackup, sweepBackupCopies, sweepBackupPackages, sweepBackupRetention, sweepStuckBackups } from './jobs/backup-cron';
 import { checkRpoAge } from './backup/rpo';
 import { checkBackupProduction } from './backup/health';
 import { checkResponsiblePersonRevoked } from './policy/responsible';
@@ -59,6 +59,8 @@ export const HOURLY_SWEEPS: readonly Sweep[] = [
   { name: 'scheduled_backup', run: startScheduledBackup },
   // A backup still running 24 hours after its request becomes incomplete with a reason (R36.6).
   { name: 'stuck_backups', run: sweepStuckBackups },
+  // Pre-build each complete backup's downloadable tar (the backfill for earlier backups and the retry for a failed pack, R36.2).
+  { name: 'backup_packages', run: sweepBackupPackages },
   { name: 'backup_copies', run: sweepBackupCopies },
   { name: 'backup_retention', run: sweepBackupRetention },
   { name: 'backup_rpo_alert', run: (env, now) => checkRpoAge(env, now) },

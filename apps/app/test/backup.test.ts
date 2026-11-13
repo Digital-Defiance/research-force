@@ -19,7 +19,8 @@ import { BACKUP_TABLES, EXCLUDED_BACKUP_TABLES } from '@researchforce/db/schema/
 import { acquireFreeze, invalidateLiveSnapshot, invalidateSnapshotForDeletion, readLease } from '../src/backup/freeze';
 import { JOB_HANDLERS } from '../src/do/jobs';
 import type { JsonValue } from '../src/do/jobs';
-import { backupPrefix, parseSegments } from '../src/jobs/backup';
+import { backupPrefix, parseSegments, setPackPartBytesForTest, tarKeyOf } from '../src/jobs/backup';
+import { dropPackedTar, sweepBackupPackages } from '../src/jobs/backup-cron';
 import '../src/api/routes/backups';
 import { fc, FC_RUNS } from '@researchforce/testing/fc';
 import { bucketKeyOf } from '../src/jobs/export';
@@ -72,6 +73,45 @@ async function runBackup(id: ULID, options: { readonly clockStart?: number; read
   throw new Error('backup job did not finish');
 }
 
+/**
+ * Drive the backup's pack job (the follow-up `internal_backup` job with `mode: 'pack'` that `finish` queues) slice by
+ * slice to its end, then record its outcome on the jobs row as the Durable Object does. Returns the outcome and slices.
+ */
+async function runPack(exportId: ULID): Promise<{ outcome: 'complete' | 'incomplete'; slices: number }> {
+  const row = (await core().prepare("SELECT id, params, requested_by AS requestedBy FROM jobs WHERE json_extract(params, '$.exportId') = ?1 AND json_extract(params, '$.mode') = 'pack' AND state IN ('queued', 'running') ORDER BY id DESC LIMIT 1")
+    .bind(exportId).first<{ id: string; params: string; requestedBy: ULID | null }>())!;
+  const job = { id: row.id, type: 'internal_backup' as const, params: JSON.parse(row.params) as JsonValue, requestedBy: row.requestedBy };
+  let cursor: JsonValue = null;
+  for (let slice = 0; slice < 500; slice++) {
+    const result = await JOB_HANDLERS.internal_backup!.slice({ env: world.bindings, job, now: world.at }, cursor);
+    if (result.done) {
+      const outcome = result.outcome ?? 'complete';
+      await core().prepare('UPDATE jobs SET state = ?2 WHERE id = ?1').bind(row.id, outcome).run();
+      return { outcome, slices: slice + 1 };
+    }
+    cursor = result.cursor;
+  }
+  throw new Error('pack job did not finish');
+}
+/** Read a ustar+pax tar back into its members. */
+function readTar(bytes: Uint8Array): { name: string; data: Uint8Array }[] {
+  const td = new TextDecoder();
+  const field = (b: Uint8Array, o: number, l: number) => td.decode(b.subarray(o, o + l)).replace(/[\0 ]+$/, '');
+  const out: { name: string; data: Uint8Array }[] = [];
+  let offset = 0; let paxPath: string | null = null;
+  while (offset + 512 <= bytes.length) {
+    const header = bytes.subarray(offset, offset + 512);
+    if (header.every((x) => x === 0)) break;
+    const size = parseInt(field(header, 124, 12) || '0', 8);
+    const data = bytes.subarray(offset + 512, offset + 512 + size);
+    offset += 512 + Math.ceil(size / 512) * 512;
+    if (String.fromCharCode(header[156]!) === 'x') { paxPath = (/ path=(.*)\n$/s.exec(td.decode(data)) ?? [])[1] ?? null; continue; }
+    out.push({ name: paxPath ?? field(header, 0, 100), data }); paxPath = null;
+  }
+  return out;
+}
+const packageState = async (id: string) =>
+  (await (await world.request('admin', 'GET', `/backups/${id}`)).json<{ package: string | null; download: { url: string }[] }>());
 const backupRow = async (id: string) =>
   (await core().prepare('SELECT state, scheduled, type, scope_project_id AS scope, volumes, incomplete, staleness, expires_at AS expiresAt, started_at AS startedAt FROM exports WHERE id = ?1').bind(id)
     .first<{ state: string; scheduled: number; type: string; scope: string | null; volumes: string | null; incomplete: string | null; staleness: string | null; expiresAt: string | null; startedAt: string }>())!;
@@ -287,15 +327,15 @@ async function seedAttachment(bytes: Uint8Array): Promise<{ readonly unitId: ULI
 const pinStates = async (): Promise<string[]> =>
   (await core().prepare('SELECT state FROM backup_file_pins ORDER BY r2_key').all<{ state: string }>()).results.map((row) => row.state);
 
-/** Wrap the private bucket so `get` of a seeded attachment source throws `times` times (an injected transient fault). */
-function failingBucket(times: number): { restore: () => void; thrown: () => number } {
+/** Wrap the private bucket so `get` of a seeded attachment source (or any key `matches` accepts) throws `times` times (an injected transient fault). */
+function failingBucket(times: number, matches: (key: string) => boolean = (key) => key.startsWith('synthetic/')): { restore: () => void; thrown: () => number } {
   const original = world.bindings.RF_PRIVATE_BUCKET;
   let thrown = 0;
   (world.bindings as { RF_PRIVATE_BUCKET: R2Bucket }).RF_PRIVATE_BUCKET = new Proxy(original, {
     get(target, property) {
       if (property === 'get') {
         return async (key: string, ...rest: unknown[]) => {
-          if (key.startsWith('synthetic/') && thrown < times) { thrown++; throw new Error('injected R2 fault'); }
+          if (matches(key) && thrown < times) { thrown++; throw new Error('injected R2 fault'); }
           return (target.get as (key: string, ...rest: unknown[]) => Promise<R2ObjectBody | null>).call(target, key, ...rest);
         };
       }
@@ -544,6 +584,7 @@ describe('POST /backups (R36.1, R36.2, R36.3)', () => {
     const { id } = await (await startBackup()).json<{ id: ULID }>();
     expect((await runBackup(id)).outcome).toBe('complete');
 
+    expect((await runPack(id)).outcome).toBe('complete');
     const detail = await (await world.request('admin', 'GET', `/backups/${id}`)).json<{ state: string; download: { url: string }[] }>();
     expect(detail.state).toBe('complete');
     expect(detail.download.length).toBeGreaterThan(0);
@@ -558,5 +599,120 @@ describe('POST /backups (R36.1, R36.2, R36.3)', () => {
     expect(claim!.purpose).toBe('internal_backup');
     // A non-Administrator cannot read the backup download list.
     expect((await world.request('author', 'GET', `/backups/${id}`)).status).toBe(403);
+  });
+});
+
+describe('the backup package is pre-built as one tar per volume by a sliced pack job (R36.2)', () => {
+  const MIB = 1024 * 1024;
+  const volumeKeys = async (id: string): Promise<string[]> => JSON.parse((await backupRow(id)).volumes!) as string[];
+  const configureDownloads = (): void => {
+    (world.bindings as { DOWNLOAD_HMAC_KEY?: string }).DOWNLOAD_HMAC_KEY = 'test-download-secret';
+    (world.bindings as { DOWNLOAD_ORIGIN?: string }).DOWNLOAD_ORIGIN = 'https://dl.researchforce.org';
+  };
+  afterEach(() => { setPackPartBytesForTest(null); });
+  it('packs a package with an ~11 MiB file in several slices into a tar of exactly the package files, offering no link until it is packed', async () => {
+    configureDownloads();
+    setPackPartBytesForTest(5 * MIB);
+    await world.created('author', 'finding');
+    const small = await seedAttachment(new TextEncoder().encode('a small file'));
+    const big = await seedAttachment(new Uint8Array(11 * MIB).map((_byte, index) => (index * 13) % 251));
+    const { id } = await (await startBackup()).json<{ id: ULID }>();
+    expect((await runBackup(id)).outcome).toBe('complete');
+    expect(await packageState(id)).toMatchObject({ package: 'preparing', download: [] });
+    const { outcome, slices } = await runPack(id);
+    expect(outcome).toBe('complete');
+    expect(slices, 'the 11 MiB file needs several parts, each slice building at most two').toBeGreaterThanOrEqual(4);
+    const [manifestKey] = await volumeKeys(id);
+    const tar = await priv().get(tarKeyOf(manifestKey!));
+    expect(tar).not.toBeNull();
+    const members = readTar(new Uint8Array(await tar!.arrayBuffer()));
+    const prefix = `${bucketKeyOf(backupPrefix(id))}/`;
+    // The package files are exactly the volume manifest's members (an empty table has no body part).
+    const manifestBefore = await (await priv().get(manifestKey!))!.json<{ members: { key: string; name: string; size?: number }[] }>();
+    const expected = manifestBefore.members.map((member) => member.name).sort();
+    expect(members.map((member) => member.name).sort()).toEqual(expected);
+    expect(expected).toEqual(expect.arrayContaining(['header.json', 'body.enc', 'manifest-fingerprint.txt', `files/${small.identifier}`, `files/${big.identifier}`]));
+    expect(expected.some((name) => name.startsWith('body/') && name.endsWith('.jsonl'))).toBe(true);
+    // Compare by length and SHA-256 rather than element by element, so an 11 MiB member is never diffed in memory.
+    const digest = async (bytes: Uint8Array): Promise<string> =>
+      Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', bytes as BufferSource)), (b) => b.toString(16).padStart(2, '0')).join('');
+    for (const member of members) {
+      const source = new Uint8Array(await (await priv().get(`${prefix}${member.name}`))!.arrayBuffer());
+      expect(member.data.length, member.name).toBe(source.length);
+      expect(await digest(member.data), member.name).toBe(await digest(source));
+    }
+    const bigMember = members.find((member) => member.name === `files/${big.identifier}`)!;
+    expect(bigMember.data.length).toBe(11 * MIB);
+    expect(await digest(bigMember.data)).toBe(big.sha256);
+    // The manifest records the tar and is marked packed; a link is now offered.
+    const manifest = await (await priv().get(manifestKey!))!.json<{ tar: { key: string; bytes: number } }>();
+    expect(manifest.tar).toEqual({ key: tarKeyOf(manifestKey!), bytes: tar!.size });
+    expect((await priv().head(manifestKey!))!.customMetadata).toMatchObject({ rfVolume: '1', rfPacked: '1' });
+    const ready = await packageState(id);
+    expect(ready.package).toBe('ready');
+    expect(ready.download).toHaveLength(1);
+    expect((await backupRow(id)).state).toBe('complete');
+  });
+  it('retries a transient fault while packing and still completes', async () => {
+    await seedAttachment(new TextEncoder().encode('retried while packing'));
+    const { id } = await (await startBackup()).json<{ id: ULID }>();
+    expect((await runBackup(id)).outcome).toBe('complete');
+    const fault = failingBucket(2, (key) => key.includes('/files/'));
+    try {
+      expect((await runPack(id)).outcome).toBe('complete');
+    } finally { fault.restore(); }
+    expect(fault.thrown()).toBe(2);
+    expect((await packageState(id)).package).toBe('ready');
+  });
+  it('leaves the backup complete and unpacked when the fault is permanent, reports failed after three packs, and stops retrying', async () => {
+    configureDownloads();
+    await seedAttachment(new TextEncoder().encode('never packed'));
+    const { id } = await (await startBackup()).json<{ id: ULID }>();
+    expect((await runBackup(id)).outcome).toBe('complete');
+    const fault = failingBucket(Number.POSITIVE_INFINITY, (key) => key.includes('/files/'));
+    try {
+      expect((await runPack(id)).outcome).toBe('incomplete');
+      expect(await packageState(id)).toMatchObject({ package: 'preparing', download: [] });
+      for (let attempt = 0; attempt < 2; attempt++) {
+        expect(await sweepBackupPackages(world.bindings, world.at), 'a failed pack is retried by the sweep').toBe(1);
+        expect((await runPack(id)).outcome).toBe('incomplete');
+      }
+    } finally { fault.restore(); }
+    expect(await packageState(id)).toMatchObject({ package: 'failed', download: [] });
+    expect(await sweepBackupPackages(world.bindings, world.at), 'three failures end the retries').toBe(0);
+    expect((await backupRow(id)).state, 'the backup itself stays complete').toBe('complete');
+    const [manifestKey] = await volumeKeys(id);
+    expect(await priv().get(tarKeyOf(manifestKey!)), 'no partial tar is left').toBeNull();
+  });
+  it('repacks a pre-fix complete backup (manifest without sizes or tar) when the sweep runs, and not again once packed', async () => {
+    configureDownloads();
+    await seedAttachment(new TextEncoder().encode('pre-fix file'));
+    const { id } = await (await startBackup()).json<{ id: ULID }>();
+    expect((await runBackup(id)).outcome).toBe('complete');
+    // A backup made before packing existed has no pack job; its manifests carry neither sizes nor a tar.
+    await core().prepare("DELETE FROM jobs WHERE json_extract(params, '$.mode') = 'pack'").run();
+    const [manifestKey] = await volumeKeys(id);
+    const manifest = await (await priv().get(manifestKey!))!.json<{ members: { key: string; name: string; size?: number }[]; tar?: unknown }>();
+    expect(manifest.members.every((member) => member.size === undefined) && manifest.tar === undefined).toBe(true);
+    expect((await packageState(id)).download).toEqual([]);
+    expect(await sweepBackupPackages(world.bindings, world.at)).toBe(1);
+    expect(await sweepBackupPackages(world.bindings, world.at), 'a queued pack is not started twice').toBe(0);
+    expect((await runPack(id)).outcome).toBe('complete');
+    expect((await packageState(id)).download).toHaveLength(1);
+    expect(await sweepBackupPackages(world.bindings, world.at), 'a packed backup needs nothing').toBe(0);
+  });
+  it('returns to unpacked, offering no link, when its tar is dropped', async () => {
+    configureDownloads();
+    await seedAttachment(new TextEncoder().encode('dropped tar'));
+    const { id } = await (await startBackup()).json<{ id: ULID }>();
+    expect((await runBackup(id)).outcome).toBe('complete');
+    expect((await runPack(id)).outcome).toBe('complete');
+    const [manifestKey] = await volumeKeys(id);
+    expect(await priv().get(tarKeyOf(manifestKey!))).not.toBeNull();
+    await dropPackedTar(world.bindings, id);
+    expect(await priv().get(tarKeyOf(manifestKey!))).toBeNull();
+    expect((await priv().head(manifestKey!))!.customMetadata).toEqual({ rfVolume: '1' });
+    expect(await (await priv().get(manifestKey!))!.json<{ tar?: unknown }>()).not.toHaveProperty('tar');
+    expect(await packageState(id)).toMatchObject({ package: 'preparing', download: [] });
   });
 });

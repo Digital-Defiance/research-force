@@ -4,7 +4,7 @@ import type { Timestamp, ULID } from '@researchforce/domain/types';
 import { sha256 } from '@noble/hashes/sha2.js';
 import { bytesToHex, utf8ToBytes } from '@noble/hashes/utils.js';
 import type { Env } from '../env';
-import { backupPrefix, startBackup } from './backup';
+import { backupPrefix, readVolumeManifestObject, startBackup, startPack, tarKeyOf, writeVolumeManifestObject } from './backup';
 import { bucketKeyOf } from './export';
 import { pointsToExpire } from './backup-retention';
 import type { RetentionPoint } from './backup-retention';
@@ -29,6 +29,8 @@ import { deleteIndependentCopy, independentDestination, transferPackage, verifyI
 /** A failed scheduled slot is retried at most this many times in all, at least this long after the previous attempt began. */
 const MAX_SLOT_ATTEMPTS = 3;
 const SLOT_RETRY_MS = 60 * 60 * 1000;
+/** A backup's tar is no longer retried once this many pack jobs have ended incomplete; the backup page then says the download failed. */
+export const MAX_PACK_FAILURES = 3;
 /** A backup still `running` this long after its request is incomplete (R36.6). */
 const STUCK_BACKUP_MS = 24 * 60 * 60 * 1000;
 
@@ -91,6 +93,47 @@ export async function sweepStuckBackups(env: Env, now: Timestamp): Promise<numbe
     ]);
   }
   return stuck.length;
+}
+
+/**
+ * Start a pack job for each complete, unexpired backup whose volumes are not all packed into a tar (R36.2). This is the
+ * BACKFILL for backups taken before packing existed and the RETRY for a pack that ended incomplete. It skips a backup
+ * with a pack job already queued or running, one whose last {@link MAX_PACK_FAILURES} packs failed, and one that already
+ * has a verified recovery point (its tar is dropped, see {@link dropPackedTar}). Returns how many packs it started.
+ */
+export async function sweepBackupPackages(env: Env, now: Timestamp): Promise<number> {
+  const packJobs = "json_extract(j.params, '$.exportId') = e.id AND json_extract(j.params, '$.mode') = 'pack'";
+  const rows = (await env.RF_CORE.prepare(
+    `SELECT e.id, e.volumes FROM exports e
+     WHERE e.type = 'backup' AND e.state = 'complete' AND e.volumes IS NOT NULL AND (e.expires_at IS NULL OR e.expires_at > ?1)
+       AND NOT EXISTS (SELECT 1 FROM backup_points bp WHERE bp.export_id = e.id AND bp.verified_at IS NOT NULL)
+       AND NOT EXISTS (SELECT 1 FROM jobs j WHERE ${packJobs} AND j.state IN ('queued', 'running'))
+       AND (SELECT count(*) FROM jobs j WHERE ${packJobs} AND j.state IN ('incomplete', 'failed')) < ?2`,
+  ).bind(now, MAX_PACK_FAILURES).all<{ id: string; volumes: string }>()).results;
+  let started = 0;
+  for (const row of rows) {
+    const volumes = JSON.parse(row.volumes) as string[];
+    const heads = await Promise.all(volumes.map((key) => env.RF_PRIVATE_BUCKET.head(key)));
+    if (volumes.length === 0 || heads.every((head) => head?.customMetadata?.['rfPacked'] === '1')) continue;
+    await startPack(env.RF_CORE, row.id as ULID, now);
+    started++;
+  }
+  return started;
+}
+
+/**
+ * Return a backup to the unpacked state by deleting its per-volume tar objects (R36.2), once a verified recovery point
+ * exists and the tar is no longer the way to fetch it. Each volume manifest is rewritten FIRST without `tar`/`rfPacked`
+ * so no link is offered for a tar that is about to go, then the tar is deleted. Idempotent.
+ */
+export async function dropPackedTar(env: Env, exportId: string): Promise<void> {
+  const row = await env.RF_CORE.prepare("SELECT volumes FROM exports WHERE id = ?1 AND type = 'backup'").bind(exportId).first<{ volumes: string | null }>();
+  if (row?.volumes == null) return;
+  for (const key of JSON.parse(row.volumes) as string[]) {
+    const manifest = await readVolumeManifestObject(env, key).catch(() => null);
+    if (manifest?.tar !== undefined) await writeVolumeManifestObject(env, key, { members: manifest.members }, false);
+    await env.RF_PRIVATE_BUCKET.delete(tarKeyOf(key));
+  }
 }
 
 /** One scheduled snapshot the copy/verification sweep reconciles, joined to its `exports` outcome. */
