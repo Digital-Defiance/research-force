@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "command": "npm test -- --reporter=json --outputFile=<temporary report>",
-  "recordedAt": "2026-11-12T22:08:53.929Z",
+  "recordedAt": "2026-11-13T02:16:35.945Z",
   "scope": "local-synthetic",
   "success": true,
   "suites": [
@@ -49,7 +49,7 @@
     },
     {
       "path": "apps/app/test/backup-cron.test.ts",
-      "passed": 20,
+      "passed": 28,
       "failed": 0,
       "skipped": 0
     },
@@ -73,7 +73,7 @@
     },
     {
       "path": "apps/app/test/backup.test.ts",
-      "passed": 17,
+      "passed": 22,
       "failed": 0,
       "skipped": 0
     },
@@ -1375,7 +1375,7 @@
     },
     {
       "path": "apps/app/web/test/exports.test.tsx",
-      "passed": 12,
+      "passed": 15,
       "failed": 0,
       "skipped": 0
     },
@@ -1584,8 +1584,14 @@
       "skipped": 0
     },
     {
+      "path": "apps/dl/test/tar-layout.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
       "path": "apps/dl/test/tar-volume.test.ts",
-      "passed": 2,
+      "passed": 4,
       "failed": 0,
       "skipped": 0
     },
@@ -1982,6 +1988,12 @@
     {
       "path": "packages/domain/test/site-view-ceiling.test.ts",
       "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "path": "packages/domain/test/tar-layout.test.ts",
+      "passed": 5,
       "failed": 0,
       "skipped": 0
     },
@@ -2530,11 +2542,17 @@
       "passed": 9,
       "failed": 0,
       "skipped": 0
+    },
+    {
+      "path": "tools/test/verify-backup.test.ts",
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
     }
   ],
   "files": {
     ".github/workflows/ci.yml": "02691c9c9bf1aa5dec4cba2bed8470d37be62631805e8ecf60e91bffa19b0437",
-    ".kiro/specs/research-collab-cms/design.md": "fd8aff99ecb60f4db379b3f3d282f670d0c05812bcdb90bdd06fe7c9b9cf35d3",
+    ".kiro/specs/research-collab-cms/design.md": "dc04be0c787594006aa05cf907a88445c1c4a16b2c820a5f6cb4c0da20de7145",
     "README.md": "5586119f3717b609a4ec434dc2df22976d2d199f22f3b899111a94b2fe734884",
     "apps/app/src/activity/feed.ts": "9b74f0a76f927852265149a64fc2931155214083cc9d4a2294dfa0371c9bc5c0",
     "apps/app/src/ai/drafts.ts": "a13520a3a71db82ae70b444092c5583825ff79fffb3fa83aa3cb73282bd23308",
@@ -2545,7 +2563,7 @@
     "apps/app/src/api/idempotency.ts": "fbdab99ae70c5994bf4395a7387cc8031db245c2751574026f4e405ff666ce6c",
     "apps/app/src/api/input.ts": "4259fddb715991642afe742767a58d6ca44f020a303a29a4b44ca633d027cd87",
     "apps/app/src/api/routes/ai.ts": "14c5fcc1bdd1923a5f80a9412ecdd83766984a6de4c4d97330868fc58112b89e",
-    "apps/app/src/api/routes/backups.ts": "16dfe0e1255cd7b6658c1670f3e8854315fb36a1ed945f7ab95de6469b608dd5",
+    "apps/app/src/api/routes/backups.ts": "2d6ad2ed42cc29ae403db1c8a902c79568df5c77e8a8b5474b6a98b31724e409",
     "apps/app/src/api/routes/citations.ts": "bbc31959823629d54825d9f7b1e4f2692edc58935e83f1c650c5cd1c337fa860",
     "apps/app/src/api/routes/compute.ts": "67306ad936da87a0606a2453ff5d63d03f9c7f92dc654a726b53478cbfb463e9",
     "apps/app/src/api/routes/coverage.ts": "9ed4a6469f4d48238ce1671085d349e8b31bdae5098f85f661b72302271f1422",
@@ -2570,7 +2588,7 @@
     "apps/app/src/api/security-headers.ts": "5923df29c57f7af083f30fa7e06aec61c3369c9a0f0bb253903b2960285a5c9f",
     "apps/app/src/auth/dev.ts": "0aeb7704f14d35e4a5553c272a5793dcf184e6c848cf39776be0ce93a0bba166",
     "apps/app/src/backup/checkpoints.ts": "ebb8beb007f81c0980b758455b72d950e60afd82bdca85dbb0dad48314127114",
-    "apps/app/src/backup/copies.ts": "83590acb0832babbdec5d15d2d87e685cefd716136314b09088fe7b66d3a4c42",
+    "apps/app/src/backup/copies.ts": "340ce4fe7aa32cda1e53abb6ec5bff418ab44f5a5b0cceb5f83d16ea9297b0c2",
     "apps/app/src/backup/custodians.ts": "b64146ca3fc297ce7c9324df29e4cd43b272f37cd76ed3b2835e514a778852d0",
     "apps/app/src/backup/custody.ts": "ae60a3988ce806c3433378cbfbc575e434cee7b9cfcb89957a90ce8e3500530a",
     "apps/app/src/backup/freeze.ts": "c22baafcec867c180668b681cb33c34a6fb337b5b7da8e826555fa4da3fa71e6",
@@ -2599,14 +2617,14 @@
     "apps/app/src/files/move.ts": "8f70c5eb1392da6ca3cc10e81ed9df629d929c8c28082d876336b192c15f5f1b",
     "apps/app/src/files/uploads.ts": "6bbc9d55286ed562bacaa71505b95fd4e4aa33c6debb003b8be5431cb208c66a",
     "apps/app/src/index.ts": "0c50eec566354e142daf3693aa6743ba1bbaf1c5fa73bb610dd7484a92277d7c",
-    "apps/app/src/jobs/backup-cron.ts": "17d9830534bd0e3fa65b7213cabe4f90678ed7139db954a6de61d2476a416243",
+    "apps/app/src/jobs/backup-cron.ts": "6843f0233e2ebc38727d2f6a0fd87f1ffc27c01b2a36381acf52c523c7e9b361",
     "apps/app/src/jobs/backup-retention.ts": "fded0d0f36f9f1cf1ebec5d03d6a60e5c2dd17e98c0656581257d690106f2de9",
-    "apps/app/src/jobs/backup.ts": "3aaf93668959769e99c6889da322cc07ddc7f269cda12f803aa84d2f40e1d30e",
+    "apps/app/src/jobs/backup.ts": "2cb73251162f38fcfd587351fb8b5502675562384c361a79ac80171271ad6c94",
     "apps/app/src/jobs/bulk-import.ts": "e59e08fc32effae3b59b47ef85ee931e896cd3e17fc34f5359305e1f4a07beda",
     "apps/app/src/jobs/bulk-validate.ts": "31cf622ca774e9a818c8472540d6635bbdef1476ca0a66a95498370310a9510e",
     "apps/app/src/jobs/deletion.ts": "73ab06c632388326d21794bb9967290ac1072ac51917f3e0426106b3792f3856",
     "apps/app/src/jobs/export-cron.ts": "2884f058407bbc6473fc50462680fc68a894591d14278cf5ea770cd9719e3fdc",
-    "apps/app/src/jobs/export-manifest.ts": "8bcb662b97430c622f0e82ab02a506933952f05b3fb1f21e20a8188afaafa9bc",
+    "apps/app/src/jobs/export-manifest.ts": "bb70f1813243c2c5e99883154b61ba81c66c566f7001e2bafe59acaa73ddba78",
     "apps/app/src/jobs/export.ts": "3d70e7ffc3825179bfbfc100e03f729fbc27847402de1e22fed932b61bc5859d",
     "apps/app/src/jobs/journal-import.ts": "d392f6c5cd6764c3599adf24b6e6b00562604a56d2a7c06ea5eedc3bf81df200",
     "apps/app/src/jobs/operational-cron.ts": "b47270aeab266cac550eb3dff1c034db1c45b433bd80f70233019dafdbc776ff",
@@ -2694,10 +2712,10 @@
     "apps/app/test/ai-drafts.test.ts": "525f225c8a423399a5531217032cd80279560236a070507f168d08f69f34f84a",
     "apps/app/test/api-foundation.test.ts": "e27dfcee5ca1c57011b57c44fd77762b1cc773cef46630c4abeac6c51c0ba0fa",
     "apps/app/test/backup-codec-workerd.test.ts": "aa636b4f6e03212875c451f368b3ee70c2131e54c35a592c859526c3ad050e42",
-    "apps/app/test/backup-cron.test.ts": "a888adaf1190c1033725ab0f66acf2c77d4d18cd9119fee5b860f568a51aa331",
+    "apps/app/test/backup-cron.test.ts": "a8b24dda34d836e88c107ef684a6b472a34d37e0d849f970b1e1b2f63e5db9f6",
     "apps/app/test/backup-freeze.test.ts": "a27fcf99aeafb0d6bde611641b0a331594f39d842fa95add4855253a6772eec4",
     "apps/app/test/backup-retention.test.ts": "d870f4d578a26ad9c32d7a5b35370f73599b03dcc16ddbae334b3ce66aaf6aa8",
-    "apps/app/test/backup.test.ts": "4858572d590a4c9ec99c5cfb7dfe304af7187508a7bd2c34939a39b24a0e0776",
+    "apps/app/test/backup.test.ts": "28d3c891cc1688db803e8fbe935ef452978f25f565f63498eca9b1d72ed0bf45",
     "apps/app/test/budget.test.ts": "9ec5fc576e5127eebd2d03cf9fa633607e8be48c47dfa07889705c1553a6c311",
     "apps/app/test/bulk-import.test.ts": "86d1c7ca6678d6197792249b47ae7a1136d4969201f928117a09ffbb4e4700be",
     "apps/app/test/bulk-validate.test.ts": "f8da061fa665749cf392961fbb44c0bf91ddbf0e9d269ea7e2026356c172c3a4",
@@ -2885,7 +2903,7 @@
     "apps/app/web/src/evidence/editor.tsx": "af1e475910a40ce9a2b92044da1940640e6f30f6dffde1c2d78b69becf82c47b",
     "apps/app/web/src/evidence/queue.tsx": "27d4230881d77fa9c6de38ce3078444880158795278668c4e34856adb3db4506",
     "apps/app/web/src/evidence/snapshot.tsx": "585d718030c34bf42cc5f47120d663c4fe881410296e1c32d36a1e70058c85a7",
-    "apps/app/web/src/exports/backups.tsx": "dafa96c55ef88c9e4ca635aee211b8558b392801a78b5aca2bbe79d5dfa86d7f",
+    "apps/app/web/src/exports/backups.tsx": "5ecc3f949759eb4e3df23b6c88c4ed22998fa87635901aa8e6a366e3881dece8",
     "apps/app/web/src/exports/exports.tsx": "db58c112862e4c7ef41e0a239c1192bcecbdf80153d775df184b3bf4788dd861",
     "apps/app/web/src/files/attachment-page.tsx": "998500f3ee0afb43a042d1a03e97cd910968ba2b3df172336a7b5297eba2554a",
     "apps/app/web/src/files/move.tsx": "f2a50b490180131a7b7cc3ca18ac8dc92ad9a45bc9f181638fdbc6464400c21b",
@@ -2947,7 +2965,7 @@
     "apps/app/web/test/dissent.test.tsx": "7ab48ddf3423da923347f56b0782e1a4a8c4f603dae5ca6630461e4ad4b4cb37",
     "apps/app/web/test/drafts.test.tsx": "face605dba10dec1dbbb2ef9d660e03127830033bb428453833bc72cf6b95339",
     "apps/app/web/test/evidence.test.tsx": "0168a9f7e8f8cb70907f085ea492d484caba0e557554b8ac28ec652cb34117b4",
-    "apps/app/web/test/exports.test.tsx": "b4d4c1e11c00d7f8c22b1eda70ccf4b236b02b36a7e804f9813e564b22c5bd78",
+    "apps/app/web/test/exports.test.tsx": "a62e2163284b2e9f033eed0c2f7655f13cc7d4dd71b77b7fff3c24bcfd81704e",
     "apps/app/web/test/files-move.test.tsx": "aae66d29524c69ec2fd77c86ab6f82fd241b46cfcea4ce7a71274ad3d4b591d6",
     "apps/app/web/test/files.test.tsx": "5a343a03ed40aefa161e35431da891ac79457de5f3097da8cbe44bae08d5e7bd",
     "apps/app/web/test/journal-import.test.tsx": "954a954073732115913f2594911d0f7ab209076fc039ce0f792ff7ec7b59fc3e",
@@ -2969,10 +2987,10 @@
     "apps/app/web/test/reviews.test.tsx": "c023fbdd8db0ea4b42f875040d214e8a9b457e8313a0c80ccb884ba768a3d779",
     "apps/app/web/test/work.test.tsx": "50b56176f80cfaaf268dcc38f6200636fee0d38403ad7f8f1c0e4e0d6eb2f64b",
     "apps/app/web/test/workflows.test.tsx": "25b637024072091c135eeb1de832e1d7cf2511b0ac9775dc1581e515a7442649",
-    "apps/dl/src/index.ts": "1d98d0e841aba9f6c0756604a6c77f09ff2678f0097f5f0a1b48a98ea3ac5851",
-    "apps/dl/src/tar.ts": "8c79a44812a5b2299439d570b5f13b3385f84d5e36e93859dcea4fd91b9471ed",
+    "apps/dl/src/index.ts": "b2f9855e032dde318fa946148daa881f8ec9a2b5e1a77adfe962c3f2ce11024e",
+    "apps/dl/src/tar.ts": "afc30432c4a40939f4e558714d30d1d12b5b790243cccc3ee7231c5fdb0b7a76",
     "apps/dl/test/properties/p05-live-download-channel.test.ts": "a9376b2f306b7739100e3a028c04e192c12ad918095819b62a6e1723593582d9",
-    "apps/dl/test/tar-volume.test.ts": "f1edd06fca7e381f1882bf9b92356d3bfa2fbbeaf51d4dcdbd740fc1786f649b",
+    "apps/dl/test/tar-volume.test.ts": "cf30a5d2ee71c21e1d9ce6332733325c369c3f326a74352acbc08f5c298e73ac",
     "apps/dl/test/tar.test.ts": "aef2673a838bd3bdf9529e097e810c38cd5fa91653b77a60836b9115a1b7549a",
     "apps/ops/src/alerts.ts": "b863ec664685cfa880eb15c2e82ef2af70538918caf7c384e34ea970ad0707b2",
     "apps/ops/src/analytics.ts": "bfc056b30c53988ab8ba5a830459bdbe88dbaf3379dda3f3e742e8871f4f7687",
@@ -3025,7 +3043,7 @@
     "infra/recovery/deployment.example.json": "f50e284de933da91b761d0b6293f62caef82e8aa0c8db7c83e31e7eca5398bec",
     "infra/recovery/restore-proof.example.json": "2c02a645aaa612d1dd4f0bc537433a5e58764b4244a02562523aabc6d6a31554",
     "infra/releases/README.md": "73919ce7f8cc7b532d520dbc250f4f16ccd28f84e70e32d21d556190afe50ade",
-    "infra/releases/development.json": "db531d25d01fde755563692c13be946e790d9bf0bce24312b87e50df3e1d0d5b",
+    "infra/releases/development.json": "4894aa46428bea38c1fa1108d58ef7b95072baafba3e94971f9e4c4f0c80f4d1",
     "infra/secrets.ts": "ba2a3092c6fb3eca9ced657c2537f4947bc51e4379d4e93e1b987cc67a7fe324",
     "lighthouserc.json": "3b50af939dd1958cb5a4da086a126bb8c3e30181ed5aa5d608680e53e1148dcf",
     "package-lock.json": "0ce11c2bb60290ba470e60d77d36554dbcf0b0aa05415640ad87629000305f9b",
