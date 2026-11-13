@@ -179,3 +179,19 @@ it('keeps the same 404 for a packed backup when authorization fails (R36.2)', as
     expect(await response.text()).toBe(await (await download(new Request('https://dl.example.test/x/nothing'), bindings, instant)).text());
   }
 });
+
+it('never assembles an Internal_Backup volume on the fly: a backup manifest with no pre-built tar is 404, not a truncating 200 (R36.2)', async () => {
+  const id = newULID(at);
+  const manifestKey = `backups/${id}/volumes/0.json`;
+  const memberKey = `backups/${id}/body/members.jsonl`;
+  await bindings.RF_PRIVATE_BUCKET.put(memberKey, new TextEncoder().encode('{"id":"m1"}\n'));
+  await bindings.RF_PRIVATE_BUCKET.put(manifestKey, JSON.stringify({ members: [{ key: memberKey, name: 'body/members.jsonl' }] }), { customMetadata: { rfVolume: '1' } });
+  const batch = new GuardedBatch(bindings.RF_CORE, { id: adminId, now: at });
+  batch.insert(exportPackages, { id, type: 'backup', scheduled: false, requestedBy: adminId, startedAt: at, state: 'complete', volumes: [manifestKey] });
+  await batch.commit();
+  const url = await backupUrl(manifestKey);
+  for (const method of ['GET', 'HEAD']) {
+    const response = await download(new Request(url, { method }), bindings, instant);
+    expect(response.status, method).toBe(404);
+  }
+});

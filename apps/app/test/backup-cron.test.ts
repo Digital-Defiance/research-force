@@ -583,7 +583,7 @@ describe('confirmOfflineCopy — an Administrator attests the offline copy by it
     expect(await pointRow(id)).toMatchObject({ verifiedAt: null, fault: 'verify-error' });
   });
 
-  it('a verified point drops the packed tar', async () => {
+  it('a verified point keeps its packed tar, so its download links keep working (R36.2)', async () => {
     offline();
     const { id, fingerprint } = await requestedCompleteBackup(asTimestamp('2026-12-02T01:00:00.000Z'));
     const [manifestKey] = JSON.parse((await core().prepare('SELECT volumes FROM exports WHERE id = ?1').bind(id).first<{ volumes: string }>())!.volumes) as string[];
@@ -592,10 +592,10 @@ describe('confirmOfflineCopy — an Administrator attests the offline copy by it
     await writeVolumeManifestObject(world.bindings, manifestKey!, { members: (await readVolumeManifestObject(world.bindings, manifestKey!)).members, tar: { key: tarKey, bytes: 3 } }, true);
 
     expect(await confirmOfflineCopy(world.bindings, id, fingerprint, asTimestamp('2026-12-02T02:00:00.000Z'))).toEqual({ ok: true, verifying: true });
-    expect(await priv().head(tarKey), 'the tar stays until the point is verified').not.toBeNull();
     expect((await runVerify((await verifyJobs(id))[0]!.id, Date.parse('2026-12-02T02:01:00.000Z'))).outcome).toBe('complete');
-    expect(await priv().head(tarKey)).toBeNull();
-    expect((await readVolumeManifestObject(world.bindings, manifestKey!)).tar).toBeUndefined();
+    expect((await pointRow(id)).verifiedAt).not.toBeNull();
+    expect(await priv().head(tarKey), 'the tar is kept after verification').not.toBeNull();
+    expect((await readVolumeManifestObject(world.bindings, manifestKey!)).tar).toEqual({ key: tarKey, bytes: 3 });
   });
 
   it('the copy sweep in job mode only queues a verify job (idempotently, at most three failed ones) and never hashes', async () => {

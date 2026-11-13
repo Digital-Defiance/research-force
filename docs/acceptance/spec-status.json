@@ -1,7 +1,7 @@
 {
   "inputs": {
     ".kiro/specs/research-collab-cms/requirements.md": "9e2d7cee953f4aeece04bad4a7dfae273a908c0df65c95beea7a4e572b71b5df",
-    ".kiro/specs/research-collab-cms/design.md": "dc04be0c787594006aa05cf907a88445c1c4a16b2c820a5f6cb4c0da20de7145",
+    ".kiro/specs/research-collab-cms/design.md": "7078a4b2530b41405c7deac5503ea1baa86fb0c9469f434e43d01463ddbf5dc1",
     ".kiro/specs/research-collab-cms/tasks.md": "ad2ff60072bd7023ae96cc83a8861be2c3a7036157b9a2d2ba892bf3a978dd3a",
     "docs/acceptance/task-evidence.json": "a181c99d589c6eee4ccb5d21745ac038e191ea5585865d74fa95ec419c496da1"
   },
@@ -15164,7 +15164,7 @@
         {
           "path": "apps/dl/src/index.ts",
           "kind": "file",
-          "sha256": "b2f9855e032dde318fa946148daa881f8ec9a2b5e1a77adfe962c3f2ce11024e"
+          "sha256": "d0d577bd61139416989fd8b8e64b8ade2758a159004eb7c63a064cea4d4c641a"
         },
         {
           "path": "packages/testing/src/public-channels.ts",
@@ -19148,7 +19148,7 @@
         {
           "path": "apps/dl/test/tar-volume.test.ts",
           "kind": "file",
-          "sha256": "cf30a5d2ee71c21e1d9ce6332733325c369c3f326a74352acbc08f5c298e73ac"
+          "sha256": "b84cdf5fda2c23c15760d351cfc39bfecd44ea9b8bd61c4589fb0fe42d25737e"
         }
       ],
       "gates": [
@@ -19203,12 +19203,12 @@
         {
           "path": "apps/app/src/jobs/backup.ts",
           "kind": "file",
-          "sha256": "2cb73251162f38fcfd587351fb8b5502675562384c361a79ac80171271ad6c94"
+          "sha256": "e8e2798e14680b4d47b0e0608a888825106586691c14251ff67b8242d2ea23d3"
         },
         {
           "path": "apps/app/test/backup.test.ts",
           "kind": "file",
-          "sha256": "28d3c891cc1688db803e8fbe935ef452978f25f565f63498eca9b1d72ed0bf45"
+          "sha256": "b085befa0ad25e814a2cd7a7eb5e0877f9f58d74afd3c64c0822bbd660366f06"
         }
       ],
       "gates": [
@@ -19590,7 +19590,7 @@
         {
           "path": "apps/app/src/jobs/backup.ts",
           "kind": "file",
-          "sha256": "2cb73251162f38fcfd587351fb8b5502675562384c361a79ac80171271ad6c94"
+          "sha256": "e8e2798e14680b4d47b0e0608a888825106586691c14251ff67b8242d2ea23d3"
         },
         {
           "path": "apps/app/src/jobs/export.ts",
@@ -19753,7 +19753,7 @@
         {
           "path": "apps/app/src/jobs/backup-cron.ts",
           "kind": "file",
-          "sha256": "6843f0233e2ebc38727d2f6a0fd87f1ffc27c01b2a36381acf52c523c7e9b361"
+          "sha256": "51f1e988e2e9269151048198000e813372cb39e8bf6d918b797ab5c0e9064827"
         },
         {
           "path": "apps/app/src/jobs/backup-retention.ts",
@@ -25937,7 +25937,7 @@
         {
           "path": "docs/acceptance/checks/local-tests.json",
           "kind": "file",
-          "sha256": "590f414b1ca11480838004dfadfc5649e5f08769a8e545f7e361fafe470adbc5"
+          "sha256": "ebba6ff13855f67075c3b9e152cb774a447f35c662aa565072ab47b5922af3b2"
         },
         {
           "path": "tools/src/specs.ts",
@@ -26369,7 +26369,7 @@
         {
           "path": "infra/releases/development.json",
           "kind": "file",
-          "sha256": "4894aa46428bea38c1fa1108d58ef7b95072baafba3e94971f9e4c4f0c80f4d1"
+          "sha256": "32f83c0c4169ff20a500e26e504945fbf5508c5350c597f90dfbf18625defd5c"
         },
         {
           "path": "infra/recovery/deployment.example.json",
@@ -26644,7 +26644,7 @@
         {
           "path": "infra/releases/development.json",
           "kind": "file",
-          "sha256": "4894aa46428bea38c1fa1108d58ef7b95072baafba3e94971f9e4c4f0c80f4d1"
+          "sha256": "32f83c0c4169ff20a500e26e504945fbf5508c5350c597f90dfbf18625defd5c"
         },
         {
           "path": "apps/app/test/operations.test.ts",
@@ -26743,7 +26743,7 @@
         {
           "path": "apps/dl/src/index.ts",
           "kind": "file",
-          "sha256": "b2f9855e032dde318fa946148daa881f8ec9a2b5e1a77adfe962c3f2ce11024e"
+          "sha256": "d0d577bd61139416989fd8b8e64b8ade2758a159004eb7c63a064cea4d4c641a"
         },
         {
           "path": "apps/dl/test/properties/p05-live-download-channel.test.ts",
@@ -27145,7 +27145,7 @@
         {
           "path": "apps/app/src/jobs/backup-cron.ts",
           "kind": "file",
-          "sha256": "6843f0233e2ebc38727d2f6a0fd87f1ffc27c01b2a36381acf52c523c7e9b361"
+          "sha256": "51f1e988e2e9269151048198000e813372cb39e8bf6d918b797ab5c0e9064827"
         },
         {
           "path": "apps/app/src/jobs/backup-retention.ts",
@@ -27155,7 +27155,7 @@
         {
           "path": "apps/app/test/backup-cron.test.ts",
           "kind": "file",
-          "sha256": "a8b24dda34d836e88c107ef684a6b472a34d37e0d849f970b1e1b2f63e5db9f6"
+          "sha256": "9f558b134c08d076f0ed7856ceca23be255ec296a6b85542bf3235139709dada"
         },
         {
           "path": "apps/app/test/backup-retention.test.ts",
@@ -27165,7 +27165,7 @@
         {
           "path": "apps/app/test/backup.test.ts",
           "kind": "file",
-          "sha256": "28d3c891cc1688db803e8fbe935ef452978f25f565f63498eca9b1d72ed0bf45"
+          "sha256": "b085befa0ad25e814a2cd7a7eb5e0877f9f58d74afd3c64c0822bbd660366f06"
         }
       ],
       "gates": [
@@ -27438,7 +27438,7 @@
         {
           "path": "apps/app/src/jobs/backup-cron.ts",
           "kind": "file",
-          "sha256": "6843f0233e2ebc38727d2f6a0fd87f1ffc27c01b2a36381acf52c523c7e9b361"
+          "sha256": "51f1e988e2e9269151048198000e813372cb39e8bf6d918b797ab5c0e9064827"
         },
         {
           "path": "apps/app/src/jobs/backup-retention.ts",
@@ -27448,7 +27448,7 @@
         {
           "path": "apps/app/src/jobs/backup.ts",
           "kind": "file",
-          "sha256": "2cb73251162f38fcfd587351fb8b5502675562384c361a79ac80171271ad6c94"
+          "sha256": "e8e2798e14680b4d47b0e0608a888825106586691c14251ff67b8242d2ea23d3"
         }
       ],
       "gates": [
@@ -27524,7 +27524,7 @@
         {
           "path": "apps/app/src/jobs/backup.ts",
           "kind": "file",
-          "sha256": "2cb73251162f38fcfd587351fb8b5502675562384c361a79ac80171271ad6c94"
+          "sha256": "e8e2798e14680b4d47b0e0608a888825106586691c14251ff67b8242d2ea23d3"
         },
         {
           "path": "apps/app/src/jobs/export.ts",
@@ -29676,7 +29676,7 @@
         {
           "path": ".kiro/specs/research-collab-cms/design.md",
           "kind": "file",
-          "sha256": "dc04be0c787594006aa05cf907a88445c1c4a16b2c820a5f6cb4c0da20de7145"
+          "sha256": "7078a4b2530b41405c7deac5503ea1baa86fb0c9469f434e43d01463ddbf5dc1"
         }
       ],
       "gates": [
@@ -30639,7 +30639,7 @@
         {
           "path": "infra/releases/development.json",
           "kind": "file",
-          "sha256": "4894aa46428bea38c1fa1108d58ef7b95072baafba3e94971f9e4c4f0c80f4d1"
+          "sha256": "32f83c0c4169ff20a500e26e504945fbf5508c5350c597f90dfbf18625defd5c"
         },
         {
           "path": "infra/releases/README.md",

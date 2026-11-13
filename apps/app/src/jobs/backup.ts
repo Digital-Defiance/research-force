@@ -30,7 +30,7 @@ import { independentDestination, verifyCopyStep } from '../backup/copies';
 import { bucketKeyOf } from './export';
 import { volumeManifests } from './export-manifest';
 import type { VolumeManifest } from './export-manifest';
-import { dropPackedTar, persistSuppressionLedger } from './backup-cron';
+import { persistSuppressionLedger } from './backup-cron';
 
 /**
  * The Internal_Backup JOB (task 38.4; R28.8, R36.1, R36.2, R36.3, R36.6, R36.11, R36.12, R36.13, R36.14, R47.15,
@@ -981,7 +981,8 @@ async function verifySlice({ env, job, now }: SliceContext, cursorValue: JsonVal
     }
     await env.RF_CORE.prepare('UPDATE backup_points SET verified_at = ?2, verify_fault = NULL WHERE export_id = ?1').bind(id, now).run();
     await persistSuppressionLedger(env, id, now);
-    await dropPackedTar(env, id);
+    // The packed tar is kept after verification: links already issued stay valid for their lifetime and later
+    // downloads keep working. Backup retention deletes the whole backup prefix, tar included (R36.2, R36.3).
     return verifyStep(cursor, { index: result.cursor.index }, true, 'complete');
   } catch (error) {
     if (isDailyLimitError(error)) throw error;

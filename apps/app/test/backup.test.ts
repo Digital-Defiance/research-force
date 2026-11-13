@@ -715,4 +715,20 @@ describe('the backup package is pre-built as one tar per volume by a sliced pack
     expect(await (await priv().get(manifestKey!))!.json<{ tar?: unknown }>()).not.toHaveProperty('tar');
     expect(await packageState(id)).toMatchObject({ package: 'preparing', download: [] });
   });
+  it('repacks a VERIFIED backup whose tar was dropped by an earlier release, so it becomes downloadable again', async () => {
+    configureDownloads();
+    await seedAttachment(new TextEncoder().encode('verified then dropped'));
+    const { id } = await (await startBackup()).json<{ id: ULID }>();
+    expect((await runBackup(id)).outcome).toBe('complete');
+    expect((await runPack(id)).outcome).toBe('complete');
+    await core().prepare("INSERT INTO backup_points (export_id, slot_key, started_at, state, copy_state, copy_destination, copied_at, verified_at, created_at) VALUES (?1, ?2, ?3, 'complete', 'offline_confirmed', 'offline', ?3, ?3, ?3)")
+      .bind(id, `manual-${id}`, world.at).run();
+    await dropPackedTar(world.bindings, id);
+    expect((await packageState(id)).download).toEqual([]);
+    expect(await sweepBackupPackages(world.bindings, world.at), 'the verified backup is repacked').toBe(1);
+    expect((await runPack(id)).outcome).toBe('complete');
+    expect(await packageState(id)).toMatchObject({ package: 'ready' });
+    expect((await packageState(id)).download).toHaveLength(1);
+    expect(await sweepBackupPackages(world.bindings, world.at), 'a packed verified backup needs nothing').toBe(0);
+  });
 });

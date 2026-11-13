@@ -147,6 +147,10 @@ export async function download(request: Request, env: Env, now = Date.now()): Pr
         if (directory === '' || !manifest.tar.key.startsWith(directory)) return notFound();
         return await serveObject(request, env, manifest.tar.key, 'research-package.tar');
       }
+      // An Internal_Backup volume is only ever served from its pre-built tar. Assembling ~150+ members on the fly
+      // exceeds the Free CPU limit and ends the response early with a 200, which looks like a complete download but is
+      // a truncated tar. Until the pack job has (re)built the tar, the volume is not served (R36.2).
+      if (manifest && claim.purpose === 'internal_backup') return notFound();
       if (manifest) return tarVolumeResponse(request, env, manifest);
     }
     return await serveObject(request, env, claim.objectKey, fileName);

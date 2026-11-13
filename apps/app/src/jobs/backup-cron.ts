@@ -100,15 +100,15 @@ export async function sweepStuckBackups(env: Env, now: Timestamp): Promise<numbe
 /**
  * Start a pack job for each complete, unexpired backup whose volumes are not all packed into a tar (R36.2). This is the
  * BACKFILL for backups taken before packing existed and the RETRY for a pack that ended incomplete. It skips a backup
- * with a pack job already queued or running, one whose last {@link MAX_PACK_FAILURES} packs failed, and one that already
- * has a verified recovery point (its tar is dropped, see {@link dropPackedTar}). Returns how many packs it started.
+ * with a pack job already queued or running and one whose last {@link MAX_PACK_FAILURES} packs failed. A verified
+ * backup is included too: its tar is kept, and one whose tar was dropped by an earlier release is repacked so it stays
+ * downloadable. Returns how many packs it started.
  */
 export async function sweepBackupPackages(env: Env, now: Timestamp): Promise<number> {
   const packJobs = "json_extract(j.params, '$.exportId') = e.id AND json_extract(j.params, '$.mode') = 'pack'";
   const rows = (await env.RF_CORE.prepare(
     `SELECT e.id, e.volumes FROM exports e
      WHERE e.type = 'backup' AND e.state = 'complete' AND e.volumes IS NOT NULL AND (e.expires_at IS NULL OR e.expires_at > ?1)
-       AND NOT EXISTS (SELECT 1 FROM backup_points bp WHERE bp.export_id = e.id AND bp.verified_at IS NOT NULL)
        AND NOT EXISTS (SELECT 1 FROM jobs j WHERE ${packJobs} AND j.state IN ('queued', 'running'))
        AND (SELECT count(*) FROM jobs j WHERE ${packJobs} AND j.state IN ('incomplete', 'failed')) < ?2`,
   ).bind(now, MAX_PACK_FAILURES).all<{ id: string; volumes: string }>()).results;
