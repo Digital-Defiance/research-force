@@ -48,7 +48,12 @@ async function main(): Promise<number> {
   const dir = mkdtempSync(join(tmpdir(), 'rf-verify-'));
   const fail = (why: string): number => { console.error(`NOT VERIFIED: ${why}`); return 1; };
   try {
-    execFileSync('tar', ['-xf', resolve(tarArg), '-C', dir]);
+    try {
+      execFileSync('tar', ['-xf', resolve(tarArg), '-C', dir], { stdio: 'pipe' });
+    } catch {
+      // A cut-off download is the usual cause; say so in plain language instead of printing a stack trace.
+      return fail('the download looks incomplete or damaged and could not be unpacked. Compare the file size with the size the download link reports, resume the download with `curl -C - -O <link>` (or the browser\'s Resume), then run this check again');
+    }
     for (const part of ['header.json', 'body.enc', 'manifest-fingerprint.txt']) {
       if (!existsSync(join(dir, part))) return fail(`the package is missing ${part}`);
     }
